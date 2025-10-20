@@ -1,0 +1,38 @@
+stages:
+  - test
+
+variables:
+  GOPATH: $ROOT_DIR/.go
+  ALPINE_CACHE: $ROOT_DIR/.apk-cache
+  ALPINE_REQS: $ROOT_DIR/.apk-requirements
+
+.golang_cache: &golang_cache
+  key:
+    files:
+      - $ROOT_DIR/go.mod
+  paths:
+    - $ROOT_DIR/$GOPATH/pkg/mod
+
+.alpine_cache: &alpine_cache
+  key:
+    files:
+      - $ALPINE_REQS
+  paths:
+    - $ROOT_DIR/$ALPINE_CACHE
+
+test:
+  stage: test
+  image: alpine:latest
+  variables:
+    APK_CACHE_DIR: $ALPINE_CACHE
+  before_script:
+    - cd $ROOT_DIR
+    - mkdir -p $ALPINE_CACHE
+    - apk update --cache-dir $ALPINE_CACHE
+    - xargs -a $ALPINE_REQS apk add --no-cache --cache-dir $ALPINE_CACHE
+  script:
+    - go test -cover -tags test
+  coverage: '/coverage: \d+.\d+% of statements/'
+  cache:
+    - <<: *golang_cache
+    - <<: *alpine_cache
