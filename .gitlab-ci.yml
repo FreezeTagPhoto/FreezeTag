@@ -1,5 +1,6 @@
 stages:
   - check-formatting
+  - lint
   - test
 
 variables:
@@ -24,6 +25,32 @@ format-frontend:
     - npx prettier --check .
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+
+lint-frontend:
+  stage: lint
+  image: node:latest
+  variables:
+    PNPM_STORE: $FRONT_DIR/.pnpm-store
+  before_script:
+    - cd $FRONT_DIR
+    - npm install --global pnpm@latest-10
+    - mkdir -p $PNPM_STORE
+    - pnpm config set store-dir $PNPM_STORE
+  script:
+    - pnpm install
+    - pnpm lint --format=@gitlab-formatters/gitlab --output-file gl-codequality.json
+  cache:
+    - <<: *pnpm_cache
+  artifacts:
+    reports:
+      codequality: $FRONT_DIR/gl-codequality.json
+    expire_in: 2 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE = 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        compare_to: 'refs/heads/main'
+        paths:
+          - frontend/**/*
 
 test-frontend:
   stage: test
@@ -94,6 +121,10 @@ format-backend:
     - fi
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        compare_to: 'refs/heads/main'
+        paths:
+          - backend/**/*
 
 test-backend:
   stage: test
