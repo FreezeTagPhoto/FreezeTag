@@ -2,7 +2,6 @@ stages:
   - test
 
 variables:
-  GOPATH: $ROOT_DIR/.go
   ALPINE_CACHE: $ROOT_DIR/.apk-cache
   ALPINE_REQS: $ROOT_DIR/.apk-requirements
 
@@ -30,6 +29,8 @@ test:
     - apk update --cache-dir $ALPINE_CACHE
     - xargs -a $ALPINE_REQS apk add --no-cache --cache-dir $ALPINE_CACHE
     - cd $ROOT_DIR
+    - export GOPATH=$PWD/.go
+    - go mod tidy
   script:
     - go test -cover -tags test
   coverage: '/coverage: \d+.\d+% of statements/'
