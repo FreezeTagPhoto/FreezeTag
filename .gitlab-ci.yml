@@ -5,7 +5,7 @@ stages:
   trigger:
     include:
       - local: $ROOT_DIR/.gitlab-ci.yml
-    strategy: mirror
+    strategy: depend
   rules:
     - changes:
       - $ROOT_DIR/**/*
