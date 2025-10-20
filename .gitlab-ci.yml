@@ -1,5 +1,5 @@
 stages:
-  - test
+  - trigger
 
 .test-dir:
   trigger:
@@ -11,7 +11,7 @@ stages:
       - $ROOT_DIR/**/*
 
 test-frontend:
-  stage: test
+  stage: trigger
   extends: .test-dir
   variables:
     ROOT_DIR: frontend
@@ -22,7 +22,7 @@ test-frontend:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
 
 test-backend:
-  stage: test
+  stage: trigger
   extends: .test-dir
   variables:
     ROOT_DIR: backend
@@ -31,4 +31,3 @@ test-backend:
       when: manual
       allow_failure: true
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
-    

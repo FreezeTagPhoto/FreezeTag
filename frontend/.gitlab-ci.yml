@@ -22,3 +22,8 @@ test:
         - $ROOT_DIR/pnpm-lock.yaml
     paths:
       - $ROOT_DIR/$PNPM_STORE
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: $ROOT_DIR/coverage/cobertura-coverage.xml

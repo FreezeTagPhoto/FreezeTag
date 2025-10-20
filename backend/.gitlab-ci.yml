@@ -9,8 +9,9 @@ variables:
   key:
     files:
       - $ROOT_DIR/go.mod
+      - $ROOT_DIR/go.sum
   paths:
-    - $ROOT_DIR/$GOPATH/pkg/mod
+    - $ROOT_DIR/.go/pkg/mod
 
 .alpine_cache: &alpine_cache
   key:
@@ -30,10 +31,17 @@ test:
     - xargs -t -a $ALPINE_REQS apk add --cache-dir $ALPINE_CACHE
     - cd $ROOT_DIR
     - export GOPATH=$PWD/.go
+    - export PATH="$GOPATH/bin:$PATH"
     - go mod tidy
+    - go install github.com/boumenot/gocover-cobertura
   script:
-    - go test -cover -tags test
+    - ./test.sh
   coverage: '/coverage: \d+.\d+% of statements/'
   cache:
     - <<: *golang_cache
     - <<: *alpine_cache
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: $ROOT_DIR/coverage.xml
