@@ -24,10 +24,6 @@ format-frontend:
     - npx prettier --check .
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
-      changes:
-        compare_to: 'refs/heads/main'
-        paths:
-          - frontend/**/*
 
 test-frontend:
   stage: test
@@ -98,10 +94,6 @@ format-backend:
     - fi
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
-      changes:
-        compare_to: 'refs/heads/main'
-        paths:
-          - backend/**/*
 
 test-backend:
   stage: test
