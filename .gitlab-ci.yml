@@ -84,7 +84,7 @@ format-backend:
     - cd $BACK_DIR
     - go mod tidy
   script:
-    - if gofmt -l $(find . -type f -name '*.go' -not -path ".go"); then
+    - if gofmt -l $(find . -type f -name '*.go' -not -path "./.go/*"); then
     -   echo "All Go files are correctly formatted."
     - else
     -   echo "Some files are not formatted correctly."
