@@ -1,0 +1,24 @@
+stages:
+  - test
+
+variables:
+  PNPM_STORE: $ROOT_DIR/.pnpm-store
+
+test:
+  stage: test
+  image: node:latest
+  before_script:
+    - cd $ROOT_DIR
+    - npm install --global pnpm@latest-10
+    - mkdir -p $PNPM_STORE
+    - pnpm config set store-dir $PNPM_STORE
+  script:
+    - pnpm install
+    - pnpm test
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  cache:
+    key:
+      files:
+        - $ROOT_DIR/pnpm-lock.yaml
+    paths:
+      - $PNPM_STORE
