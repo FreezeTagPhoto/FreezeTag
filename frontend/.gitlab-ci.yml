@@ -15,6 +15,7 @@ test:
   script:
     - pnpm install
     - pnpm test
+    - cp coverage/cobertura-coverage.xml ../frontend-coverage.xml
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   cache:
     key:
@@ -26,7 +27,7 @@ test:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: $ROOT_DIR/coverage/cobertura-coverage.xml
+        path: frontend-coverage.xml
   rules:
     - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
     - if: $CI_MERGE_REQUEST_ID

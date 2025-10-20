@@ -37,6 +37,7 @@ test:
   script:
     - chmod +x test.sh
     - ./test.sh
+    - cp coverage.xml ../backend-coverage.xml
   coverage: '/coverage: \d+.\d+% of statements/'
   cache:
     - <<: *golang_cache
@@ -45,7 +46,7 @@ test:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: $ROOT_DIR/coverage.xml
+        path: backend-coverage.xml
   rules:
     - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
     - if: $CI_MERGE_REQUEST_ID
