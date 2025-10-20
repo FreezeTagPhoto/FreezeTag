@@ -19,14 +19,14 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "coverage/**",
-      ".swc/**"
+      ".swc/**",
     ],
   },
   {
     rules: {
-      "@typescript-eslint/no-unused-vars": "error"
-    }
-  }
+      "@typescript-eslint/no-unused-vars": "error",
+    },
+  },
 ];
 
 export default eslintConfig;

@@ -19,10 +19,16 @@ variables:
 format-frontend:
   stage: check-formatting
   image: node:latest
+  variables:
+    PNPM_STORE: $FRONT_DIR/.pnpm-store
   before_script:
     - cd $FRONT_DIR
+    - npm install --global pnpm@latest-10
+    - mkdir -p $PNPM_STORE
+    - pnpm config set store-dir $PNPM_STORE
   script:
-    - npx prettier --check .
+    - pnpm install
+    - pnpm format:check
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
 
