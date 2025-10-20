@@ -40,10 +40,10 @@ coverage-report:
     - test-frontend
     - test-backend
   before_script:
-    apk add --no-cache python3
-    npm install -g cobertura-merge
+    - apk add --no-cache python3
+    - npm install -g cobertura-merge
   script:
-    npx cobertura-merge -o coverage-full.xml backend=backend-coverage.xml frontend=frontend-coverage.xml
-    python coverage-report.py
+    - npx cobertura-merge -o coverage-full.xml backend=backend-coverage.xml frontend=frontend-coverage.xml
+    - python coverage-report.py
   coverage: '/coverage: (\d+\.\d+)%/'
   
