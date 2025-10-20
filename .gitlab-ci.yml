@@ -44,5 +44,6 @@ coverage-report:
   script:
     - npx merge-cobertura -o coverage-full.xml backend=backend-coverage.xml frontend=frontend-coverage.xml
     - python coverage-report.py
+    - ls
   coverage: '/coverage: (\d+\.\d+)%/'
   
