@@ -34,10 +34,9 @@ test-frontend:
       coverage_report:
         coverage_format: cobertura
         path: frontend-coverage.xml
+    expire_in: 2 days
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: manual
-      allow_failure: true
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
       changes:
         compare_to: 'refs/heads/main'
@@ -68,7 +67,7 @@ test-backend:
     GOPATH: $BACK_DIR/.go
   before_script:
     - cd $BACK_DIR
-    - mkdir -p $ALPINE_CACHE
+    - mkdir -p $APK_CACHE_DIR
     - apk update --cache-dir $ALPINE_CACHE
     - xargs -t -a $ALPINE_REQS apk add --cache-dir $ALPINE_CACHE
     - export PATH="$GOPATH/bin:$PATH"
@@ -87,6 +86,7 @@ test-backend:
       coverage_report:
         coverage_format: cobertura
         path: backend-coverage.xml
+    expire_in: 2 days
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
