@@ -6,31 +6,14 @@ variables:
   BACK_DIR: $CI_PROJECT_DIR/backend
   FRONT_DIR: $CI_PROJECT_DIR/frontend
 
-format-backend:
-  stage: check-formatting
-  image: golang:latest
-  variables:
-    GOPATH: $BACK_DIR/.go
-  cache:
-    - <<: *golang_cache
-  before_script:
-    - cd $BACK_DIR
-    - go mod tidy
-  script:
-    - if gofmt -l .; then
-    -   echo "All Go files are correctly formatted."
-    - else
-    -   echo "Some files are not formatted correctly."
-    -   echo "diffs:"
-    -   gofmt -d .
-    -   exit 1
-    - fi
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
-      changes:
-        compare_to: 'refs/heads/main'
-        paths:
-          - backend/**/*
+# ------------ Frontend Jobs ------------ #
+
+.pnpm_cache: &pnpm_cache
+  key:
+    files:
+      - $FRONT_DIR/pnpm-lock.yaml
+  paths:
+    - $FRONT_DIR/$PNPM_STORE
 
 format-frontend:
   stage: check-formatting
@@ -45,13 +28,6 @@ format-frontend:
         compare_to: 'refs/heads/main'
         paths:
           - frontend/**/*
-
-.pnpm_cache: &pnpm_cache
-  key:
-    files:
-      - $FRONT_DIR/pnpm-lock.yaml
-  paths:
-    - $FRONT_DIR/$PNPM_STORE
 
 test-frontend:
   stage: test
@@ -84,6 +60,8 @@ test-frontend:
         paths:
           - frontend/**/*
 
+# ------------ Backend Jobs ------------ #
+
 .golang_cache: &golang_cache
   key:
     files:
@@ -98,6 +76,32 @@ test-frontend:
       - $ALPINE_REQS
   paths:
     - $ALPINE_CACHE
+
+format-backend:
+  stage: check-formatting
+  image: golang:latest
+  variables:
+    GOPATH: $BACK_DIR/.go
+  cache:
+    - <<: *golang_cache
+  before_script:
+    - cd $BACK_DIR
+    - go mod tidy
+  script:
+    - if gofmt -l .; then
+    -   echo "All Go files are correctly formatted."
+    - else
+    -   echo "Some files are not formatted correctly."
+    -   echo "diffs:"
+    -   gofmt -d .
+    -   exit 1
+    - fi
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        compare_to: 'refs/heads/main'
+        paths:
+          - backend/**/*
 
 test-backend:
   stage: test
