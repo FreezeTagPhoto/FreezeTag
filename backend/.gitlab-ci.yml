@@ -46,3 +46,6 @@ test:
       coverage_report:
         coverage_format: cobertura
         path: $ROOT_DIR/coverage.xml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
+    - if: $CI_MERGE_REQUEST_ID
