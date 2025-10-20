@@ -14,7 +14,7 @@ test-frontend:
   stage: test
   extends: .test-dir
   variables:
-    ROOT_DIR: ./frontend
+    ROOT_DIR: frontend
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       when: manual
@@ -25,7 +25,7 @@ test-backend:
   stage: test
   extends: .test-dir
   variables:
-    ROOT_DIR: ./backend
+    ROOT_DIR: backend
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       when: manual
