@@ -27,7 +27,7 @@ test:
   before_script:
     - mkdir -p $ALPINE_CACHE
     - apk update --cache-dir $ALPINE_CACHE
-    - xargs -a $ALPINE_REQS apk add --no-cache --cache-dir $ALPINE_CACHE
+    - xargs -t -a $ALPINE_REQS apk add --no-cache --cache-dir $ALPINE_CACHE
     - cd $ROOT_DIR
     - export GOPATH=$PWD/.go
     - go mod tidy
