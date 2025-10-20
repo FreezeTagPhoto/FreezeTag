@@ -2,7 +2,7 @@ stages:
   - test
 
 variables:
-  PNPM_STORE: $ROOT_DIR/.pnpm-store
+  PNPM_STORE: .pnpm-store
 
 test:
   stage: test
@@ -21,4 +21,4 @@ test:
       files:
         - $ROOT_DIR/pnpm-lock.yaml
     paths:
-      - $PNPM_STORE
+      - $ROOT_DIR/$PNPM_STORE

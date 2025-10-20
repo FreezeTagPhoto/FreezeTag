@@ -26,10 +26,10 @@ test:
   variables:
     APK_CACHE_DIR: $ALPINE_CACHE
   before_script:
-    - cd $ROOT_DIR
     - mkdir -p $ALPINE_CACHE
     - apk update --cache-dir $ALPINE_CACHE
     - xargs -a $ALPINE_REQS apk add --no-cache --cache-dir $ALPINE_CACHE
+    - cd $ROOT_DIR
   script:
     - go test -cover -tags test
   coverage: '/coverage: \d+.\d+% of statements/'
