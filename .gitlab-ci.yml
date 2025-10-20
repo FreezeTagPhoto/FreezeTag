@@ -42,8 +42,8 @@ coverage-report:
   before_script:
     - apk add --no-cache python3
   script:
+    - ls
     - npx merge-cobertura -o coverage-full.xml backend=backend-coverage.xml frontend=frontend-coverage.xml
     - python coverage-report.py
-    - ls
   coverage: '/coverage: (\d+\.\d+)%/'
   
