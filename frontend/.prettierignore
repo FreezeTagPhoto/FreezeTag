@@ -1,0 +1,6 @@
+# ignore stuff used for testing
+coverage/
+build/
+
+# ignore runner files
+.pnpm-store/

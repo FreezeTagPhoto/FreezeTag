@@ -20,6 +20,9 @@ importers:
       "@eslint/eslintrc":
         specifier: ^3
         version: 3.3.1
+      "@gitlab-formatters/eslint-formatter-gitlab":
+        specifier: ^1.0.1
+        version: 1.0.1(eslint@9.38.0)
       "@testing-library/dom":
         specifier: ^10.4.1
         version: 10.4.1
@@ -53,6 +56,9 @@ importers:
       jest-environment-jsdom:
         specifier: ^30.2.0
         version: 30.2.0
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.22)(typescript@5.9.3)
@@ -482,6 +488,14 @@ packages:
         integrity: sha512-sB5uyeq+dwCWyPi31B2gQlVlo+j5brPlWx4yZBrEaRo/nhdDE8Xke1gsGgtiBdaBTxuTkceLVuVt/pclrasb0A==,
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
+
+  "@gitlab-formatters/eslint-formatter-gitlab@1.0.1":
+    resolution:
+      {
+        integrity: sha512-7flKM7NwgCmZ/WR8z/2CAW7641jnFd6gfk1GPMUaTioGM7QJYEtd+oLXajXaLfaOfUnA6HFGf3dt9rx+JE4bXQ==,
+      }
+    peerDependencies:
+      eslint: ">=8 <10"
 
   "@humanfs/core@0.19.1":
     resolution:
@@ -3922,6 +3936,14 @@ packages:
       }
     engines: { node: ">= 0.8.0" }
 
+  prettier@3.6.2:
+    resolution:
+      {
+        integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==,
+      }
+    engines: { node: ">=14" }
+    hasBin: true
+
   pretty-format@27.5.1:
     resolution:
       {
@@ -5098,6 +5120,10 @@ snapshots:
     dependencies:
       "@eslint/core": 0.16.0
       levn: 0.4.1
+
+  "@gitlab-formatters/eslint-formatter-gitlab@1.0.1(eslint@9.38.0)":
+    dependencies:
+      eslint: 9.38.0
 
   "@humanfs/core@0.19.1": {}
 
@@ -7538,6 +7564,8 @@ snapshots:
       source-map-js: 1.2.1
 
   prelude-ls@1.2.1: {}
+
+  prettier@3.6.2: {}
 
   pretty-format@27.5.1:
     dependencies:
