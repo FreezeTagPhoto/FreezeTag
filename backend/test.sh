@@ -1,4 +1,5 @@
 #!/bin/sh
 
-go test -coverprofile="coverage.out" -covermode count -tags test .
-gocover-cobertura < coverage.out > coverage.xml
+mkdir -p coverage
+go test -coverprofile="coverage/coverage.out" -covermode count -tags test .
+gocover-cobertura < coverage/coverage.out > coverage/cobertura-coverage.xml
