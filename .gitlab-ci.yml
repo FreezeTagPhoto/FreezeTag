@@ -31,6 +31,10 @@ format-frontend:
     - pnpm format:check
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        compare_to: 'refs/heads/main'
+        paths:
+          - frontend/**/*
 
 lint-frontend:
   stage: lint
@@ -71,7 +75,6 @@ test-frontend:
   script:
     - pnpm install
     - pnpm test
-    - cp coverage/cobertura-coverage.xml $CI_PROJECT_DIR/frontend-coverage.xml
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   cache:
     - <<: *pnpm_cache
@@ -79,7 +82,7 @@ test-frontend:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: frontend-coverage.xml
+        path: $FRONT_DIR/coverage/cobertura-coverage.xml
     expire_in: 2 days
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -132,6 +135,36 @@ format-backend:
         paths:
           - backend/**/*
 
+lint-backend:
+  stage: lint
+  image: alpine:latest
+  variables:
+    ALPINE_REQS: $BACK_DIR/.apk-requirements
+    APK_CACHE_DIR: $BACK_DIR/.apk-cache
+    GOPATH: $BACK_DIR/.go
+  cache:
+    - <<: *golang_cache
+  before_script:
+    - cd $BACK_DIR
+    - mkdir -p $APK_CACHE_DIR
+    - apk update --cache-dir $APK_CACHE_DIR
+    - xargs -t -a $ALPINE_REQS apk add --cache-dir $APK_CACHE_DIR
+    - export PATH="$GOPATH/bin:$PATH"
+    - go mod tidy
+    - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $GOPATH/bin v2.5.0
+  script:
+    - golangci-lint run
+  artifacts:
+    reports:
+      codequality: $BACK_DIR/gl-codequality.json
+    expire_in: 2 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+      changes:
+        compare_to: 'refs/heads/main'
+        paths:
+          - backend/**/*
+
 test-backend:
   stage: test
   image: alpine:latest
@@ -150,7 +183,6 @@ test-backend:
   script:
     - chmod +x test.sh
     - ./test.sh
-    - cp coverage.xml $CI_PROJECT_DIR/backend-coverage.xml
   coverage: '/coverage: \d+.\d+% of statements/'
   cache:
     - <<: *golang_cache
@@ -159,7 +191,7 @@ test-backend:
     reports:
       coverage_report:
         coverage_format: cobertura
-        path: backend-coverage.xml
+        path: $BACK_DIR/coverage/cobertura-coverage.xml
     expire_in: 2 days
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
