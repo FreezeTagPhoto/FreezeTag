@@ -16,7 +16,7 @@ describe("API Handler", () => {
       fail();
     }
   });
-  
+
   it("properly handles a 405 response", async () => {
     const handler = new ApiHandler("http://www.google.com", Method.POST);
     const response = await handler.send_request("{status: 'good'}");
