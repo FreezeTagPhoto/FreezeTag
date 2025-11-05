@@ -7,6 +7,16 @@ variables:
   BACK_DIR: $CI_PROJECT_DIR/backend
   FRONT_DIR: $CI_PROJECT_DIR/frontend
 
+# ------------ Catch-all MR job that always passes ------------ #
+
+dummy:
+  stage: test
+  image: alpine:latest
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+  script:
+    - echo "placeholder, this is the only job that runs in MR flows if only documentation changed."
+
 # ------------ Frontend Jobs ------------ #
 
 .pnpm_cache: &pnpm_cache
