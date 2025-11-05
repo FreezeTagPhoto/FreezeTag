@@ -3,9 +3,13 @@
 package main
 
 import (
-	"fmt"
+	"freezetag/backend/api/test"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	fmt.Println(Hello("World"))
+	router := gin.Default()
+	test.RegisterEndpoints(router)
+	router.Run("localhost:8080") //nolint:errcheck // no need to check return value
 }
