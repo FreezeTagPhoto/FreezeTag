@@ -1,5 +1,5 @@
 import Image from "next/image";
-import logoUrl from "@/app/freezetag+text.svg";
+import logoUrl from "@/icons/freezetag+text.svg";
 import styles from "./Sidebar.module.css";
 
 export default function Sidebar() {

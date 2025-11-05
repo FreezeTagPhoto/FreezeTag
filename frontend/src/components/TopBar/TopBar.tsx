@@ -6,13 +6,17 @@ export default function TopBar() {
   return (
     <div className={styles.bar}>
       <div className={styles.searchWrap}>
-        <span className={styles.searchIcon} aria-hidden>🔍</span>
+        <span className={styles.searchIcon} aria-hidden>
+          🔍
+        </span>
         <input
           className={styles.search}
           placeholder="Search…"
           aria-label="Search"
         />
-        <button className={styles.clear} aria-label="Clear">✕</button>
+        <button className={styles.clear} aria-label="Clear">
+          ✕
+        </button>
       </div>
 
       <div className={styles.pills}>
