@@ -5,6 +5,7 @@ go 1.24.9
 require (
 	github.com/boumenot/gocover-cobertura v1.4.0
 	github.com/gin-gonic/gin v1.11.0
+	github.com/gobwas/glob v0.2.3
 	github.com/stretchr/testify v1.11.1
 )
 
