@@ -1,0 +1,69 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: 110px;
+  gap: 16px;
+}
+
+.tile {
+  background: #e9e4ee;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.thumb {
+  width: 100%;
+  height: 100%;
+  opacity: 0.6;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.shapeTri {
+  position: absolute;
+  top: 14%;
+  width: 22%;
+  aspect-ratio: 1 / 1;
+  background: #c4bacc;
+  clip-path: polygon(50% 8%, 10% 90%, 90% 90%);
+  border-radius: 10px;
+}
+
+.shapeGear {
+  position: absolute;
+  width: 16%;
+  aspect-ratio: 1/1;
+  background: #c4bacc;
+  border-radius: 50%;
+  bottom: 22%;
+  left: 22%;
+  box-shadow:
+    0 0 0 8px #c4bacc inset,
+    12px 0 0 -6px #c4bacc,
+    -12px 0 0 -6px #c4bacc,
+    0 12px 0 -6px #c4bacc,
+    0 -12px 0 -6px #c4bacc;
+}
+
+.shapeSquare {
+  position: absolute;
+  right: 14%;
+  bottom: 16%;
+  width: 14%;
+  aspect-ratio: 1/1;
+  background: #c4bacc;
+  border-radius: 10px;
+}
+
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

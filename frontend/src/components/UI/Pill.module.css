@@ -1,0 +1,21 @@
+.pill {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #262a38;
+  color: #dfe3f0;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.pill:hover {
+  background: #2e3345;
+}
+
+.caret {
+  opacity: 0.8;
+}
