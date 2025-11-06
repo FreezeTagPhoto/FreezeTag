@@ -7,8 +7,8 @@ import { ApiHandler, Method } from "@/api/common/apihandler";
 
 describe("API Handler", () => {
   it("can receive a response", async () => {
-    const handler = new ApiHandler("http://www.google.com", Method.GET);
-    const response = await handler.send_request("search?q=university of utah");
+    const handler = ApiHandler("http://www.google.com")(Method.GET);
+    const response = await handler("search?q=university of utah");
 
     if (response.ok) {
       expect(response.value).not.toBeNull();
@@ -18,8 +18,8 @@ describe("API Handler", () => {
   });
 
   it("properly handles a 405 response", async () => {
-    const handler = new ApiHandler("http://www.google.com", Method.POST);
-    const response = await handler.send_request("{status: 'good'}");
+    const handler = ApiHandler("http://www.google.com")(Method.POST);
+    const response = await handler("{status: 'good'}");
 
     if (response.ok) {
       fail();
