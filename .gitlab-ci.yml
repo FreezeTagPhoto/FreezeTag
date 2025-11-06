@@ -193,7 +193,7 @@ test-backend:
   script:
     - chmod +x test.sh
     - ./test.sh
-  coverage: '/coverage: \d+.\d+% of statements/'
+  coverage: '/total:\s+\(statements\)\s+\d+.\d+%/'
   cache:
     - <<: *golang_cache
     - <<: *alpine_cache
