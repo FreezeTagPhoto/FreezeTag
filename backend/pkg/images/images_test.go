@@ -10,36 +10,32 @@ import (
 
 func TestParserCollectionRegisterOne(t *testing.T) {
 	parser := InitParserCollection()
-	err := parser.RegisterParserFunc("*.png", func(name string, data []byte) (Info, error) {
-		return Info{
-			struct {
-				pixelsRGBA []byte
-				width      int
-				height     int
-			}{
-				[]byte{69, 4, 20},
-				69,
-				420,
-			},
-			nil,
+	err := parser.RegisterParserFunc("*.png", func(name string, data []byte) (Data, error) {
+		return Data{
+			PixelsRGBA:  []byte{},
+			Width:       69,
+			Height:      420,
+			DateCreated: nil,
+			Geo:         nil,
+			Cam:         nil,
 		}, nil
 	})
 	assert.NoError(t, err, "registering a parser with a valid glob should not fail")
 	info, err := parser.ParseImage("test.png", []byte{})
 	require.NoError(t, err, "parsing an image should not fail")
-	assert.Equal(t, 69, info.image.width)
-	assert.Equal(t, 420, info.image.height)
-	assert.Nil(t, info.meta)
+	assert.Equal(t, 69, info.Width)
+	assert.Equal(t, 420, info.Height)
+	assert.Nil(t, info.DateCreated)
 }
 
 func TestParserCollectionRegisterMultiple(t *testing.T) {
 	parser := InitParserCollection()
-	err := parser.RegisterParserFunc("*.png", func(name string, data []byte) (Info, error) {
-		return Info{}, errors.New("png")
+	err := parser.RegisterParserFunc("*.png", func(name string, data []byte) (Data, error) {
+		return Data{}, errors.New("png")
 	})
 	assert.NoError(t, err, "registering a parser with a valid glob should not fail")
-	err = parser.RegisterParserFunc("{*.jpg,*.jpeg}", func(name string, data []byte) (Info, error) {
-		return Info{}, errors.New("jpg")
+	err = parser.RegisterParserFunc("{*.jpg,*.jpeg}", func(name string, data []byte) (Data, error) {
+		return Data{}, errors.New("jpg")
 	})
 	assert.NoError(t, err, "registering a parser with a valid glob should not fail")
 	_, err = parser.ParseImage("test.jpeg", []byte{})
@@ -56,8 +52,8 @@ func TestParserCollectionNoMatch(t *testing.T) {
 
 func TestParserCollectionInvalidGlob(t *testing.T) {
 	parser := InitParserCollection()
-	err := parser.RegisterParserFunc("^^[{bad}", func(name string, data []byte) (Info, error) {
-		return Info{}, errors.New("foo")
+	err := parser.RegisterParserFunc("^^[{bad}", func(name string, data []byte) (Data, error) {
+		return Data{}, errors.New("foo")
 	})
 	assert.Error(t, err)
 }
