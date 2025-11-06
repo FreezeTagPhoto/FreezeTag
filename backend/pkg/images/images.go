@@ -5,39 +5,40 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
+	"gopkg.in/gographics/imagick.v3/imagick"
 )
 
+func init() {
+	imagick.Initialize()
+}
+
 // standardized image information
-type Info struct {
+type Data struct {
 	// image data, obviously will always appear
-	image struct {
-		pixelsRGBA []byte
-		width      int
-		height     int
+	PixelsRGBA []byte
+	Width      int
+	Height     int
+	// image metadata, only some parts of this may appear
+	// otherwise they'll be nil
+	DateCreated *time.Time
+	Geo         *struct {
+		Lat float64
+		Lon float64
+		Alt float64
 	}
-	// image metadata, only sometimes appears in EXIF-format images
-	// and even then only parts may appear
-	meta *struct {
-		// geolocation information
-		geo *struct {
-			location string
-			time     time.Time
-		}
-		// manufacturer information
-		cam *struct {
-			manufacturer string
-			model        string
-		}
+	Cam *struct {
+		Manufacturer string
+		Model        string
 	}
 }
 
 type Parser interface {
-	ParseImage(name string, data []byte) (Info, error)
+	ParseImage(name string, data []byte) (Data, error)
 }
 
-type ParserFunc func(string, []byte) (Info, error)
+type ParserFunc func(string, []byte) (Data, error)
 
-func (p ParserFunc) ParseImage(name string, data []byte) (Info, error) {
+func (p ParserFunc) ParseImage(name string, data []byte) (Data, error) {
 	return p(name, data)
 }
 
@@ -73,15 +74,15 @@ func (pc *ParserCollection) RegisterParser(match string, parser Parser) error {
 // Register an image parser function and activation glob with this parser collection
 //
 // Globs are defined using syntax you can find at https://github.com/gobwas/glob.
-func (pc *ParserCollection) RegisterParserFunc(match string, parser func(string, []byte) (Info, error)) error {
+func (pc *ParserCollection) RegisterParserFunc(match string, parser func(string, []byte) (Data, error)) error {
 	return pc.RegisterParser(match, ParserFunc(parser))
 }
 
-func (pc ParserCollection) ParseImage(name string, data []byte) (Info, error) {
+func (pc ParserCollection) ParseImage(name string, data []byte) (Data, error) {
 	for _, entry := range pc.parsers {
 		if entry.matcher.Match(name) {
 			return entry.parser.ParseImage(name, data)
 		}
 	}
-	return Info{}, fmt.Errorf("no parser for file: %q", name)
+	return Data{}, fmt.Errorf("no parser for file: %q", name)
 }

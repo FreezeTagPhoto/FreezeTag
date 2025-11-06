@@ -1,9 +1,12 @@
 # FreezeTag Backend
 This is a [Go](https://go.dev) project.
 ## Getting Started
+### Runtime Dependencies
 Make sure you've installed the Go toolchain. This project is running Go 1.24.9, so any version at or above that should work.
 
-Running the project should be as simple as `go run .`
+You will also need imagemagick and ffmpeg installed on your system.
+
+After installing those, running the project should be as simple as `go run .`
 
 ## Contributing & Testing
 Read our project's [Contribution Guidelines](https://capstone.cs.utah.edu/groups/freezetag/-/wikis/Contribution-Guidelines)
