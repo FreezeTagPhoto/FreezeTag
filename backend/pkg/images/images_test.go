@@ -77,10 +77,10 @@ func TestParserCollectionFormatIntegration(t *testing.T) {
 	err = parser.RegisterParserFunc("*.{png,jpg,jpeg}", formats.ParseBasic)
 	require.NoError(t, err)
 	cases := []imageParserTestCase{
-		{name: "Parse JPG", file: "formats/test/gopher.jpg", width: 32, height: 32},
-		{name: "Parse PNG", file: "formats/test/gopher.png", width: 32, height: 32},
-		{name: "Parse CR3", file: "formats/test/tree.CR3", width: 8191, height: 5463},
-		{name: "Parse HEIC (fail)", file: "formats/test/gopher.heic", fail: true, failText: "no parser for file"},
+		{name: "Parse JPG", file: "formats/test_resources/gopher.jpg", width: 32, height: 32},
+		{name: "Parse PNG", file: "formats/test_resources/gopher.png", width: 32, height: 32},
+		{name: "Parse CR3", file: "formats/test_resources/tree.CR3", width: 8191, height: 5463},
+		{name: "Parse HEIC (fail)", file: "formats/test_resources/gopher.heic", fail: true, failText: "no parser for file"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

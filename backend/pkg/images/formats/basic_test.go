@@ -18,7 +18,7 @@ func TestParsePNGInvalid(t *testing.T) {
 }
 
 func TestParsePNGIncompleteGPS(t *testing.T) {
-	data, err := os.ReadFile("test/incompleteGPS.png")
+	data, err := os.ReadFile("test_resources/incompleteGPS.png")
 	require.NoError(t, err)
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -29,7 +29,7 @@ func TestParsePNGIncompleteGPS(t *testing.T) {
 }
 
 func TestParsePNGWithGPSData(t *testing.T) {
-	data, err := os.ReadFile("test/completeGPS.png")
+	data, err := os.ReadFile("test_resources/completeGPS.png")
 	require.NoError(t, err)
 	imageData, err := ParseBasic("completeGPS.png", data)
 	assert.NoError(t, err)
@@ -40,7 +40,7 @@ func TestParsePNGWithGPSData(t *testing.T) {
 }
 
 func TestParsePNGWithEXIFDate(t *testing.T) {
-	data, err := os.ReadFile("test/withExifDate.png")
+	data, err := os.ReadFile("test_resources/withExifDate.png")
 	require.NoError(t, err)
 	imageData, err := ParseBasic("withExifDate.png", data)
 	assert.NoError(t, err)
@@ -50,7 +50,7 @@ func TestParsePNGWithEXIFDate(t *testing.T) {
 }
 
 func TestParsePNGWithNoEXIFDate(t *testing.T) {
-	data, err := os.ReadFile("test/gopher.png")
+	data, err := os.ReadFile("test_resources/gopher.png")
 	require.NoError(t, err)
 	imageData, err := ParseBasic("gopher.png", data)
 	assert.NoError(t, err)
@@ -58,7 +58,7 @@ func TestParsePNGWithNoEXIFDate(t *testing.T) {
 }
 
 func TestParsePNGWithManufacturerInfo(t *testing.T) {
-	data, err := os.ReadFile("test/completeManufacturer.png")
+	data, err := os.ReadFile("test_resources/completeManufacturer.png")
 	require.NoError(t, err)
 	imageData, err := ParseBasic("completeManufacturer.png", data)
 	assert.NoError(t, err)
@@ -69,7 +69,7 @@ func TestParsePNGWithManufacturerInfo(t *testing.T) {
 }
 
 func TestParsePNGGivesCorrectBytes(t *testing.T) {
-	data, err := os.ReadFile("test/teenytiny.png")
+	data, err := os.ReadFile("test_resources/teenytiny.png")
 	require.NoError(t, err)
 	imageData, err := ParseBasic("teenytiny.png", data)
 	assert.NoError(t, err)
@@ -90,9 +90,9 @@ type basicParseTestCase struct {
 
 func TestVariousBasicFormats(t *testing.T) {
 	tests := []basicParseTestCase{
-		{name: "Parse JPG", file: "test/gopher.jpg"},
-		{name: "Parse TIFF", file: "test/gopher.tiff"},
-		{name: "Parse WEBP", file: "test/gopher.webp"},
+		{name: "Parse JPG", file: "test_resources/gopher.jpg"},
+		{name: "Parse TIFF", file: "test_resources/gopher.tiff"},
+		{name: "Parse WEBP", file: "test_resources/gopher.webp"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

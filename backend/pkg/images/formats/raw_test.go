@@ -25,7 +25,7 @@ func TestInvalidRawImage(t *testing.T) {
 }
 
 func TestRawImageMissingGeo(t *testing.T) {
-	data, err := os.ReadFile("test/incompleteGPS.heic")
+	data, err := os.ReadFile("test_resources/incompleteGPS.heic")
 	require.NoError(t, err)
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -37,9 +37,9 @@ func TestRawImageMissingGeo(t *testing.T) {
 
 func TestVariousRawFormats(t *testing.T) {
 	tests := []rawTestCase{
-		{name: "Parse HEIC 1", file: "test/gopher.heic", width: 32, height: 32},
-		{name: "Parse HEIC 2", file: "test/gopher.heif", width: 32, height: 32},
-		{name: "Parse CR3", file: "test/tree.CR3", width: 8191, height: 5463},
+		{name: "Parse HEIC 1", file: "test_resources/gopher.heic", width: 32, height: 32},
+		{name: "Parse HEIC 2", file: "test_resources/gopher.heif", width: 32, height: 32},
+		{name: "Parse CR3", file: "test_resources/tree.CR3", width: 8191, height: 5463},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
