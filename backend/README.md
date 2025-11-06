@@ -6,6 +6,8 @@ Make sure you've installed the Go toolchain. This project is running Go 1.24.9, 
 
 You will also need ImageMagick, FFmpeg, pkg-config, and the GNU C toolchain installed on your system, along with the associated libraries for ImageMagick and FFmpeg (sometimes installed with the main package, sometimes in `-dev` packages depending on operating system)
 
+If you get errors from ImageMagick, install libraries like `libraw`, `libtiff`, `libheif`, `libwebp` to your system. ImageMagick uses these shared libraries as delegates to process certain formats.
+
 After installing those, running the project should be as simple as `go run .`
 
 ## Contributing & Testing

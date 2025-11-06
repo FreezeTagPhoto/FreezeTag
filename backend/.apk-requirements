@@ -6,3 +6,6 @@ ffmpeg
 ffmpeg-dev
 pkgconf
 alpine-sdk
+libraw
+libheif
+tiff
