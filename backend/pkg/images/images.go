@@ -2,43 +2,26 @@ package images
 
 import (
 	"fmt"
-	"time"
+	"freezetag/backend/pkg/images/imagedata"
+	"log"
 
 	"github.com/gobwas/glob"
 	"gopkg.in/gographics/imagick.v3/imagick"
 )
 
 func init() {
+	log.Println("[INFO] initializing ImageMagick...")
 	imagick.Initialize()
-}
-
-// standardized image information
-type Data struct {
-	// image data, obviously will always appear
-	PixelsRGBA []byte
-	Width      int
-	Height     int
-	// image metadata, only some parts of this may appear
-	// otherwise they'll be nil
-	DateCreated *time.Time
-	Geo         *struct {
-		Lat float64
-		Lon float64
-		Alt float64
-	}
-	Cam *struct {
-		Manufacturer string
-		Model        string
-	}
+	log.Println("[INFO] ImageMagick finished initializing.")
 }
 
 type Parser interface {
-	ParseImage(name string, data []byte) (Data, error)
+	ParseImage(name string, data []byte) (imagedata.Data, error)
 }
 
-type ParserFunc func(string, []byte) (Data, error)
+type ParserFunc func(string, []byte) (imagedata.Data, error)
 
-func (p ParserFunc) ParseImage(name string, data []byte) (Data, error) {
+func (p ParserFunc) ParseImage(name string, data []byte) (imagedata.Data, error) {
 	return p(name, data)
 }
 
@@ -74,15 +57,15 @@ func (pc *ParserCollection) RegisterParser(match string, parser Parser) error {
 // Register an image parser function and activation glob with this parser collection
 //
 // Globs are defined using syntax you can find at https://github.com/gobwas/glob.
-func (pc *ParserCollection) RegisterParserFunc(match string, parser func(string, []byte) (Data, error)) error {
+func (pc *ParserCollection) RegisterParserFunc(match string, parser func(string, []byte) (imagedata.Data, error)) error {
 	return pc.RegisterParser(match, ParserFunc(parser))
 }
 
-func (pc ParserCollection) ParseImage(name string, data []byte) (Data, error) {
+func (pc ParserCollection) ParseImage(name string, data []byte) (imagedata.Data, error) {
 	for _, entry := range pc.parsers {
 		if entry.matcher.Match(name) {
 			return entry.parser.ParseImage(name, data)
 		}
 	}
-	return Data{}, fmt.Errorf("no parser for file: %q", name)
+	return imagedata.Data{}, fmt.Errorf("no parser for file: %q", name)
 }
