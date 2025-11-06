@@ -4,7 +4,7 @@ This is a [Go](https://go.dev) project.
 ### Runtime Dependencies
 Make sure you've installed the Go toolchain. This project is running Go 1.24.9, so any version at or above that should work.
 
-You will also need imagemagick and ffmpeg installed on your system.
+You will also need ImageMagick, FFmpeg, pkg-config, and the GNU C toolchain installed on your system, along with the associated libraries for ImageMagick and FFmpeg (sometimes installed with the main package, sometimes in `-dev` packages depending on operating system)
 
 After installing those, running the project should be as simple as `go run .`
 

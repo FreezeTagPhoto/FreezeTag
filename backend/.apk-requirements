@@ -1,2 +1,8 @@
 go
 uv
+imagemagick
+imagemagick-dev
+ffmpeg
+ffmpeg-dev
+pkgconf
+alpine-sdk
