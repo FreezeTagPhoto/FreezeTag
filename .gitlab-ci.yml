@@ -154,6 +154,7 @@ lint-backend:
     GOPATH: $BACK_DIR/.go
   cache:
     - <<: *golang_cache
+    - <<: *alpine_cache
   before_script:
     - cd $BACK_DIR
     - mkdir -p $APK_CACHE_DIR
