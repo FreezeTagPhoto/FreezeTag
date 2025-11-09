@@ -1,36 +1,41 @@
 import { Result, Ok, Err } from "@/common/result";
-import { fetch, Response, BodyInit } from "undici";
+import { install } from "undici";
+
+install();
 
 export enum Method {
   GET = "GET",
   POST = "POST",
   DELETE = "DELETE",
 }
-export type RequestBody = BodyInit;
-export type RequestResult = Result<RequestBody, number>;
 
-export function ApiHandler(address: string) {
-  if (!address.endsWith("/")) address += "/";
+export function ApiHandler<T>(address: string) {
   return (method: Method) => {
-    return async (data: string): Promise<RequestResult> => {
-      let result: Promise<Response>;
-      if (method === Method.POST) {
-        result = fetch(address, {
+    if (method === Method.POST) {
+      return async (data: BodyInit): Promise<Result<T, number>> => {
+        const response = await fetch(address, {
           method: method,
           body: data,
         });
-      } else {
-        result = fetch(address + data, {
+
+        if (response.ok) {
+          return Ok((await response.json()) as T);
+        } else {
+          return Err(response.status);
+        }
+      };
+    } else {
+      return async (data: BodyInit): Promise<Result<T, number>> => {
+        const response = await fetch(address + data, {
           method: method,
         });
-      }
-      const response = await result;
 
-      if (response.ok) {
-        return Ok(response.body);
-      } else {
-        return Err(response.status);
-      }
-    };
+        if (response.ok) {
+          return Ok((await response.json()) as T);
+        } else {
+          return Err(response.status);
+        }
+      };
+    }
   };
 }
