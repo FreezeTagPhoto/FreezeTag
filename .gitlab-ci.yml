@@ -117,7 +117,7 @@ test-frontend:
     files:
       - $ALPINE_REQS
   paths:
-    - $ALPINE_CACHE
+    - $APK_CACHE_DIR
 
 format-backend:
   stage: check-formatting
