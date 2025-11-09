@@ -8,5 +8,5 @@ type DatabaseQuery interface {
 
 func ImageIdPreparable(dq DatabaseQuery) (string, []any) {
 	stmt, args := dq.StatementWithArgs()
-	return fmt.Sprintf(`SELECT id FROM Images WHERE %s`, stmt), args
+	return fmt.Sprintf(`SELECT id, latitude, longitude FROM Images WHERE %s`, stmt), args
 }

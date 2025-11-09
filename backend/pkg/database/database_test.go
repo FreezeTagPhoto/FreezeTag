@@ -183,6 +183,7 @@ func TestRetrieveImageByGeoDegrees(t *testing.T) {
 		},
 		Cam: nil,
 	})
+	_ = insertTestImage(t, tmp)
 	require.NoError(t, err)
 	ids, err := tmp.GetImages(queries.CreateImageQuery().WithLocation(0., 0., 1.))
 	assert.NoError(t, err)

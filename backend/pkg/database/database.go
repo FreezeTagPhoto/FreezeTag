@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images/imagedata"
+	"math"
 	"strings"
 	"time"
 
@@ -70,6 +71,11 @@ func InitSQLiteImageDatabase(datasource string) (SqliteImageDatabase, error) {
 	return SqliteImageDatabase{db}, nil
 }
 
+func cosineDistanceDegrees(latA float64, latB float64, longA float64, longB float64) float64 {
+	var phi1, phi2, lambda1, lambda2 = latA * math.Pi / 180., latB * math.Pi / 180., longA * math.Pi / 180., longB * math.Pi / 180.
+	return (180. / math.Pi) * math.Acos(math.Sin(phi1)*math.Sin(phi2)+math.Cos(phi1)*math.Cos(phi2)*math.Cos(math.Abs(lambda1-lambda2)))
+}
+
 func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery) ([]ImageId, error) {
 	s, as := queries.ImageIdPreparable(q)
 	stmt, err := db.db.Prepare(s)
@@ -88,8 +94,19 @@ func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery) ([]ImageId, err
 			return []ImageId{}, err
 		}
 		var id int
-		if err := rows.Scan(&id); err != nil {
+		var lat, long sql.NullFloat64
+		if err := rows.Scan(&id, &lat, &long); err != nil {
 			return []ImageId{}, err
+		}
+		if dq, ok := q.(*queries.ImageQuery); ok && dq.NearLocation != nil {
+			// skip adding if there is no location
+			if !lat.Valid || !long.Valid {
+				continue
+			}
+			// skip adding if distance is too large
+			if cosineDistanceDegrees(lat.Float64, dq.NearLocation[0], long.Float64, dq.NearLocation[1]) > dq.NearLocation[2] {
+				continue
+			}
 		}
 		ids = append(ids, ImageId(id))
 	}

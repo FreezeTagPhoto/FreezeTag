@@ -65,8 +65,8 @@ func TestImageQueryLocationSimilar(t *testing.T) {
 	q := CreateImageQuery().
 		WithLocation(6.9, 42.0, 6.7)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((SQRT(POW(latitude - ?, 2) + POW(longitude - ?, 2)) < ?))", s)
-	assert.Equal(t, []any{6.9, 42.0, 6.7}, as)
+	assert.Equal(t, "(TRUE)", s)
+	assert.Equal(t, []any{}, as)
 }
 
 func TestImageQueryMakeExact(t *testing.T) {
@@ -197,6 +197,6 @@ func TestImageQueryAllPieces(t *testing.T) {
 		WithModel("baz").
 		WithLocation(6.9, 42.0, 67.0)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((id IN (SELECT imageId FROM Tags WHERE tag IN (?) OR (tag LIKE ? ESCAPE '!') GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?)) AND (SQRT(POW(latitude - ?, 2) + POW(longitude - ?, 2)) < ?) AND (cameraMake = ?) AND (cameraModel = ?))", s)
-	assert.Equal(t, []any{"test", "%foo%", 2, 6.9, 42.0, 67.0, "bar", "baz"}, as)
+	assert.Equal(t, "((id IN (SELECT imageId FROM Tags WHERE tag IN (?) OR (tag LIKE ? ESCAPE '!') GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?)) AND (cameraMake = ?) AND (cameraModel = ?))", s)
+	assert.Equal(t, []any{"test", "%foo%", 2, "bar", "baz"}, as)
 }

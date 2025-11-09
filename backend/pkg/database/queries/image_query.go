@@ -13,8 +13,8 @@ type queryTag struct {
 
 type ImageQuery struct {
 	tags []queryTag
-	// latitude, longitude, distance (degrees, will take conversion)
-	nearLocation   *[3]float64
+	// latitude, longitude, distance (pass as degrees)
+	NearLocation   *[3]float64
 	make           *queryTag
 	model          *queryTag
 	takenBefore    *time.Time
@@ -38,14 +38,14 @@ func (q *ImageQuery) StatementWithArgs() (string, []any) {
 		args = append(args, as...)
 		parts++
 	}
-	if q.nearLocation != nil {
-		if parts != 0 {
-			builder.WriteString(" AND ")
-		}
-		builder.WriteString(`(SQRT(POW(latitude - ?, 2) + POW(longitude - ?, 2)) < ?)`)
-		args = append(args, q.nearLocation[0], q.nearLocation[1], q.nearLocation[2])
-		parts++
-	}
+	// if q.nearLocation != nil {
+	// 	if parts != 0 {
+	// 		builder.WriteString(" AND ")
+	// 	}
+	// 	builder.WriteString(`(DEGREES(ACOS(SIN(RADIANS(latitude)) * SIN(RADIANS(?)) + COS(RADIANS(latitude)) * COS(RADIANS(?)) * COS(ABS(longitude - ?)))) <= ?)`)
+	// 	args = append(args, q.nearLocation[0], q.nearLocation[0], q.nearLocation[1], q.nearLocation[2])
+	// 	parts++
+	// }
 	if q.make != nil {
 		if parts != 0 {
 			builder.WriteString(" AND ")
@@ -189,7 +189,7 @@ func (q *ImageQuery) WithTagsLike(tags ...string) *ImageQuery {
 }
 
 func (q *ImageQuery) WithLocation(lat float64, long float64, dist float64) *ImageQuery {
-	q.nearLocation = &[3]float64{lat, long, dist}
+	q.NearLocation = &[3]float64{lat, long, dist}
 	return q
 }
 
