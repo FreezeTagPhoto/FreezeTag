@@ -175,14 +175,14 @@ func (db SqliteImageDatabase) GetImageThumbnailSizes(id ImageId) ([]int, error) 
 }
 
 func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageId, error) {
-	var datetaken *string
-	dateuploaded := time.Now().Format("2006-01-02 15:04:05")
+	var datetaken *int64
+	dateuploaded := time.Now().Unix()
 	var make *string
 	var model *string
 	var latitude *float64
 	var longitude *float64
 	if data.DateCreated != nil {
-		formatted := data.DateCreated.Format("2006-01-02 15:04:05")
+		formatted := data.DateCreated.Unix()
 		datetaken = &formatted
 	}
 	if data.Cam != nil {

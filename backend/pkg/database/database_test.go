@@ -196,6 +196,8 @@ func TestRetrieveImageByDateRange(t *testing.T) {
 	tmp := createTempDatabase(t)
 	now := time.Now()
 	then := time.Now().Add(-24 * time.Hour)
+	beforeThen := then.Add(-1 * time.Hour)
+	afterThen := then.Add(1 * time.Hour)
 	idA, err := tmp.AddImage("foo.png", imagedata.Data{
 		PixelsRGBA:  []byte{},
 		Width:       1280,
@@ -214,10 +216,10 @@ func TestRetrieveImageByDateRange(t *testing.T) {
 		Cam:         nil,
 	})
 	require.NoError(t, err)
-	ids, err := tmp.GetImages(queries.CreateImageQuery().TakenBefore(then))
+	ids, err := tmp.GetImages(queries.CreateImageQuery().TakenAfter(beforeThen).TakenBefore(afterThen))
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{idA}, ids)
-	ids, err = tmp.GetImages(queries.CreateImageQuery().TakenAfter(then))
+	ids, err = tmp.GetImages(queries.CreateImageQuery().TakenAfter(afterThen))
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{idB}, ids)
 }

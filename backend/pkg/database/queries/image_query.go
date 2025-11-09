@@ -76,7 +76,7 @@ func (q *ImageQuery) StatementWithArgs() (string, []any) {
 		if parts != 0 {
 			builder.WriteString(" AND ")
 		}
-		builder.WriteString("(UNIXEPOCH(dateTaken) >= ?)")
+		builder.WriteString("(dateTaken >= ?)")
 		args = append(args, q.takenAfter.Unix())
 		parts++
 	}
@@ -84,7 +84,7 @@ func (q *ImageQuery) StatementWithArgs() (string, []any) {
 		if parts != 0 {
 			builder.WriteString(" AND ")
 		}
-		builder.WriteString("(UNIXEPOCH(dateTaken) <= ?)")
+		builder.WriteString("(dateTaken <= ?)")
 		args = append(args, q.takenBefore.Unix())
 		parts++
 	}
@@ -92,7 +92,7 @@ func (q *ImageQuery) StatementWithArgs() (string, []any) {
 		if parts != 0 {
 			builder.WriteString(" AND ")
 		}
-		builder.WriteString("(UNIXEPOCH(dateUploaded) >= ?)")
+		builder.WriteString("(dateUploaded >= ?)")
 		args = append(args, q.uploadedAfter.Unix())
 		parts++
 	}
@@ -100,7 +100,7 @@ func (q *ImageQuery) StatementWithArgs() (string, []any) {
 		if parts != 0 {
 			builder.WriteString(" AND ")
 		}
-		builder.WriteString("(UNIXEPOCH(dateUploaded) <= ?)")
+		builder.WriteString("(dateUploaded <= ?)")
 		args = append(args, q.uploadedBefore.Unix())
 		parts++
 	}

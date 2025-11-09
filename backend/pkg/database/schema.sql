@@ -4,8 +4,8 @@ PRAGMA foreign_keys=true;
 CREATE TABLE IF NOT EXISTS Images (
     id INTEGER PRIMARY KEY NOT NULL,
     imageFile TEXT NOT NULL,
-    dateTaken TEXT,
-    dateUploaded TEXT,
+    dateTaken INTEGER, -- unix epoch
+    dateUploaded INTEGER, -- unix epoch
     cameraMake TEXT,
     cameraModel TEXT,
     latitude REAL,

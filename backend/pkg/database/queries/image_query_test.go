@@ -123,7 +123,7 @@ func TestImageQueryTakenBefore(t *testing.T) {
 	now := time.Now()
 	q := CreateImageQuery().TakenBefore(now)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((UNIXEPOCH(dateTaken) <= ?))", s)
+	assert.Equal(t, "((dateTaken <= ?))", s)
 	assert.Equal(t, []any{now.Unix()}, as)
 }
 
@@ -131,7 +131,7 @@ func TestImageQueryTakenAfter(t *testing.T) {
 	now := time.Now()
 	q := CreateImageQuery().TakenAfter(now)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((UNIXEPOCH(dateTaken) >= ?))", s)
+	assert.Equal(t, "((dateTaken >= ?))", s)
 	assert.Equal(t, []any{now.Unix()}, as)
 }
 
@@ -139,7 +139,7 @@ func TestImageQueryUploadedBefore(t *testing.T) {
 	now := time.Now()
 	q := CreateImageQuery().UploadedBefore(now)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((UNIXEPOCH(dateUploaded) <= ?))", s)
+	assert.Equal(t, "((dateUploaded <= ?))", s)
 	assert.Equal(t, []any{now.Unix()}, as)
 }
 
@@ -147,7 +147,7 @@ func TestImageQueryUploadedAfter(t *testing.T) {
 	now := time.Now()
 	q := CreateImageQuery().UploadedAfter(now)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((UNIXEPOCH(dateUploaded) >= ?))", s)
+	assert.Equal(t, "((dateUploaded >= ?))", s)
 	assert.Equal(t, []any{now.Unix()}, as)
 }
 
@@ -156,7 +156,7 @@ func TestImageQueryUploadedRange(t *testing.T) {
 	then := now.Add(-24 * time.Hour)
 	q := CreateImageQuery().UploadedAfter(then).UploadedBefore(now)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((UNIXEPOCH(dateUploaded) >= ?) AND (UNIXEPOCH(dateUploaded) <= ?))", s)
+	assert.Equal(t, "((dateUploaded >= ?) AND (dateUploaded <= ?))", s)
 	assert.Equal(t, []any{then.Unix(), now.Unix()}, as)
 }
 
@@ -165,7 +165,7 @@ func TestImageQueryTakenRange(t *testing.T) {
 	then := now.Add(-24 * time.Hour)
 	q := CreateImageQuery().TakenAfter(then).TakenBefore(now)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((UNIXEPOCH(dateTaken) >= ?) AND (UNIXEPOCH(dateTaken) <= ?))", s)
+	assert.Equal(t, "((dateTaken >= ?) AND (dateTaken <= ?))", s)
 	assert.Equal(t, []any{then.Unix(), now.Unix()}, as)
 }
 
@@ -176,7 +176,7 @@ func TestImageQueryMakeUploadedTakenAfter(t *testing.T) {
 		UploadedAfter(now).
 		WithMake("test")
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((cameraMake = ?) AND (UNIXEPOCH(dateTaken) >= ?) AND (UNIXEPOCH(dateUploaded) >= ?))", s)
+	assert.Equal(t, "((cameraMake = ?) AND (dateTaken >= ?) AND (dateUploaded >= ?))", s)
 	assert.Equal(t, []any{"test", now.Unix(), now.Unix()}, as)
 }
 
