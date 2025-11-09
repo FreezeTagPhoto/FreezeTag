@@ -3,6 +3,7 @@ package queries
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -64,7 +65,7 @@ func TestImageQueryLocationSimilar(t *testing.T) {
 	q := CreateImageQuery().
 		WithLocation(6.9, 42.0, 6.7)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((SQRT(POW(latitude - ?, 2), POW(longitude - ?, 2)) < ?))", s)
+	assert.Equal(t, "((SQRT(POW(latitude - ?, 2) + POW(longitude - ?, 2)) < ?))", s)
 	assert.Equal(t, []any{6.9, 42.0, 6.7}, as)
 }
 
@@ -118,6 +119,67 @@ func TestImageQueryMakeExactModelFuzzy(t *testing.T) {
 	assert.Equal(t, []any{"test", "%f%"}, as)
 }
 
+func TestImageQueryTakenBefore(t *testing.T) {
+	now := time.Now()
+	q := CreateImageQuery().TakenBefore(now)
+	s, as := q.StatementWithArgs()
+	assert.Equal(t, "((UNIXEPOCH(dateTaken) <= ?))", s)
+	assert.Equal(t, []any{now.Unix()}, as)
+}
+
+func TestImageQueryTakenAfter(t *testing.T) {
+	now := time.Now()
+	q := CreateImageQuery().TakenAfter(now)
+	s, as := q.StatementWithArgs()
+	assert.Equal(t, "((UNIXEPOCH(dateTaken) >= ?))", s)
+	assert.Equal(t, []any{now.Unix()}, as)
+}
+
+func TestImageQueryUploadedBefore(t *testing.T) {
+	now := time.Now()
+	q := CreateImageQuery().UploadedBefore(now)
+	s, as := q.StatementWithArgs()
+	assert.Equal(t, "((UNIXEPOCH(dateUploaded) <= ?))", s)
+	assert.Equal(t, []any{now.Unix()}, as)
+}
+
+func TestImageQueryUploadedAfter(t *testing.T) {
+	now := time.Now()
+	q := CreateImageQuery().UploadedAfter(now)
+	s, as := q.StatementWithArgs()
+	assert.Equal(t, "((UNIXEPOCH(dateUploaded) >= ?))", s)
+	assert.Equal(t, []any{now.Unix()}, as)
+}
+
+func TestImageQueryUploadedRange(t *testing.T) {
+	now := time.Now()
+	then := now.Add(-24 * time.Hour)
+	q := CreateImageQuery().UploadedAfter(then).UploadedBefore(now)
+	s, as := q.StatementWithArgs()
+	assert.Equal(t, "((UNIXEPOCH(dateUploaded) >= ?) AND (UNIXEPOCH(dateUploaded) <= ?))", s)
+	assert.Equal(t, []any{then.Unix(), now.Unix()}, as)
+}
+
+func TestImageQueryTakenRange(t *testing.T) {
+	now := time.Now()
+	then := now.Add(-24 * time.Hour)
+	q := CreateImageQuery().TakenAfter(then).TakenBefore(now)
+	s, as := q.StatementWithArgs()
+	assert.Equal(t, "((UNIXEPOCH(dateTaken) >= ?) AND (UNIXEPOCH(dateTaken) <= ?))", s)
+	assert.Equal(t, []any{then.Unix(), now.Unix()}, as)
+}
+
+func TestImageQueryMakeUploadedTakenAfter(t *testing.T) {
+	now := time.Now()
+	q := CreateImageQuery().
+		TakenAfter(now).
+		UploadedAfter(now).
+		WithMake("test")
+	s, as := q.StatementWithArgs()
+	assert.Equal(t, "((cameraMake = ?) AND (UNIXEPOCH(dateTaken) >= ?) AND (UNIXEPOCH(dateUploaded) >= ?))", s)
+	assert.Equal(t, []any{"test", now.Unix(), now.Unix()}, as)
+}
+
 func TestImageQueryTagAndMake(t *testing.T) {
 	q := CreateImageQuery().
 		WithTag("test").
@@ -135,6 +197,6 @@ func TestImageQueryAllPieces(t *testing.T) {
 		WithModel("baz").
 		WithLocation(6.9, 42.0, 67.0)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((id IN (SELECT imageId FROM Tags WHERE tag IN (?) OR (tag LIKE ? ESCAPE '!') GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?)) AND (SQRT(POW(latitude - ?, 2), POW(longitude - ?, 2)) < ?) AND (cameraMake = ?) AND (cameraModel = ?))", s)
+	assert.Equal(t, "((id IN (SELECT imageId FROM Tags WHERE tag IN (?) OR (tag LIKE ? ESCAPE '!') GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?)) AND (SQRT(POW(latitude - ?, 2) + POW(longitude - ?, 2)) < ?) AND (cameraMake = ?) AND (cameraModel = ?))", s)
 	assert.Equal(t, []any{"test", "%foo%", 2, 6.9, 42.0, 67.0, "bar", "baz"}, as)
 }

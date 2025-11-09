@@ -3,6 +3,7 @@ package queries
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 type queryTag struct {
@@ -12,10 +13,14 @@ type queryTag struct {
 
 type ImageQuery struct {
 	tags []queryTag
-	// latitude, longitude, distance (miles)
-	nearLocation *[3]float64
-	make         *queryTag
-	model        *queryTag
+	// latitude, longitude, distance (degrees, will take conversion)
+	nearLocation   *[3]float64
+	make           *queryTag
+	model          *queryTag
+	takenBefore    *time.Time
+	takenAfter     *time.Time
+	uploadedBefore *time.Time
+	uploadedAfter  *time.Time
 }
 
 func CreateImageQuery() *ImageQuery {
@@ -37,7 +42,7 @@ func (q *ImageQuery) StatementWithArgs() (string, []any) {
 		if parts != 0 {
 			builder.WriteString(" AND ")
 		}
-		builder.WriteString(`(SQRT(POW(latitude - ?, 2), POW(longitude - ?, 2)) < ?)`)
+		builder.WriteString(`(SQRT(POW(latitude - ?, 2) + POW(longitude - ?, 2)) < ?)`)
 		args = append(args, q.nearLocation[0], q.nearLocation[1], q.nearLocation[2])
 		parts++
 	}
@@ -65,6 +70,38 @@ func (q *ImageQuery) StatementWithArgs() (string, []any) {
 			builder.WriteString(`(cameraModel LIKE ? ESCAPE '!')`)
 			args = append(args, "%"+escapeLikeString(q.model.tag)+"%")
 		}
+		parts++
+	}
+	if q.takenAfter != nil {
+		if parts != 0 {
+			builder.WriteString(" AND ")
+		}
+		builder.WriteString("(UNIXEPOCH(dateTaken) >= ?)")
+		args = append(args, q.takenAfter.Unix())
+		parts++
+	}
+	if q.takenBefore != nil {
+		if parts != 0 {
+			builder.WriteString(" AND ")
+		}
+		builder.WriteString("(UNIXEPOCH(dateTaken) <= ?)")
+		args = append(args, q.takenBefore.Unix())
+		parts++
+	}
+	if q.uploadedAfter != nil {
+		if parts != 0 {
+			builder.WriteString(" AND ")
+		}
+		builder.WriteString("(UNIXEPOCH(dateUploaded) >= ?)")
+		args = append(args, q.uploadedAfter.Unix())
+		parts++
+	}
+	if q.uploadedBefore != nil {
+		if parts != 0 {
+			builder.WriteString(" AND ")
+		}
+		builder.WriteString("(UNIXEPOCH(dateUploaded) <= ?)")
+		args = append(args, q.uploadedBefore.Unix())
 		parts++
 	}
 	if parts == 0 {
@@ -173,5 +210,25 @@ func (q *ImageQuery) WithModel(model string) *ImageQuery {
 
 func (q *ImageQuery) WithModelLike(model string) *ImageQuery {
 	q.model = &queryTag{model, false}
+	return q
+}
+
+func (q *ImageQuery) TakenBefore(date time.Time) *ImageQuery {
+	q.takenBefore = &date
+	return q
+}
+
+func (q *ImageQuery) TakenAfter(date time.Time) *ImageQuery {
+	q.takenAfter = &date
+	return q
+}
+
+func (q *ImageQuery) UploadedBefore(date time.Time) *ImageQuery {
+	q.uploadedBefore = &date
+	return q
+}
+
+func (q *ImageQuery) UploadedAfter(date time.Time) *ImageQuery {
+	q.uploadedAfter = &date
 	return q
 }
