@@ -244,6 +244,9 @@ func TestAddAndRetrieveThumbnails(t *testing.T) {
 	success, err = tmp.AddImageThumbnail(id, 2, []byte("bar"))
 	assert.NoError(t, err)
 	assert.True(t, success)
+	sizes, err := tmp.GetImageThumbnailSizes(id)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []int{1, 2}, sizes)
 	data, err := tmp.GetImageThumbnail(id, 1)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("foo"), data)
@@ -254,6 +257,19 @@ func TestRetrieveNoThumbnail(t *testing.T) {
 	data, err := tmp.GetImageThumbnail(ImageId(1), 1)
 	assert.NoError(t, err)
 	assert.Zero(t, data)
+}
+
+func TestRemoveImageThumbnail(t *testing.T) {
+	tmp := createTempDatabase(t)
+	id := insertTestImage(t, tmp)
+	_, _ = tmp.AddImageThumbnail(id, 1, []byte("foo"))
+	_, _ = tmp.AddImageThumbnail(id, 2, []byte("bar"))
+	success, err := tmp.RemoveImageThumbnail(id, 1)
+	assert.NoError(t, err)
+	assert.True(t, success)
+	success, err = tmp.RemoveImageThumbnail(id, 3)
+	assert.NoError(t, err)
+	assert.False(t, success)
 }
 
 func TestAddDuplicateThumbnail(t *testing.T) {
@@ -290,6 +306,9 @@ func TestDeleteImage(t *testing.T) {
 	assert.Empty(t, tags)
 	data, _ := tmp.GetImageThumbnail(id, 1)
 	assert.Empty(t, data)
+	success, err = tmp.RemoveImage(ImageId(3))
+	assert.NoError(t, err)
+	assert.False(t, success)
 }
 
 func TestRemoveImageTags(t *testing.T) {

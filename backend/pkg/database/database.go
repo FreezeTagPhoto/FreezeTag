@@ -23,6 +23,8 @@ type ImageDatabase interface {
 	GetImageThumbnail(ImageId, int) ([]byte, error)
 	// Get the tags attached to an image
 	GetImageTags(ImageId) ([]string, error)
+	// Get the thumbnail sizes an image has
+	GetImageThumbnailSizes(ImageId) ([]int, error)
 	// Add an image file and its metadata to the database
 	//
 	// returns: the database ID of the image
@@ -43,6 +45,10 @@ type ImageDatabase interface {
 	//
 	// returns: the number of tags successfully removed
 	RemoveImageTags(ImageId, []string) (int, error)
+	// Remove a thumbnail with the given size from an image
+	//
+	// returns: whether the thumbnail was removed
+	RemoveImageThumbnail(ImageId, int) (bool, error)
 }
 
 type SqliteImageDatabase struct {
@@ -146,6 +152,26 @@ func (db SqliteImageDatabase) GetImageTags(id ImageId) ([]string, error) {
 		tags = append(tags, tag)
 	}
 	return tags, nil
+}
+
+func (db SqliteImageDatabase) GetImageThumbnailSizes(id ImageId) ([]int, error) {
+	rows, err := db.db.Query("SELECT thumbnailSize FROM Thumbnails WHERE imageId = ?", id)
+	if err != nil {
+		return []int{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	sizes := []int{}
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return []int{}, err
+		}
+		var size int
+		if err := rows.Scan(&size); err != nil {
+			return []int{}, err
+		}
+		sizes = append(sizes, size)
+	}
+	return sizes, nil
 }
 
 func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageId, error) {
@@ -261,4 +287,16 @@ func (db SqliteImageDatabase) RemoveImageTags(id ImageId, tags []string) (int, e
 		return 0, err
 	}
 	return int(mod), nil
+}
+
+func (db SqliteImageDatabase) RemoveImageThumbnail(id ImageId, size int) (bool, error) {
+	res, err := db.db.Exec("DELETE FROM Thumbnails WHERE imageId = ? AND thumbnailSize = ?", id, size)
+	if err != nil {
+		return false, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rows != 0, nil
 }
