@@ -222,9 +222,8 @@ func TestRetrieveImageByDateRange(t *testing.T) {
 	assert.Equal(t, []ImageId{idB}, ids)
 }
 
-func TestAddAndRetrieveThumbnails(t *testing.T) {
-	tmp := createTempDatabase(t)
-	id, err := tmp.AddImage("foo.png", imagedata.Data{
+func insertTestImage(t *testing.T, db ImageDatabase) ImageId {
+	id, err := db.AddImage("foo.png", imagedata.Data{
 		PixelsRGBA:  []byte{},
 		Width:       1280,
 		Height:      720,
@@ -233,6 +232,12 @@ func TestAddAndRetrieveThumbnails(t *testing.T) {
 		Cam:         nil,
 	})
 	require.NoError(t, err)
+	return id
+}
+
+func TestAddAndRetrieveThumbnails(t *testing.T) {
+	tmp := createTempDatabase(t)
+	id := insertTestImage(t, tmp)
 	success, err := tmp.AddImageThumbnail(id, 1, []byte("foo"))
 	assert.NoError(t, err)
 	assert.True(t, success)
@@ -253,19 +258,49 @@ func TestRetrieveNoThumbnail(t *testing.T) {
 
 func TestAddDuplicateThumbnail(t *testing.T) {
 	tmp := createTempDatabase(t)
-	id, err := tmp.AddImage("foo.png", imagedata.Data{
-		PixelsRGBA:  []byte{},
-		Width:       1280,
-		Height:      720,
-		DateCreated: nil,
-		Geo:         nil,
-		Cam:         nil,
-	})
-	require.NoError(t, err)
+	id := insertTestImage(t, tmp)
 	success, err := tmp.AddImageThumbnail(id, 1, []byte("foo"))
 	assert.NoError(t, err)
 	assert.True(t, success)
 	success, err = tmp.AddImageThumbnail(id, 1, []byte("bar"))
 	assert.NoError(t, err)
 	assert.False(t, success)
+}
+
+func TestAddGetImageTags(t *testing.T) {
+	tmp := createTempDatabase(t)
+	id := insertTestImage(t, tmp)
+	num, err := tmp.AddImageTags(id, []string{"foo", "bar", "baz"})
+	assert.NoError(t, err)
+	assert.Equal(t, 3, num)
+	tags, err := tmp.GetImageTags(id)
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{"foo", "bar", "baz"}, tags)
+}
+
+func TestDeleteImage(t *testing.T) {
+	tmp := createTempDatabase(t)
+	id := insertTestImage(t, tmp)
+	_, _ = tmp.AddImageTags(id, []string{"foo", "bar"})
+	_, _ = tmp.AddImageThumbnail(id, 1, []byte("baz"))
+	success, err := tmp.RemoveImage(id)
+	assert.NoError(t, err)
+	assert.True(t, success)
+	tags, _ := tmp.GetImageTags(id)
+	assert.Empty(t, tags)
+	data, _ := tmp.GetImageThumbnail(id, 1)
+	assert.Empty(t, data)
+}
+
+func TestRemoveImageTags(t *testing.T) {
+	tmp := createTempDatabase(t)
+	id := insertTestImage(t, tmp)
+	_, _ = tmp.AddImageTags(id, []string{"foo", "bar", "baz", "snap", "crackle", "pop"})
+	tags, _ := tmp.GetImageTags(id)
+	assert.ElementsMatch(t, []string{"foo", "bar", "baz", "snap", "crackle", "pop"}, tags)
+	count, err := tmp.RemoveImageTags(id, []string{"foo", "pop", "notatag"})
+	assert.NoError(t, err)
+	assert.Equal(t, 2, count)
+	tags, _ = tmp.GetImageTags(id)
+	assert.ElementsMatch(t, []string{"bar", "baz", "snap", "crackle"}, tags)
 }

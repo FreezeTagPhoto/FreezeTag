@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images/imagedata"
+	"strings"
 	"time"
 
 	_ "embed"
@@ -20,6 +21,8 @@ type ImageDatabase interface {
 	GetImageFile(ImageId) (*string, error)
 	// Get the thumbnail data at the given thumbnail level for the image with the given ID
 	GetImageThumbnail(ImageId, int) ([]byte, error)
+	// Get the tags attached to an image
+	GetImageTags(ImageId) ([]string, error)
 	// Add an image file and its metadata to the database
 	//
 	// returns: the database ID of the image
@@ -28,6 +31,18 @@ type ImageDatabase interface {
 	//
 	// returns: whether the thumbnail was added successfully
 	AddImageThumbnail(ImageId, int, []byte) (bool, error)
+	// Add a set of tags to the image with the given id
+	//
+	// returns: the number of tags successfully added
+	AddImageTags(ImageId, []string) (int, error)
+	// Remove an image from the database
+	//
+	// returns: whether an image was removed
+	RemoveImage(ImageId) (bool, error)
+	// Remove tags from an image
+	//
+	// returns: the number of tags successfully removed
+	RemoveImageTags(ImageId, []string) (int, error)
 }
 
 type SqliteImageDatabase struct {
@@ -113,6 +128,26 @@ func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size int) ([]byte, e
 	return nil, nil
 }
 
+func (db SqliteImageDatabase) GetImageTags(id ImageId) ([]string, error) {
+	rows, err := db.db.Query("SELECT tag FROM Tags WHERE imageId = ?", id)
+	if err != nil {
+		return []string{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	tags := []string{}
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return []string{}, err
+		}
+		var tag string
+		if err := rows.Scan(&tag); err != nil {
+			return []string{}, err
+		}
+		tags = append(tags, tag)
+	}
+	return tags, nil
+}
+
 func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageId, error) {
 	var datetaken *string
 	dateuploaded := time.Now().Format("2006-01-02 15:04:05")
@@ -159,8 +194,71 @@ func (db SqliteImageDatabase) AddImageThumbnail(id ImageId, size int, data []byt
 	if err != nil {
 		return false, err
 	}
-	if rows == 0 {
-		return false, nil
+	return rows != 0, nil
+}
+
+func (db SqliteImageDatabase) AddImageTags(id ImageId, tags []string) (int, error) {
+	modified := 0
+	tx, err := db.db.Begin()
+	if err != nil {
+		return 0, err
 	}
-	return true, nil
+	stmt, err := tx.Prepare("INSERT OR IGNORE INTO Tags (imageId, tag) VALUES (?, ?)")
+	if err != nil {
+		return 0, err
+	}
+	defer stmt.Close() //nolint:errcheck
+	for _, tag := range tags {
+		res, err := stmt.Exec(id, tag)
+		if err != nil {
+			return 0, err
+		}
+		rows, err := res.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		modified += int(rows)
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return modified, nil
+}
+
+func (db SqliteImageDatabase) RemoveImage(id ImageId) (bool, error) {
+	res, err := db.db.Exec("DELETE FROM Images WHERE id = ?", id)
+	if err != nil {
+		return false, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rows != 0, nil
+}
+
+func (db SqliteImageDatabase) RemoveImageTags(id ImageId, tags []string) (int, error) {
+	if len(tags) == 0 {
+		return 0, nil
+	}
+	var query strings.Builder
+	args := []any{id}
+	query.WriteString("DELETE FROM Tags WHERE imageId = ? AND tag IN (")
+	for i, tag := range tags {
+		args = append(args, tag)
+		query.WriteRune('?')
+		if i != len(tags)-1 {
+			query.WriteString(", ")
+		}
+	}
+	query.WriteRune(')')
+	res, err := db.db.Exec(query.String(), args...)
+	if err != nil {
+		return 0, err
+	}
+	mod, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return int(mod), nil
 }
