@@ -14,8 +14,20 @@ import (
 type ImageId int64
 
 type ImageDatabase interface {
+	// Get a list of image IDs corresponding to the provided query
 	GetImages(queries.DatabaseQuery) ([]ImageId, error)
+	// Get the image filename pointed to by the image ID
+	GetImageFile(ImageId) (*string, error)
+	// Get the thumbnail data at the given thumbnail level for the image with the given ID
+	GetImageThumbnail(ImageId, int) ([]byte, error)
+	// Add an image file and its metadata to the database
+	//
+	// returns: the database ID of the image
 	AddImage(string, imagedata.Data) (ImageId, error)
+	// Add a thumbnail of the given size with the given data to the database
+	//
+	// returns: whether the thumbnail was added successfully
+	AddImageThumbnail(ImageId, int, []byte) (bool, error)
 }
 
 type SqliteImageDatabase struct {
@@ -63,6 +75,44 @@ func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery) ([]ImageId, err
 	return ids, nil
 }
 
+func (db SqliteImageDatabase) GetImageFile(id ImageId) (*string, error) {
+	rows, err := db.db.Query("SELECT imageFile FROM Images WHERE id = ?", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() //nolint:errcheck
+	if rows.Next() {
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		return &name, nil
+	}
+	return nil, nil
+}
+
+func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size int) ([]byte, error) {
+	rows, err := db.db.Query("SELECT thumbnailData FROM Thumbnails WHERE imageId = ? AND thumbnailSize = ?", id, size)
+	if err != nil {
+		return []byte{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	if rows.Next() {
+		if err := rows.Err(); err != nil {
+			return []byte{}, err
+		}
+		data := []byte{}
+		if err := rows.Scan(&data); err != nil {
+			return []byte{}, err
+		}
+		return data, nil
+	}
+	return nil, nil
+}
+
 func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageId, error) {
 	var datetaken *string
 	dateuploaded := time.Now().Format("2006-01-02 15:04:05")
@@ -98,4 +148,19 @@ func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageI
 		return 0, err
 	}
 	return ImageId(id), nil
+}
+
+func (db SqliteImageDatabase) AddImageThumbnail(id ImageId, size int, data []byte) (bool, error) {
+	res, err := db.db.Exec("INSERT OR IGNORE INTO Thumbnails (imageId, thumbnailSize, thumbnailData) VALUES (?, ?, ?)", id, size, data)
+	if err != nil {
+		return false, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	if rows == 0 {
+		return false, nil
+	}
+	return true, nil
 }

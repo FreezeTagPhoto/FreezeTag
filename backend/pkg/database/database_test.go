@@ -19,7 +19,7 @@ func createTempFile(t *testing.T) *os.File {
 	return tmp
 }
 
-func createTempDatabase(t *testing.T) SqliteImageDatabase {
+func createTempDatabase(t *testing.T) ImageDatabase {
 	tmp := createTempFile(t)
 	db, err := InitSQLiteImageDatabase(tmp.Name())
 	require.NoError(t, err)
@@ -43,7 +43,7 @@ func TestOpenDatabaseBrokenFile(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestAddImages(t *testing.T) {
+func TestAddAndRetrieveImages(t *testing.T) {
 	tmp := createTempDatabase(t)
 	id, err := tmp.AddImage("foo.png", imagedata.Data{
 		PixelsRGBA:  []byte{},
@@ -67,6 +67,17 @@ func TestAddImages(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, id2)
 	assert.NotEqual(t, id, id2)
+	name, err := tmp.GetImageFile(id)
+	assert.NoError(t, err)
+	assert.NotNil(t, name)
+	assert.Equal(t, "foo.png", *name)
+}
+
+func TestRetrieveNoImage(t *testing.T) {
+	tmp := createTempDatabase(t)
+	name, err := tmp.GetImageFile(ImageId(1))
+	assert.NoError(t, err)
+	assert.Nil(t, name)
 }
 
 func TestRetrieveAllImages(t *testing.T) {
@@ -209,4 +220,52 @@ func TestRetrieveImageByDateRange(t *testing.T) {
 	ids, err = tmp.GetImages(queries.CreateImageQuery().TakenAfter(then))
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{idB}, ids)
+}
+
+func TestAddAndRetrieveThumbnails(t *testing.T) {
+	tmp := createTempDatabase(t)
+	id, err := tmp.AddImage("foo.png", imagedata.Data{
+		PixelsRGBA:  []byte{},
+		Width:       1280,
+		Height:      720,
+		DateCreated: nil,
+		Geo:         nil,
+		Cam:         nil,
+	})
+	require.NoError(t, err)
+	success, err := tmp.AddImageThumbnail(id, 1, []byte("foo"))
+	assert.NoError(t, err)
+	assert.True(t, success)
+	success, err = tmp.AddImageThumbnail(id, 2, []byte("bar"))
+	assert.NoError(t, err)
+	assert.True(t, success)
+	data, err := tmp.GetImageThumbnail(id, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("foo"), data)
+}
+
+func TestRetrieveNoThumbnail(t *testing.T) {
+	tmp := createTempDatabase(t)
+	data, err := tmp.GetImageThumbnail(ImageId(1), 1)
+	assert.NoError(t, err)
+	assert.Zero(t, data)
+}
+
+func TestAddDuplicateThumbnail(t *testing.T) {
+	tmp := createTempDatabase(t)
+	id, err := tmp.AddImage("foo.png", imagedata.Data{
+		PixelsRGBA:  []byte{},
+		Width:       1280,
+		Height:      720,
+		DateCreated: nil,
+		Geo:         nil,
+		Cam:         nil,
+	})
+	require.NoError(t, err)
+	success, err := tmp.AddImageThumbnail(id, 1, []byte("foo"))
+	assert.NoError(t, err)
+	assert.True(t, success)
+	success, err = tmp.AddImageThumbnail(id, 1, []byte("bar"))
+	assert.NoError(t, err)
+	assert.False(t, success)
 }
