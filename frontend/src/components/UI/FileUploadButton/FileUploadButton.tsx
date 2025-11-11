@@ -9,7 +9,6 @@ export default function FileUploadButton() {
         onChange={FileChangeHandler}
         multiple
         required
-        accept="image/png"
         name="image"
       />
     </form>
