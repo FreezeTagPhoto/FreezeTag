@@ -9,7 +9,7 @@ export type UploadResult = Result<
 >;
 type UploadResponse = {
   uploaded: { id: number; filename: string }[];
-  errors: { error: string; filename: string }[];
+  errors: { reason: string; filename: string }[];
 };
 
 export default async function ImageUploader(
@@ -50,7 +50,7 @@ async function image_upload_with_handler(
     image_map.set(image.filename, Ok(image.id));
   }
   for (const error of body.errors) {
-    image_map.set(error.filename, Err(error.error));
+    image_map.set(error.filename, Err(error.reason));
   }
 
   return Ok(image_map);
