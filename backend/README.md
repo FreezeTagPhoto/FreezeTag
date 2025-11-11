@@ -41,22 +41,22 @@ $ go install github.com/boumenot/gocover-cobertura@latest
 ```
 
 ### Enabling CGO
-The `imagick` Go bindings use CGO to call the ImageMagick C API. Ensure CGO is enabled when building or running tests. Example:
+The `imagick` Go bindings use CGO to call the ImageMagick C API. Ensure CGO is enabled when building or running tests. This is only necessary when not using the makefile's `run` and `test` targets. Example:
 ```bash
 # enable CGO for a single command
 $ CGO_ENABLED=1 go build ./...
 $ CGO_ENABLED=1 go test ./... -v
 
-# or export for your session
+# or export for your session (the Makefile also takes care of this)
 $ export CGO_ENABLED=1
 ```
-Make sure `gcc` (or an equivalent C compiler) is installed. 
+Make sure `gcc` (or an equivalent C compiler) is installed. On MacOS, you might have to set the `CXX` and `CC` variables to the actual `gcc`, sometimes it aliases `clang` and that does not work.
 
 ### Building the project
 After the dependencies are installed and `CGO_ENABLED=1` is set when needed, you can run the backend from the `backend/` directory:
 ```bash
 # build only the necessary parts
-$ go run .
+$ make run
 # build everything
 $ go run ./...
 ```
@@ -65,7 +65,7 @@ $ go run ./...
 ### Testing
 Project tests can be executed with:
 ```bash
-$ ./test.sh
+$ make test
 # or run a specific package
 $ go test ./pkg/images -v
 ```
