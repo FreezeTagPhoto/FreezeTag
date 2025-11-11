@@ -192,8 +192,7 @@ test-backend:
     - go mod tidy
     - go install github.com/boumenot/gocover-cobertura
   script:
-    - chmod +x test.sh
-    - ./test.sh
+    - make test
   coverage: '/total:\s+\(statements\)\s+\d+.\d+%/'
   cache:
     - <<: *golang_cache
