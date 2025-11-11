@@ -18,6 +18,7 @@
   position: relative;
   width: 100%;
   height: clamp(44px, 9vw, 72px);
+  cursor: pointer;
 }
 
 .logoImg {
@@ -47,8 +48,16 @@
   background: transparent;
   color: inherit;
   cursor: pointer;
+  text-decoration: none;
+  font: inherit;
 }
 
 .item:hover {
   background: rgba(255, 255, 255, 0.04);
+}
+
+.itemActive {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
 }
