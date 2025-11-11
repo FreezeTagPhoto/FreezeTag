@@ -3,13 +3,13 @@ import FileChangeHandler from "@/api/upload/filechangehandler";
 
 export default function FileUploadButton() {
   return (
-    <form action={handleSubmit} method="POST">
+    <form action={handleSubmit}>
       <input
         type="file"
         onChange={FileChangeHandler}
         multiple
         required
-        name="image"
+        name="file"
       />
     </form>
   );
