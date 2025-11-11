@@ -9,10 +9,12 @@ export enum Method {
   DELETE = "DELETE",
 }
 
+export type RequestError = { status_code: number; response: Response };
+
 export function ApiHandler<T>(address: string) {
   return (method: Method) => {
     if (method === Method.POST) {
-      return async (data: BodyInit): Promise<Result<T, number>> => {
+      return async (data: BodyInit): Promise<Result<T, RequestError>> => {
         const response = await fetch(address, {
           method: method,
           body: data,
@@ -21,11 +23,11 @@ export function ApiHandler<T>(address: string) {
         if (response.ok) {
           return Ok((await response.json()) as T);
         } else {
-          return Err(response.status);
+          return Err({ status_code: response.status, response });
         }
       };
     } else {
-      return async (data: BodyInit): Promise<Result<T, number>> => {
+      return async (data: BodyInit): Promise<Result<T, RequestError>> => {
         const response = await fetch(address + data, {
           method: method,
         });
@@ -33,7 +35,7 @@ export function ApiHandler<T>(address: string) {
         if (response.ok) {
           return Ok((await response.json()) as T);
         } else {
-          return Err(response.status);
+          return Err({ status_code: response.status, response });
         }
       };
     }
