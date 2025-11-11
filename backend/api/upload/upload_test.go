@@ -53,7 +53,6 @@ func TestPostFileSuccess(t *testing.T) {
 	require.NoError(t, writeTestFile(writer, "file", "testfile.png", []byte("hello world image")))
 	require.NoError(t, writer.Close())
 
-	
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/upload", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -84,7 +83,7 @@ func TestPostWithNoFiles(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := StatusBadRequestResponse{Error: "No files uploaded"}
+	expected := StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
 	var got StatusBadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
@@ -97,7 +96,6 @@ func TestPostWithMalformedMultipartForm(t *testing.T) {
 	body := bytes.NewBufferString("this is not a multipart payload")
 	writer := multipart.NewWriter(body)
 	require.NoError(t, writer.Close())
-
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/upload", body)
@@ -119,7 +117,6 @@ func TestPostTextNoMultipartForm(t *testing.T) {
 	body := bytes.NewBufferString("this is not a multipart payload")
 	writer := multipart.NewWriter(body)
 	require.NoError(t, writer.Close())
-
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/upload", body)
@@ -171,5 +168,28 @@ func TestPostWithMultipleFilesSuccess(t *testing.T) {
 	sort.Slice(got.Uploaded, func(i, j int) bool {
 		return got.Uploaded[i].Filename < got.Uploaded[j].Filename
 	})
+	assert.Equal(t, expected, got)
+}
+
+func TestPostWithNoFileField(t *testing.T) {
+	router := initTest()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	require.NoError(t, writeTestFile(writer, "not_file", "testfile1.png", []byte("hello world image 1")))
+	require.NoError(t, writer.Close())
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/upload", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	expected := StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
+	var got StatusBadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+
 	assert.Equal(t, expected, got)
 }

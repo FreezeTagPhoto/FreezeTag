@@ -47,9 +47,9 @@ func (ue UploadEndpoint) handlePost(c *gin.Context) {
 		return
 	}
 
-	files := form.File["file"]
-	if len(files) == 0 {
-		c.JSON(http.StatusBadRequest, StatusBadRequestResponse{Error: "No files uploaded"})
+	files, ok := form.File["file"]
+	if !ok || len(files) == 0 {
+		c.JSON(http.StatusBadRequest, StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"})
 		return
 	}
 
