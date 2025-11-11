@@ -12,10 +12,12 @@ type UploadResponse = {
   errors: { error: string; filename: string }[];
 };
 
-export async function ImageUploader(event: FormData): Promise<UploadResult> {
+export default async function ImageUploader(
+  event: FormData
+): Promise<UploadResult> {
   return image_upload_with_handler(
     ApiHandler<UploadResponse>(SERVER_ADDRESS + "upload/")(Method.POST),
-    event,
+    event
   );
 }
 

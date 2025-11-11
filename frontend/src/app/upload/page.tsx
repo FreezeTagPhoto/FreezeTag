@@ -1,5 +1,10 @@
+import FileUploadButton from "@/components/UI/FileUploadButton/FileUploadButton";
+
 export default function Home() {
   return (
-    <h1>Hi</h1>
+    <div>
+      <h1>Hi</h1>
+      <FileUploadButton />
+    </div>
   );
 }
