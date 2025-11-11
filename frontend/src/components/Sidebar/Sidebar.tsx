@@ -1,4 +1,3 @@
-// src/components/Sidebar/Sidebar.tsx
 "use client";
 
 import Image from "next/image";
@@ -8,10 +7,10 @@ import logoUrl from "@/icons/freezetag+text.svg";
 import styles from "./Sidebar.module.css";
 
 const navItems = [
-  { label: "Upload",   href: "/upload" },
-  { label: "Manage",   href: "/manage" },
+  { label: "Upload", href: "/upload" },
+  { label: "Manage", href: "/manage" },
   { label: "Settings", href: "/settings" },
-  { label: "Plugins",  href: "/plugins" },
+  { label: "Plugins", href: "/plugins" },
   { label: "Accounts", href: "/accounts" },
 ];
 
@@ -42,7 +41,7 @@ export default function Sidebar() {
 
           return (
             <Link
-              key={item.label} // <-- unique & stable for this static list
+              key={item.label}
               href={item.href}
               className={`${styles.item} ${isActive ? styles.itemActive : ""}`}
               aria-current={isActive ? "page" : undefined}
