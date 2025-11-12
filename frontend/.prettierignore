@@ -4,3 +4,6 @@ build/
 
 # ignore runner files
 .pnpm-store/
+
+# ignore pnpm-lock.yaml
+pnpm-lock.yaml
