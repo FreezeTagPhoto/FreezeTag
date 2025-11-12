@@ -77,6 +77,7 @@ test-frontend:
   image: node:latest
   variables:
     PNPM_STORE: $FRONT_DIR/.pnpm-store
+    NODE_OPTIONS: "--no-webstorage"
   before_script:
     - cd $FRONT_DIR
     - npm install --global pnpm@latest-10
