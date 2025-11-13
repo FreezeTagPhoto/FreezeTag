@@ -35,11 +35,6 @@ $ sudo apt install -y imagemagick libmagickcore-7*
 
 If your distribution provides ImageMagick 6 by default, either upgrade to a release that supplies ImageMagick 7, use a third-party package, or build ImageMagick 7 from source.
 
-### Optional Tools
-```bash
-$ go install github.com/boumenot/gocover-cobertura@latest
-```
-
 ### Enabling CGO
 The `imagick` Go bindings use CGO to call the ImageMagick C API. Ensure CGO is enabled when building or running tests. This is only necessary when not using the makefile's `run` and `test` targets. Example:
 ```bash
@@ -63,7 +58,7 @@ $ go run ./...
 
 
 ### Testing
-Many testing configs rely on [`Mockery`](https://github.com/vektra/mockery). Make sure you have version 3.6.0 or higher installed. The [`.mockery.yml`](./.mockery.yml) file is used to generate mocks of relevant interfaces, and those mocked tests can be generated via running `$ mockery` in the `backend` root directory.  
+Many testing configs rely on [`Mockery`](https://github.com/vektra/mockery). Make sure you have version 3.6.0 or higher installed. The [`.mockery.yml`](./.mockery.yml) file is used to generate mocks of relevant interfaces, and those mocked tests can be generated via running `$ go tool mockery` in the `backend` root directory.  
 
 Project tests can be executed with:
 ```bash

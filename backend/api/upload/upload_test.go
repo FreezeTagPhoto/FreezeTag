@@ -3,7 +3,7 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
-	"freezetag/backend/mockery"
+	"freezetag/backend/mocks"
 	"freezetag/backend/pkg/repositories"
 	"mime/multipart"
 	"net/http"
@@ -20,15 +20,15 @@ import (
 func initTest(t *testing.T) *gin.Engine {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-    StoreImageBytes(mock.Anything, mock.AnythingOfType("string")).
-    RunAndReturn(func(_ []byte, filename string) repositories.Result {
-        return repositories.Result{
-            Success: &repositories.ImageHandleSuccess{
-                Id:       67,
-                Filename: filename,
-            },
-        }
-    }).Maybe()
+		StoreImageBytes(mock.Anything, mock.AnythingOfType("string")).
+		RunAndReturn(func(_ []byte, filename string) repositories.Result {
+			return repositories.Result{
+				Success: &repositories.ImageHandleSuccess{
+					Id:       67,
+					Filename: filename,
+				},
+			}
+		}).Maybe()
 
 	router := gin.Default()
 	InitUploadEndpoint(m).RegisterEndpoints(router)

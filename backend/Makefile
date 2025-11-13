@@ -1,4 +1,4 @@
-.PHONY: run test
+.PHONY: run test mocks tidy clean
 .SILENT:
 
 TAGS=sqlite_math_functions,sqlite_foreign_keys
@@ -6,21 +6,27 @@ TAGS=sqlite_math_functions,sqlite_foreign_keys
 export CGO_FLAGS_ALLOW='-Xpreprocessor'
 export CGO_ENABLED=1
 
+tidy:
+	go mod tidy
+
 test: mocks
 	mkdir -p coverage
-	go test -coverprofile="coverage/coverage.out" -covermode count -tags=test,$(TAGS) ./...
+	go test -coverprofile="coverage/coverage.out.tmp" -covermode count -tags=test,$(TAGS) ./... | grep -v "freezetag/backend/mockery"
 	TESTPASSED=$$?
+	cat coverage/coverage.out.tmp | grep -v "_mock.go" > coverage/coverage.out
+	rm coverage/coverage.out.tmp
 	go tool cover -html=coverage/coverage.out -o coverage/coverage.html
-	GOFLAGS="-tags=test,$(TAGS)" gocover-cobertura < coverage/coverage.out > coverage/cobertura-coverage.xml
+	GOFLAGS="-tags=test,$(TAGS)" go tool gocover-cobertura < coverage/coverage.out > coverage/cobertura-coverage.xml
 	go tool cover -func coverage/coverage.out | tail -n 1
 	exit $$TESTPASSED
 
-run:
+run: tidy
 	go run -tags=$(TAGS) .
 
-mocks: 
-	mockery --config=./.mockery.yml
+mocks: tidy
+	rm -rf ./mocks
+	go tool mockery --config=./.mockery.yml
 
 clean:
 	rm -rf ./coverage
-	rm -rf ./mockery
+	rm -rf ./mocks

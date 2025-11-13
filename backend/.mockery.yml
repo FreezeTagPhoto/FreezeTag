@@ -5,7 +5,7 @@ force-file-write: true
 formatter: goimports
 generate: true
 include-auto-generated: false
-log-level: info
+log-level: warn
 structname: '{{.Mock}}{{.InterfaceName}}'
 pkgname: '{{.SrcPackageName}}'
 recursive: false
@@ -15,7 +15,7 @@ template-schema: '{{.Template}}.schema.json'
 packages:
   freezetag/backend/pkg/repositories:
     config:
-      dir: "./mockery"
+      dir: "./mocks"
       filename: "{{.InterfaceName}}_mock.go"
       pkgname: "mocks"
       structname: "Mock{{.InterfaceName}}"
