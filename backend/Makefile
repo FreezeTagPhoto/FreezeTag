@@ -11,7 +11,7 @@ tidy:
 
 test: mocks
 	mkdir -p coverage
-	go test -coverprofile="coverage/coverage.out.tmp" -covermode count -tags=test,$(TAGS) ./... | grep -v "freezetag/backend/mockery"
+	go test -coverprofile="coverage/coverage.out.tmp" -covermode count -tags=test,$(TAGS) ./... | grep -v "mocks"
 	TESTPASSED=$$?
 	cat coverage/coverage.out.tmp | grep -v "_mock.go" > coverage/coverage.out
 	rm coverage/coverage.out.tmp
