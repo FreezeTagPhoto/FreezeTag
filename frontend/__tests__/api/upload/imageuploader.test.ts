@@ -40,8 +40,8 @@ describe("Image Uploader", () => {
       return Ok({
         uploaded: [],
         errors: [
-          { error: "Gopher died on the way", filename: "gopher.png" },
-          { error: "Coffee spilled", filename: "coffee.jpeg" },
+          { reason: "Gopher died on the way", filename: "gopher.png" },
+          { reason: "Coffee spilled", filename: "coffee.jpeg" },
         ],
       });
     };

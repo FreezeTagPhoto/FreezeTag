@@ -13,11 +13,11 @@ type UploadResponse = {
 };
 
 export default async function ImageUploader(
-  event: FormData
+  event: FormData,
 ): Promise<UploadResult> {
   return image_upload_with_handler(
     ApiHandler<UploadResponse>(SERVER_ADDRESS + "upload")(Method.POST),
-    event
+    event,
   );
 }
 

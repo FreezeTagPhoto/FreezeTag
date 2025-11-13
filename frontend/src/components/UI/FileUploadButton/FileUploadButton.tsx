@@ -5,7 +5,10 @@ import styles from "./FileUploadButton.module.css";
 export default function FileUploadButton() {
   return (
     <form action={handleSubmit}>
-      <label htmlFor="file-upload" className={styles.label}> File Upload! </label>
+      <label htmlFor="file-upload" className={styles.label}>
+        {" "}
+        File Upload!{" "}
+      </label>
       <input
         type="file"
         onChange={FileChangeHandler}
