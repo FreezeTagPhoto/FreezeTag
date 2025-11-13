@@ -17,5 +17,5 @@ type Result struct {
 
 type ImageRepository interface {
 	StoreImageBytes(data []byte, filename string) Result
-	RetrieveImage(id uint) (any, error)
+	RetrieveThumbnail(id uint, quality uint) ([]byte, error)
 }

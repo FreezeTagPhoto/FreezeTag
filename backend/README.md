@@ -63,6 +63,8 @@ $ go run ./...
 
 
 ### Testing
+Many testing configs rely on [`Mockery`](https://github.com/vektra/mockery). Make sure you have version 3.6.0 or higher installed. The [`.mockery.yml`](./.mockery.yml) file is used to generate mocks of relevant interfaces, and those mocked tests can be generated via running `$ mockery` in the `backend` root directory.  
+
 Project tests can be executed with:
 ```bash
 $ make test

@@ -3,6 +3,7 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
+	"freezetag/backend/mockery"
 	"freezetag/backend/pkg/repositories"
 	"mime/multipart"
 	"net/http"
@@ -12,26 +13,25 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
-type mockRepository struct{}
+func initTest(t *testing.T) *gin.Engine {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+    StoreImageBytes(mock.Anything, mock.AnythingOfType("string")).
+    RunAndReturn(func(_ []byte, filename string) repositories.Result {
+        return repositories.Result{
+            Success: &repositories.ImageHandleSuccess{
+                Id:       67,
+                Filename: filename,
+            },
+        }
+    }).Maybe()
 
-func (mockRepository) StoreImageBytes(data []byte, filename string) repositories.Result {
-	return repositories.Result{
-		Success: &repositories.ImageHandleSuccess{Id: 67, Filename: filename},
-		Err:     nil,
-	}
-}
-
-func (mockRepository) RetrieveImage(uid uint) (any, error) {
-	return nil, nil
-}
-
-func initTest() *gin.Engine {
 	router := gin.Default()
-	var tr mockRepository
-	InitUploadEndpoint(tr).RegisterEndpoints(router)
+	InitUploadEndpoint(m).RegisterEndpoints(router)
 	return router
 }
 
@@ -45,7 +45,7 @@ func writeTestFile(writer *multipart.Writer, fieldname string, filename string, 
 }
 
 func TestPostFileSuccess(t *testing.T) {
-	router := initTest()
+	router := initTest(t)
 
 	body := &bytes.Buffer{}
 
@@ -70,7 +70,7 @@ func TestPostFileSuccess(t *testing.T) {
 }
 
 func TestPostWithNoFiles(t *testing.T) {
-	router := initTest()
+	router := initTest(t)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -91,7 +91,7 @@ func TestPostWithNoFiles(t *testing.T) {
 }
 
 func TestPostWithMalformedMultipartForm(t *testing.T) {
-	router := initTest()
+	router := initTest(t)
 
 	body := bytes.NewBufferString("this is not a multipart payload")
 	writer := multipart.NewWriter(body)
@@ -112,7 +112,7 @@ func TestPostWithMalformedMultipartForm(t *testing.T) {
 }
 
 func TestPostTextNoMultipartForm(t *testing.T) {
-	router := initTest()
+	router := initTest(t)
 
 	body := bytes.NewBufferString("this is not a multipart payload")
 	writer := multipart.NewWriter(body)
@@ -133,7 +133,7 @@ func TestPostTextNoMultipartForm(t *testing.T) {
 }
 
 func TestPostWithMultipleFilesSuccess(t *testing.T) {
-	router := initTest()
+	router := initTest(t)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -172,7 +172,7 @@ func TestPostWithMultipleFilesSuccess(t *testing.T) {
 }
 
 func TestPostWithNoFileField(t *testing.T) {
-	router := initTest()
+	router := initTest(t)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
