@@ -19,6 +19,10 @@ func imageToRGBA(mw *imagick.MagickWand) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+	err = rgba.SetImageDepth(8)
+	if err != nil {
+		return []byte{}, err
+	}
 	rgba.ResetIterator()
 	return rgba.GetImageBlob()
 }
