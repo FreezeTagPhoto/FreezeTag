@@ -6,7 +6,7 @@ TAGS=sqlite_math_functions,sqlite_foreign_keys
 export CGO_FLAGS_ALLOW='-Xpreprocessor'
 export CGO_ENABLED=1
 
-test:
+test: mocks
 	mkdir -p coverage
 	go test -coverprofile="coverage/coverage.out" -covermode count -tags=test,$(TAGS) ./...
 	TESTPASSED=$$?
@@ -17,3 +17,10 @@ test:
 
 run:
 	go run -tags=$(TAGS) .
+
+mocks: 
+	mockery --config=./.mockery.yml
+
+clean:
+	rm -rf ./coverage
+	rm -rf ./mockery
