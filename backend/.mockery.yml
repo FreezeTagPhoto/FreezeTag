@@ -21,3 +21,12 @@ packages:
       structname: "Mock{{.InterfaceName}}"
     interfaces:
       ImageRepository:
+
+  freezetag/backend/pkg/database:
+    config:
+      dir: "./mocks"
+      filename: "{{.InterfaceName}}_mock.go"
+      pkgname: "mocks"
+      structname: "Mock{{.InterfaceName}}"
+    interfaces:
+      ImageDatabase:
