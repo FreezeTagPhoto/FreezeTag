@@ -26,7 +26,7 @@ func CreateThumbnail(data imagedata.Data, maxHeight int, quality float32) ([]byt
 	}
 	if maxHeight > 0 && data.Height > maxHeight {
 		change := float32(maxHeight) / float32(data.Height)
-		err = mw.ResizeImage(uint(float32(data.Width)*change), uint(data.Height), imagick.FILTER_BOX)
+		err = mw.ResizeImage(uint(float32(data.Width)*change), uint(maxHeight), imagick.FILTER_BOX)
 		if err != nil {
 			return []byte{}, err
 		}

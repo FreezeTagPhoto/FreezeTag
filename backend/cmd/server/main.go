@@ -24,7 +24,7 @@ func main() {
 
 func initParserCollection() images.Parser {
 	parserCollection := images.InitParserCollection()
-	if err := parserCollection.RegisterParserFunc("*.{cr3,CR3,nef,NEF,dng,DNG}", formats.ParseRaw); err != nil {
+	if err := parserCollection.RegisterParserFunc("*.{cr3,nef,dng,hei{c,f}}", formats.ParseRaw); err != nil {
 		log.Fatalf("[ERROR] failed to register RAW parser: %v", err)
 	}
 	if err := parserCollection.RegisterParserFunc("*.{png,jpg,jpeg}", formats.ParseBasic); err != nil {
