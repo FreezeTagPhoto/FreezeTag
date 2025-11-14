@@ -15,7 +15,7 @@ template-schema: '{{.Template}}.schema.json'
 packages:
   freezetag/backend/pkg/repositories:
     config:
-      dir: "./mocks"
+      dir: "./mocks/{{.InterfaceName}}"
       filename: "{{.InterfaceName}}_mock.go"
       pkgname: "mocks"
       structname: "Mock{{.InterfaceName}}"
@@ -24,7 +24,7 @@ packages:
 
   freezetag/backend/pkg/database:
     config:
-      dir: "./mocks"
+      dir: "./mocks/{{.InterfaceName}}"
       filename: "{{.InterfaceName}}_mock.go"
       pkgname: "mocks"
       structname: "Mock{{.InterfaceName}}"
