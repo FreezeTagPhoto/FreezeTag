@@ -3,6 +3,7 @@ package repositories
 import (
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/images"
+	"os"
 )
 
 type ImageHandleSuccess struct {
@@ -26,14 +27,16 @@ type ImageRepository interface {
 }
 
 type DefaultImageRepository struct {
-	db database.ImageDatabase
-	parserCollection images.Parser
+	db         database.ImageDatabase
+	parser     images.Parser
+	folderPath string
 }
 
-func InitImageRepository(db database.ImageDatabase, parserCollection images.Parser) *DefaultImageRepository {
+func InitImageRepository(db database.ImageDatabase, paser images.Parser, folderPath string) *DefaultImageRepository {
 	return &DefaultImageRepository{
-		db: db,
-		parserCollection: parserCollection,
+		db:         db,
+		parser:     paser,
+		folderPath: folderPath,
 	}
 }
 
@@ -47,8 +50,16 @@ func errorResult(filename string, err error) Result {
 	}
 }
 
+// TODO: Doesn't handle name collisions
 func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string) Result {
-	imagedata, err := repo.parserCollection.ParseImage(filename, data)
+	max_height := 512
+	quality := float32(0)
+
+	imagedata, err := repo.parser.ParseImage(filename, data)
+	if err != nil {
+		return errorResult(filename, err)
+	}
+	thumb, err := images.CreateThumbnail(imagedata, max_height, quality)
 	if err != nil {
 		return errorResult(filename, err)
 	}
@@ -58,6 +69,19 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 		return errorResult(filename, err)
 	}
 
+	added, err := repo.db.AddImageThumbnail(id, max_height, thumb)
+	if err != nil || !added {
+		return errorResult(filename, err)
+	}
+
+	// 0644 is rw-r--r-- permissions for this new file
+	// 0755 is rwxr-xr-x permissions for this new directory (if it doesn't exist)
+	if err := os.MkdirAll(repo.folderPath, 0755); err != nil {
+    	return errorResult(filename, err)
+	}
+	if err := os.WriteFile(repo.folderPath+"/"+filename, data, 0644); err != nil {
+		return errorResult(filename, err)
+	}
 	return Result{
 		Success: &ImageHandleSuccess{
 			Id:       id,

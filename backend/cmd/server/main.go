@@ -12,10 +12,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+const defaultImageFolder = "../../images/"
 
 func main() {
 	router := gin.Default()
-	repo := initRepository()
+	repo := initRepository(defaultImageFolder)
 	RegisterEndpoints(router, repo)
 	router.Run("localhost:3824") //nolint:errcheck // no need to check return value
 }
@@ -32,13 +33,13 @@ func initParserCollection() images.Parser {
 }
 
 // initRepository initializes the image repository with a SQLite database and an image parser collection.
-func initRepository() repositories.ImageRepository {
+func initRepository(imageFolder string) repositories.ImageRepository {
 	db, err := database.InitSQLiteImageDatabase("database.db")
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err.Error())
 	}
 	parserCollection := initParserCollection()
-	return repositories.InitImageRepository(db, parserCollection)
+	return repositories.InitImageRepository(db, parserCollection, imageFolder)
 }
 
 func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository) {

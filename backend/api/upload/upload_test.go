@@ -3,7 +3,7 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
-	"freezetag/backend/mocks"
+	"freezetag/backend/mocks/ImageRepository"
 	"freezetag/backend/pkg/repositories"
 	"mime/multipart"
 	"net/http"
