@@ -1,3 +1,5 @@
 coverage
 gl-codequality.json
 /mocks/
+*.db
+/images/

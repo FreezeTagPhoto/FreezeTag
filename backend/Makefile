@@ -21,7 +21,7 @@ test: mocks
 	exit $$TESTPASSED
 
 run: tidy
-	go run -tags=$(TAGS) .
+	go run -tags=$(TAGS) ./cmd/server
 
 mocks: tidy
 	rm -rf ./mocks
