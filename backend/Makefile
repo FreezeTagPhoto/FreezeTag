@@ -3,7 +3,7 @@
 
 TAGS=sqlite_math_functions,sqlite_foreign_keys
 
-export CGO_CFLAGS_ALLOW='-Xpreprocessor'
+export CGO_CFLAGS_ALLOW=-Xpreprocessor
 export CGO_ENABLED=1
 
 tidy:
