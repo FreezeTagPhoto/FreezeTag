@@ -2,6 +2,7 @@ package upload
 
 import (
 	"bytes"
+	"freezetag/backend/api"
 	"freezetag/backend/pkg/repositories"
 	"io"
 	"mime/multipart"
@@ -14,10 +15,6 @@ import (
 type StatusOkResponse struct {
 	Uploaded []repositories.ImageHandleSuccess `json:"uploaded"`
 	Errors   []repositories.ImageHandleFail    `json:"errors"`
-}
-
-type StatusBadRequestResponse struct {
-	Error string `json:"error"`
 }
 
 type UploadEndpoint struct {
@@ -43,13 +40,13 @@ func (ue UploadEndpoint) RegisterEndpoints(e *gin.Engine) {
 func (ue UploadEndpoint) handlePost(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, StatusBadRequestResponse{Error: "failed to parse multipart form: " + err.Error()})
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "failed to parse multipart form: " + err.Error()})
 		return
 	}
 
 	files, ok := form.File["file"]
 	if !ok || len(files) == 0 {
-		c.JSON(http.StatusBadRequest, StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"})
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"})
 		return
 	}
 
@@ -58,7 +55,7 @@ func (ue UploadEndpoint) handlePost(c *gin.Context) {
 		bytes, err := readFileBytes(file)
 
 		if err != nil {
-			c.JSON(http.StatusBadRequest, StatusBadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
+			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
 			return
 		}
 		go func(data []byte, filename string) {

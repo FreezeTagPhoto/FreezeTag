@@ -3,7 +3,8 @@ package upload
 import (
 	"bytes"
 	"encoding/json"
-	"freezetag/backend/mocks/ImageRepository"
+	"freezetag/backend/api"
+	mocks "freezetag/backend/mocks/ImageRepository"
 	"freezetag/backend/pkg/repositories"
 	"mime/multipart"
 	"net/http"
@@ -83,8 +84,8 @@ func TestPostWithNoFiles(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
-	var got StatusBadRequestResponse
+	expected := api.StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
+	var got api.StatusBadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -104,8 +105,8 @@ func TestPostWithMalformedMultipartForm(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := StatusBadRequestResponse{Error: "failed to parse multipart form: no multipart boundary param in Content-Type"}
-	var got StatusBadRequestResponse
+	expected := api.StatusBadRequestResponse{Error: "failed to parse multipart form: no multipart boundary param in Content-Type"}
+	var got api.StatusBadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -125,8 +126,8 @@ func TestPostTextNoMultipartForm(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := StatusBadRequestResponse{Error: "failed to parse multipart form: request Content-Type isn't multipart/form-data"}
-	var got StatusBadRequestResponse
+	expected := api.StatusBadRequestResponse{Error: "failed to parse multipart form: request Content-Type isn't multipart/form-data"}
+	var got api.StatusBadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -187,8 +188,8 @@ func TestPostWithNoFileField(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
-	var got StatusBadRequestResponse
+	expected := api.StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
+	var got api.StatusBadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
