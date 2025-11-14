@@ -12,7 +12,7 @@ type ImageHandleSuccess struct {
 }
 
 type ImageHandleFail struct {
-	Reason   error  `json:"reason"`
+	Reason   string `json:"reason"`
 	Filename string `json:"filename"`
 }
 
@@ -44,7 +44,7 @@ func errorResult(filename string, err error) Result {
 	return Result{
 		Success: nil,
 		Err: &ImageHandleFail{
-			Reason:   err,
+			Reason:   err.Error(),
 			Filename: filename,
 		},
 	}
@@ -59,7 +59,11 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	if err != nil {
 		return errorResult(filename, err)
 	}
-	thumb, err := images.CreateThumbnail(imagedata, max_height, quality)
+	thumbSmall, err := images.CreateThumbnail(imagedata, max_height, quality)
+	if err != nil {
+		return errorResult(filename, err)
+	}
+	thumbLarge, err := images.CreateThumbnail(imagedata, 0, 1)
 	if err != nil {
 		return errorResult(filename, err)
 	}
@@ -69,15 +73,19 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 		return errorResult(filename, err)
 	}
 
-	added, err := repo.db.AddImageThumbnail(id, max_height, thumb)
-	if err != nil || !added {
+	ok, err := repo.db.AddImageThumbnail(id, 1, thumbSmall)
+	if err != nil || !ok {
+		return errorResult(filename, err)
+	}
+	ok, err = repo.db.AddImageThumbnail(id, 2, thumbLarge)
+	if err != nil || !ok {
 		return errorResult(filename, err)
 	}
 
 	// 0644 is rw-r--r-- permissions for this new file
 	// 0755 is rwxr-xr-x permissions for this new directory (if it doesn't exist)
 	if err := os.MkdirAll(repo.folderPath, 0755); err != nil {
-    	return errorResult(filename, err)
+		return errorResult(filename, err)
 	}
 	if err := os.WriteFile(repo.folderPath+"/"+filename, data, 0644); err != nil {
 		return errorResult(filename, err)

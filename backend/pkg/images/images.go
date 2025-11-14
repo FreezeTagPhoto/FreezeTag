@@ -67,5 +67,5 @@ func (pc ParserCollection) ParseImage(name string, data []byte) (imagedata.Data,
 			return entry.parser.ParseImage(name, data)
 		}
 	}
-	return imagedata.Data{}, fmt.Errorf("no parser for file: %q", name)
+	return imagedata.Data{}, fmt.Errorf("no parser for file")
 }

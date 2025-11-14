@@ -72,8 +72,9 @@ func (ue UploadEndpoint) handlePost(c *gin.Context) {
 		result := <-results
 		if result.Err != nil {
 			errors = append(errors, *result.Err)
+		} else {
+			uploaded = append(uploaded, *result.Success)
 		}
-		uploaded = append(uploaded, *result.Success)
 	}
 
 	response := StatusOkResponse{
@@ -95,8 +96,6 @@ func readFileBytes(fh *multipart.FileHeader) ([]byte, error) {
 
 	if _, err := io.Copy(&buf, f); err != nil {
 		return nil, err
-	} 
+	}
 	return buf.Bytes(), nil
 }
-
-
