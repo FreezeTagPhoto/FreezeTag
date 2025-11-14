@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images"
 	"os"
 )
@@ -22,6 +23,7 @@ type Result struct {
 }
 
 type ImageRepository interface {
+	SearchImage(query queries.DatabaseQuery) ([]database.ImageId, error)
 	StoreImageBytes(data []byte, filename string) Result
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
 }
@@ -101,4 +103,8 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 
 func (repo *DefaultImageRepository) RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error) {
 	return repo.db.GetImageThumbnail(id, quality)
+}
+
+func (repo *DefaultImageRepository) SearchImage(query queries.DatabaseQuery) ([]database.ImageId, error) {
+	return repo.db.GetImages(query)
 }

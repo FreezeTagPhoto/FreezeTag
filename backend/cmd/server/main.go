@@ -3,6 +3,7 @@
 package main
 
 import (
+	"freezetag/backend/api/search"
 	"freezetag/backend/api/thumbnails"
 	"freezetag/backend/api/upload"
 	"freezetag/backend/pkg/database"
@@ -47,5 +48,6 @@ func initRepository(imageFolder string) repositories.ImageRepository {
 func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository) {
 	upload.InitUploadEndpoint(repo).RegisterEndpoints(router)
 	thumbnails.InitThumbnailEndpoint(repo).RegisterEndpoints(router)
+	search.InitSearchEndpoint(repo).RegisterEndpoints(router)
 	// Other endpoints would be registered here
 }
