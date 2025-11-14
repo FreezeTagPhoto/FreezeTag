@@ -1,6 +1,6 @@
 "use client";
 import styles from "./TopBar.module.css";
-import Pill from "@/components/UI/Pill";
+import Pill from "@/components/UI/Pill/Pill";
 
 export default function TopBar() {
   return (

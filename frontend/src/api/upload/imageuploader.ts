@@ -9,12 +9,14 @@ export type UploadResult = Result<
 >;
 type UploadResponse = {
   uploaded: { id: number; filename: string }[];
-  errors: { error: string; filename: string }[];
+  errors: { reason: string; filename: string }[];
 };
 
-export async function ImageUploader(event: FormData): Promise<UploadResult> {
+export default async function ImageUploader(
+  event: FormData,
+): Promise<UploadResult> {
   return image_upload_with_handler(
-    ApiHandler<UploadResponse>(SERVER_ADDRESS + "upload/")(Method.POST),
+    ApiHandler<UploadResponse>(SERVER_ADDRESS + "upload")(Method.POST),
     event,
   );
 }
@@ -48,7 +50,7 @@ async function image_upload_with_handler(
     image_map.set(image.filename, Ok(image.id));
   }
   for (const error of body.errors) {
-    image_map.set(error.filename, Err(error.error));
+    image_map.set(error.filename, Err(error.reason));
   }
 
   return Ok(image_map);
