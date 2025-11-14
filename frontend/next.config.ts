@@ -7,6 +7,16 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "25gb",
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3824",
+        pathname: "/thumbnails/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
