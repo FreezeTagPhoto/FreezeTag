@@ -1,5 +1,5 @@
 import styles from "./Gallery.module.css";
-import Image from "next/image";
+import GalleryImage from "./GalleryImage/GalleryImage";
 
 type Item = {
   id: string;
@@ -29,14 +29,7 @@ export default function Gallery(props: GalleryProps) {
     return (
       <div className={styles.grid}>
         {props.image_ids.map((id) => (
-          <Image
-            key={id}
-            src={`http://localhost:3824/thumbnails/${id}?size=1`}
-            alt={`A thumbnail of image ${id}`}
-            width={512}
-            height={512}
-            loading="lazy"
-          />
+          <GalleryImage key={id} id={id} />
         ))}
       </div>
     );

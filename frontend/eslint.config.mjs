@@ -32,6 +32,7 @@ const eslintConfig = [
           caughtErrorsIgnorePattern: "^_",
         },
       ],
+      "@next/next/no-img-element": ["off"],
     },
   },
 ];

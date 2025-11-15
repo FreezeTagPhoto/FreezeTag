@@ -28,7 +28,7 @@ export default function FileUploadButton(props: FileUploadProps) {
 
 const handleSubmit = async (
   event: FormData,
-  ids_retrieved_callback: (ids: number[]) => void
+  ids_retrieved_callback: (ids: number[]) => void,
 ) => {
   const result = await ImageUploader(event);
   console.log(result);

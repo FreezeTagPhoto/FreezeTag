@@ -1,0 +1,11 @@
+.image {
+  height: 128px;
+  max-width: 100%;
+}
+
+.image_container {
+  height: 128px;
+  /* max-width: 128px; */
+  display: inline;
+  float: none;
+}
