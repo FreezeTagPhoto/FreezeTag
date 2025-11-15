@@ -45,7 +45,6 @@ async function image_upload_with_handler(
   }
 
   const body = request_result.value;
-  console.log(body);
 
   const image_map = new Map();
   for (const image of body.uploaded) {
