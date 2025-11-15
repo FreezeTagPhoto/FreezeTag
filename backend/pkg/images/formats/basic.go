@@ -13,6 +13,9 @@ func ParseBasic(name string, data []byte) (imagedata.Data, error) {
 	if err := mw.ReadImageBlob(data); err != nil {
 		return imagedata.Data{}, failedConversionError{name, err}
 	}
+	if err := mw.AutoOrientImage(); err != nil {
+		return imagedata.Data{}, failedConversionError{name, err}
+	}
 	data, err := imageToRGBA(mw)
 	if err != nil {
 		return imagedata.Data{}, failedConversionError{name, err}
