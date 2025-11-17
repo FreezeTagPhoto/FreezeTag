@@ -12,7 +12,7 @@ export default function Home() {
         <div className={styles.pillsRow} />
       </header>
 
-      <Gallery />
+      <Gallery image_ids={[]} />
     </main>
   );
 }
