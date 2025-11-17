@@ -10,7 +10,6 @@ export default function Home() {
   };
   return (
     <div>
-      <h1>Hi</h1>
       <FileUploadButton ids_retrieved_callback={ids_retrieved_callback} />
       <Gallery image_ids={ids} />
     </div>
