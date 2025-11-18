@@ -60,11 +60,11 @@ func TestPostFileSuccess(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
-	expected := StatusOkResponse{
+	expected := api.StatusOkResponse{
 		Uploaded: []repositories.ImageUploadSuccess{{Id: 67, Filename: "testfile.png"}},
 		Errors:   []repositories.ImageUploadFail{},
 	}
-	var got StatusOkResponse
+	var got api.StatusOkResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -151,7 +151,7 @@ func TestPostWithMultipleFilesSuccess(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
-	expected := StatusOkResponse{
+	expected := api.StatusOkResponse{
 		Uploaded: []repositories.ImageUploadSuccess{
 			{Id: 67, Filename: "testfile1.png"},
 			{Id: 67, Filename: "testfile2.jpg"},
@@ -159,7 +159,7 @@ func TestPostWithMultipleFilesSuccess(t *testing.T) {
 		},
 		Errors: []repositories.ImageUploadFail{},
 	}
-	var got StatusOkResponse
+	var got api.StatusOkResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	//because the order of uploaded files is not guaranteed, sort the same way before comparing.

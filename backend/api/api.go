@@ -1,6 +1,18 @@
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	"freezetag/backend/pkg/repositories"
+
+	"github.com/gin-gonic/gin"
+)
+
+
+type StatusOkResponse struct {
+	Uploaded []repositories.ImageUploadSuccess `json:"uploaded"`
+	Errors   []repositories.ImageUploadFail    `json:"errors"`
+}
+
+
 
 type StatusBadRequestResponse struct {
 	Error string `json:"error"`

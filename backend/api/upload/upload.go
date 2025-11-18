@@ -12,11 +12,6 @@ import (
 )
 
 /* Types */
-type StatusOkResponse struct {
-	Uploaded []repositories.ImageUploadSuccess `json:"uploaded"`
-	Errors   []repositories.ImageUploadFail    `json:"errors"`
-}
-
 type UploadEndpoint struct {
 	imageRepository repositories.ImageRepository
 }
@@ -26,7 +21,7 @@ type UploadEndpoint struct {
 // Creates a new UploadEndpoint with the given image repository.
 func InitUploadEndpoint(repository repositories.ImageRepository) UploadEndpoint {
 	return UploadEndpoint{
-		repository,
+		imageRepository: repository,
 	}
 }
 
@@ -74,7 +69,7 @@ func (ue UploadEndpoint) handlePost(c *gin.Context) {
 		}
 	}
 
-	response := StatusOkResponse{
+	response := api.StatusOkResponse{
 		Uploaded: uploaded,
 		Errors:   errors,
 	}
