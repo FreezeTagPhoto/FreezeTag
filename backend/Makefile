@@ -1,4 +1,4 @@
-.PHONY: run test mocks tidy clean
+.PHONY: run test mocks lint tidy clean
 .SILENT:
 
 TAGS=sqlite_math_functions,sqlite_foreign_keys
@@ -19,6 +19,9 @@ test: mocks
 	GOFLAGS="-tags=test,$(TAGS)" go tool gocover-cobertura < coverage/coverage.out > coverage/cobertura-coverage.xml
 	go tool cover -func coverage/coverage.out | tail -n 1
 	exit $$TESTPASSED
+
+lint: mocks
+	golangci-lint run
 
 run: tidy
 	go run -tags=$(TAGS) ./cmd/server
