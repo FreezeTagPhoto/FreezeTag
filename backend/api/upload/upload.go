@@ -13,8 +13,8 @@ import (
 
 /* Types */
 type StatusOkResponse struct {
-	Uploaded []repositories.ImageHandleSuccess `json:"uploaded"`
-	Errors   []repositories.ImageHandleFail    `json:"errors"`
+	Uploaded []repositories.ImageUploadSuccess `json:"uploaded"`
+	Errors   []repositories.ImageUploadFail    `json:"errors"`
 }
 
 type UploadEndpoint struct {
@@ -63,8 +63,8 @@ func (ue UploadEndpoint) handlePost(c *gin.Context) {
 		}(bytes, file.Filename)
 	}
 
-	uploaded := make([]repositories.ImageHandleSuccess, 0, len(files))
-	errors := make([]repositories.ImageHandleFail, 0)
+	uploaded := make([]repositories.ImageUploadSuccess, 0, len(files))
+	errors := make([]repositories.ImageUploadFail, 0)
 	for range files {
 		result := <-results
 		if result.Err != nil {

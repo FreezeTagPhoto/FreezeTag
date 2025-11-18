@@ -24,7 +24,7 @@ func initTest(t *testing.T) *gin.Engine {
 		StoreImageBytes(mock.Anything, mock.AnythingOfType("string")).
 		RunAndReturn(func(_ []byte, filename string) repositories.Result {
 			return repositories.Result{
-				Success: &repositories.ImageHandleSuccess{
+				Success: &repositories.ImageUploadSuccess{
 					Id:       67,
 					Filename: filename,
 				},
@@ -61,8 +61,8 @@ func TestPostFileSuccess(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 	expected := StatusOkResponse{
-		Uploaded: []repositories.ImageHandleSuccess{{Id: 67, Filename: "testfile.png"}},
-		Errors:   []repositories.ImageHandleFail{},
+		Uploaded: []repositories.ImageUploadSuccess{{Id: 67, Filename: "testfile.png"}},
+		Errors:   []repositories.ImageUploadFail{},
 	}
 	var got StatusOkResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
@@ -152,12 +152,12 @@ func TestPostWithMultipleFilesSuccess(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 	expected := StatusOkResponse{
-		Uploaded: []repositories.ImageHandleSuccess{
+		Uploaded: []repositories.ImageUploadSuccess{
 			{Id: 67, Filename: "testfile1.png"},
 			{Id: 67, Filename: "testfile2.jpg"},
 			{Id: 67, Filename: "testfile3.txt"},
 		},
-		Errors: []repositories.ImageHandleFail{},
+		Errors: []repositories.ImageUploadFail{},
 	}
 	var got StatusOkResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
