@@ -43,6 +43,7 @@ func (te TagEndpoint) HandleDelete(c *gin.Context) {
 	results := make(chan repositories.ImageTagResult, idlen)
 	for _, id := range c.QueryArray("id") {
 		idstr, err := strconv.ParseInt(id, 10, 64)
+
 		if err != nil {
 			results <- repositories.ImageTagResult{
 				Success: nil,
@@ -68,7 +69,7 @@ func (te TagEndpoint) HandleDelete(c *gin.Context) {
 		}
 	}
 
-	response := api.StatusOkDeleteResponse{
+	response := api.StatusOkTagDeleteResponse{
 		Deleted: deleted,
 		Errors:  errors,
 	}
@@ -115,7 +116,7 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 		}
 	}
 
-	response := api.StatusOkDeleteResponse{
+	response := api.StatusOkTagDeleteResponse{
 		Deleted: deleted,
 		Errors:  errors,
 	}
