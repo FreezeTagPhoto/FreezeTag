@@ -238,6 +238,19 @@ func insertTestImage(t *testing.T, db ImageDatabase) ImageId {
 	return id
 }
 
+func insertTestImageNamed(t *testing.T, db ImageDatabase, name string) ImageId {
+	id, err := db.AddImage(name, imagedata.Data{
+		PixelsRGBA:  []byte{},
+		Width:       1280,
+		Height:      720,
+		DateCreated: nil,
+		Geo:         nil,
+		Cam:         nil,
+	})
+	require.NoError(t, err)
+	return id
+}
+
 func TestAddAndRetrieveThumbnails(t *testing.T) {
 	tmp := createTempDatabase(t)
 	id := insertTestImage(t, tmp)
@@ -295,6 +308,24 @@ func TestAddGetImageTags(t *testing.T) {
 	tags, err := tmp.GetImageTags(id)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []string{"foo", "bar", "baz"}, tags)
+}
+
+func TestGetAllTags(t *testing.T) {
+	tmp := createTempDatabase(t)
+	
+	id := insertTestImageNamed(t, tmp, "foo.png")
+	num, err := tmp.AddImageTags(id, []string{"foo", "bar", "baz"})
+	assert.NoError(t, err)
+	assert.Equal(t, 3, num)
+
+	id = insertTestImageNamed(t, tmp, "bar.jpeg")
+	num, err = tmp.AddImageTags(id, []string{"baz", "bat"})
+	assert.NoError(t, err)
+	assert.Equal(t, 2, num)
+	
+	tags, err := tmp.GetAllTags()
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, []string{"foo", "bar", "baz", "bat"}, tags)
 }
 
 func TestDeleteImage(t *testing.T) {
