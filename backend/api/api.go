@@ -12,8 +12,8 @@ type StatusOkUploadResponse struct {
 }
 
 type StatusOkDeleteResponse struct {
-	Deleted []repositories.ImageDeleteSuccess `json:"deleted"`
-	Errors  []repositories.ImageDeleteFail    `json:"errors"`
+	Deleted []repositories.ImageTagSuccess `json:"deleted"`
+	Errors  []repositories.ImageTagFail    `json:"errors"`
 }
 
 type StatusBadRequestResponse struct {

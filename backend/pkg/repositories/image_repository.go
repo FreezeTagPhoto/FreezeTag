@@ -25,19 +25,19 @@ type UploadResult struct {
 	Err     *ImageUploadFail    `json:"error"`
 }
 
-type ImageDeleteFail struct {
+type ImageTagFail struct {
 	Reason string           `json:"reason"`
 	Id     database.ImageId `json:"id"`
 }
 
-type ImageDeleteSuccess struct {
+type ImageTagSuccess struct {
 	Id    database.ImageId `json:"id"`
 	Count int              `json:"count"`
 }
 
-type DeleteResult struct {
-	Success *ImageDeleteSuccess `json:"success"`
-	Err     *ImageDeleteFail    `json:"error"`
+type ImageTagResult struct {
+	Success *ImageTagSuccess `json:"success"`
+	Err     *ImageTagFail    `json:"error"`
 }
 
 type ImageRepository interface {
@@ -46,8 +46,8 @@ type ImageRepository interface {
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
 	RetrieveAllTags() ([]string, error)
 	RetrieveImageTags(id database.ImageId) ([]string, error)
-	AddImageTags(id database.ImageId, tags []string) (int, error)
-	RemoveImageTags(id database.ImageId, tags []string) DeleteResult
+	AddImageTags(id database.ImageId, tags []string) ImageTagResult
+	RemoveImageTags(id database.ImageId, tags []string) ImageTagResult
 }
 
 type DefaultImageRepository struct {
@@ -172,24 +172,40 @@ func (repo *DefaultImageRepository) RetrieveImageTags(id database.ImageId) ([]st
 	return repo.db.GetImageTags(id)
 }
 
-func (repo *DefaultImageRepository) AddImageTags(id database.ImageId, tags []string) (int, error) {
-	return repo.db.AddImageTags(id, tags)
-}
-
-func (repo *DefaultImageRepository) RemoveImageTags(id database.ImageId, tags []string) DeleteResult {
-	count, err := repo.db.RemoveImageTags(id, tags)
-	if err != nil { 
-		return DeleteResult{
+func (repo *DefaultImageRepository) AddImageTags(id database.ImageId, tags []string) ImageTagResult {
+	count, err := repo.db.AddImageTags(id, tags)
+	if err != nil {
+		return ImageTagResult{
 			Success: nil,
-			Err: &ImageDeleteFail{
-				Id: id,
+			Err: &ImageTagFail{
+				Id:     id,
 				Reason: err.Error(),
 			},
 		}
 	}
-	return DeleteResult{
-		Success: &ImageDeleteSuccess{
-			Id: id,
+	return ImageTagResult{
+		Success: &ImageTagSuccess{
+			Id:    id,
+			Count: count,
+		},
+		Err: nil,
+	}
+}
+
+func (repo *DefaultImageRepository) RemoveImageTags(id database.ImageId, tags []string) ImageTagResult {
+	count, err := repo.db.RemoveImageTags(id, tags)
+	if err != nil {
+		return ImageTagResult{
+			Success: nil,
+			Err: &ImageTagFail{
+				Id:     id,
+				Reason: err.Error(),
+			},
+		}
+	}
+	return ImageTagResult{
+		Success: &ImageTagSuccess{
+			Id:    id,
 			Count: count,
 		},
 		Err: nil,
