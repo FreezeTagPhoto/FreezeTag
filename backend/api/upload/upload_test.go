@@ -19,6 +19,7 @@ import (
 )
 
 func initTest(t *testing.T) *gin.Engine {
+	t.Helper()
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
 		StoreImageBytes(mock.Anything, mock.AnythingOfType("string")).
