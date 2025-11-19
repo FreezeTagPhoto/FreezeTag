@@ -13,6 +13,10 @@ func ParseRaw(name string, data []byte) (imagedata.Data, error) {
 	if err := loadRawImage(name, data, mw); err != nil {
 		return imagedata.Data{}, failedConversionError{name, err}
 	}
+	// some RAW formats have orientation defined by metadata (e.g. phone cameras)
+	if err := mw.AutoOrientImage(); err != nil {
+		return imagedata.Data{}, failedConversionError{name, err}
+	}
 	data, err := imageToRGBA(mw)
 	if err != nil {
 		return imagedata.Data{}, failedConversionError{name, err}

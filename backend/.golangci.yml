@@ -14,6 +14,7 @@ linters:
     paths:
       - .go/
       - .apk-cache/
+      - mocks/
 output:
   formats:
     text:

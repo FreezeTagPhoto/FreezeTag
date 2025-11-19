@@ -1,0 +1,246 @@
+package search
+
+import (
+	"encoding/json"
+	"fmt"
+	"freezetag/backend/api"
+	mocks "freezetag/backend/mocks/ImageRepository"
+	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/database/queries"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+)
+
+func TestSearchSuccessNoQueries(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		SearchImage(mock.AnythingOfType("*queries.ImageQuery")).
+		Return([]database.ImageId{1, 2, 3}, nil)
+
+	router := gin.Default()
+	InitSearchEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/search", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	expected := []database.ImageId{1, 2, 3}
+	var got []database.ImageId
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestSearchSuccessBasicQueries(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		SearchImage(mock.AnythingOfType("*queries.ImageQuery")).
+		Return([]database.ImageId{1}, nil)
+
+	router := gin.Default()
+	InitSearchEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	// Build query parameters
+	params := url.Values{}
+	params.Add("make", "test")
+	params.Add("makeLike", "test2")
+	params.Add("model", "testModel")
+	params.Add("modelLike", "testModelLike")
+	params.Add("takenBefore", "0")
+	params.Add("takenAfter", "0")
+	params.Add("uploadedBefore", "10")
+	params.Add("uploadedAfter", "10")
+	
+
+
+	reqURL := "/search?" + params.Encode() // properly encodes & joins parameters
+
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	expected := []database.ImageId{1}
+	var got []database.ImageId
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestSearchSuccessTags(t *testing.T) {
+	expectedQuery := queries.CreateImageQuery()
+	expectedQuery.WithTag("1")
+	expectedQuery.WithTag("2")
+	expectedQuery.WithTag("3")
+	expectedQuery.WithTagLike("4")
+
+	params := url.Values{}
+	params.Add("tag", "1")
+	params.Add("tag", "2")
+	params.Add("tag", "3")
+	params.Add("tagLike", "4")
+	reqURL := "/search?" + params.Encode() // properly encodes & joins parameters
+
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		SearchImage(mock.AnythingOfType("*queries.ImageQuery")).
+		RunAndReturn(
+			func(actualQuery queries.DatabaseQuery) ([]database.ImageId, error) {
+				assert.Equal(t, expectedQuery, actualQuery)
+				return []database.ImageId{1, 2, 3, 4}, nil
+			})
+
+	router := gin.Default()
+	InitSearchEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	expected := []database.ImageId{1, 2, 3, 4}
+	var got []database.ImageId
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func runNearErrorTest(t *testing.T, near string, expectedErr string) {
+	t.Helper()
+
+	params := url.Values{}
+	params.Add("near", near)
+	reqURL := "/search?" + params.Encode()
+
+	m := mocks.NewMockImageRepository(t)
+
+	router := gin.Default()
+	InitSearchEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	expected := api.StatusBadRequestResponse{Error: expectedErr}
+	var got api.StatusBadRequestResponse
+
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestSearchNearBadNearTooManyCoords(t *testing.T) {
+	runNearErrorTest(t, "1,2,3,4", "invalid near parameter")
+
+}
+
+func TestSearchNearBadLatitude(t *testing.T) {
+	runNearErrorTest(t, "a,2,3", "invalid latitude in near parameter")
+}
+
+func TestSearchNearBadLongitude(t *testing.T) {
+	runNearErrorTest(t, "1,b,3", "invalid longitude in near parameter")
+}
+
+func TestSearchNearBadDistance(t *testing.T) {
+	runNearErrorTest(t, "1,2,c", "invalid distance in near parameter")
+}
+
+func TestSearchNearSuccess(t *testing.T) {
+	expectedQuery := queries.CreateImageQuery()
+	expectedQuery.WithLocation(1, 2, 3)
+	params := url.Values{}
+	params.Add("near", "1,2,3")
+	reqURL := "/search?" + params.Encode()
+
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		SearchImage(mock.Anything).
+		RunAndReturn(
+			func(actualQuery queries.DatabaseQuery) ([]database.ImageId, error) {
+				assert.Equal(t, expectedQuery, actualQuery)
+				return []database.ImageId{1}, nil
+			})
+
+	router := gin.Default()
+	InitSearchEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	expected := []database.ImageId{1}
+	var got []database.ImageId
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func runBadTakenXTest(t *testing.T, query, location, expectedErr string) { 
+	t.Helper()
+
+	params := url.Values{}
+	params.Add(query, location)
+	reqURL := "/search?" + params.Encode()
+
+	m := mocks.NewMockImageRepository(t)
+
+	router := gin.Default()
+	InitSearchEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	expected := api.StatusBadRequestResponse{Error: expectedErr}
+	var got api.StatusBadRequestResponse
+
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestBadTakenBefore(t *testing.T) { 
+	runBadTakenXTest(t, "takenBefore", "notint", "bad takenBefore parameter")
+}
+func TestBadTakenAfter(t *testing.T) { 
+	runBadTakenXTest(t, "takenAfter", "notint", "bad takenAfter parameter")
+}
+func TestBadUploadedBefore(t *testing.T) { 
+	runBadTakenXTest(t, "uploadedBefore", "notint", "bad uploadedBefore parameter")
+}
+
+func TestBadUploadedAfter(t *testing.T) { 
+	runBadTakenXTest(t, "uploadedAfter", "notint", "bad uploadedAfter parameter")
+}
+
+func TestSearchImageFail(t *testing.T) { 
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		SearchImage(mock.Anything).
+		Return(nil, fmt.Errorf("mock error"))
+
+	router := gin.Default()
+	InitSearchEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/search", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	expected := api.StatusServerErrorResponse{Error: "mock error"}
+	var got api.StatusServerErrorResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+	
+}
+
+

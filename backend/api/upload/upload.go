@@ -2,6 +2,7 @@ package upload
 
 import (
 	"bytes"
+	"freezetag/backend/api"
 	"freezetag/backend/pkg/repositories"
 	"io"
 	"mime/multipart"
@@ -11,15 +12,6 @@ import (
 )
 
 /* Types */
-type StatusOkResponse struct {
-	Uploaded []repositories.ImageHandleSuccess `json:"uploaded"`
-	Errors   []repositories.ImageHandleFail    `json:"errors"`
-}
-
-type StatusBadRequestResponse struct {
-	Error string `json:"error"`
-}
-
 type UploadEndpoint struct {
 	imageRepository repositories.ImageRepository
 }
@@ -29,7 +21,7 @@ type UploadEndpoint struct {
 // Creates a new UploadEndpoint with the given image repository.
 func InitUploadEndpoint(repository repositories.ImageRepository) UploadEndpoint {
 	return UploadEndpoint{
-		repository,
+		imageRepository: repository,
 	}
 }
 
@@ -43,13 +35,13 @@ func (ue UploadEndpoint) RegisterEndpoints(e *gin.Engine) {
 func (ue UploadEndpoint) handlePost(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, StatusBadRequestResponse{Error: "failed to parse multipart form: " + err.Error()})
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "failed to parse multipart form: " + err.Error()})
 		return
 	}
 
 	files, ok := form.File["file"]
 	if !ok || len(files) == 0 {
-		c.JSON(http.StatusBadRequest, StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"})
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"})
 		return
 	}
 
@@ -58,7 +50,7 @@ func (ue UploadEndpoint) handlePost(c *gin.Context) {
 		bytes, err := readFileBytes(file)
 
 		if err != nil {
-			c.JSON(http.StatusBadRequest, StatusBadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
+			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
 			return
 		}
 		go func(data []byte, filename string) {
@@ -66,17 +58,18 @@ func (ue UploadEndpoint) handlePost(c *gin.Context) {
 		}(bytes, file.Filename)
 	}
 
-	uploaded := make([]repositories.ImageHandleSuccess, 0, len(files))
-	errors := make([]repositories.ImageHandleFail, 0)
+	uploaded := make([]repositories.ImageUploadSuccess, 0, len(files))
+	errors := make([]repositories.ImageUploadFail, 0)
 	for range files {
 		result := <-results
 		if result.Err != nil {
 			errors = append(errors, *result.Err)
+		} else {
+			uploaded = append(uploaded, *result.Success)
 		}
-		uploaded = append(uploaded, *result.Success)
 	}
 
-	response := StatusOkResponse{
+	response := api.StatusOkResponse{
 		Uploaded: uploaded,
 		Errors:   errors,
 	}
@@ -95,8 +88,6 @@ func readFileBytes(fh *multipart.FileHeader) ([]byte, error) {
 
 	if _, err := io.Copy(&buf, f); err != nil {
 		return nil, err
-	} 
+	}
 	return buf.Bytes(), nil
 }
-
-

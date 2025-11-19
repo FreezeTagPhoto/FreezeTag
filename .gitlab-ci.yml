@@ -162,10 +162,10 @@ lint-backend:
     - apk update --cache-dir $APK_CACHE_DIR
     - xargs -t -a $ALPINE_REQS apk add --cache-dir $APK_CACHE_DIR
     - export PATH="$GOPATH/bin:$PATH"
-    - go mod tidy
+    - make tidy
     - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $GOPATH/bin v2.5.0
   script:
-    - golangci-lint run
+    - make lint
   artifacts:
     reports:
       codequality: $BACK_DIR/gl-codequality.json
@@ -190,8 +190,6 @@ test-backend:
     - apk update --cache-dir $APK_CACHE_DIR
     - xargs -t -a $ALPINE_REQS apk add --cache-dir $APK_CACHE_DIR
     - export PATH="$GOPATH/bin:$PATH"
-    - go mod tidy
-    - go install github.com/boumenot/gocover-cobertura
   script:
     - make test
   coverage: '/total:\s+\(statements\)\s+\d+.\d+%/'

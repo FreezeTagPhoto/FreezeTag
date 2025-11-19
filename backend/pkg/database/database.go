@@ -21,7 +21,7 @@ type ImageDatabase interface {
 	// Get the image filename pointed to by the image ID
 	GetImageFile(ImageId) (*string, error)
 	// Get the thumbnail data at the given thumbnail level for the image with the given ID
-	GetImageThumbnail(ImageId, int) ([]byte, error)
+	GetImageThumbnail(ImageId, uint) ([]byte, error)
 	// Get the tags attached to an image
 	GetImageTags(ImageId) ([]string, error)
 	// Get the thumbnail sizes an image has
@@ -132,7 +132,7 @@ func (db SqliteImageDatabase) GetImageFile(id ImageId) (*string, error) {
 	return nil, nil
 }
 
-func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size int) ([]byte, error) {
+func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size uint) ([]byte, error) {
 	rows, err := db.db.Query("SELECT thumbnailData FROM Thumbnails WHERE imageId = ? AND thumbnailSize = ?", id, size)
 	if err != nil {
 		return []byte{}, err

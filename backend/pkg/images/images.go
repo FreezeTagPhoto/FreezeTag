@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"freezetag/backend/pkg/images/imagedata"
 	"log"
+	"strings"
 
 	"github.com/gobwas/glob"
 	"gopkg.in/gographics/imagick.v3/imagick"
@@ -63,9 +64,9 @@ func (pc *ParserCollection) RegisterParserFunc(match string, parser func(string,
 
 func (pc ParserCollection) ParseImage(name string, data []byte) (imagedata.Data, error) {
 	for _, entry := range pc.parsers {
-		if entry.matcher.Match(name) {
+		if entry.matcher.Match(strings.ToLower(name)) {
 			return entry.parser.ParseImage(name, data)
 		}
 	}
-	return imagedata.Data{}, fmt.Errorf("no parser for file: %q", name)
+	return imagedata.Data{}, fmt.Errorf("no parser for file")
 }
