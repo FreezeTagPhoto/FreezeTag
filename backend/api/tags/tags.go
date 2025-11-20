@@ -52,10 +52,11 @@ func (te TagEndpoint) HandleDelete(c *gin.Context) {
 					Reason: fmt.Sprintf("unknown id %s", id),
 				},
 			}
+		} else {
+			go func(id database.ImageId, tags []string) {
+				results <- te.imageRepository.RemoveImageTags(id, tags)
+			}(database.ImageId(idstr), tags)
 		}
-		go func(id database.ImageId, tags []string) {
-			results <- te.imageRepository.RemoveImageTags(id, tags)
-		}(database.ImageId(idstr), tags)
 	}
 
 	deleted := make([]repositories.ImageTagSuccess, 0)
@@ -99,10 +100,12 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 					Reason: fmt.Sprintf("unknown id %s", id),
 				},
 			}
+		} else {
+			go func(id database.ImageId, tags []string) {
+				results <- te.imageRepository.AddImageTags(id, tags)
+			}(database.ImageId(idstr), tags)
 		}
-		go func(id database.ImageId, tags []string) {
-			results <- te.imageRepository.AddImageTags(id, tags)
-		}(database.ImageId(idstr), tags)
+
 	}
 
 	deleted := make([]repositories.ImageTagSuccess, 0)
@@ -116,9 +119,9 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 		}
 	}
 
-	response := api.StatusOkTagDeleteResponse{
-		Deleted: deleted,
-		Errors:  errors,
+	response := api.StatusOkTagAddResponse{
+		Added:  deleted,
+		Errors: errors,
 	}
 	c.JSON(http.StatusOK, response)
 }
