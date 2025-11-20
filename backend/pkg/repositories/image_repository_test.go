@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 // for good data
 func initParserCollection() images.Parser {
 	parserCollection := images.InitParserCollection()
@@ -201,11 +200,9 @@ func TestGetThumbnailFail(t *testing.T) {
 	assert.Equal(t, result, thumbnailBytes, "thumbnail bytes differ from expected")
 }
 
-
-func TestSearchImageError(t *testing.T) { 
+func TestSearchImageError(t *testing.T) {
 	err := fmt.Errorf("mock error")
 	ids := []database.ImageId{}
-
 
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().GetImages(mock.Anything).Return(ids, err)
@@ -217,7 +214,7 @@ func TestSearchImageError(t *testing.T) {
 	assert.Equal(t, result, ids)
 }
 
-func TestSearchImageNoneReturn(t *testing.T) { 
+func TestSearchImageNoneReturn(t *testing.T) {
 	ids := []database.ImageId{}
 
 	mockdb := mockDatabase.NewMockImageDatabase(t)
@@ -230,7 +227,7 @@ func TestSearchImageNoneReturn(t *testing.T) {
 	assert.Equal(t, result, ids)
 }
 
-func TestSearchImageSomeReturnedIDs(t *testing.T) { 
+func TestSearchImageSomeReturnedIDs(t *testing.T) {
 	ids := []database.ImageId{1, 2, 3, 4, 5}
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().GetImages(mock.Anything).Return(ids, nil)
@@ -240,4 +237,98 @@ func TestSearchImageSomeReturnedIDs(t *testing.T) {
 	result, err := repo.SearchImage(queries.CreateImageQuery())
 	assert.Nil(t, err, "error occured when it shouldn't have when retrieving imageID from mockdb")
 	assert.Equal(t, result, ids)
+}
+
+func TestRetrieveAllTagsSuccess(t *testing.T) {
+	expected := []string{"tag1", "tag2"}
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().GetAllTags().Return(expected, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result, err := repo.RetrieveAllTags()
+	assert.Nil(t, err, "error occured when it shouldn't have when retrieving imageID from mockdb")
+	assert.Equal(t, expected, result)
+}
+
+func TestRetrieveAllTagsFail(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().GetAllTags().Return([]string{}, fmt.Errorf("mock error"))
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	_, err := repo.RetrieveAllTags()
+	assert.NotNil(t, err, "no error when there should be an error")
+	assert.Equal(t, "mock error", err.Error())
+}
+
+func TestRetrieveImageTagsSuccess(t *testing.T) {
+	expected := []string{"tag1", "tag2"}
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().GetImageTags(mock.Anything).Return(expected, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result, err := repo.RetrieveImageTags(1)
+	assert.Nil(t, err, "error occured when it shouldn't have when retrieving imageID from mockdb")
+	assert.Equal(t, expected, result)
+}
+
+func TestRetrievImageTagsFail(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().GetImageTags(mock.Anything).Return([]string{}, fmt.Errorf("mock error"))
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	_, err := repo.RetrieveImageTags(1)
+	assert.NotNil(t, err, "no error when there should be an error")
+	assert.Equal(t, "mock error", err.Error())
+}
+
+func TestAddImageTagsSuccess(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().AddImageTags(mock.Anything, mock.Anything).Return(1, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result := repo.AddImageTags(1, []string{"tag"})
+	assert.Nil(t, result.Err, "error should be nil")
+	assert.NotNil(t, result.Success, "success should not be nil")
+	assert.Equal(t, ImageTagSuccess{Id: 1, Count: 1}, *result.Success)
+}
+
+func TestAddImageTagsFail(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().AddImageTags(mock.Anything, mock.Anything).Return(1, fmt.Errorf("mock error"))
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result := repo.AddImageTags(1, []string{"tag"})
+	assert.NotNil(t, result.Err, "error should be nil")
+	assert.Nil(t, result.Success, "success should be nil")
+	assert.Equal(t, ImageTagFail{Reason: "mock error", Id: 1}, *result.Err)
+}
+
+func TestRemoveImageTagsSuccess(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().RemoveImageTags(mock.Anything, mock.Anything).Return(1, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result := repo.RemoveImageTags(1, []string{"tag"})
+	assert.Nil(t, result.Err, "error should be nil")
+	assert.NotNil(t, result.Success, "success should not be nil")
+	assert.Equal(t, ImageTagSuccess{Id: 1, Count: 1}, *result.Success)
+}
+
+func TestRemoveImageTagsFail(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().RemoveImageTags(mock.Anything, mock.Anything).Return(1, fmt.Errorf("mock error"))
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result := repo.RemoveImageTags(1, []string{"tag"})
+	assert.NotNil(t, result.Err, "error should be nil")
+	assert.Nil(t, result.Success, "success should be nil")
+	assert.Equal(t, ImageTagFail{Reason: "mock error", Id: 1}, *result.Err)
 }
