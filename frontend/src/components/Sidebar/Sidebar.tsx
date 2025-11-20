@@ -7,6 +7,7 @@ import logoUrl from "@/icons/freezetag+text.svg";
 import styles from "./Sidebar.module.css";
 
 const navItems = [
+  { label: "Gallery", href: "/" },
   { label: "Upload", href: "/upload" },
   { label: "Manage", href: "/manage" },
   { label: "Settings", href: "/settings" },
