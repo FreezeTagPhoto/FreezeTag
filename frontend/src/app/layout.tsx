@@ -5,7 +5,6 @@ import "./globals.css";
 import styles from "./page.module.css";
 
 import Sidebar from "@/components/Sidebar/Sidebar";
-import TopBar from "@/components/TopBar/TopBar";
 import favicon from "@/icons/favicon.ico";
 
 const geistSans = Geist({
@@ -40,7 +39,6 @@ export default function RootLayout({
           </aside>
 
           <div className={styles.content}>
-            <TopBar />
             {children}
           </div>
         </div>
