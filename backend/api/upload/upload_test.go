@@ -23,8 +23,8 @@ func initTest(t *testing.T) *gin.Engine {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
 		StoreImageBytes(mock.Anything, mock.AnythingOfType("string")).
-		RunAndReturn(func(_ []byte, filename string) repositories.Result {
-			return repositories.Result{
+		RunAndReturn(func(_ []byte, filename string) repositories.UploadResult {
+			return repositories.UploadResult{
 				Success: &repositories.ImageUploadSuccess{
 					Id:       67,
 					Filename: filename,
@@ -61,11 +61,11 @@ func TestPostFileSuccess(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
-	expected := api.StatusOkResponse{
+	expected := api.StatusOkUploadResponse{
 		Uploaded: []repositories.ImageUploadSuccess{{Id: 67, Filename: "testfile.png"}},
 		Errors:   []repositories.ImageUploadFail{},
 	}
-	var got api.StatusOkResponse
+	var got api.StatusOkUploadResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -152,7 +152,7 @@ func TestPostWithMultipleFilesSuccess(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
-	expected := api.StatusOkResponse{
+	expected := api.StatusOkUploadResponse{
 		Uploaded: []repositories.ImageUploadSuccess{
 			{Id: 67, Filename: "testfile1.png"},
 			{Id: 67, Filename: "testfile2.jpg"},
@@ -160,7 +160,7 @@ func TestPostWithMultipleFilesSuccess(t *testing.T) {
 		},
 		Errors: []repositories.ImageUploadFail{},
 	}
-	var got api.StatusOkResponse
+	var got api.StatusOkUploadResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	//because the order of uploaded files is not guaranteed, sort the same way before comparing.

@@ -6,13 +6,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-type StatusOkResponse struct {
+type StatusOkUploadResponse struct {
 	Uploaded []repositories.ImageUploadSuccess `json:"uploaded"`
 	Errors   []repositories.ImageUploadFail    `json:"errors"`
 }
 
+type StatusOkTagDeleteResponse struct {
+	Deleted []repositories.ImageTagSuccess `json:"deleted"`
+	Errors  []repositories.ImageTagFail    `json:"errors"`
+}
 
+type StatusOkTagAddResponse struct {
+	Added  []repositories.ImageTagSuccess `json:"added"`
+	Errors []repositories.ImageTagFail    `json:"errors"`
+}
 
 type StatusBadRequestResponse struct {
 	Error string `json:"error"`

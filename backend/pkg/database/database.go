@@ -24,6 +24,8 @@ type ImageDatabase interface {
 	GetImageThumbnail(ImageId, uint) ([]byte, error)
 	// Get the tags attached to an image
 	GetImageTags(ImageId) ([]string, error)
+	// Get all tags present in the database
+	GetAllTags() ([]string, error)
 	// Get the thumbnail sizes an image has
 	GetImageThumbnailSizes(ImageId) ([]int, error)
 	// Add an image file and its metadata to the database
@@ -154,6 +156,26 @@ func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size uint) ([]byte, 
 func (db SqliteImageDatabase) GetImageTags(id ImageId) ([]string, error) {
 	rows, err := db.db.Query("SELECT tag FROM Tags WHERE imageId = ?", id)
 	if err != nil {
+		return []string{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	tags := []string{}
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return []string{}, err
+		}
+		var tag string
+		if err := rows.Scan(&tag); err != nil {
+			return []string{}, err
+		}
+		tags = append(tags, tag)
+	}
+	return tags, nil
+}
+
+func (db SqliteImageDatabase) GetAllTags() ([]string, error) { 
+	rows, err := db.db.Query("SELECT DISTINCT tag FROM Tags")
+	if err != nil { 
 		return []string{}, err
 	}
 	defer rows.Close() //nolint:errcheck

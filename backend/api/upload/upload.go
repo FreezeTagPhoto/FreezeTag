@@ -45,7 +45,7 @@ func (ue UploadEndpoint) handlePost(c *gin.Context) {
 		return
 	}
 
-	results := make(chan repositories.Result, len(files))
+	results := make(chan repositories.UploadResult, len(files))
 	for _, file := range files {
 		bytes, err := readFileBytes(file)
 
@@ -69,7 +69,7 @@ func (ue UploadEndpoint) handlePost(c *gin.Context) {
 		}
 	}
 
-	response := api.StatusOkResponse{
+	response := api.StatusOkUploadResponse{
 		Uploaded: uploaded,
 		Errors:   errors,
 	}
