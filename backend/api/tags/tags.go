@@ -127,6 +127,7 @@ func (te TagEndpoint) HandleGetAllTags(c *gin.Context) {
 	result, err := te.imageRepository.RetrieveAllTags()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, result)
 }
@@ -136,12 +137,14 @@ func (te TagEndpoint) HandleGetImageTags(c *gin.Context) {
 	var id database.ImageId
 	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "Invalid image ID parameter"})
+		return
 	} else {
 		id = database.ImageId(num)
 	}
 	result, err := te.imageRepository.RetrieveImageTags(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, result)
 }
