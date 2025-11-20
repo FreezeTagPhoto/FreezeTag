@@ -11,7 +11,7 @@ export default function FileUploadButton(props: FileUploadProps) {
     <form action={(e) => handleSubmit(e, props.ids_retrieved_callback)}>
       <label htmlFor="file-upload" className={styles.label}>
         {" "}
-        File Upload!{" "}
+        Upload images{" "}
       </label>
       <input
         type="file"
