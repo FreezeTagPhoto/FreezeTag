@@ -1,8 +1,15 @@
 "use client";
+import { useState } from "react";
 import styles from "./TopBar.module.css";
 import Pill from "@/components/UI/Pill/Pill";
 
 export default function TopBar() {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleClear = () => {
+    setSearchTerm("");
+  };
+
   return (
     <div className={styles.bar}>
       <div className={styles.searchWrap}>
@@ -11,10 +18,17 @@ export default function TopBar() {
         </span>
         <input
           className={styles.search}
-          placeholder="Search…"
+          placeholder="Search..."
           aria-label="Search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <button className={styles.clear} aria-label="Clear">
+        <button 
+          className={styles.clear} 
+          aria-label="Clear"
+          onClick={handleClear}
+          type="button"
+        >
           ✕
         </button>
       </div>
