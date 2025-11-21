@@ -1,7 +1,7 @@
 "use server";
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
-import { Result, Err, Ok } from "@/common/result";
+import { Result, Err } from "@/common/result";
 
 export type SearchResult = Result<
   number[],
@@ -30,7 +30,10 @@ async function search_with_handler(
   for (const query of queries) {
     const query_string = query[1];
     let new_query = "";
-    if (query_string.startsWith("make=")) {
+
+    if (query_string === "") {
+      continue;
+    } else if (query_string.startsWith("make=")) {
       const sub_query = query_string.slice("make=".length);
       if (sub_query.startsWith(`"`)) {
         new_query = "make=" + sub_query.slice(1, sub_query.length - 1);
@@ -52,6 +55,13 @@ async function search_with_handler(
       query_string.startsWith("uploadedAfter=")
     ) {
       new_query = query_string;
+    } else {
+      // Handle tags
+      if (query_string.startsWith(`"`)) {
+        new_query = "tag=" + query_string.slice(1, query_string.length - 1);
+      } else {
+        new_query = "tagLike=" + query_string;
+      }
     }
 
     compiled_api_queries.push(new_query);
@@ -75,6 +85,8 @@ async function search_with_handler(
       });
     }
   }
+
+  return result;
 }
 
 export const testing_SearchHandler = search_with_handler;
