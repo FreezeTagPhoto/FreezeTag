@@ -3,7 +3,11 @@ import { useState } from "react";
 import styles from "./TopBar.module.css";
 import Pill from "@/components/UI/Pill/Pill";
 
-export default function TopBar() {
+type TopBarProps = {
+  onChangeHandler: (value: string) => void;
+};
+
+export default function TopBar(props: TopBarProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleClear = () => {
@@ -21,7 +25,10 @@ export default function TopBar() {
           placeholder="Search..."
           aria-label="Search"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            props.onChangeHandler(e.target.value);
+          }}
         />
         <button
           className={styles.clear}
