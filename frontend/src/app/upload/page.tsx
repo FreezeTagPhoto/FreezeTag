@@ -17,7 +17,7 @@ export default function Home() {
       </div>
     );
   }
-  
+
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>

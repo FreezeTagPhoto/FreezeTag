@@ -23,8 +23,8 @@ export default function TopBar() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <button 
-          className={styles.clear} 
+        <button
+          className={styles.clear}
           aria-label="Clear"
           onClick={handleClear}
           type="button"

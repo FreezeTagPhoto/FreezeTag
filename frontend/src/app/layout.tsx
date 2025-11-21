@@ -38,9 +38,7 @@ export default function RootLayout({
             <Sidebar />
           </aside>
 
-          <div className={styles.content}>
-            {children}
-          </div>
+          <div className={styles.content}>{children}</div>
         </div>
       </body>
     </html>

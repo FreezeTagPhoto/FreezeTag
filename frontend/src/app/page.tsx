@@ -3,7 +3,7 @@ import Gallery from "@/components/Gallery/Gallery";
 import TopBar from "@/components/TopBar/TopBar";
 
 export default function Home() {
-  let images_ids: string | any[] = [];
+  const images_ids: string | number[] = [];
   return (
     <>
       <TopBar />
@@ -11,7 +11,9 @@ export default function Home() {
         <header className={styles.headerRow}>
           <div>
             <h1 className={styles.h1}>Gallery</h1>
-            <p className={styles.subtle}>{images_ids.length} {images_ids.length !== 1 ? "images" : "image"}</p>
+            <p className={styles.subtle}>
+              {images_ids.length} {images_ids.length !== 1 ? "images" : "image"}
+            </p>
           </div>
           <div className={styles.pillsRow} />
         </header>
