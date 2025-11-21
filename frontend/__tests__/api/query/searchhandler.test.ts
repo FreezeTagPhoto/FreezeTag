@@ -39,7 +39,7 @@ describe("Search Handler", () => {
       return Ok([]);
     };
 
-    const user_query = `among us, takenBefore=1234567890, make="Apple"`;
+    const user_query = `among us; takenBefore=1234567890; make="Apple"`;
     await testing_SearchHandler(handler, user_query);
   });
 
@@ -56,7 +56,7 @@ describe("Search Handler", () => {
       return Ok([]);
     };
 
-    const user_query = `"67", make=Samsung, model=Galaxy, model="Note 7"`;
+    const user_query = `"67"; make=Samsung; model=Galaxy; model="Note 7"`;
     await testing_SearchHandler(handler, user_query);
   });
 
@@ -82,5 +82,15 @@ describe("Search Handler", () => {
 
     const result = await testing_SearchHandler(handler, "");
     expect(result).toStrictEqual(Err({ status: 400, message: "true" }));
+  });
+
+  it("Should have working near queries", async () => {
+    const handler = async (query: BodyInit): HandlerReturnType => {
+      expect(query).toBe("near=1,2,3");
+      return Ok([]);
+    };
+
+    const user_query = `near=1,2,3`;
+    await testing_SearchHandler(handler, user_query);
   });
 });

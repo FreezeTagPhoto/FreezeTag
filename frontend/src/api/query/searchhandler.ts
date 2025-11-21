@@ -9,7 +9,7 @@ export type SearchResult = Result<
 >;
 type SearchResponse = number[];
 
-const regex = /\s*(.*?(?:".*?")?)\s*(?:,|$)/g;
+const regex = /\s*(.*?(?:".*?")?)\s*(?:;|$)/g;
 
 export default async function SearchHandler(
   user_query: string,
