@@ -48,6 +48,7 @@ type ImageRepository interface {
 	RetrieveImageTags(id database.ImageId) ([]string, error)
 	AddImageTags(id database.ImageId, tags []string) ImageTagResult
 	RemoveImageTags(id database.ImageId, tags []string) ImageTagResult
+	GetImageFilepath(id database.ImageId) (string, error)
 }
 
 type DefaultImageRepository struct {
@@ -210,4 +211,15 @@ func (repo *DefaultImageRepository) RemoveImageTags(id database.ImageId, tags []
 		},
 		Err: nil,
 	}
+}
+
+func (repo *DefaultImageRepository) GetImageFilepath(id database.ImageId) (string, error) { 
+	file, err := repo.db.GetImageFile(id)
+	if err != nil { 
+		return "", err
+	}
+	if file == nil || *file == "" { 
+		return "", fmt.Errorf("nil or empty file")
+	}
+	return *file, nil
 }

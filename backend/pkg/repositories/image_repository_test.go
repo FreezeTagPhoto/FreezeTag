@@ -332,3 +332,49 @@ func TestRemoveImageTagsFail(t *testing.T) {
 	assert.Nil(t, result.Success, "success should be nil")
 	assert.Equal(t, ImageTagFail{Reason: "mock error", Id: 1}, *result.Err)
 }
+
+func TestGetImageFilepathSuccess(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	s := "filename"
+	mockdb.EXPECT().
+		GetImageFile(mock.Anything).
+		Return(&s, nil)
+
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result, err := repo.GetImageFilepath(1)
+	assert.Nil(t, err, "error should be nil")
+	assert.NotNil(t, result, "result should be valid")
+	assert.Equal(t, s, result)
+}
+
+func TestGetImageFilepathNilString(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+
+	mockdb.EXPECT().
+		GetImageFile(mock.Anything).
+		Return(nil, nil)
+
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	_, err := repo.GetImageFilepath(1)
+	assert.NotNil(t, err, "result should be valid")
+	assert.Equal(t, err.Error(), "nil or empty file")
+}
+
+
+func TestGetImageFilepathError(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImageFile(mock.Anything).
+		Return(nil, fmt.Errorf("mock error"))
+
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	_, err := repo.GetImageFilepath(1)
+	assert.NotNil(t, err, "result should be valid")
+	assert.Equal(t, err.Error(), "mock error")
+}

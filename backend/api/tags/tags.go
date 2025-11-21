@@ -15,9 +15,9 @@ type TagEndpoint struct {
 	imageRepository repositories.ImageRepository
 }
 
-func InitTagEndpoint(repository repositories.ImageRepository) TagEndpoint {
+func InitTagEndpoint(repo repositories.ImageRepository) TagEndpoint {
 	return TagEndpoint{
-		repository,
+		repo,
 	}
 }
 
