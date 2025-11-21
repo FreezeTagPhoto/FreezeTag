@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const defaultImageFolder = "./images/"
+const defaultImageFolder = "./images"
 
 func main() {
 	router := gin.Default()
