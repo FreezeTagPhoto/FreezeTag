@@ -21,6 +21,7 @@ export default function FileUploadButton(props: FileUploadProps) {
         name="file"
         className={styles.button}
         id="file-upload"
+        accept="image/*"
       />
     </form>
   );
