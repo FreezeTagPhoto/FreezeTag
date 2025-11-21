@@ -11,7 +11,7 @@ export default function FileUploadButton(props: FileUploadProps) {
     <form action={(e) => handleSubmit(e, props.ids_retrieved_callback)}>
       <label htmlFor="file-upload" className={styles.label}>
         {" "}
-        File Upload!{" "}
+        Upload images{" "}
       </label>
       <input
         type="file"
@@ -30,17 +30,22 @@ const handleSubmit = async (
   event: FormData,
   ids_retrieved_callback: (ids: number[]) => void,
 ) => {
-  const result = await ImageUploader(event);
-  console.log(result);
+  try {
+    const result = await ImageUploader(event);
+    console.log(result);
 
-  const ids = [];
-  if (result.ok) {
-    for (const [_key, value] of result.value) {
-      if (value.ok) {
-        ids.push(value.value);
+    const ids = [];
+    if (result.ok) {
+      for (const [_key, value] of result.value) {
+        if (value.ok) {
+          ids.push(value.value);
+        }
       }
     }
-  }
 
-  ids_retrieved_callback(ids);
+    ids_retrieved_callback(ids);
+  } catch (error) {
+    console.error("Error uploading images (is the backend running?):", error);
+    // TODO: show error to user
+  }
 };
