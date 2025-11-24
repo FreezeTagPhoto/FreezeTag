@@ -7,11 +7,16 @@ type TopBarProps = {
   onChangeHandler: (value: string) => void;
 };
 
-export default function TopBar(props: TopBarProps) {
+export default function TopBar({ onChangeHandler }: TopBarProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    onChangeHandler(value);
+  };
+
   const handleClear = () => {
-    setSearchTerm("");
+    handleSearchChange("");
   };
 
   return (
@@ -25,10 +30,7 @@ export default function TopBar(props: TopBarProps) {
           placeholder="Search..."
           aria-label="Search"
           value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            props.onChangeHandler(e.target.value);
-          }}
+          onChange={(e) => handleSearchChange(e.target.value)}
         />
         <button
           className={styles.clear}
