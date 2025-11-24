@@ -7,11 +7,7 @@ export type GalleryImageProps = {
 
 export default function GalleryImage({ id, onClick }: GalleryImageProps) {
   return (
-    <button
-      type="button"
-      className={styles.image_container}
-      onClick={onClick}
-    >
+    <button type="button" className={styles.image_container} onClick={onClick}>
       <img
         src={`http://localhost:3824/thumbnails/${id}?size=1`}
         loading="lazy"
