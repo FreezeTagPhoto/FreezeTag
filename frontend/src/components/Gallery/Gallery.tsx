@@ -17,13 +17,17 @@ export default function Gallery({ image_ids }: GalleryProps) {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+
         setSelectedId(null);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", handleKeyDown, { capture: true } as any);
   }, [selectedId]);
+
 
   const handleBackdropClick = () => {
     setSelectedId(null);
