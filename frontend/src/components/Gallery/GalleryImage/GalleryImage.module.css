@@ -13,7 +13,7 @@
 
 .image_container:focus-visible {
   outline: none;
-  border-color: #00ADD8;
+  border-color: #00add8;
 }
 
 .image {
