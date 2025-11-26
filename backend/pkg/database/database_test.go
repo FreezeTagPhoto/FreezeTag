@@ -312,7 +312,7 @@ func TestAddGetImageTags(t *testing.T) {
 
 func TestGetAllTags(t *testing.T) {
 	tmp := createTempDatabase(t)
-	
+
 	id := insertTestImageNamed(t, tmp, "foo.png")
 	num, err := tmp.AddImageTags(id, []string{"foo", "bar", "baz"})
 	assert.NoError(t, err)
@@ -322,7 +322,7 @@ func TestGetAllTags(t *testing.T) {
 	num, err = tmp.AddImageTags(id, []string{"baz", "bat"})
 	assert.NoError(t, err)
 	assert.Equal(t, 2, num)
-	
+
 	tags, err := tmp.GetAllTags()
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []string{"foo", "bar", "baz", "bat"}, tags)
@@ -356,4 +356,34 @@ func TestRemoveImageTags(t *testing.T) {
 	assert.Equal(t, 2, count)
 	tags, _ = tmp.GetImageTags(id)
 	assert.ElementsMatch(t, []string{"bar", "baz", "snap", "crackle"}, tags)
+}
+
+func TestAddTags(t *testing.T) {
+	tmp := createTempDatabase(t)
+	ids, err := tmp.AddTags([]string{"a", "b", "c"})
+	require.NoError(t, err)
+	assert.Equal(t, 3, len(ids))
+	ids, err = tmp.AddTags([]string{"c", "d", "e"})
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(ids))
+}
+
+func TestRemoveTags(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA := insertTestImage(t, tmp)
+	idB := insertTestImage(t, tmp)
+	_, _ = tmp.AddImageTags(idA, []string{"a", "b", "c"})
+	_, _ = tmp.AddImageTags(idB, []string{"b", "c", "d"})
+	del, err := tmp.RemoveTags([]string{"b", "notatag"})
+	require.NoError(t, err)
+	assert.Equal(t, 1, del)
+	tags, err := tmp.GetImageTags(idA)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"a", "c"}, tags)
+	tags, err = tmp.GetImageTags(idB)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"c", "d"}, tags)
+	tags, err = tmp.GetAllTags()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"a", "c", "d"}, tags)
 }
