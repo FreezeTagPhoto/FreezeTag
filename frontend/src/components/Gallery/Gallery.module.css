@@ -1,100 +1,100 @@
 .grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 12px;
 }
 
 .grid button {
-  flex: 0 0 auto;
+    flex: 0 0 auto;
 }
 
 .viewerBackdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 50;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
 }
 
 .viewer {
-  display: flex;
-  width: min(1200px, 100vw);
-  height: min(820px, 100vh);
-  background: #000;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: none;
-  border: 2px solid #111827;
+    display: flex;
+    width: min(1200px, 100vw);
+    height: min(820px, 100vh);
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: none;
+    border: 2px solid #111827;
 }
 
 .viewerImageArea {
-  position: relative;
-  flex: 3;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #121219;
+    position: relative;
+    flex: 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #121219;
 }
 
 .viewerImage {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
 }
 
 .closeButton {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  border: none;
-  background: rgba(0, 0, 0, 0.7);
-  color: #f9fafb;
-  font-size: 22px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(0, 0, 0, 0.7);
+    color: #f9fafb;
+    font-size: 22px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
 
 .viewerSidebar {
-  flex: 1.1;
-  background: #1e2031;
-  border-left: 1px solid #111827;
-  padding: 20px 24px;
-  overflow-y: auto;
+    flex: 1.1;
+    background: #1e2031;
+    border-left: 1px solid #111827;
+    padding: 20px 24px;
+    overflow-y: auto;
 }
 
 .sidebarTitle {
-  margin: 0 0 16px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #e5e7eb;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+    margin: 0 0 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e5e7eb;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
 }
 
 .sidebarList {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 0.9rem;
 }
 
 .sidebarList dt {
-  font-weight: 600;
-  color: #9ca3af;
-  margin-bottom: 2px;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-bottom: 2px;
 }
 
 .sidebarList dd {
-  margin: 0;
-  color: #e5e7eb;
+    margin: 0;
+    color: #e5e7eb;
 }

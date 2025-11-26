@@ -1,25 +1,25 @@
 .image_container {
-  display: inline-block;
-  height: 128px;
-  padding: 0;
-  margin: 0;
-  cursor: pointer;
-  vertical-align: top;
+    display: inline-block;
+    height: 128px;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    vertical-align: top;
 
-  border-radius: 12px;
-  border: 3px solid transparent;
-  background: transparent;
+    border-radius: 12px;
+    border: 3px solid transparent;
+    background: transparent;
 }
 
 .image_container:focus-visible {
-  outline: none;
-  border-color: #00add8;
+    outline: none;
+    border-color: #00add8;
 }
 
 .image {
-  height: 100%;
-  width: auto;
-  display: block;
-  border-radius: 9px;
-  background: transparent;
+    height: 100%;
+    width: auto;
+    display: block;
+    border-radius: 9px;
+    background: transparent;
 }

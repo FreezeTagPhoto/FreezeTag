@@ -1,16 +1,16 @@
 import styles from "./Pill.module.css";
 
 export default function Pill({
-  label,
-  caret,
+    label,
+    caret,
 }: {
-  label: string;
-  caret?: boolean;
+    label: string;
+    caret?: boolean;
 }) {
-  return (
-    <button className={styles.pill}>
-      <span>{label}</span>
-      {caret && <span className={styles.caret}>▾</span>}
-    </button>
-  );
+    return (
+        <button className={styles.pill}>
+            <span>{label}</span>
+            {caret && <span className={styles.caret}>▾</span>}
+        </button>
+    );
 }
