@@ -26,11 +26,12 @@ func (fe FileEndpoint) RegisterEndpoints(e *gin.Engine) {
 
 // @summary     Get file
 // @description Get an image file given an ID
-// @param       id path int false "Image ID"
-// @success     200 {file} file
+// @produce     application/octet-stream
+// @router      /file/{id} [get]
+// @param       id path int true "Image ID"
+// @success     200 {file}   string "thumbnail file data"
 // @failure     400 {object} api.StatusBadRequestResponse
 // @failure     500 {object} api.StatusServerErrorResponse
-// @router      /file/{id} [get]
 func (fe FileEndpoint) HandleGet(c *gin.Context) {
 	idParam := c.Param("id")
 	var id database.ImageId

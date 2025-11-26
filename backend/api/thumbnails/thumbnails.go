@@ -24,6 +24,14 @@ func (te ThumbnailEndpoint) RegisterEndpoints(e *gin.Engine) {
 	e.GET("/thumbnails/:id", te.HandleGet)
 }
 
+// @summary     Get thumbnail
+// @description Get a WEBP format image thumbnail for an image
+// @produce     image/webp
+// @router      /thumbnails/{id} [get]
+// @param       id path int true "Image ID"
+// @success     200 {file}   string "thumbnail file data"
+// @failure     400 {object} api.StatusBadRequestResponse
+// @failure     500 {object} api.StatusServerErrorResponse
 func (te ThumbnailEndpoint) HandleGet(c *gin.Context) {
 	idParam := c.Param("id")
 	var id database.ImageId

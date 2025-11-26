@@ -26,7 +26,7 @@ test: mocks
 lint: mocks
 	golangci-lint run
 
-run: tidy
+run: docs
 	go run -tags=$(TAGS) ./cmd/server
 
 mocks: tidy

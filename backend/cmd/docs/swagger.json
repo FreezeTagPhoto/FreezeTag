@@ -11,18 +11,22 @@
         "/file/{id}": {
             "get": {
                 "description": "Get an image file given an ID",
+                "produces": [
+                    "application/octet-stream"
+                ],
                 "summary": "Get file",
                 "parameters": [
                     {
                         "type": "integer",
                         "description": "Image ID",
                         "name": "id",
-                        "in": "path"
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "thumbnail file data",
                         "schema": {
                             "type": "file"
                         }
@@ -41,6 +45,351 @@
                     }
                 }
             }
+        },
+        "/search": {
+            "get": {
+                "description": "Search for an image given information",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Search images",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "camera make",
+                        "name": "make",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "camera make fuzzy",
+                        "name": "makeLike",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "camera model",
+                        "name": "model",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "camera model fuzzy",
+                        "name": "modelLike",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture taken before (unix epoch)",
+                        "name": "takenBefore",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture taken after (unix epoch)",
+                        "name": "takenAfter",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture uploaded before (unix epoch)",
+                        "name": "uploadedBefore",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture uploaded after (unix epoch)",
+                        "name": "uploadedAfter",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "100.0,12.0,1.0",
+                        "description": "latitude/longitude/distance (degrees)",
+                        "name": "near",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "picture tag",
+                        "name": "tag",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "picture tag fuzzy",
+                        "name": "tagLike",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer",
+                                "format": "int64"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusBadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/add": {
+            "post": {
+                "description": "Add tags to images",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Add tags",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "tags to add",
+                        "name": "tag",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "image IDs to add to",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusOkTagAddResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusBadRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/list": {
+            "get": {
+                "description": "Get all the tags in the database",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "List all tags",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/list/{id}": {
+            "get": {
+                "description": "Get all the tags associated with an image",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "List image tags",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "image ID to get the tags of",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusBadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/remove": {
+            "delete": {
+                "description": "Delete tags from images",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Delete tags",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "tags to remove",
+                        "name": "tag",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "image IDs to remove from",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusOkTagDeleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusBadRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/thumbnails/{id}": {
+            "get": {
+                "description": "Get a WEBP format image thumbnail for an image",
+                "produces": [
+                    "image/webp"
+                ],
+                "summary": "Get thumbnail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Image ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "thumbnail file data",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusBadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/upload": {
+            "post": {
+                "description": "Upload a set of image files to the server",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Upload files",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "image file to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusOkUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.StatusBadRequestResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -52,11 +401,106 @@
                 }
             }
         },
+        "api.StatusOkTagAddResponse": {
+            "type": "object",
+            "properties": {
+                "added": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageTagSuccess"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageTagFail"
+                    }
+                }
+            }
+        },
+        "api.StatusOkTagDeleteResponse": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageTagSuccess"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageTagFail"
+                    }
+                }
+            }
+        },
+        "api.StatusOkUploadResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageUploadFail"
+                    }
+                },
+                "uploaded": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageUploadSuccess"
+                    }
+                }
+            }
+        },
         "api.StatusServerErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
                     "type": "string"
+                }
+            }
+        },
+        "repositories.ImageTagFail": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "repositories.ImageTagSuccess": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "repositories.ImageUploadFail": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "repositories.ImageUploadSuccess": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
                 }
             }
         }

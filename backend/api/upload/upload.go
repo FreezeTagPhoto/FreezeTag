@@ -27,12 +27,17 @@ func InitUploadEndpoint(repository repositories.ImageRepository) UploadEndpoint 
 
 // Registers the upload endpoints to the given Gin engine.
 func (ue UploadEndpoint) RegisterEndpoints(e *gin.Engine) {
-	e.POST("/upload", ue.handlePost)
+	e.POST("/upload", ue.HandlePost)
 }
 
-// Handles the POST /upload endpoint, sending uploaded files to the image repository that was
-// initialized in the InitUploadEndpoint function.
-func (ue UploadEndpoint) handlePost(c *gin.Context) {
+// @summary     Upload files
+// @description Upload a set of image files to the server
+// @produce     application/json
+// @router      /upload [post]
+// @param       file formData []file true "image file to upload" collectionFormat(multi)
+// @success     200 {object} api.StatusOkUploadResponse
+// @failure     400 {object} api.StatusBadRequestResponse
+func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "failed to parse multipart form: " + err.Error()})

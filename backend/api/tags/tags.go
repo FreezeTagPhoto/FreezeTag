@@ -28,6 +28,14 @@ func (te TagEndpoint) RegisterEndpoints(e *gin.Engine) {
 	e.GET("/tag/list/:id", te.HandleGetImageTags)
 }
 
+// @summary     Delete tags
+// @description Delete tags from images
+// @produce     application/json
+// @router      /tag/remove [delete]
+// @param       tag query []string true "tags to remove"           collectionFormat(multi)
+// @param       id  query []int    true "image IDs to remove from" collectionFormat(multi)
+// @success     200 {object} api.StatusOkTagDeleteResponse
+// @failure     400 {object} api.StatusBadRequestResponse
 func (te TagEndpoint) HandleDelete(c *gin.Context) {
 	if len(c.QueryArray("tag")) == 0 {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no tags to remove"})
@@ -77,13 +85,21 @@ func (te TagEndpoint) HandleDelete(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// @summary     Add tags
+// @description Add tags to images
+// @produce     application/json
+// @router      /tag/add [post]
+// @param       tag query []string true "tags to add"         collectionFormat(multi)
+// @param       id  query []int    true "image IDs to add to" collectionFormat(multi)
+// @success     200 {object} api.StatusOkTagAddResponse
+// @failure     400 {object} api.StatusBadRequestResponse
 func (te TagEndpoint) HandlePost(c *gin.Context) {
 	if len(c.QueryArray("tag")) == 0 {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no tags to remove"})
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no tags to add"})
 		return
 	}
 	if len(c.QueryArray("id")) == 0 {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no ids to remove tags from"})
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no ids to add tags to"})
 		return
 	}
 
@@ -126,6 +142,12 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// @summary     List all tags
+// @description Get all the tags in the database
+// @produce     application/json
+// @router      /tag/list [get]
+// @success     200 {array}  string
+// @failure     500 {object} api.StatusServerErrorResponse
 func (te TagEndpoint) HandleGetAllTags(c *gin.Context) {
 	result, err := te.imageRepository.RetrieveAllTags()
 	if err != nil {
@@ -135,6 +157,14 @@ func (te TagEndpoint) HandleGetAllTags(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// @summary     List image tags
+// @description Get all the tags associated with an image
+// @produce     application/json
+// @router      /tag/list/{id} [get]
+// @param       id path int true "image ID to get the tags of"
+// @success     200 {array}  string
+// @failure     400 {object} api.StatusBadRequestResponse
+// @failure     500 {object} api.StatusServerErrorResponse
 func (te TagEndpoint) HandleGetImageTags(c *gin.Context) {
 	idParam := c.Param("id")
 	var id database.ImageId
