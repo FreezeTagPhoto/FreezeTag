@@ -67,7 +67,6 @@ export default function Gallery({ image_ids }: GalleryProps) {
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [selectedId, image_ids]);
 
-
   const handleBackdropClick = () => {
     setSelectedId(null);
   };
