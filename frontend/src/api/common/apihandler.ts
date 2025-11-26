@@ -11,9 +11,9 @@ export enum Method {
 
 export type RequestError = { status_code: number; response: Response };
 
-export function ApiHandler<T>(address: string) {
+export function ApiHandler<T>(address: string, body_request: boolean = true) {
     return (method: Method) => {
-        if (method === Method.POST) {
+        if (method === Method.POST && body_request) {
             return async (data: BodyInit): Promise<Result<T, RequestError>> => {
                 const response = await fetch(address, {
                     method: method,
