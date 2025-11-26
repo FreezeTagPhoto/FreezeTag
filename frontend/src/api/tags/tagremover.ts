@@ -6,34 +6,35 @@ import { Result, Err, Ok } from "@/common/result";
 /**
  * The string array is a list of errors on an otherwise successful request
  */
-export type TagAddResult = Result<
+export type TagRemoveResult = Result<
     string[],
     { status: number; message: string }
 >;
-type TagAddResponse = {
-    added: string[];
+type TagRemoveResponse = {
+    deleted: string[];
     errors: string[];
 };
 
-export default async function TagAdder(
+export default async function TagRemover(
     image_ids: number[],
     tags: string[],
-): Promise<TagAddResult> {
-    return add_tag_with_handler(
-        ApiHandler<TagAddResponse>(
-            SERVER_ADDRESS + "tag/add?",
-            false,
-        )(Method.POST),
+): Promise<TagRemoveResult> {
+    return remove_tag_with_handler(
+        ApiHandler<TagRemoveResponse>(SERVER_ADDRESS + "tag/remove?")(
+            Method.DELETE,
+        ),
         image_ids,
         tags,
     );
 }
 
-async function add_tag_with_handler(
-    handler: (data: BodyInit) => Promise<Result<TagAddResponse, RequestError>>,
+async function remove_tag_with_handler(
+    handler: (
+        data: BodyInit,
+    ) => Promise<Result<TagRemoveResponse, RequestError>>,
     image_ids: number[],
     tags: string[],
-): Promise<TagAddResult> {
+): Promise<TagRemoveResult> {
     const query_arr = [];
 
     for (const image_id of image_ids) query_arr.push(`id=${image_id}`);
@@ -60,5 +61,5 @@ async function add_tag_with_handler(
     return Ok(result.value.errors);
 }
 
-export const testing_TagAdder = add_tag_with_handler;
-export type testing_TagAddResponse = TagAddResponse;
+export const testing_TagRemover = remove_tag_with_handler;
+export type testing_TagRemoveResponse = TagRemoveResponse;
