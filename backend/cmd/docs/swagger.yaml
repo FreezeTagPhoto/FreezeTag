@@ -1,0 +1,41 @@
+basePath: /
+definitions:
+  api.StatusBadRequestResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  api.StatusServerErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This is the API access for the backend of the FreezeTag app.
+  title: FreezeTag API
+  version: "0.1"
+paths:
+  /file/{id}:
+    get:
+      description: Get an image file given an ID
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.StatusBadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.StatusServerErrorResponse'
+      summary: Get file
+swagger: "2.0"

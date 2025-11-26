@@ -1,4 +1,4 @@
-.PHONY: run test mocks lint tidy clean
+.PHONY: run test mocks lint tidy clean docs
 .SILENT:
 
 TAGS=sqlite_math_functions,sqlite_foreign_keys
@@ -8,6 +8,9 @@ export CGO_ENABLED=1
 
 tidy:
 	go mod tidy
+
+docs: tidy
+	go tool swag init -g cmd/server/main.go -o cmd/docs
 
 test: mocks
 	mkdir -p coverage
