@@ -4,6 +4,8 @@
 TAGS=sqlite_math_functions,sqlite_foreign_keys
 
 export CGO_CFLAGS_ALLOW=-Xpreprocessor
+# ldflags to stop MacOS from complaining about a warning that doesn't matter constantly
+export CGO_LDFLAGS=-Wl,-no_warn_duplicate_libraries
 export CGO_ENABLED=1
 
 tidy:

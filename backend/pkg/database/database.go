@@ -167,7 +167,7 @@ func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size uint) ([]byte, 
 }
 
 func (db SqliteImageDatabase) GetImageTags(id ImageId) ([]string, error) {
-	rows, err := db.db.Query("SELECT tag FROM Tags WHERE imageId = ?", id)
+	rows, err := db.db.Query("SELECT tag FROM Tags WHERE id IN (SELECT tagId FROM ImageTags WHERE imageId = ?)", id)
 	if err != nil {
 		return []string{}, err
 	}
@@ -370,7 +370,10 @@ func (db SqliteImageDatabase) AddImageTags(id ImageId, tags []string) (int, erro
 	if err != nil {
 		return 0, err
 	}
-	tagIds, err := db.AddTags(tags)
+	if _, err = db.AddTags(tags); err != nil {
+		return 0, err
+	}
+	tagIds, err := db.GetTags(tags)
 	if err != nil {
 		return 0, err
 	}
@@ -416,10 +419,13 @@ func (db SqliteImageDatabase) RemoveImageTags(id ImageId, tags []string) (int, e
 	args := []any{id}
 	query.WriteString("DELETE FROM ImageTags WHERE imageId = ? AND tagId IN (")
 	tagIds, err := db.GetTags(tags)
+	if err != nil {
+		return 0, err
+	}
 	for i, id := range tagIds {
 		args = append(args, id)
 		query.WriteRune('?')
-		if i != len(tags)-1 {
+		if i < len(tagIds)-1 {
 			query.WriteString(", ")
 		}
 	}

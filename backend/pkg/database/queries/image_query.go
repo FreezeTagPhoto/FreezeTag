@@ -38,14 +38,6 @@ func (q *ImageQuery) StatementWithArgs() (string, []any) {
 		args = append(args, as...)
 		parts++
 	}
-	// if q.nearLocation != nil {
-	// 	if parts != 0 {
-	// 		builder.WriteString(" AND ")
-	// 	}
-	// 	builder.WriteString(`(DEGREES(ACOS(SIN(RADIANS(latitude)) * SIN(RADIANS(?)) + COS(RADIANS(latitude)) * COS(RADIANS(?)) * COS(ABS(longitude - ?)))) <= ?)`)
-	// 	args = append(args, q.nearLocation[0], q.nearLocation[0], q.nearLocation[1], q.nearLocation[2])
-	// 	parts++
-	// }
 	if q.make != nil {
 		if parts != 0 {
 			builder.WriteString(" AND ")
@@ -121,7 +113,7 @@ func escapeLikeString(s string) string {
 
 func buildTagMatcher(tags []queryTag) (string, []any) {
 	// (id IN (
-	// SELECT imageId FROM Tags WHERE (tag IN (...) OR (tag LIKE ... OR ...))
+	// SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE tag IN (...) OR (tag LIKE ...))
 	// GROUP BY imageId
 	// HAVING COUNT(DISTINCT imageId) = /* number of tag matchers */
 	// ))
@@ -159,7 +151,7 @@ func buildTagMatcher(tags []queryTag) (string, []any) {
 		matcher += fmt.Sprintf("(%s)", fuzzyBuilder.String())
 	}
 	return fmt.Sprintf(
-		`(id IN (SELECT imageId FROM Tags WHERE %s GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?))`,
+		`(id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE %s) GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?))`,
 		matcher,
 	), append(append(exactArgs, fuzzyArgs...), len(tags))
 }

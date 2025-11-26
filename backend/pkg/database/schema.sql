@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS Tags (
     id INTEGER PRIMARY KEY NOT NULL,
     tag TEXT,
     UNIQUE(tag)
-)
+);
 
 CREATE TABLE IF NOT EXISTS ImageTags (
     imageId INTEGER,
