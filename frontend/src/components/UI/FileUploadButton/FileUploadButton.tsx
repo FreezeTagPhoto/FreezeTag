@@ -9,54 +9,54 @@ export type FileUploadProps = {
 };
 
 export default function FileUploadButton(props: FileUploadProps) {
-  const hiddenInputRef = useRef<HTMLInputElement>(null);
+    const hiddenInputRef = useRef<HTMLInputElement>(null);
 
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop: (incomingFiles) => {
-      if (hiddenInputRef.current) {
-        // Note the specific way we need to munge the file into the hidden input
-        // https://stackoverflow.com/a/68182158/1068446
-        const dataTransfer = new DataTransfer();
-        incomingFiles.forEach((v) => {
-          dataTransfer.items.add(v);
-        });
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop: (incomingFiles) => {
+            if (hiddenInputRef.current) {
+                // Note the specific way we need to munge the file into the hidden input
+                // https://stackoverflow.com/a/68182158/1068446
+                const dataTransfer = new DataTransfer();
+                incomingFiles.forEach((v) => {
+                    dataTransfer.items.add(v);
+                });
 
-        hiddenInputRef.current.files = dataTransfer.files;
-        hiddenInputRef.current.dispatchEvent(
-          new Event("change", { bubbles: true }),
-        );
-      }
-    },
-    accept: { "image/*": [] },
-  });
+                hiddenInputRef.current.files = dataTransfer.files;
+                hiddenInputRef.current.dispatchEvent(
+                    new Event("change", { bubbles: true }),
+                );
+            }
+        },
+        accept: { "image/*": [] },
+    });
 
-  return (
-    <form action={(e) => handleSubmit(e, props.ids_retrieved_callback)}>
-      <label {...getRootProps({ className: styles.label })}>
-        {" "}
-        Upload images{" "}
-        <input
-          type="file"
-          onChange={FileChangeHandler}
-          multiple
-          required
-          name="file"
-          className={styles.button}
-          id="file-upload"
-          ref={hiddenInputRef}
-        />
-        <input {...getInputProps()} />
-      </label>
-    </form>
-  );
+    return (
+        <form action={(e) => handleSubmit(e, props.ids_retrieved_callback)}>
+            <label {...getRootProps({ className: styles.label })}>
+                {" "}
+                Upload images{" "}
+                <input
+                    type="file"
+                    onChange={FileChangeHandler}
+                    multiple
+                    required
+                    name="file"
+                    className={styles.button}
+                    id="file-upload"
+                    ref={hiddenInputRef}
+                />
+                <input {...getInputProps()} />
+            </label>
+        </form>
+    );
 }
 
 const handleSubmit = async (
     event: FormData,
     ids_retrieved_callback: (ids: number[]) => void,
 ) => {
-  try {
-    const result = await ImageUploader(event);
+    try {
+        const result = await ImageUploader(event);
 
         const ids = [];
         if (result.ok) {
