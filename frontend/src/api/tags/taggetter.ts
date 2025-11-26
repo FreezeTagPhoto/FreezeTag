@@ -27,7 +27,7 @@ async function get_tag_with_handler(
     handler: (data: BodyInit) => Promise<Result<TagGetResponse, RequestError>>,
     image_id?: number,
 ): Promise<TagGetResult> {
-    let result = await (image_id ? handler(`/${image_id}`) : handler(""));
+    const result = await (image_id ? handler(`/${image_id}`) : handler(""));
 
     if (!result.ok) {
         const status = result.error.status_code;
