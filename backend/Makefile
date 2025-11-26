@@ -23,7 +23,7 @@ test: mocks
 	go tool cover -func coverage/coverage.out | tail -n 1
 	exit $$TESTPASSED
 
-lint: mocks
+lint: mocks docs
 	golangci-lint run
 
 run: docs
