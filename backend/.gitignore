@@ -3,3 +3,4 @@ gl-codequality.json
 /mocks/
 *.db
 /images/
+/cmd/docs

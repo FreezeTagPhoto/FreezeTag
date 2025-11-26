@@ -10,7 +10,7 @@ tidy:
 	go mod tidy
 
 docs: tidy
-	go tool swag init -g cmd/server/main.go -o cmd/docs
+	go tool swag init -q -g cmd/server/main.go -o cmd/docs
 
 test: mocks
 	mkdir -p coverage
