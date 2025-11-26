@@ -4,8 +4,16 @@
 TAGS=sqlite_math_functions,sqlite_foreign_keys
 
 export CGO_CFLAGS_ALLOW=-Xpreprocessor
+ifeq ($(OS),WINDOWS_NT)
+# we might have to do Windows-specific stuff eventually
+else 
+	UNAME=$(shell uname -s)
+	ifeq ($(UNAME),Darwin)
+		CGO_LDFLAGS=-Wl,-no_warn_duplicate_libraries
+	endif
+endif
 # ldflags to stop MacOS from complaining about a warning that doesn't matter constantly
-export CGO_LDFLAGS=-Wl,-no_warn_duplicate_libraries
+export CGO_LDFLAGS
 export CGO_ENABLED=1
 
 tidy:
