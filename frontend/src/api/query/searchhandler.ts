@@ -11,6 +11,25 @@ type SearchResponse = number[];
 
 const regex = /\s*(.*?(?:".*?")?)\s*(?:;|$)/g;
 
+function parseDateOrUnix(raw: string): string | null {
+    let value = raw.trim();
+
+    if (value.startsWith(`"`) && value.endsWith(`"`) && value.length >= 2) {
+        value = value.slice(1, -1);
+    }
+
+    if (/^[0-9]+$/.test(value)) {
+        return value;
+    }
+
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+        return Math.floor(date.getTime() / 1000).toString();
+    }
+
+    return null;
+}
+
 export default async function SearchHandler(
     user_query: string,
 ): Promise<SearchResult> {
@@ -48,12 +67,21 @@ async function search_with_handler(
                 new_query = "modelLike=" + sub_query;
             }
         } else if (
-            query_string.startsWith("near=") ||
             query_string.startsWith("takenBefore=") ||
             query_string.startsWith("takenAfter=") ||
             query_string.startsWith("uploadedBefore=") ||
             query_string.startsWith("uploadedAfter=")
         ) {
+            const [key, ...rest] = query_string.split("=");
+            const rawValue = rest.join("=");
+            const parsed = parseDateOrUnix(rawValue);
+
+            if (parsed === null) {
+                new_query = query_string;
+            } else {
+                new_query = `${key}=${parsed}`;
+            }
+        } else if (query_string.startsWith("near=")) {
             new_query = query_string;
         } else {
             // Handle tags
