@@ -51,6 +51,24 @@ func parseNearParam(near string) ([3]float64, error) {
 	return [3]float64{lat, long, dist}, nil
 }
 
+// @summary     Search images
+// @description Search for an image given information
+// @produce     application/json
+// @router      /search [get]
+// @param       make           query string  false "camera make"
+// @param       makeLike       query string  false "camera make fuzzy"
+// @param       model          query string  false "camera model"
+// @param       modelLike      query string  false "camera model fuzzy"
+// @param       takenBefore    query string  false "picture taken before (unix epoch)"
+// @param       takenAfter     query string  false "picture taken after (unix epoch)"
+// @param       uploadedBefore query string  false "picture uploaded before (unix epoch)"
+// @param       uploadedAfter  query string  false "picture uploaded after (unix epoch)"
+// @param       near           query string  false "latitude/longitude/distance (degrees)" example(100.0,12.0,1.0)
+// @param       tag            query []string false "picture tag"                          collectionFormat(multi)
+// @param       tagLike        query []string false "picture tag fuzzy"                    collectionFormat(multi)
+// @success     200 {array}  database.ImageId
+// @failure     400 {object} api.StatusBadRequestResponse
+// @failure     500 {object} api.StatusServerErrorResponse
 func (se SearchEndpoint) HandleGet(c *gin.Context) {
 	query := queries.CreateImageQuery()
 	if make := c.Query("make"); make != "" {

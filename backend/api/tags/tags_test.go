@@ -206,7 +206,7 @@ func TestHandlePostNoIds(t *testing.T) {
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "no ids to remove tags from"}
+	expected := api.StatusBadRequestResponse{Error: "no ids to add tags to"}
 	var got api.StatusBadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
@@ -225,7 +225,7 @@ func TestHandlePostNoTags(t *testing.T) {
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "no tags to remove"}
+	expected := api.StatusBadRequestResponse{Error: "no tags to add"}
 	var got api.StatusBadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)

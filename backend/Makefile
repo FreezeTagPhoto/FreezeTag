@@ -1,4 +1,4 @@
-.PHONY: run test mocks lint tidy clean
+.PHONY: run test mocks lint tidy clean docs
 .SILENT:
 
 TAGS=sqlite_math_functions,sqlite_foreign_keys
@@ -19,6 +19,9 @@ export CGO_ENABLED=1
 tidy:
 	go mod tidy
 
+docs: tidy
+	go tool swag init -q -g cmd/server/main.go -o cmd/docs
+
 test: mocks
 	mkdir -p coverage
 	go test -coverprofile="coverage/coverage.out.tmp" -covermode count -tags=test,$(TAGS) ./... | grep -v "mocks"
@@ -30,10 +33,10 @@ test: mocks
 	go tool cover -func coverage/coverage.out | tail -n 1
 	exit $$TESTPASSED
 
-lint: mocks
+lint: mocks docs
 	golangci-lint run
 
-run: tidy
+run: docs
 	go run -tags=$(TAGS) ./cmd/server
 
 mocks: tidy

@@ -13,15 +13,35 @@ import (
 	"freezetag/backend/pkg/repositories"
 	"log"
 
+	docs "freezetag/backend/cmd/docs"
+
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
 const defaultImageFolder = "./images"
 
+// @title FreezeTag API
+// @version 0.1
+// @description This is the API access for the backend of the FreezeTag app.
+//
+// @basePath /
 func main() {
 	router := gin.Default()
+	docs.SwaggerInfo.BasePath = "/"
 	repo := initRepository(defaultImageFolder)
 	RegisterEndpoints(router, repo)
+	router.GET("/swagger/*any", func(c *gin.Context) {
+		if c.Param("any") == "" || c.Param("any") == "/" {
+			c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+			return
+		}
+		ginSwagger.WrapHandler(swaggerfiles.Handler)(c)
+	})
 	router.Run("localhost:3824") //nolint:errcheck // no need to check return value
 }
 
