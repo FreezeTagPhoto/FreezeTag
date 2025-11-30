@@ -29,7 +29,7 @@ func (me MetadataEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @produce     application/json
 // @router      /metadata/{id} [get]
 // @param       id path int true "Image ID"
-// @success     200 {object} imagedata.Metadata
+// @success     200 {object} api.MetadataResponse
 // @failure     400 {object} api.StatusBadRequestResponse
 // @failure     500 {object} api.StatusServerErrorResponse
 func (me MetadataEndpoint) HandleGetMetadata(c *gin.Context) {
@@ -48,5 +48,4 @@ func (me MetadataEndpoint) HandleGetMetadata(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, result)
-	
 }
