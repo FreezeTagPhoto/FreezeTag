@@ -387,3 +387,60 @@ func TestRemoveTags(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"a", "c", "d"}, tags)
 }
+
+
+func TestGetMetadata(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA := insertTestImage(t, tmp)
+	data, err := tmp.GetImageMetadata(idA)
+	require.NoError(t, err)
+	require.NotNil(t, data)
+	assert.Nil(t, data.DateTaken)
+	assert.NotNil(t, data.DateUploaded)
+	assert.Nil(t, data.CameraMake)
+	assert.Nil(t, data.CameraModel)
+	assert.Nil(t, data.Latitude)
+	assert.Nil(t, data.Longitude)
+}
+
+func TestGetMetadataNoId(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA := insertTestImage(t, tmp)
+	idB := idA+1
+	data, err := tmp.GetImageMetadata(idB)
+	require.NoError(t, err)
+	require.NotNil(t, data)
+	assert.Equal(t, imagedata.Metadata{}, data)
+}
+
+func TestGetMetadataPopulated(t *testing.T) {
+	tmp := createTempDatabase(t)
+	testTime := time.Now()
+	lat := 12.34
+	lon := 56.78
+	idA, err := tmp.AddImage("meta.png", imagedata.Data{
+		PixelsRGBA:  []byte{},
+		Width:       800,
+		Height:      600,
+		DateCreated: &testTime,
+		Geo: &struct {
+			Lat float64
+			Lon float64
+			Alt float64
+		}{
+			Lat: lat,
+			Lon: lon,
+			Alt: 0,
+		},
+	})
+	require.NoError(t, err)
+	data, err := tmp.GetImageMetadata(idA)
+	require.NoError(t, err)
+	require.NotNil(t, data)
+	assert.Equal(t, testTime.Unix(), *data.DateTaken)
+	assert.NotNil(t, data.DateUploaded)
+	assert.Nil(t, data.CameraMake)
+	assert.Nil(t, data.CameraModel)
+	assert.Equal(t, &lat, data.Latitude)
+	assert.Equal(t, &lon, data.Longitude)
+}
