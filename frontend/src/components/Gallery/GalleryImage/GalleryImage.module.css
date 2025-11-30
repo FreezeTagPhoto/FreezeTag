@@ -16,6 +16,22 @@
     border-color: #00add8;
 }
 
+.image_container_fake_focus {
+    display: inline-block;
+    height: 128px;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    vertical-align: top;
+
+    border-radius: 12px;
+    border: 3px solid transparent;
+    background: transparent;
+    
+    outline: none;
+    border-color: #00add8;
+}
+
 .image {
     height: 100%;
     width: auto;
