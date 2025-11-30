@@ -346,7 +346,7 @@ func TestGetImageFilepathSuccess(t *testing.T) {
 	result, err := repo.GetImageFilepath(1)
 	assert.Nil(t, err, "error should be nil")
 	assert.NotNil(t, result, "result should be valid")
-	assert.Equal(t, s, result)
+	assert.Equal(t, "/"+s, result)
 }
 
 func TestGetImageFilepathNilString(t *testing.T) {
