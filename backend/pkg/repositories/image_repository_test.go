@@ -30,6 +30,16 @@ func initParserCollection() images.Parser {
 	return parserCollection
 }
 
+
+func TestFolderPath(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	parser := initParserCollection()
+	repo := InitImageRepository(mockdb, parser, "/some/test/folder")
+	assert.Equal(t, "/some/test/folder/", repo.folderPath, "folder path should have trailing slash")
+	repo = InitImageRepository(mockdb, parser, "/some/test/folder/")
+	assert.Equal(t, "/some/test/folder/", repo.folderPath, "folder path should a SINGLE have trailing slash")
+}
+
 func TestStoreImageBytesSuccess(t *testing.T) {
 
 	tmpDir := t.TempDir() //tempdir will be cleaned up automatically after the test
@@ -377,4 +387,75 @@ func TestGetImageFilepathError(t *testing.T) {
 	_, err := repo.GetImageFilepath(1)
 	assert.NotNil(t, err, "result should be valid")
 	assert.Equal(t, err.Error(), "mock error")
+}
+
+func ptrFloat64(f float64) *float64 {
+	return &f
+}
+func ptrString(s string) *string {
+	return &s
+}
+func ptrInt64(i int64) *int64 {
+	return &i
+}
+
+func TestGetImageMetadataSuccess(tt *testing.T) {
+	expected := imagedata.Metadata{
+		FileName:     ptrString("mockfile.jpg"),
+		DateTaken:    ptrInt64(0),
+		DateUploaded: ptrInt64(0),
+		CameraMake:   ptrString("mockCamera"),
+		CameraModel:  ptrString("mockModel"),
+		Latitude:     ptrFloat64(67.41),
+		Longitude:    ptrFloat64(-9.1021),
+	}
+
+	mockdb := mockDatabase.NewMockImageDatabase(tt)
+	mockdb.EXPECT().
+		GetImageMetadata(mock.Anything).
+		Return(expected, nil)
+
+	parser := mockParser.NewMockParser(tt)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
+
+	result, err := repo.GetImageMetadata(1)
+	assert.Nil(tt, err, "error should be nil")
+	assert.Equal(tt, expected, result)
+}
+
+func TestGetImageMetadataMissingFields(t *testing.T) {
+	expected := imagedata.Metadata{
+		FileName:     nil,
+		DateTaken:    ptrInt64(0),
+		DateUploaded: ptrInt64(0),
+		CameraMake:   nil,
+		CameraModel:  nil,
+		Latitude:     ptrFloat64(67.41),
+		Longitude:    ptrFloat64(-9.1021),
+	}
+
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImageMetadata(mock.Anything).
+		Return(expected, nil)
+
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
+
+	result, err := repo.GetImageMetadata(1)
+	assert.Nil(t, err, "error should be nil")
+	assert.Equal(t, expected, result)
+}
+
+func TestGetImageMetadataFail9(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImageMetadata(mock.Anything).
+		Return(imagedata.Metadata{}, fmt.Errorf("mock error"))
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
+
+	_, err := repo.GetImageMetadata(1)
+	assert.NotNil(t, err, "error should not be nil")
+	assert.Equal(t, "mock error", err.Error())
 }
