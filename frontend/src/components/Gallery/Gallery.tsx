@@ -127,16 +127,18 @@ export default function Gallery({
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
     const handleImageSelectionChange = (id: number) => {
-        // This is kinda messy because this ensures I'm handling the state correctly
-        // Maybe this is not necessary at all
-        if (selectedIds.has(id)) {
-            setSelectedIds(selectedIds.difference(new Set([id])));
+        const newIds = new Set<number>().union(selectedIds);
+
+        if (newIds.has(id)) {
+            newIds.delete(id);
         } else {
-            setSelectedIds(selectedIds.union(new Set([id])));
+            newIds.add(id);
         }
 
+        setSelectedIds(newIds);
+
         if (onChange) {
-            onChange(selectedIds.union(new Set()));
+            onChange(newIds);
         }
     };
 
