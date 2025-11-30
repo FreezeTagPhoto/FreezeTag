@@ -13,10 +13,17 @@ CREATE TABLE IF NOT EXISTS Images (
 );
 
 CREATE TABLE IF NOT EXISTS Tags (
-    imageId INTEGER,
+    id INTEGER PRIMARY KEY NOT NULL,
     tag TEXT,
+    UNIQUE(tag)
+);
+
+CREATE TABLE IF NOT EXISTS ImageTags (
+    imageId INTEGER,
+    tagId INTEGER,
     FOREIGN KEY(imageId) REFERENCES Images(id) ON DELETE CASCADE,
-    UNIQUE(imageId, tag)
+    FOREIGN KEY(tagId) REFERENCES Tags(id) ON DELETE CASCADE,
+    UNIQUE(imageId, tagId)
 );
 
 CREATE TABLE IF NOT EXISTS Thumbnails (

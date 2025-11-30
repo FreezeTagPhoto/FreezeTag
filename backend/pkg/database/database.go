@@ -14,6 +14,7 @@ import (
 )
 
 type ImageId int64
+type TagId int64
 
 type ImageDatabase interface {
 	// Get a list of image IDs corresponding to the provided query
@@ -24,6 +25,10 @@ type ImageDatabase interface {
 	GetImageThumbnail(ImageId, uint) ([]byte, error)
 	// Get the tags attached to an image
 	GetImageTags(ImageId) ([]string, error)
+	// Get all tags matching the given names in the database
+	//
+	// Note: This function WILL fail silently if you ask for tags that haven't been added. Only use this if you don't care about the tags absolutely existing.
+	GetTags([]string) ([]TagId, error)
 	// Get all tags present in the database
 	GetAllTags() ([]string, error)
 	// Get the thumbnail sizes an image has
@@ -40,6 +45,14 @@ type ImageDatabase interface {
 	//
 	// returns: the number of tags successfully added
 	AddImageTags(ImageId, []string) (int, error)
+	// Add a set of tags by name to the database
+	//
+	// returns: the IDs of the tags with those names
+	AddTags([]string) ([]TagId, error)
+	// Remove a set of tags by name from the database
+	//
+	// returns: the number of tags actually removed
+	RemoveTags([]string) (int, error)
 	// Remove an image from the database
 	//
 	// returns: whether an image was removed
@@ -154,7 +167,7 @@ func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size uint) ([]byte, 
 }
 
 func (db SqliteImageDatabase) GetImageTags(id ImageId) ([]string, error) {
-	rows, err := db.db.Query("SELECT tag FROM Tags WHERE imageId = ?", id)
+	rows, err := db.db.Query("SELECT tag FROM Tags WHERE id IN (SELECT tagId FROM ImageTags WHERE imageId = ?)", id)
 	if err != nil {
 		return []string{}, err
 	}
@@ -173,9 +186,98 @@ func (db SqliteImageDatabase) GetImageTags(id ImageId) ([]string, error) {
 	return tags, nil
 }
 
-func (db SqliteImageDatabase) GetAllTags() ([]string, error) { 
-	rows, err := db.db.Query("SELECT DISTINCT tag FROM Tags")
-	if err != nil { 
+func (db SqliteImageDatabase) GetTags(tags []string) ([]TagId, error) {
+	var value strings.Builder
+	value.WriteByte('(')
+	for i := range tags {
+		value.WriteString("?")
+		if i < len(tags)-1 {
+			value.WriteString(", ")
+		}
+	}
+	value.WriteByte(')')
+	params := make([]any, len(tags))
+	for i, tag := range tags {
+		params[i] = tag
+	}
+	rows, err := db.db.Query("SELECT id FROM Tags WHERE tag IN "+value.String(), params...)
+	if err != nil {
+		return []TagId{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	ids := []TagId{}
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return []TagId{}, err
+		}
+		var id TagId
+		if err := rows.Scan(&id); err != nil {
+			return []TagId{}, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func (db SqliteImageDatabase) AddTags(tags []string) ([]TagId, error) {
+	var value strings.Builder
+	for i := range tags {
+		value.WriteString("(?)")
+		if i < len(tags)-1 {
+			value.WriteString(", ")
+		}
+	}
+	params := make([]any, len(tags))
+	for i, tag := range tags {
+		params[i] = tag
+	}
+	rows, err := db.db.Query("INSERT OR IGNORE INTO Tags (tag) VALUES "+value.String()+" RETURNING id", params...)
+	if err != nil {
+		return []TagId{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	ids := []TagId{}
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return []TagId{}, err
+		}
+		var id TagId
+		if err := rows.Scan(&id); err != nil {
+			return []TagId{}, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func (db SqliteImageDatabase) RemoveTags(tags []string) (int, error) {
+	var value strings.Builder
+	value.WriteByte('(')
+	for i := range tags {
+		value.WriteString("?")
+		if i < len(tags)-1 {
+			value.WriteString(", ")
+		}
+	}
+	value.WriteByte(')')
+	params := make([]any, len(tags))
+	for i, tag := range tags {
+		params[i] = tag
+	}
+	res, err := db.db.Exec("DELETE FROM Tags WHERE tag IN "+value.String(), params...)
+	if err != nil {
+		return 0, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return int(rows), nil
+}
+
+func (db SqliteImageDatabase) GetAllTags() ([]string, error) {
+	rows, err := db.db.Query("SELECT tag FROM Tags")
+	if err != nil {
 		return []string{}, err
 	}
 	defer rows.Close() //nolint:errcheck
@@ -268,13 +370,20 @@ func (db SqliteImageDatabase) AddImageTags(id ImageId, tags []string) (int, erro
 	if err != nil {
 		return 0, err
 	}
-	stmt, err := tx.Prepare("INSERT OR IGNORE INTO Tags (imageId, tag) VALUES (?, ?)")
+	if _, err = db.AddTags(tags); err != nil {
+		return 0, err
+	}
+	tagIds, err := db.GetTags(tags)
+	if err != nil {
+		return 0, err
+	}
+	stmt, err := tx.Prepare("INSERT OR IGNORE INTO ImageTags (imageId, tagId) VALUES (?, ?)")
 	if err != nil {
 		return 0, err
 	}
 	defer stmt.Close() //nolint:errcheck
-	for _, tag := range tags {
-		res, err := stmt.Exec(id, tag)
+	for _, tagId := range tagIds {
+		res, err := stmt.Exec(id, tagId)
 		if err != nil {
 			return 0, err
 		}
@@ -308,11 +417,15 @@ func (db SqliteImageDatabase) RemoveImageTags(id ImageId, tags []string) (int, e
 	}
 	var query strings.Builder
 	args := []any{id}
-	query.WriteString("DELETE FROM Tags WHERE imageId = ? AND tag IN (")
-	for i, tag := range tags {
-		args = append(args, tag)
+	query.WriteString("DELETE FROM ImageTags WHERE imageId = ? AND tagId IN (")
+	tagIds, err := db.GetTags(tags)
+	if err != nil {
+		return 0, err
+	}
+	for i, id := range tagIds {
+		args = append(args, id)
 		query.WriteRune('?')
-		if i != len(tags)-1 {
+		if i < len(tagIds)-1 {
 			query.WriteString(", ")
 		}
 	}
