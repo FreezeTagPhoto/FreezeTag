@@ -21,3 +21,15 @@ type Data struct {
 		Model        string
 	}
 }
+
+// metadata stores a more limited set of image information
+// in a way that can be easily serialized to JSON for frontend serving
+type Metadata struct {
+	FileName    *string  `json:"fileName,omitempty"`
+	DateTaken    *int64   `json:"dateTaken,omitempty"`
+	DateUploaded *int64   `json:"dateUploaded,omitempty"`
+	CameraMake   *string  `json:"cameraMake,omitempty"`
+	CameraModel  *string  `json:"cameraModel,omitempty"`
+	Latitude     *float64 `json:"latitude,omitempty"`
+	Longitude    *float64 `json:"longitude,omitempty"`
+}
