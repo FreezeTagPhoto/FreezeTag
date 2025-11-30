@@ -22,7 +22,6 @@ export default function Home() {
         );
     }
 
-
     return (
         <div className={styles.page}>
             <div className={styles.toolbar}>
@@ -31,15 +30,16 @@ export default function Home() {
                 />
             </div>
 
-            <div className={styles.gallery}>
-                <Gallery
-                    image_ids={ids}
-                    selectable_images={true}
-                    onChange={(ids) => setSelectedIds(ids)}
-                />
+            <div className={styles.gallery_tags_container}>
+                <div className={styles.gallery}>
+                    <Gallery
+                        image_ids={ids}
+                        selectable_images={true}
+                        onChange={(ids) => setSelectedIds(ids)}
+                    />
+                </div>
+                <TagChangeButton image_ids={selectedIds} />
             </div>
-
-            <TagChangeButton image_ids={selectedIds}/>
         </div>
     );
 }

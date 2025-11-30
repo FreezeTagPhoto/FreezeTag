@@ -1,4 +1,3 @@
-import ImageUploader from "@/api/upload/imageuploader";
 import styles from "./TagChangeButton.module.css";
 import { useEffect, useState } from "react";
 import TagGetter, { TagGetResult } from "@/api/tags/taggetter";
@@ -45,6 +44,7 @@ export default function TagChangeButton(props: TagChangeProps) {
                 if (new_tag) tags.push(new_tag);
                 const image_id_array = image_ids.values().toArray();
                 const result = await TagAdder(image_id_array, tags);
+
                 if (result.ok) {
                     console.log(
                         "Successfully added tags! result: ",
@@ -67,15 +67,23 @@ export default function TagChangeButton(props: TagChangeProps) {
     useEffect(updateTags, []);
 
     return (
-        <form action={(e) => handleSubmit(e, props.image_ids)}>
-            <select multiple name="tag_menu">
+        <form
+            action={(e) => handleSubmit(e, props.image_ids)}
+            className={styles.form}
+        >
+            <select multiple name="tag_menu" className={styles.tag_menu}>
                 {tags.map((tag) => (
                     <option value={tag} key={tag}>
                         {tag}
                     </option>
                 ))}
             </select>
-            <input name="new_tag" type="text" placeholder="New tag..."></input>
+            <input
+                name="new_tag"
+                type="text"
+                placeholder="New tag..."
+                className={styles.new_tag}
+            ></input>
             <label htmlFor="tags-submit" className={styles.label}>
                 {" "}
                 Submit Tags!{" "}

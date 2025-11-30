@@ -9,3 +9,28 @@
     cursor: pointer;
     border-radius: 10px;
 }
+
+.form {
+    display: flex;
+    flex-direction: column;
+}
+
+.tag_menu {
+    border: 1px solid #ccc;
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 10px;
+    height: 100%;
+}
+
+.tag_menu option {
+    padding: 3px 12px;
+}
+
+.new_tag {
+    border: 1px solid #ccc;
+    display: inline-block;
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 10px;
+}
