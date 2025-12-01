@@ -5,6 +5,7 @@ export type GalleryImageProps = {
     onClick?: () => void;
     buttonRef?: (el: HTMLButtonElement | null) => void;
     onFocus?: () => void;
+    selected?: boolean;
 };
 
 export default function GalleryImage({
@@ -12,11 +13,16 @@ export default function GalleryImage({
     onClick,
     buttonRef,
     onFocus,
+    selected,
 }: GalleryImageProps) {
     return (
         <button
             type="button"
-            className={styles.image_container}
+            className={
+                selected
+                    ? styles.image_container_fake_focus
+                    : styles.image_container
+            }
             onClick={onClick}
             ref={buttonRef}
             onFocus={onFocus}

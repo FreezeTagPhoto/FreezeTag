@@ -12,9 +12,16 @@ import GalleryImage from "./GalleryImage/GalleryImage";
 
 export type GalleryProps = {
     image_ids: number[];
+    selectable_images?: boolean;
+    onChange?: (ids: Set<number>) => void;
 };
 
-export default function Gallery({ image_ids }: GalleryProps) {
+export default function Gallery({
+    image_ids,
+    selectable_images,
+    onChange,
+}: GalleryProps) {
+    // Full Screen Preview Handling
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
@@ -116,6 +123,25 @@ export default function Gallery({ image_ids }: GalleryProps) {
         }
     };
 
+    // Selectable Images Handling
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+    const handleImageSelectionChange = (id: number) => {
+        const newIds = new Set<number>().union(selectedIds);
+
+        if (newIds.has(id)) {
+            newIds.delete(id);
+        } else {
+            newIds.add(id);
+        }
+
+        setSelectedIds(newIds);
+
+        if (onChange) {
+            onChange(newIds);
+        }
+    };
+
     return (
         <>
             {/* thumbnails */}
@@ -130,11 +156,21 @@ export default function Gallery({ image_ids }: GalleryProps) {
                     <GalleryImage
                         key={id}
                         id={id}
-                        onClick={() => setSelectedId(id)}
-                        onFocus={() => setFocusedIndex(index)}
+                        onClick={() => {
+                            if (selectable_images) {
+                                handleImageSelectionChange(id);
+                            } else {
+                                setSelectedId(id);
+                            }
+                        }}
+                        onFocus={() => {
+                            // Avoids focusing in select mode
+                            if (!selectable_images) setFocusedIndex(index);
+                        }}
                         buttonRef={(el) => {
                             itemRefs.current[index] = el;
                         }}
+                        selected={selectedIds.has(id)}
                     />
                 ))}
             </div>
