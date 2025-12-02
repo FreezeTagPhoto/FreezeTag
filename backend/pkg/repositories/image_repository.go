@@ -6,8 +6,10 @@ import (
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images"
+	"freezetag/backend/pkg/images/imagedata"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type ImageUploadSuccess struct {
@@ -49,6 +51,7 @@ type ImageRepository interface {
 	AddImageTags(id database.ImageId, tags []string) ImageTagResult
 	RemoveImageTags(id database.ImageId, tags []string) ImageTagResult
 	GetImageFilepath(id database.ImageId) (string, error)
+	GetImageMetadata(id database.ImageId) (imagedata.Metadata, error)
 }
 
 type DefaultImageRepository struct {
@@ -61,7 +64,7 @@ func InitImageRepository(db database.ImageDatabase, paser images.Parser, folderP
 	return &DefaultImageRepository{
 		db:         db,
 		parser:     paser,
-		folderPath: folderPath,
+		folderPath: strings.TrimRight(folderPath, "/") + "/",
 	}
 }
 
@@ -104,7 +107,7 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	if err != nil {
 		return errorUploadResult(filename, err)
 	}
-	filepath := repo.folderPath + "/" + filename
+	filepath := repo.folderPath + filename
 
 	imagedata, err := repo.parser.ParseImage(filename, data)
 	if err != nil {
@@ -214,12 +217,22 @@ func (repo *DefaultImageRepository) RemoveImageTags(id database.ImageId, tags []
 }
 
 func (repo *DefaultImageRepository) GetImageFilepath(id database.ImageId) (string, error) { 
-	file, err := repo.db.GetImageFile(id)
+	fileName, err := repo.db.GetImageFile(id)
 	if err != nil { 
 		return "", err
 	}
-	if file == nil || *file == "" { 
+	if fileName == nil || *fileName == "" { 
 		return "", fmt.Errorf("nil or empty file")
 	}
-	return *file, nil
+
+	
+	return fmt.Sprintf("%s%s", repo.folderPath, *fileName), nil
+}
+
+func (repo *DefaultImageRepository) GetImageMetadata(id database.ImageId) (imagedata.Metadata, error) {
+	metadata, err := repo.db.GetImageMetadata(id)
+	if err != nil {
+		return imagedata.Metadata{}, err
+	}
+	return metadata, nil
 }

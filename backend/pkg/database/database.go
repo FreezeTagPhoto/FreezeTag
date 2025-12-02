@@ -25,6 +25,8 @@ type ImageDatabase interface {
 	GetImageThumbnail(ImageId, uint) ([]byte, error)
 	// Get the tags attached to an image
 	GetImageTags(ImageId) ([]string, error)
+	// Get the metadata for an image
+	GetImageMetadata(ImageId) (imagedata.Metadata, error)
 	// Get all tags matching the given names in the database
 	//
 	// Note: This function WILL fail silently if you ask for tags that haven't been added. Only use this if you don't care about the tags absolutely existing.
@@ -295,6 +297,39 @@ func (db SqliteImageDatabase) GetAllTags() ([]string, error) {
 	return tags, nil
 }
 
+func (db SqliteImageDatabase) GetImageMetadata(id ImageId) (imagedata.Metadata, error) {
+	rows, err := db.db.Query("SELECT imageFile, dateTaken, dateUploaded, cameraMake, cameraModel, latitude, longitude FROM Images WHERE id = ?", id)
+	if err != nil {
+		return imagedata.Metadata{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	if rows.Next() {
+		if err := rows.Err(); err != nil {
+			return imagedata.Metadata{}, err
+		}
+		var fileName sql.NullString
+		var dateTaken sql.NullInt64
+		var dateUploaded sql.NullInt64
+		var cameraMake sql.NullString
+		var cameraModel sql.NullString
+		var latitude sql.NullFloat64
+		var longitude sql.NullFloat64
+		if err := rows.Scan(&fileName, &dateTaken, &dateUploaded, &cameraMake, &cameraModel, &latitude, &longitude); err != nil {
+			return imagedata.Metadata{}, err
+		}
+		return imagedata.Metadata{
+			FileName:    nullStringPtr(fileName),
+			DateTaken:    nullInt64Ptr(dateTaken),
+			DateUploaded: nullInt64Ptr(dateUploaded),
+			CameraMake:   nullStringPtr(cameraMake),
+			CameraModel:  nullStringPtr(cameraModel),
+			Latitude:     nullFloat64Ptr(latitude),
+			Longitude:    nullFloat64Ptr(longitude),
+		}, nil
+	}
+	return imagedata.Metadata{}, nil
+}
+
 func (db SqliteImageDatabase) GetImageThumbnailSizes(id ImageId) ([]int, error) {
 	rows, err := db.db.Query("SELECT thumbnailSize FROM Thumbnails WHERE imageId = ?", id)
 	if err != nil {
@@ -451,4 +486,26 @@ func (db SqliteImageDatabase) RemoveImageThumbnail(id ImageId, size int) (bool, 
 		return false, err
 	}
 	return rows != 0, nil
+}
+
+// helper functions to convert sql.Null* to pointers
+func nullInt64Ptr(n sql.NullInt64) *int64 {
+	if n.Valid {
+		return &n.Int64
+	}
+	return nil
+}
+
+func nullStringPtr(n sql.NullString) *string {
+	if n.Valid {
+		return &n.String
+	}
+	return nil
+}
+
+func nullFloat64Ptr(n sql.NullFloat64) *float64 {
+	if n.Valid {
+		return &n.Float64
+	}
+	return nil
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"freezetag/backend/pkg/images/imagedata"
 	"freezetag/backend/pkg/repositories"
 
 	"github.com/gin-gonic/gin"
@@ -36,3 +37,5 @@ type StatusNotFoundResponse struct {
 type ApiEndpoint interface {
 	RegisterEndpoints(e *gin.Engine)
 }
+
+type MetadataResponse imagedata.Metadata
