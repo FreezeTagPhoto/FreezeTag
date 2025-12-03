@@ -1,3 +1,4 @@
+// src/components/Gallery/Gallery.tsx
 "use client";
 
 import {
@@ -17,6 +18,10 @@ export type GalleryProps = {
     onChange?: (ids: Set<number>) => void;
 };
 
+// How we should pan after a zoom happens: point (fx, fy) on the image
+// expressed as a fraction of its width/height.
+type PendingPan = null | { fx: number; fy: number };
+
 export default function Gallery({
     image_ids,
     selectable_images,
@@ -34,6 +39,9 @@ export default function Gallery({
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const imgRef = useRef<HTMLImageElement | null>(null);
     const [hoveringImage, setHoveringImage] = useState(false);
+
+    // remember where to pan *after* zoom has been applied
+    const [pendingPan, setPendingPan] = useState<PendingPan>(null);
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -57,6 +65,7 @@ export default function Gallery({
     // reset zoom + pan when opening / changing image
     useEffect(() => {
         setZoom(1);
+        setPendingPan(null);
         const scroller = scrollRef.current;
         if (scroller) {
             scroller.scrollLeft = 0;
@@ -165,32 +174,18 @@ export default function Gallery({
 
     const zoomOut = () => {
         setZoom(1);
+        setPendingPan(null);
         const scroller = scrollRef.current;
         if (!scroller) return;
 
-        requestAnimationFrame(() => {
-            scroller.scrollLeft = 0;
-            scroller.scrollTop = 0;
-        });
+        scroller.scrollLeft = 0;
+        scroller.scrollTop = 0;
     };
 
+    // Zoom to the true center of the image: (fx, fy) = (0.5, 0.5)
     const zoomInCentered = () => {
-        const scroller = scrollRef.current;
         setZoom(2);
-        if (!scroller) return;
-
-        requestAnimationFrame(() => {
-            const maxLeft = Math.max(
-                0,
-                scroller.scrollWidth - scroller.clientWidth,
-            );
-            const maxTop = Math.max(
-                0,
-                scroller.scrollHeight - scroller.clientHeight,
-            );
-            scroller.scrollLeft = maxLeft / 2;
-            scroller.scrollTop = maxTop / 2;
-        });
+        setPendingPan({ fx: 0.5, fy: 0.5 });
     };
 
     const handleZoomButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
@@ -227,32 +222,53 @@ export default function Gallery({
             const fy = (event.clientY - imgRect.top) / imgRect.height;
 
             setZoom(2);
-
-            // after zoom layout, pan so that (fx,fy) is roughly centered
-            requestAnimationFrame(() => {
-                const scrollWidth = scroller.scrollWidth;
-                const scrollHeight = scroller.scrollHeight;
-
-                const targetLeft = fx * scrollWidth - scroller.clientWidth / 2;
-                const targetTop =
-                    fy * scrollHeight - scroller.clientHeight / 2;
-
-                const maxLeft = Math.max(
-                    0,
-                    scrollWidth - scroller.clientWidth,
-                );
-                const maxTop = Math.max(0, scrollHeight - scroller.clientHeight);
-
-                scroller.scrollLeft = Math.max(
-                    0,
-                    Math.min(targetLeft, maxLeft),
-                );
-                scroller.scrollTop = Math.max(0, Math.min(targetTop, maxTop));
-            });
+            setPendingPan({ fx, fy });
         } else {
             zoomOut();
         }
     };
+
+    // After zoom changes, pan so that the chosen point (fx, fy) is at the center
+    useEffect(() => {
+        if (zoom === 1 || !pendingPan) return;
+
+        const scroller = scrollRef.current;
+        const img = imgRef.current;
+        if (!scroller || !img) return;
+
+        const scrollerRect = scroller.getBoundingClientRect();
+        const imgRect = img.getBoundingClientRect();
+
+        const scrollWidth = scroller.scrollWidth;
+        const scrollHeight = scroller.scrollHeight;
+
+        const maxLeft = Math.max(0, scrollWidth - scroller.clientWidth);
+        const maxTop = Math.max(0, scrollHeight - scroller.clientHeight);
+
+        const imgWidth = imgRect.width;
+        const imgHeight = imgRect.height;
+
+        // Image position inside the scroller's content coordinates
+        const imgLeftInScroller =
+            imgRect.left - scrollerRect.left + scroller.scrollLeft;
+        const imgTopInScroller =
+            imgRect.top - scrollerRect.top + scroller.scrollTop;
+
+        const absX = imgLeftInScroller + pendingPan.fx * imgWidth;
+        const absY = imgTopInScroller + pendingPan.fy * imgHeight;
+
+        const rawLeft = absX - scroller.clientWidth / 2;
+        const rawTop = absY - scroller.clientHeight / 2;
+
+        const targetLeft = Math.max(0, Math.min(rawLeft, maxLeft));
+        const targetTop = Math.max(0, Math.min(rawTop, maxTop));
+
+        scroller.scrollLeft = targetLeft;
+        scroller.scrollTop = targetTop;
+
+        // clear so this runs only once per zoom action
+        setPendingPan(null);
+    }, [zoom, pendingPan]);
 
     return (
         <>
@@ -355,6 +371,9 @@ export default function Gallery({
                                             ? "zoom-in"
                                             : "zoom-out"
                                         : "default",
+                                    // critical: center at 1x, top-align when zoomed
+                                    alignItems:
+                                        zoom === 1 ? "center" : "flex-start",
                                 }}
                             >
                                 <img
@@ -384,7 +403,7 @@ export default function Gallery({
                                 Image details
                             </h2>
                             <dl className={styles.sidebarList}>
-                                {/* //TODO: these are placeholders, swap for real metadata later */}
+                                {/* TODO: placeholders, swap for real metadata later */}
                                 <div>
                                     <dt>Filename</dt>
                                     <dd>IMG_{selectedId}.JPG</dd>
