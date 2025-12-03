@@ -6,6 +6,7 @@ import {
     useRef,
     MouseEvent,
     KeyboardEvent as ReactKeyboardEvent,
+    useCallback,
 } from "react";
 import styles from "./Gallery.module.css";
 import GalleryImage from "./GalleryImage/GalleryImage";
@@ -15,6 +16,9 @@ export type GalleryProps = {
     selectable_images?: boolean;
     onChange?: (ids: Set<number>) => void;
 };
+
+// point (fx, fy) on image expressed as fraction of width/height (after zoom)
+type PendingPan = null | { fx: number; fy: number };
 
 export default function Gallery({
     image_ids,
@@ -27,6 +31,44 @@ export default function Gallery({
 
     const gridRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+    // zoom: 1 = fit, 2 = zoomed
+    const [zoom, setZoom] = useState<number>(1);
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const [hoveringImage, setHoveringImage] = useState(false);
+
+    // remember where to pan after zoom has been applied
+    const [pendingPan, setPendingPan] = useState<PendingPan>(null);
+
+    const moveSelection = useCallback(
+        (direction: "next" | "prev") => {
+            if (selectedId === null) return;
+
+            const currentIndex = image_ids.indexOf(selectedId);
+            if (currentIndex === -1) return;
+
+            const delta = direction === "next" ? 1 : -1;
+            const nextIndex = currentIndex + delta;
+
+            if (nextIndex < 0 || nextIndex >= image_ids.length) return;
+
+            const nextId = image_ids[nextIndex];
+            setSelectedId(nextId);
+            setFocusedIndex(nextIndex);
+        },
+        [selectedId, image_ids],
+    );
+
+    // reset zoom + pan when opening / changing image
+    useEffect(() => {
+        setZoom(1);
+        setPendingPan(null);
+        const scroller = scrollRef.current;
+        if (scroller) {
+            scroller.scrollLeft = 0;
+            scroller.scrollTop = 0;
+        }
+    }, [selectedId]);
 
     useEffect(() => {
         if (selectedId === null) return;
@@ -46,33 +88,16 @@ export default function Gallery({
             event.preventDefault();
             event.stopPropagation();
 
-            const currentIndex = image_ids.indexOf(selectedId);
-            if (currentIndex === -1) return;
-
-            let nextIndex = currentIndex;
-
             if (event.key === "ArrowRight") {
-                if (currentIndex < image_ids.length - 1) {
-                    nextIndex = currentIndex + 1;
-                } else {
-                    return;
-                }
+                moveSelection("next");
             } else if (event.key === "ArrowLeft") {
-                if (currentIndex > 0) {
-                    nextIndex = currentIndex - 1;
-                } else {
-                    return;
-                }
+                moveSelection("prev");
             }
-
-            const nextId = image_ids[nextIndex];
-            setSelectedId(nextId);
-            setFocusedIndex(nextIndex);
         };
 
         window.addEventListener("keydown", handleKeyDown, true);
         return () => window.removeEventListener("keydown", handleKeyDown, true);
-    }, [selectedId, image_ids]);
+    }, [selectedId, moveSelection]);
 
     const handleBackdropClick = () => {
         setSelectedId(null);
@@ -142,6 +167,79 @@ export default function Gallery({
         }
     };
 
+    const zoomOut = () => {
+        setZoom(1);
+        setPendingPan(null);
+        const scroller = scrollRef.current;
+        if (!scroller) return;
+
+        scroller.scrollLeft = 0;
+        scroller.scrollTop = 0;
+    };
+
+    // zoom to center of image: (fx, fy) = (0.5, 0.5)
+    const zoomInCentered = () => {
+        setZoom(2);
+        setPendingPan({ fx: 0.5, fy: 0.5 });
+    };
+
+    const handleZoomButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        if (zoom === 1) {
+            zoomInCentered();
+        } else {
+            zoomOut();
+        }
+    };
+
+    // if click the image at 1×, it zooms to 2× and pans so clicked spot is centered
+    // if click again at 2×, it zooms back out.
+    const handleImageClick = (event: MouseEvent<HTMLImageElement>) => {
+        const scroller = scrollRef.current;
+        if (!scroller) return; // if no scroll container, escape
+
+        event.stopPropagation();
+
+        if (zoom === 1) {
+            const imgRect = event.currentTarget.getBoundingClientRect();
+            const fx = (event.clientX - imgRect.left) / imgRect.width;
+            const fy = (event.clientY - imgRect.top) / imgRect.height;
+
+            setZoom(2);
+            setPendingPan({ fx, fy });
+        } else {
+            zoomOut();
+        }
+    };
+
+    // after zoom changes, pan so that the chosen point (fx, fy) is at the center
+    useEffect(() => {
+        if (zoom === 1 || !pendingPan) return;
+
+        const scroller = scrollRef.current;
+        if (!scroller) return;
+
+        const scrollWidth = scroller.scrollWidth;
+        const scrollHeight = scroller.scrollHeight;
+        const clientWidth = scroller.clientWidth;
+        const clientHeight = scroller.clientHeight;
+
+        const maxLeft = Math.max(0, scrollWidth - clientWidth);
+        const maxTop = Math.max(0, scrollHeight - clientHeight);
+
+        const rawLeft = pendingPan.fx * scrollWidth - clientWidth / 2;
+        const rawTop = pendingPan.fy * scrollHeight - clientHeight / 2;
+
+        const targetLeft = Math.max(0, Math.min(rawLeft, maxLeft));
+        const targetTop = Math.max(0, Math.min(rawTop, maxTop));
+
+        scroller.scrollLeft = targetLeft;
+        scroller.scrollTop = targetTop;
+
+        // clear so this runs only once per zoom action
+        setPendingPan(null);
+    }, [zoom, pendingPan]);
+
     return (
         <>
             {/* thumbnails */}
@@ -183,20 +281,92 @@ export default function Gallery({
                 >
                     <div className={styles.viewer} onClick={stopPropagation}>
                         <div className={styles.viewerImageArea}>
+                            {/* chevron buttons */}
+                            <button
+                                type="button"
+                                className={`${styles.navButton} ${styles.navButtonLeft}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveSelection("prev");
+                                }}
+                                aria-label="Previous image"
+                            >
+                                ‹
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.navButton} ${styles.navButtonRight}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveSelection("next");
+                                }}
+                                aria-label="Next image"
+                            >
+                                ›
+                            </button>
+
+                            {/* close button */}
                             <button
                                 type="button"
                                 className={styles.closeButton}
-                                onClick={() => setSelectedId(null)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedId(null);
+                                }}
                                 aria-label="Close"
                             >
                                 ×
                             </button>
 
-                            <img
-                                src={`http://localhost:3824/thumbnails/${selectedId}?size=2`}
-                                alt={`Preview of image ${selectedId}`}
-                                className={styles.viewerImage}
-                            />
+                            {/* zoom toggle button (1x / 2x) */}
+                            <button
+                                type="button"
+                                className={styles.zoomButton}
+                                onClick={handleZoomButtonClick}
+                                aria-label={
+                                    zoom === 1 ? "Zoom to 2x" : "Zoom to 1x"
+                                }
+                            >
+                                {zoom === 1 ? "1×" : "2×"}
+                            </button>
+
+                            {/* scrollable image area */}
+                            <div
+                                className={styles.viewerImageScroll}
+                                ref={scrollRef}
+                                style={{
+                                    cursor: hoveringImage
+                                        ? zoom === 1
+                                            ? "zoom-in"
+                                            : "zoom-out"
+                                        : "default",
+                                    // Center image at 1x; top-left anchor when zoomed
+                                    justifyContent:
+                                        zoom === 1 ? "center" : "flex-start",
+                                    alignItems:
+                                        zoom === 1 ? "center" : "flex-start",
+                                }}
+                            >
+                                <img
+                                    src={`http://localhost:3824/thumbnails/${selectedId}?size=2`}
+                                    alt={`Preview of image ${selectedId}`}
+                                    className={styles.viewerImage}
+                                    draggable={false}
+                                    onMouseEnter={() => setHoveringImage(true)}
+                                    onMouseLeave={() => setHoveringImage(false)}
+                                    onClick={handleImageClick}
+                                    style={
+                                        zoom === 1
+                                            ? {}
+                                            : {
+                                                  width: `${zoom * 100}%`,
+                                                  height: "auto",
+                                                  maxWidth: "none",
+                                                  maxHeight: "none",
+                                              }
+                                    }
+                                />
+                            </div>
                         </div>
 
                         <aside className={styles.viewerSidebar}>
@@ -204,7 +374,7 @@ export default function Gallery({
                                 Image details
                             </h2>
                             <dl className={styles.sidebarList}>
-                                {/* //TODO: these are placeholders, swap for real metadata later */}
+                                {/* TODO: placeholders, swap for real metadata later */}
                                 <div>
                                     <dt>Filename</dt>
                                     <dd>IMG_{selectedId}.JPG</dd>
