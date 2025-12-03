@@ -60,11 +60,19 @@ const handleSubmit = async (
 
         const ids = [];
         if (result.ok) {
-            for (const [_key, value] of result.value) {
+            for (const [key, value] of result.value) {
                 if (value.ok) {
                     ids.push(value.value);
+                } else {
+                    console.error(`Error uploading ${key} because of ${value.error}`);
                 }
             }
+        } else {
+            console.error(
+                "Error uploading images (is the backend running?):",
+                result.error,
+            );
+            // TODO: show error to user
         }
 
         ids_retrieved_callback(ids);
