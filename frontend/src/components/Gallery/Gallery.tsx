@@ -1,4 +1,3 @@
-// src/components/Gallery/Gallery.tsx
 "use client";
 
 import {
@@ -18,8 +17,7 @@ export type GalleryProps = {
     onChange?: (ids: Set<number>) => void;
 };
 
-// How we should pan after a zoom happens: point (fx, fy) on the image
-// expressed as a fraction of its width/height.
+// point (fx, fy) on image expressed as fraction of width/height (after zoom)
 type PendingPan = null | { fx: number; fy: number };
 
 export default function Gallery({
@@ -37,10 +35,9 @@ export default function Gallery({
     // zoom: 1 = fit, 2 = zoomed
     const [zoom, setZoom] = useState<number>(1);
     const scrollRef = useRef<HTMLDivElement | null>(null);
-    const imgRef = useRef<HTMLImageElement | null>(null);
     const [hoveringImage, setHoveringImage] = useState(false);
 
-    // remember where to pan *after* zoom has been applied
+    // remember where to pan after zoom has been applied
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
 
     const moveSelection = useCallback(
@@ -170,8 +167,6 @@ export default function Gallery({
         }
     };
 
-    // ---- Zoom helpers ------------------------------------------------------
-
     const zoomOut = () => {
         setZoom(1);
         setPendingPan(null);
@@ -182,7 +177,7 @@ export default function Gallery({
         scroller.scrollTop = 0;
     };
 
-    // Zoom to the true center of the image: (fx, fy) = (0.5, 0.5)
+    // zoom to center of image: (fx, fy) = (0.5, 0.5)
     const zoomInCentered = () => {
         setZoom(2);
         setPendingPan({ fx: 0.5, fy: 0.5 });
@@ -197,27 +192,16 @@ export default function Gallery({
         }
     };
 
-    // click on the image area to zoom around the clicked point
-    const handleImageClick = (event: MouseEvent<HTMLDivElement>) => {
+    // if click the image at 1×, it zooms to 2× and pans so clicked spot is centered
+    // if click again at 2×, it zooms back out.
+    const handleImageClick = (event: MouseEvent<HTMLImageElement>) => {
         const scroller = scrollRef.current;
-        const img = imgRef.current;
-        if (!scroller || !img) return;
-
-        // only react if the click is actually on the image
-        const imgRect = img.getBoundingClientRect();
-        if (
-            event.clientX < imgRect.left ||
-            event.clientX > imgRect.right ||
-            event.clientY < imgRect.top ||
-            event.clientY > imgRect.bottom
-        ) {
-            return;
-        }
+        if (!scroller) return; // if no scroll container, escape
 
         event.stopPropagation();
 
         if (zoom === 1) {
-            // fraction of the image where we clicked
+            const imgRect = event.currentTarget.getBoundingClientRect();
             const fx = (event.clientX - imgRect.left) / imgRect.width;
             const fy = (event.clientY - imgRect.top) / imgRect.height;
 
@@ -228,37 +212,23 @@ export default function Gallery({
         }
     };
 
-    // After zoom changes, pan so that the chosen point (fx, fy) is at the center
+    // after zoom changes, pan so that the chosen point (fx, fy) is at the center
     useEffect(() => {
         if (zoom === 1 || !pendingPan) return;
 
         const scroller = scrollRef.current;
-        const img = imgRef.current;
-        if (!scroller || !img) return;
-
-        const scrollerRect = scroller.getBoundingClientRect();
-        const imgRect = img.getBoundingClientRect();
+        if (!scroller) return;
 
         const scrollWidth = scroller.scrollWidth;
         const scrollHeight = scroller.scrollHeight;
+        const clientWidth = scroller.clientWidth;
+        const clientHeight = scroller.clientHeight;
 
-        const maxLeft = Math.max(0, scrollWidth - scroller.clientWidth);
-        const maxTop = Math.max(0, scrollHeight - scroller.clientHeight);
+        const maxLeft = Math.max(0, scrollWidth - clientWidth);
+        const maxTop = Math.max(0, scrollHeight - clientHeight);
 
-        const imgWidth = imgRect.width;
-        const imgHeight = imgRect.height;
-
-        // Image position inside the scroller's content coordinates
-        const imgLeftInScroller =
-            imgRect.left - scrollerRect.left + scroller.scrollLeft;
-        const imgTopInScroller =
-            imgRect.top - scrollerRect.top + scroller.scrollTop;
-
-        const absX = imgLeftInScroller + pendingPan.fx * imgWidth;
-        const absY = imgTopInScroller + pendingPan.fy * imgHeight;
-
-        const rawLeft = absX - scroller.clientWidth / 2;
-        const rawTop = absY - scroller.clientHeight / 2;
+        const rawLeft = pendingPan.fx * scrollWidth - clientWidth / 2;
+        const rawTop = pendingPan.fy * scrollHeight - clientHeight / 2;
 
         const targetLeft = Math.max(0, Math.min(rawLeft, maxLeft));
         const targetTop = Math.max(0, Math.min(rawTop, maxTop));
@@ -357,33 +327,34 @@ export default function Gallery({
                                     zoom === 1 ? "Zoom to 2x" : "Zoom to 1x"
                                 }
                             >
-                                {zoom === 1 ? "1x" : "2x"}
+                                {zoom === 1 ? "1×" : "2×"}
                             </button>
 
                             {/* scrollable image area */}
                             <div
                                 className={styles.viewerImageScroll}
                                 ref={scrollRef}
-                                onClick={handleImageClick}
                                 style={{
                                     cursor: hoveringImage
                                         ? zoom === 1
                                             ? "zoom-in"
                                             : "zoom-out"
                                         : "default",
-                                    // critical: center at 1x, top-align when zoomed
+                                    // Center image at 1x; top-left anchor when zoomed
+                                    justifyContent:
+                                        zoom === 1 ? "center" : "flex-start",
                                     alignItems:
                                         zoom === 1 ? "center" : "flex-start",
                                 }}
                             >
                                 <img
-                                    ref={imgRef}
                                     src={`http://localhost:3824/thumbnails/${selectedId}?size=2`}
                                     alt={`Preview of image ${selectedId}`}
                                     className={styles.viewerImage}
                                     draggable={false}
                                     onMouseEnter={() => setHoveringImage(true)}
                                     onMouseLeave={() => setHoveringImage(false)}
+                                    onClick={handleImageClick}
                                     style={
                                         zoom === 1
                                             ? {}
