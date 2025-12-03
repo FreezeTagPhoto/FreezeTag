@@ -32,7 +32,7 @@ export default function FileUploadButton(props: FileUploadProps) {
 
     return (
         <form action={(e) => handleSubmit(e, props.ids_retrieved_callback)}>
-            <label {...getRootProps({ className: styles.label })}>
+            <div {...getRootProps({ className: styles.label })}>
                 {" "}
                 Upload images{" "}
                 <input
@@ -45,8 +45,8 @@ export default function FileUploadButton(props: FileUploadProps) {
                     id="file-upload"
                     ref={hiddenInputRef}
                 />
-                <input {...getInputProps()} />
-            </label>
+                <input {...getInputProps()} className={styles.button} />
+            </div>
         </form>
     );
 }
