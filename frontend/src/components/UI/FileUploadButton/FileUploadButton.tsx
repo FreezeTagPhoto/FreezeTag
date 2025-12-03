@@ -64,7 +64,9 @@ const handleSubmit = async (
                 if (value.ok) {
                     ids.push(value.value);
                 } else {
-                    console.error(`Error uploading ${key} because of ${value.error}`);
+                    console.error(
+                        `Error uploading ${key} because of ${value.error}`,
+                    );
                 }
             }
         } else {
