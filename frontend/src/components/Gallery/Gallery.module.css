@@ -94,7 +94,9 @@
 
     opacity: 0;
     pointer-events: none;
-    transition: opacity 150ms ease-in-out, background-color 150ms ease-in-out;
+    transition:
+        opacity 150ms ease-in-out,
+        background-color 150ms ease-in-out;
 }
 
 /* Appear on hover over the image area */
@@ -152,7 +154,7 @@
     width: 10px;
     height: 10px;
     border-style: solid;
-    border-width: 0 2px 2px 0;  /* stroke thickness */
+    border-width: 0 2px 2px 0; /* stroke thickness */
     border-color: currentColor;
     transform-origin: center;
 }
