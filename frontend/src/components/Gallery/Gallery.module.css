@@ -51,6 +51,11 @@
     align-items: center;
     background: #121219;
     overflow: hidden; /* inner div handles scrolling */
+
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .viewerImageScroll {
