@@ -28,6 +28,10 @@ export default function Gallery({
 
     const gridRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+    const viewerImageAreaRef = useRef<HTMLDivElement | null>(null);
+
+    // zoom: 1 = fit, 2 = zoomed
+    const [zoom, setZoom] = useState<number>(1);
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -47,6 +51,16 @@ export default function Gallery({
         },
         [selectedId, image_ids],
     );
+
+    // reset zoom + scroll when switching / closing images
+    useEffect(() => {
+        setZoom(1);
+        const area = viewerImageAreaRef.current;
+        if (area) {
+            area.scrollLeft = 0;
+            area.scrollTop = 0;
+        }
+    }, [selectedId]);
 
     useEffect(() => {
         if (selectedId === null) return;
@@ -145,6 +159,78 @@ export default function Gallery({
         }
     };
 
+    const zoomOut = () => {
+        setZoom(1);
+        const area = viewerImageAreaRef.current;
+        if (!area) return;
+        requestAnimationFrame(() => {
+            area.scrollLeft = 0;
+            area.scrollTop = 0;
+        });
+    };
+
+    const zoomInCentered = () => {
+        const area = viewerImageAreaRef.current;
+        setZoom(2);
+        if (!area) return;
+        requestAnimationFrame(() => {
+            const maxLeft = area.scrollWidth - area.clientWidth;
+            const maxTop = area.scrollHeight - area.clientHeight;
+            area.scrollLeft = Math.max(0, maxLeft / 2);
+            area.scrollTop = Math.max(0, maxTop / 2);
+        });
+    };
+
+    const handleZoomButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        if (zoom === 1) {
+            zoomInCentered();
+        } else {
+            zoomOut();
+        }
+    };
+
+    // click-to-zoom at cursor position
+    const handleImageAreaClick = (event: MouseEvent<HTMLDivElement>) => {
+        const target = event.target as HTMLElement;
+        // don't toggle zoom when clicking buttons over the image
+        if (target.closest("button")) return;
+
+        const area = viewerImageAreaRef.current;
+        if (!area) return;
+
+        if (zoom === 1) {
+            const rect = area.getBoundingClientRect();
+
+            // position of click within the scrollable content (before zoom)
+            const offsetX = event.clientX - rect.left + area.scrollLeft;
+            const offsetY = event.clientY - rect.top + area.scrollTop;
+
+            const newZoom = 2;
+            const scaleFactor = newZoom / zoom; // 2 / 1
+
+            setZoom(newZoom);
+
+            // after layout updates for the new zoom, adjust scroll so the
+            // clicked point is roughly centered
+            requestAnimationFrame(() => {
+                const desiredLeft =
+                    offsetX * scaleFactor - area.clientWidth / 2;
+                const desiredTop =
+                    offsetY * scaleFactor - area.clientHeight / 2;
+
+                const maxLeft = area.scrollWidth - area.clientWidth;
+                const maxTop = area.scrollHeight - area.clientHeight;
+
+                area.scrollLeft = Math.max(0, Math.min(desiredLeft, maxLeft));
+                area.scrollTop = Math.max(0, Math.min(desiredTop, maxTop));
+            });
+        } else {
+            // currently zoomed -> zoom back out
+            zoomOut();
+        }
+    };
+
     return (
         <>
             {/* thumbnails */}
@@ -185,7 +271,14 @@ export default function Gallery({
                     onClick={handleBackdropClick}
                 >
                     <div className={styles.viewer} onClick={stopPropagation}>
-                        <div className={styles.viewerImageArea}>
+                        <div
+                            className={styles.viewerImageArea}
+                            ref={viewerImageAreaRef}
+                            onClick={handleImageAreaClick}
+                            style={{
+                                cursor: zoom === 1 ? "zoom-in" : "zoom-out",
+                            }}
+                        >
                             {/* chevron buttons */}
                             <button
                                 type="button"
@@ -213,16 +306,43 @@ export default function Gallery({
                             <button
                                 type="button"
                                 className={styles.closeButton}
-                                onClick={() => setSelectedId(null)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedId(null);
+                                }}
                                 aria-label="Close"
                             >
                                 ×
+                            </button>
+
+                            {/* zoom toggle button (1x / 2x) */}
+                            <button
+                                type="button"
+                                className={styles.zoomButton}
+                                onClick={handleZoomButtonClick}
+                                aria-label={
+                                    zoom === 1 ? "Zoom to 2x" : "Zoom to 1x"
+                                }
+                            >
+                                {zoom === 1 ? "1x" : "2x"}
                             </button>
 
                             <img
                                 src={`http://localhost:3824/thumbnails/${selectedId}?size=2`}
                                 alt={`Preview of image ${selectedId}`}
                                 className={styles.viewerImage}
+                                style={
+                                    zoom === 1
+                                        ? {
+                                              width: "100%",
+                                              height: "auto",
+                                              maxHeight: "100%",
+                                          }
+                                        : {
+                                              width: `${zoom * 100}%`,
+                                              height: "auto",
+                                          }
+                                }
                             />
                         </div>
 
