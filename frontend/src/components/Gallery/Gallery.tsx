@@ -6,6 +6,7 @@ import {
     useRef,
     MouseEvent,
     KeyboardEvent as ReactKeyboardEvent,
+    useCallback,
 } from "react";
 import styles from "./Gallery.module.css";
 import GalleryImage from "./GalleryImage/GalleryImage";
@@ -28,6 +29,25 @@ export default function Gallery({
     const gridRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
+    const moveSelection = useCallback(
+        (direction: "next" | "prev") => {
+            if (selectedId === null) return;
+
+            const currentIndex = image_ids.indexOf(selectedId);
+            if (currentIndex === -1) return;
+
+            const delta = direction === "next" ? 1 : -1;
+            const nextIndex = currentIndex + delta;
+
+            if (nextIndex < 0 || nextIndex >= image_ids.length) return;
+
+            const nextId = image_ids[nextIndex];
+            setSelectedId(nextId);
+            setFocusedIndex(nextIndex);
+        },
+        [selectedId, image_ids],
+    );
+
     useEffect(() => {
         if (selectedId === null) return;
 
@@ -46,33 +66,16 @@ export default function Gallery({
             event.preventDefault();
             event.stopPropagation();
 
-            const currentIndex = image_ids.indexOf(selectedId);
-            if (currentIndex === -1) return;
-
-            let nextIndex = currentIndex;
-
             if (event.key === "ArrowRight") {
-                if (currentIndex < image_ids.length - 1) {
-                    nextIndex = currentIndex + 1;
-                } else {
-                    return;
-                }
+                moveSelection("next");
             } else if (event.key === "ArrowLeft") {
-                if (currentIndex > 0) {
-                    nextIndex = currentIndex - 1;
-                } else {
-                    return;
-                }
+                moveSelection("prev");
             }
-
-            const nextId = image_ids[nextIndex];
-            setSelectedId(nextId);
-            setFocusedIndex(nextIndex);
         };
 
         window.addEventListener("keydown", handleKeyDown, true);
         return () => window.removeEventListener("keydown", handleKeyDown, true);
-    }, [selectedId, image_ids]);
+    }, [selectedId, moveSelection]);
 
     const handleBackdropClick = () => {
         setSelectedId(null);
@@ -183,6 +186,30 @@ export default function Gallery({
                 >
                     <div className={styles.viewer} onClick={stopPropagation}>
                         <div className={styles.viewerImageArea}>
+                            {/* chevron buttons */}
+                            <button
+                                type="button"
+                                className={`${styles.navButton} ${styles.navButtonLeft}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveSelection("prev");
+                                }}
+                                aria-label="Previous image"
+                            >
+                                ‹
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.navButton} ${styles.navButtonRight}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveSelection("next");
+                                }}
+                                aria-label="Next image"
+                            >
+                                ›
+                            </button>
+                            {/* close button */}
                             <button
                                 type="button"
                                 className={styles.closeButton}
