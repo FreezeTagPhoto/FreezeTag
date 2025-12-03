@@ -28,10 +28,12 @@ export default function Gallery({
 
     const gridRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
-    const viewerImageAreaRef = useRef<HTMLDivElement | null>(null);
 
     // zoom: 1 = fit, 2 = zoomed
     const [zoom, setZoom] = useState<number>(1);
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const imgRef = useRef<HTMLImageElement | null>(null);
+    const [hoveringImage, setHoveringImage] = useState(false);
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -52,13 +54,13 @@ export default function Gallery({
         [selectedId, image_ids],
     );
 
-    // reset zoom + scroll when switching / closing images
+    // reset zoom + pan when opening / changing image
     useEffect(() => {
         setZoom(1);
-        const area = viewerImageAreaRef.current;
-        if (area) {
-            area.scrollLeft = 0;
-            area.scrollTop = 0;
+        const scroller = scrollRef.current;
+        if (scroller) {
+            scroller.scrollLeft = 0;
+            scroller.scrollTop = 0;
         }
     }, [selectedId]);
 
@@ -159,25 +161,35 @@ export default function Gallery({
         }
     };
 
+    // ---- Zoom helpers ------------------------------------------------------
+
     const zoomOut = () => {
         setZoom(1);
-        const area = viewerImageAreaRef.current;
-        if (!area) return;
+        const scroller = scrollRef.current;
+        if (!scroller) return;
+
         requestAnimationFrame(() => {
-            area.scrollLeft = 0;
-            area.scrollTop = 0;
+            scroller.scrollLeft = 0;
+            scroller.scrollTop = 0;
         });
     };
 
     const zoomInCentered = () => {
-        const area = viewerImageAreaRef.current;
+        const scroller = scrollRef.current;
         setZoom(2);
-        if (!area) return;
+        if (!scroller) return;
+
         requestAnimationFrame(() => {
-            const maxLeft = area.scrollWidth - area.clientWidth;
-            const maxTop = area.scrollHeight - area.clientHeight;
-            area.scrollLeft = Math.max(0, maxLeft / 2);
-            area.scrollTop = Math.max(0, maxTop / 2);
+            const maxLeft = Math.max(
+                0,
+                scroller.scrollWidth - scroller.clientWidth,
+            );
+            const maxTop = Math.max(
+                0,
+                scroller.scrollHeight - scroller.clientHeight,
+            );
+            scroller.scrollLeft = maxLeft / 2;
+            scroller.scrollTop = maxTop / 2;
         });
     };
 
@@ -190,43 +202,54 @@ export default function Gallery({
         }
     };
 
-    // click-to-zoom at cursor position
-    const handleImageAreaClick = (event: MouseEvent<HTMLDivElement>) => {
-        const target = event.target as HTMLElement;
-        // don't toggle zoom when clicking buttons over the image
-        if (target.closest("button")) return;
+    // click on the image area to zoom around the clicked point
+    const handleImageClick = (event: MouseEvent<HTMLDivElement>) => {
+        const scroller = scrollRef.current;
+        const img = imgRef.current;
+        if (!scroller || !img) return;
 
-        const area = viewerImageAreaRef.current;
-        if (!area) return;
+        // only react if the click is actually on the image
+        const imgRect = img.getBoundingClientRect();
+        if (
+            event.clientX < imgRect.left ||
+            event.clientX > imgRect.right ||
+            event.clientY < imgRect.top ||
+            event.clientY > imgRect.bottom
+        ) {
+            return;
+        }
+
+        event.stopPropagation();
 
         if (zoom === 1) {
-            const rect = area.getBoundingClientRect();
+            // fraction of the image where we clicked
+            const fx = (event.clientX - imgRect.left) / imgRect.width;
+            const fy = (event.clientY - imgRect.top) / imgRect.height;
 
-            // position of click within the scrollable content (before zoom)
-            const offsetX = event.clientX - rect.left + area.scrollLeft;
-            const offsetY = event.clientY - rect.top + area.scrollTop;
+            setZoom(2);
 
-            const newZoom = 2;
-            const scaleFactor = newZoom / zoom; // 2 / 1
-
-            setZoom(newZoom);
-
-            // after layout updates for the new zoom, adjust scroll so the
-            // clicked point is roughly centered
+            // after zoom layout, pan so that (fx,fy) is roughly centered
             requestAnimationFrame(() => {
-                const desiredLeft =
-                    offsetX * scaleFactor - area.clientWidth / 2;
-                const desiredTop =
-                    offsetY * scaleFactor - area.clientHeight / 2;
+                const scrollWidth = scroller.scrollWidth;
+                const scrollHeight = scroller.scrollHeight;
 
-                const maxLeft = area.scrollWidth - area.clientWidth;
-                const maxTop = area.scrollHeight - area.clientHeight;
+                const targetLeft = fx * scrollWidth - scroller.clientWidth / 2;
+                const targetTop =
+                    fy * scrollHeight - scroller.clientHeight / 2;
 
-                area.scrollLeft = Math.max(0, Math.min(desiredLeft, maxLeft));
-                area.scrollTop = Math.max(0, Math.min(desiredTop, maxTop));
+                const maxLeft = Math.max(
+                    0,
+                    scrollWidth - scroller.clientWidth,
+                );
+                const maxTop = Math.max(0, scrollHeight - scroller.clientHeight);
+
+                scroller.scrollLeft = Math.max(
+                    0,
+                    Math.min(targetLeft, maxLeft),
+                );
+                scroller.scrollTop = Math.max(0, Math.min(targetTop, maxTop));
             });
         } else {
-            // currently zoomed -> zoom back out
             zoomOut();
         }
     };
@@ -271,14 +294,7 @@ export default function Gallery({
                     onClick={handleBackdropClick}
                 >
                     <div className={styles.viewer} onClick={stopPropagation}>
-                        <div
-                            className={styles.viewerImageArea}
-                            ref={viewerImageAreaRef}
-                            onClick={handleImageAreaClick}
-                            style={{
-                                cursor: zoom === 1 ? "zoom-in" : "zoom-out",
-                            }}
-                        >
+                        <div className={styles.viewerImageArea}>
                             {/* chevron buttons */}
                             <button
                                 type="button"
@@ -302,6 +318,7 @@ export default function Gallery({
                             >
                                 ›
                             </button>
+
                             {/* close button */}
                             <button
                                 type="button"
@@ -327,23 +344,39 @@ export default function Gallery({
                                 {zoom === 1 ? "1x" : "2x"}
                             </button>
 
-                            <img
-                                src={`http://localhost:3824/thumbnails/${selectedId}?size=2`}
-                                alt={`Preview of image ${selectedId}`}
-                                className={styles.viewerImage}
-                                style={
-                                    zoom === 1
-                                        ? {
-                                              width: "100%",
-                                              height: "auto",
-                                              maxHeight: "100%",
-                                          }
-                                        : {
-                                              width: `${zoom * 100}%`,
-                                              height: "auto",
-                                          }
-                                }
-                            />
+                            {/* scrollable image area */}
+                            <div
+                                className={styles.viewerImageScroll}
+                                ref={scrollRef}
+                                onClick={handleImageClick}
+                                style={{
+                                    cursor: hoveringImage
+                                        ? zoom === 1
+                                            ? "zoom-in"
+                                            : "zoom-out"
+                                        : "default",
+                                }}
+                            >
+                                <img
+                                    ref={imgRef}
+                                    src={`http://localhost:3824/thumbnails/${selectedId}?size=2`}
+                                    alt={`Preview of image ${selectedId}`}
+                                    className={styles.viewerImage}
+                                    draggable={false}
+                                    onMouseEnter={() => setHoveringImage(true)}
+                                    onMouseLeave={() => setHoveringImage(false)}
+                                    style={
+                                        zoom === 1
+                                            ? {}
+                                            : {
+                                                  width: `${zoom * 100}%`,
+                                                  height: "auto",
+                                                  maxWidth: "none",
+                                                  maxHeight: "none",
+                                              }
+                                    }
+                                />
+                            </div>
                         </div>
 
                         <aside className={styles.viewerSidebar}>
