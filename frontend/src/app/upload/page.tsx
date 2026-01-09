@@ -34,7 +34,6 @@ export default function Home() {
                 <div className={styles.gallery}>
                     <MassTaggingGallery
                         image_ids={ids}
-                        selectable_images={true}
                         onChange={(ids) => setSelectedIds(ids)}
                     />
                 </div>
