@@ -1,5 +1,5 @@
 "use client";
-import Gallery from "@/components/Gallery/Gallery";
+import MassTaggingGallery from "@/components/Gallery/MassTaggingGallery/MassTaggingGallery";
 import FileUploadButton from "@/components/UI/FileUploadButton/FileUploadButton";
 import { useState } from "react";
 import styles from "./page.module.css";
@@ -32,9 +32,8 @@ export default function Home() {
 
             <div className={styles.gallery_tags_container}>
                 <div className={styles.gallery}>
-                    <Gallery
+                    <MassTaggingGallery
                         image_ids={ids}
-                        selectable_images={true}
                         onChange={(ids) => setSelectedIds(ids)}
                     />
                 </div>

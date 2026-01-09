@@ -1,7 +1,7 @@
 "use client";
 import SearchHandler from "@/api/query/searchhandler";
 import styles from "./page.module.css";
-import Gallery from "@/components/Gallery/Gallery";
+import MainGallery from "@/components/Gallery/MainGallery/MainGallery";
 import TopBar from "@/components/TopBar/TopBar";
 import { useEffect, useState } from "react";
 
@@ -41,7 +41,7 @@ export default function Home() {
                     <div className={styles.pillsRow} />
                 </header>
 
-                <Gallery image_ids={images_ids} />
+                <MainGallery image_ids={images_ids} />
             </main>
         </>
     );

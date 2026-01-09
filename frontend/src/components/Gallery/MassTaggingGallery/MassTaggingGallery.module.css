@@ -1,0 +1,14 @@
+/* ===========================
+   Thumbnail grid
+   =========================== */
+
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 12px;
+}
+
+.grid button {
+    flex: 0 0 auto;
+}

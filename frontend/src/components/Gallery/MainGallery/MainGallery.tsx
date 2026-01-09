@@ -8,23 +8,17 @@ import {
     KeyboardEvent as ReactKeyboardEvent,
     useCallback,
 } from "react";
-import styles from "./Gallery.module.css";
-import GalleryImage from "./GalleryImage/GalleryImage";
+import styles from "./MainGallery.module.css";
+import GalleryImage from "../GalleryImage/GalleryImage";
 
 export type GalleryProps = {
     image_ids: number[];
-    selectable_images?: boolean;
-    onChange?: (ids: Set<number>) => void;
 };
 
 // point (fx, fy) on image expressed as fraction of width/height (after zoom)
 type PendingPan = null | { fx: number; fy: number };
 
-export default function Gallery({
-    image_ids,
-    selectable_images,
-    onChange,
-}: GalleryProps) {
+export default function MainGallery({ image_ids }: GalleryProps) {
     // Full Screen Preview Handling
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
@@ -148,25 +142,6 @@ export default function Gallery({
         }
     };
 
-    // Selectable Images Handling
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-
-    const handleImageSelectionChange = (id: number) => {
-        const newIds = new Set<number>().union(selectedIds);
-
-        if (newIds.has(id)) {
-            newIds.delete(id);
-        } else {
-            newIds.add(id);
-        }
-
-        setSelectedIds(newIds);
-
-        if (onChange) {
-            onChange(newIds);
-        }
-    };
-
     const zoomOut = () => {
         setZoom(1);
         setPendingPan(null);
@@ -255,20 +230,15 @@ export default function Gallery({
                         key={id}
                         id={id}
                         onClick={() => {
-                            if (selectable_images) {
-                                handleImageSelectionChange(id);
-                            } else {
-                                setSelectedId(id);
-                            }
+                            setSelectedId(id);
                         }}
                         onFocus={() => {
-                            // Avoids focusing in select mode
-                            if (!selectable_images) setFocusedIndex(index);
+                            setFocusedIndex(index);
                         }}
                         buttonRef={(el) => {
                             itemRefs.current[index] = el;
                         }}
-                        selected={selectedIds.has(id)}
+                        selected={false}
                     />
                 ))}
             </div>
