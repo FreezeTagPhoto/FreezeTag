@@ -8,8 +8,8 @@ import {
     KeyboardEvent as ReactKeyboardEvent,
     useCallback,
 } from "react";
-import styles from "./Gallery.module.css";
-import GalleryImage from "./GalleryImage/GalleryImage";
+import styles from "./MainGallery.module.css";
+import GalleryImage from "../GalleryImage/GalleryImage";
 
 export type GalleryProps = {
     image_ids: number[];
@@ -20,7 +20,7 @@ export type GalleryProps = {
 // point (fx, fy) on image expressed as fraction of width/height (after zoom)
 type PendingPan = null | { fx: number; fy: number };
 
-export default function Gallery({
+export default function MainGallery({
     image_ids,
     selectable_images,
     onChange,
