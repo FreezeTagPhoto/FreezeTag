@@ -44,6 +44,7 @@ type ImageTagResult struct {
 
 type ImageRepository interface {
 	SearchImage(query queries.DatabaseQuery) ([]database.ImageId, error)
+	SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder) ([]database.ImageId, error)
 	StoreImageBytes(data []byte, filename string) UploadResult
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
 	RetrieveAllTags() ([]string, error)
@@ -168,6 +169,10 @@ func (repo *DefaultImageRepository) SearchImage(query queries.DatabaseQuery) ([]
 	return repo.db.GetImages(query)
 }
 
+func (repo *DefaultImageRepository) SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder) ([]database.ImageId, error) {
+	return repo.db.GetImagesOrder(query, field, order)
+}
+
 func (repo *DefaultImageRepository) RetrieveAllTags() ([]string, error) {
 	return repo.db.GetAllTags()
 }
@@ -216,16 +221,15 @@ func (repo *DefaultImageRepository) RemoveImageTags(id database.ImageId, tags []
 	}
 }
 
-func (repo *DefaultImageRepository) GetImageFilepath(id database.ImageId) (string, error) { 
+func (repo *DefaultImageRepository) GetImageFilepath(id database.ImageId) (string, error) {
 	fileName, err := repo.db.GetImageFile(id)
-	if err != nil { 
+	if err != nil {
 		return "", err
 	}
-	if fileName == nil || *fileName == "" { 
+	if fileName == nil || *fileName == "" {
 		return "", fmt.Errorf("nil or empty file")
 	}
 
-	
 	return fmt.Sprintf("%s%s", repo.folderPath, *fileName), nil
 }
 

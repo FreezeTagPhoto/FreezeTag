@@ -55,17 +55,19 @@ func parseNearParam(near string) ([3]float64, error) {
 // @description Search for an image given information
 // @produce     application/json
 // @router      /search [get]
-// @param       make           query string  false "camera make"
-// @param       makeLike       query string  false "camera make fuzzy"
-// @param       model          query string  false "camera model"
-// @param       modelLike      query string  false "camera model fuzzy"
-// @param       takenBefore    query string  false "picture taken before (unix epoch)"
-// @param       takenAfter     query string  false "picture taken after (unix epoch)"
-// @param       uploadedBefore query string  false "picture uploaded before (unix epoch)"
-// @param       uploadedAfter  query string  false "picture uploaded after (unix epoch)"
-// @param       near           query string  false "latitude/longitude/distance (degrees)" example(100.0,12.0,1.0)
-// @param       tag            query []string false "picture tag"                          collectionFormat(multi)
-// @param       tagLike        query []string false "picture tag fuzzy"                    collectionFormat(multi)
+// @param       make           query string   false "camera make"
+// @param       makeLike       query string   false "camera make fuzzy"
+// @param       model          query string   false "camera model"
+// @param       modelLike      query string   false "camera model fuzzy"
+// @param       takenBefore    query string   false "picture taken before (unix epoch)"
+// @param       takenAfter     query string   false "picture taken after (unix epoch)"
+// @param       uploadedBefore query string   false "picture uploaded before (unix epoch)"
+// @param       uploadedAfter  query string   false "picture uploaded after (unix epoch)"
+// @param       near           query string   false "latitude/longitude/distance (degrees)" example(100.0,12.0,1.0)
+// @param       tag            query []string false "picture tag"                           collectionFormat(multi)
+// @param       tagLike        query []string false "picture tag fuzzy"                     collectionFormat(multi)
+// @param       sortBy         query string   false "sort by"                               Enums(DateAdded,DateCreated) default(DateAdded)
+// @param       sortOrder      query string   false "sort order"                            Enums(ASC,DESC) default(DESC)
 // @success     200 {array}  database.ImageId
 // @failure     400 {object} api.StatusBadRequestResponse
 // @failure     500 {object} api.StatusServerErrorResponse
@@ -129,7 +131,31 @@ func (se SearchEndpoint) HandleGet(c *gin.Context) {
 		}
 		query.UploadedAfter(time.Unix(ua, 0))
 	}
-	images, err := se.imageRepository.SearchImage(query)
+	var field queries.SortField
+	var order queries.SortOrder
+	if sfParam := c.Query("sortBy"); sfParam != "" {
+		switch sfParam {
+		case "DateAdded":
+			field = queries.DateAdded
+		case "DateCreated":
+			field = queries.DateCreated
+		default:
+			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad sortBy parameter"})
+			return
+		}
+	}
+	if soParam := c.Query("sortOrder"); soParam != "" {
+		switch soParam {
+		case "ASC":
+			order = queries.Ascending
+		case "DESC":
+			order = queries.Descending
+		default:
+			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad sortOrder parameter"})
+			return
+		}
+	}
+	images, err := se.imageRepository.SearchImageOrdered(query, field, order)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
 		return
