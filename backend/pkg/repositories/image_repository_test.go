@@ -30,7 +30,6 @@ func initParserCollection() images.Parser {
 	return parserCollection
 }
 
-
 func TestFolderPath(t *testing.T) {
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	parser := initParserCollection()
@@ -249,6 +248,18 @@ func TestSearchImageSomeReturnedIDs(t *testing.T) {
 	assert.Equal(t, result, ids)
 }
 
+func TestSearchImageOrderedSomeReturnedIDs(t *testing.T) {
+	ids := []database.ImageId{1, 3, 2, 4, 5}
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().GetImagesOrder(mock.Anything, mock.Anything, mock.Anything).Return(ids, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result, err := repo.SearchImageOrdered(queries.CreateImageQuery(), queries.DateCreated, queries.Ascending)
+	assert.NoError(t, err)
+	assert.Equal(t, result, ids)
+}
+
 func TestRetrieveAllTagsSuccess(t *testing.T) {
 	expected := []string{"tag1", "tag2"}
 	mockdb := mockDatabase.NewMockImageDatabase(t)
@@ -373,7 +384,6 @@ func TestGetImageFilepathNilString(t *testing.T) {
 	assert.NotNil(t, err, "result should be valid")
 	assert.Equal(t, err.Error(), "nil or empty file")
 }
-
 
 func TestGetImageFilepathError(t *testing.T) {
 	mockdb := mockDatabase.NewMockImageDatabase(t)

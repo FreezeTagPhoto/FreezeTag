@@ -19,6 +19,8 @@ type TagId int64
 type ImageDatabase interface {
 	// Get a list of image IDs corresponding to the provided query
 	GetImages(queries.DatabaseQuery) ([]ImageId, error)
+	// Get a list of image IDs corresponding to the provided query and order
+	GetImagesOrder(queries.DatabaseQuery, queries.SortField, queries.SortOrder) ([]ImageId, error)
 	// Get the image filename pointed to by the image ID
 	GetImageFile(ImageId) (*string, error)
 	// Get the thumbnail data at the given thumbnail level for the image with the given ID
@@ -94,7 +96,11 @@ func cosineDistanceDegrees(latA float64, latB float64, longA float64, longB floa
 }
 
 func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery) ([]ImageId, error) {
-	s, as := queries.ImageIdPreparable(q)
+	return db.GetImagesOrder(q, queries.DateAdded, queries.Descending)
+}
+
+func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder) ([]ImageId, error) {
+	s, as := queries.ImageIdPreparable(q, sf, so)
 	stmt, err := db.db.Prepare(s)
 	if err != nil {
 		return []ImageId{}, err
@@ -318,7 +324,7 @@ func (db SqliteImageDatabase) GetImageMetadata(id ImageId) (imagedata.Metadata, 
 			return imagedata.Metadata{}, err
 		}
 		return imagedata.Metadata{
-			FileName:    nullStringPtr(fileName),
+			FileName:     nullStringPtr(fileName),
 			DateTaken:    nullInt64Ptr(dateTaken),
 			DateUploaded: nullInt64Ptr(dateUploaded),
 			CameraMake:   nullStringPtr(cameraMake),

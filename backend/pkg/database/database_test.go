@@ -73,6 +73,37 @@ func TestAddAndRetrieveImages(t *testing.T) {
 	assert.Equal(t, "foo.png", *name)
 }
 
+func TestRetrieveImagesSortedByDateCreated(t *testing.T) {
+	tmp := createTempDatabase(t)
+	today := time.Now()
+	yesterday := today.Add(-24 * time.Hour)
+	halfway := today.Add(-12 * time.Hour)
+	id1, err := tmp.AddImage("foo.png", imagedata.Data{
+		Width:       1280,
+		Height:      720,
+		DateCreated: &yesterday,
+	})
+	assert.NoError(t, err)
+	assert.NotZero(t, id1)
+	id2, err := tmp.AddImage("bar.png", imagedata.Data{
+		Width:       480,
+		Height:      320,
+		DateCreated: &today,
+	})
+	assert.NoError(t, err)
+	assert.NotZero(t, id2)
+	id3, err := tmp.AddImage("baz.png", imagedata.Data{
+		Width:       720,
+		Height:      1280,
+		DateCreated: &halfway,
+	})
+	assert.NoError(t, err)
+	assert.NotZero(t, id3)
+	ids, err := tmp.GetImagesOrder(queries.CreateImageQuery(), queries.DateCreated, queries.Descending)
+	assert.NoError(t, err)
+	assert.Equal(t, []ImageId{id2, id3, id1}, ids)
+}
+
 func TestRetrieveNoImage(t *testing.T) {
 	tmp := createTempDatabase(t)
 	name, err := tmp.GetImageFile(ImageId(1))
@@ -388,7 +419,6 @@ func TestRemoveTags(t *testing.T) {
 	assert.Equal(t, []string{"a", "c", "d"}, tags)
 }
 
-
 func TestGetMetadata(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
@@ -406,7 +436,7 @@ func TestGetMetadata(t *testing.T) {
 func TestGetMetadataNoId(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
-	idB := idA+1
+	idB := idA + 1
 	data, err := tmp.GetImageMetadata(idB)
 	require.NoError(t, err)
 	require.NotNil(t, data)
