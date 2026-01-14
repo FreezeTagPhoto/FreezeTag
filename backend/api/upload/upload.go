@@ -14,14 +14,16 @@ import (
 /* Types */
 type UploadEndpoint struct {
 	imageRepository repositories.ImageRepository
+	jobRepository   repositories.JobRepository
 }
 
 /* Functions */
 
 // Creates a new UploadEndpoint with the given image repository.
-func InitUploadEndpoint(repository repositories.ImageRepository) UploadEndpoint {
+func InitUploadEndpoint(repository repositories.ImageRepository, jobRepository repositories.JobRepository) UploadEndpoint {
 	return UploadEndpoint{
 		imageRepository: repository,
+		jobRepository:   jobRepository,
 	}
 }
 
@@ -50,7 +52,8 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 		return
 	}
 
-	results := make(chan repositories.UploadResult, len(files))
+	jobs := []*repositories.FileJob{}
+
 	for _, file := range files {
 		bytes, err := readFileBytes(file)
 
@@ -58,29 +61,29 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
 			return
 		}
-		go func(data []byte, filename string) {
-			results <- ue.imageRepository.StoreImageBytes(data, filename)
-		}(bytes, file.Filename)
+		jobs = append(jobs, &repositories.FileJob{Name: file.Filename, Bytes: bytes})
 	}
-	// id := uuid.New()
-	// c.JSON(http.StatusOK, api.Job{Uuid: id, Status: "processing", Name: "uploading files"})
 
-	// uploaded := make([]repositories.ImageUploadSuccess, 0, len(files))
-	// errors := make([]repositories.ImageUploadFail, 0)
-	// for range files {
-	// 	result := <-results
-	// 	if result.Err != nil {
-	// 		errors = append(errors, *result.Err)
-	// 	} else {
-	// 		uploaded = append(uploaded, *result.Success)
-	// 	}
-	// }
+	UUID := repositories.NewJobBatchID()
+	jobBatch := repositories.JobBatch{
+		UUID:       UUID,
+		InProgress: jobs,
+	}
+	
+	err = ue.jobRepository.Create(&jobBatch)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to create job batch: " + err.Error()})
+		return
+	}
 
-	// response := api.StatusOkUploadResponse{
-	// 	Uploaded: uploaded,
-	// 	Errors:   errors,
-	// }
-	// c.JSON(http.StatusOK, response)
+	for _, file := range jobs {
+		go func(name string, data []byte) {
+			result := ue.imageRepository.StoreImageBytes(data, name)
+			ue.jobRepository.CompleteFileJob(jobBatch.UUID, name, result)
+		}(file.Name, file.Bytes)
+	}
+
+	c.JSON(http.StatusOK, &jobBatch)
 }
 
 // Reads the bytes from a multipart.FileHeader

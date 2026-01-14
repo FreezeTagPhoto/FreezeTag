@@ -34,7 +34,8 @@ func main() {
 	router := gin.Default()
 	docs.SwaggerInfo.BasePath = "/"
 	repo := initRepository(defaultImageFolder)
-	RegisterEndpoints(router, repo)
+	jobRepo := initJobRepository()
+	RegisterEndpoints(router, repo, jobRepo)
 	router.GET("/swagger/*any", func(c *gin.Context) {
 		if c.Param("any") == "" || c.Param("any") == "/" {
 			c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
@@ -66,8 +67,12 @@ func initRepository(imageFolder string) repositories.ImageRepository {
 	return repositories.InitImageRepository(db, parserCollection, imageFolder)
 }
 
-func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository) {
-	upload.InitUploadEndpoint(repo).RegisterEndpoints(router)
+func initJobRepository() repositories.JobRepository {
+	return repositories.NewDefaultJobRepository()
+}
+
+func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository, jobRepo repositories.JobRepository) {
+	upload.InitUploadEndpoint(repo, jobRepo).RegisterEndpoints(router)
 	thumbnails.InitThumbnailEndpoint(repo).RegisterEndpoints(router)
 	search.InitSearchEndpoint(repo).RegisterEndpoints(router)
 	tags.InitTagEndpoint(repo).RegisterEndpoints(router)
