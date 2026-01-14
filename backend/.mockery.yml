@@ -21,6 +21,7 @@ packages:
       structname: "Mock{{.InterfaceName}}"
     interfaces:
       ImageRepository:
+      JobRepository:
 
   freezetag/backend/pkg/database:
     config:

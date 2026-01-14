@@ -3,6 +3,7 @@
 package main
 
 import (
+	"freezetag/backend/api/jobquery"
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
@@ -72,9 +73,11 @@ func initJobRepository() repositories.JobRepository {
 }
 
 func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository, jobRepo repositories.JobRepository) {
-	upload.InitUploadEndpoint(repo, jobRepo).RegisterEndpoints(router)
+	upload.InitUploadEndpoint(repo, jobRepo).RegisterEndpoints(router)	
+
 	thumbnails.InitThumbnailEndpoint(repo).RegisterEndpoints(router)
 	search.InitSearchEndpoint(repo).RegisterEndpoints(router)
 	tags.InitTagEndpoint(repo).RegisterEndpoints(router)
-	// Other endpoints would be registered here
+
+	jobquery.InitJobQueryEndpoint(jobRepo).RegisterEndpoints(router)
 }

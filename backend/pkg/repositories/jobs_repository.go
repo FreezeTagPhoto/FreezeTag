@@ -3,6 +3,7 @@ package repositories
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -11,7 +12,9 @@ type JobBatch struct {
 	UUID       uuid.UUID       `json:"uuid"`
 	Results    []*UploadResult `json:"results"`
 	InProgress []*FileJob      `json:"in_progress"`
-	mutex      sync.Mutex      `json:"-"`
+
+	mutex sync.Mutex  `json:"-"`
+	timer *time.Timer `json:"-"`
 }
 
 type FileJob struct {
@@ -19,6 +22,11 @@ type FileJob struct {
 	Status string `json:"status"`
 	Bytes  []byte `json:"-"`
 }
+
+const (
+	MaxIdleTime   = 1 * time.Hour    // if a job batch is idle for 1 hour, assume something has happened to the job and kill it
+	RetentionTime = 15 * time.Minute // keep completed job batches for 15 minutes after completion
+)
 
 type JobRepository interface {
 	Create(*JobBatch) error
@@ -40,6 +48,9 @@ func NewDefaultJobRepository() *DefaultJobRepository {
 
 func (r *DefaultJobRepository) Create(batch *JobBatch) error {
 	r.jobs.Store(batch.UUID, batch)
+	batch.timer = time.AfterFunc(MaxIdleTime, func() {
+		_ = r.Delete(batch.UUID)
+	})
 	return nil
 }
 
@@ -74,16 +85,23 @@ func (r *DefaultJobRepository) CompleteFileJob(batchID uuid.UUID, fileName strin
 	}
 	batch.mutex.Lock()
 	defer batch.mutex.Unlock()
+	batch.updateIdleStatus(MaxIdleTime)
 
 	for i, job := range batch.InProgress {
 		if job.Name == fileName {
 			batch.Results = append(batch.Results, &result)
-			// Remove from in progress, preserving order
 			batch.InProgress = append(batch.InProgress[:i], batch.InProgress[i+1:]...)
+
+			if len(batch.InProgress) == 0 {
+				if batch.timer != nil {
+					batch.timer.Stop()
+					batch.timer.Reset(RetentionTime)
+				}
+			}
 			return nil
 		}
 	}
-	return fmt.Errorf("File name not found")
+	return fmt.Errorf("file name not found")
 }
 
 func (r *DefaultJobRepository) UpdateJobStatus(batchID uuid.UUID, fileName string, status string) error {
@@ -93,6 +111,7 @@ func (r *DefaultJobRepository) UpdateJobStatus(batchID uuid.UUID, fileName strin
 	}
 	batch.mutex.Lock()
 	defer batch.mutex.Unlock()
+	batch.updateIdleStatus(MaxIdleTime)
 
 	for _, job := range batch.InProgress {
 		if job.Name == fileName {
@@ -100,9 +119,16 @@ func (r *DefaultJobRepository) UpdateJobStatus(batchID uuid.UUID, fileName strin
 			return nil
 		}
 	}
-	return fmt.Errorf("File name not found")
+	return fmt.Errorf("file name not found")
 }
 
 func NewJobBatchID() uuid.UUID {
 	return uuid.New()
+}
+
+func (batch *JobBatch) updateIdleStatus(reset time.Duration) {
+	if batch.timer != nil {
+		batch.timer.Stop()
+		batch.timer.Reset(reset)
+	}
 }

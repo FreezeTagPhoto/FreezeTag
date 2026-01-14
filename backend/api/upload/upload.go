@@ -37,7 +37,7 @@ func (ue UploadEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @produce     application/json
 // @router      /upload [post]
 // @param       file formData []file true "image file to upload" collectionFormat(multi)
-// @success     200 {object} api.StatusOkUploadResponse
+// @success     200 {object} uuid.UUID "the UUID of the created job batch, accepted in /jobquery to check the status of the batch"
 // @failure     400 {object} api.StatusBadRequestResponse
 func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 	form, err := c.MultipartForm()
@@ -79,11 +79,11 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 	for _, file := range jobs {
 		go func(name string, data []byte) {
 			result := ue.imageRepository.StoreImageBytes(data, name)
-			ue.jobRepository.CompleteFileJob(jobBatch.UUID, name, result)
+			_ = ue.jobRepository.CompleteFileJob(jobBatch.UUID, name, result)
 		}(file.Name, file.Bytes)
 	}
 
-	c.JSON(http.StatusOK, &jobBatch)
+	c.JSON(http.StatusAccepted, &UUID)
 }
 
 // Reads the bytes from a multipart.FileHeader
