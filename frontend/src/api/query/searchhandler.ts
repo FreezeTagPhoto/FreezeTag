@@ -55,16 +55,24 @@ async function search_with_handler(
         } else if (query_string.startsWith("make=")) {
             const sub_query = query_string.slice("make=".length);
             if (sub_query.startsWith(`"`)) {
-                new_query = "make=" + sub_query.slice(1, sub_query.length - 1);
+                new_query =
+                    "make=" +
+                    encodeURIComponent(
+                        sub_query.slice(1, sub_query.length - 1),
+                    );
             } else {
-                new_query = "makeLike=" + sub_query;
+                new_query = "makeLike=" + encodeURIComponent(sub_query);
             }
         } else if (query_string.startsWith("model=")) {
             const sub_query = query_string.slice("model=".length);
             if (sub_query.startsWith(`"`)) {
-                new_query = "model=" + sub_query.slice(1, sub_query.length - 1);
+                new_query =
+                    "model=" +
+                    encodeURIComponent(
+                        sub_query.slice(1, sub_query.length - 1),
+                    );
             } else {
-                new_query = "modelLike=" + sub_query;
+                new_query = "modelLike=" + encodeURIComponent(sub_query);
             }
         } else if (
             query_string.startsWith("takenBefore=") ||
@@ -77,19 +85,22 @@ async function search_with_handler(
             const parsed = parseDateOrUnix(rawValue);
 
             if (parsed === null) {
-                new_query = query_string;
+                new_query = `${key}=${encodeURIComponent(rawValue)}`;
             } else {
                 new_query = `${key}=${parsed}`;
             }
         } else if (query_string.startsWith("near=")) {
-            new_query = query_string;
+            new_query = `near=${encodeURIComponent(query_string.slice("near=".length))}`;
         } else {
             // Handle tags
             if (query_string.startsWith(`"`)) {
                 new_query =
-                    "tag=" + query_string.slice(1, query_string.length - 1);
+                    "tag=" +
+                    encodeURIComponent(
+                        query_string.slice(1, query_string.length - 1),
+                    );
             } else {
-                new_query = "tagLike=" + query_string;
+                new_query = "tagLike=" + encodeURIComponent(query_string);
             }
         }
 

@@ -37,7 +37,7 @@ async function add_tag_with_handler(
     const query_arr = [];
 
     for (const image_id of image_ids) query_arr.push(`id=${image_id}`);
-    for (const tag of tags) query_arr.push(`tag=${tag}`);
+    for (const tag of tags) query_arr.push(`tag=${encodeURIComponent(tag)}`);
     const result = await handler(query_arr.join("&"));
 
     if (!result.ok) {
