@@ -28,13 +28,13 @@ func (je JobQueryEndpoint) RegisterEndpoints(e *gin.Engine) {
 }
 
 // @summary     Query job batch status
-// @description Query the status of a job batch using its UUID
+// @description Retrieves the current status of a job batch, including pending files and completed results.
 // @produce     application/json
 // @router      /jobquery/{id} [get]
-// @param       id path string true "the UUID of the job batch to query"
-// @success     200 {object} repositories.JobBatch "the job batch with the given UUID"
-// @failure     400 {object} api.StatusBadRequestResponse "if the provided UUID is not valid"
-// @failure     404 {object} api.StatusNotFoundResponse "if no job batch with the given UUID is found"
+// @param       id   path      string  true  "Job Batch UUID" format(uuid)
+// @success     200  {object}  repositories.JobBatch
+// @failure     400  {object}  api.StatusBadRequestResponse
+// @failure     404  {object}  api.StatusNotFoundResponse
 func (je JobQueryEndpoint) HandleGet(c *gin.Context) {
 	idParam := c.Param("id")
 	var id uuid.UUID
