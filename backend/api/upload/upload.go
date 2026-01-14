@@ -62,23 +62,25 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 			results <- ue.imageRepository.StoreImageBytes(data, filename)
 		}(bytes, file.Filename)
 	}
+	// id := uuid.New()
+	// c.JSON(http.StatusOK, api.Job{Uuid: id, Status: "processing", Name: "uploading files"})
 
-	uploaded := make([]repositories.ImageUploadSuccess, 0, len(files))
-	errors := make([]repositories.ImageUploadFail, 0)
-	for range files {
-		result := <-results
-		if result.Err != nil {
-			errors = append(errors, *result.Err)
-		} else {
-			uploaded = append(uploaded, *result.Success)
-		}
-	}
+	// uploaded := make([]repositories.ImageUploadSuccess, 0, len(files))
+	// errors := make([]repositories.ImageUploadFail, 0)
+	// for range files {
+	// 	result := <-results
+	// 	if result.Err != nil {
+	// 		errors = append(errors, *result.Err)
+	// 	} else {
+	// 		uploaded = append(uploaded, *result.Success)
+	// 	}
+	// }
 
-	response := api.StatusOkUploadResponse{
-		Uploaded: uploaded,
-		Errors:   errors,
-	}
-	c.JSON(http.StatusOK, response)
+	// response := api.StatusOkUploadResponse{
+	// 	Uploaded: uploaded,
+	// 	Errors:   errors,
+	// }
+	// c.JSON(http.StatusOK, response)
 }
 
 // Reads the bytes from a multipart.FileHeader
