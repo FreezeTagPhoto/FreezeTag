@@ -32,7 +32,7 @@ describe("Search Handler", () => {
             expect(typeof query === "string").toBeTruthy();
             if (typeof query === "string") {
                 const components = query.split("&");
-                expect(components.includes("tagLike=among us")).toBeTruthy();
+                expect(components.includes("tagLike=among%20us")).toBeTruthy();
                 expect(
                     components.includes("takenBefore=1234567890"),
                 ).toBeTruthy();
@@ -53,7 +53,7 @@ describe("Search Handler", () => {
                 expect(components.includes("tag=67")).toBeTruthy();
                 expect(components.includes("makeLike=Samsung")).toBeTruthy();
                 expect(components.includes("modelLike=Galaxy")).toBeTruthy();
-                expect(components.includes("model=Note 7")).toBeTruthy();
+                expect(components.includes("model=Note%207")).toBeTruthy();
             }
             return Ok([]);
         };
@@ -88,11 +88,44 @@ describe("Search Handler", () => {
 
     it("Should have working near queries", async () => {
         const handler = async (query: BodyInit): HandlerReturnType => {
-            expect(query).toBe("near=1,2,3");
+            expect(query).toBe("near=1%2C2%2C3");
             return Ok([]);
         };
 
         const user_query = `near=1,2,3`;
+        await testing_SearchHandler(handler, user_query);
+    });
+
+    it("Shouldn't parse unix time", async () => {
+        const handler = async (query: BodyInit): HandlerReturnType => {
+            expect(query).toBe("takenBefore=123456789");
+            return Ok([]);
+        };
+
+        const user_query = `takenBefore=123456789`;
+        await testing_SearchHandler(handler, user_query);
+
+        const user_query_quotes = `takenBefore="123456789"`;
+        await testing_SearchHandler(handler, user_query_quotes);
+    });
+
+    it("Should parse date", async () => {
+        const handler = async (query: BodyInit): HandlerReturnType => {
+            expect(query).toBe(`takenAfter=${819170640000 / 1000}`); // Converted UNIX time for that date
+            return Ok([]);
+        };
+
+        const user_query = `takenAfter="1995-12-17T03:24:00Z"`;
+        await testing_SearchHandler(handler, user_query);
+    });
+
+    it("Should reasonably handle NAN", async () => {
+        const handler = async (query: BodyInit): HandlerReturnType => {
+            expect(query).toBe(`takenAfter=FakeDate`); // Passes through user query if it cannot be parsed
+            return Ok([]);
+        };
+
+        const user_query = `takenAfter=FakeDate`;
         await testing_SearchHandler(handler, user_query);
     });
 });
