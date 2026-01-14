@@ -37,7 +37,7 @@ func (ue UploadEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @produce     application/json
 // @router      /upload [post]
 // @param       file formData []file true "image file to upload" collectionFormat(multi)
-// @success     200 {object} uuid.UUID "the UUID of the created job batch, accepted in /jobquery to check the status of the batch"
+// @success     202 {object} uuid.UUID "the UUID of the created job batch, accepted in /jobquery to check the status of the batch"
 // @failure     400 {object} api.StatusBadRequestResponse
 func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 	form, err := c.MultipartForm()
