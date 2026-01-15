@@ -32,17 +32,25 @@ type PluginMessage struct {
 
 type Plugin interface {
 	Name() string
-	IO() chan PluginMessage
+	IO() PluginIo
+	Shutdown() error
+}
+
+type PluginIo struct {
+	In  chan<- PluginMessage
+	Out <-chan PluginMessage
 }
 
 // Create a protocol channel from the stdin and stdout of a process.
 // Returns a channel of plugin messages along with a function that can be used to close the channel.
-func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginMessage, func()) {
-	proto := make(chan PluginMessage)
-	cancel := make(chan struct{})
+func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, func()) {
+	in := make(chan PluginMessage)
+	out := make(chan PluginMessage)
+	cancel := make(chan struct{}, 1)
 	cancelFunc := func() {
 		cancel <- struct{}{}
-		close(proto)
+		close(in)
+		close(out)
 		err := stdout.Close()
 		if err != nil {
 			log.Fatalf("Failed to close plugin stdout: %v", err)
@@ -52,7 +60,8 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 		outBuf := bufio.NewReader(stdout)
 	ReadOut:
 		for {
-			typeByte, err := outBuf.ReadByte()
+			typeBuf := make([]byte, 1)
+			_, err := io.ReadFull(outBuf, typeBuf)
 			// check for cancellation here just in case output closed because it's done
 			select {
 			case _ = <-cancel:
@@ -63,6 +72,7 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 			if err != nil {
 				log.Fatalf("Failed to read from plugin stdout: %v", err)
 			}
+			typeByte := typeBuf[0]
 			msgType := MessageType(typeByte)
 			if !msgType.IsValid() {
 				log.Fatalf("Message from plugin has invalid type")
@@ -70,7 +80,7 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 			switch msgType {
 			case READY, SHUTDOWN:
 				// special case with nil contents
-				proto <- PluginMessage{
+				out <- PluginMessage{
 					Type:     msgType,
 					Contents: nil,
 				}
@@ -87,7 +97,7 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 				if err != nil {
 					log.Fatalf("Failed to read message contents from plugin: %v", err)
 				}
-				proto <- PluginMessage{
+				out <- PluginMessage{
 					Type:     msgType,
 					Contents: contentBuf,
 				}
@@ -109,7 +119,7 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 				if err != nil {
 					log.Fatalf("Failed to deserialize plugin message contents: %v", err)
 				}
-				proto <- PluginMessage{
+				out <- PluginMessage{
 					Type:     msgType,
 					Contents: contents,
 				}
@@ -118,7 +128,7 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 	}()
 	go func() { // write to stdin
 		for {
-			msg, ok := <-proto
+			msg, ok := <-in
 			if !ok {
 				err := stdin.Close()
 				if err != nil {
@@ -135,7 +145,7 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 				}
 			case BIN, LOG, ERR:
 				// special case with plain binary/text contents
-				packet := append([]byte{byte(msg.Type)}, msg.Contents.([]byte)...)
+				packet := append(binary.LittleEndian.AppendUint64([]byte{byte(msg.Type)}, uint64(len(msg.Contents.([]byte)))), msg.Contents.([]byte)...)
 				_, err := stdin.Write(packet)
 				if err != nil {
 					log.Fatalf("Failed to send plugin message: %v", err)
@@ -155,10 +165,10 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 			}
 		}
 	}()
-	return proto, cancelFunc
+	return PluginIo{in, out}, cancelFunc
 }
 
-func (pp pythonPlugin) IO() chan PluginMessage {
+func (pp pythonPlugin) IO() PluginIo {
 	return pp.io
 }
 

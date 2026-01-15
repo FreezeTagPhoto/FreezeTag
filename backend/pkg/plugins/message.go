@@ -13,14 +13,14 @@ type imageAction struct {
 }
 
 func ProcessImage(plugin Plugin, id database.ImageId, repo repositories.ImageRepository) error {
-	plugin.IO() <- PluginMessage{GET, imageAction{"process", id}}
+	plugin.IO().In <- PluginMessage{GET, imageAction{"process", id}}
 	webp, err := repo.RetrieveThumbnail(id, 2)
 	if err != nil {
 		return err
 	}
-	plugin.IO() <- PluginMessage{BIN, webp}
+	plugin.IO().In <- PluginMessage{BIN, webp}
 	for {
-		msg := <-plugin.IO()
+		msg := <-plugin.IO().Out
 		switch msg.Type {
 		case ERR:
 			return fmt.Errorf("%s", string(msg.Contents.([]byte)))
@@ -31,10 +31,10 @@ func ProcessImage(plugin Plugin, id database.ImageId, repo repositories.ImageRep
 		case GET:
 			err := handleProcessGet(plugin, repo, msg.Contents)
 			if err != nil {
-				plugin.IO() <- PluginMessage{ERR, []byte(err.Error())}
+				plugin.IO().In <- PluginMessage{ERR, []byte(err.Error())}
 			}
 		default:
-			plugin.IO() <- PluginMessage{ERR, []byte("invalid request")}
+			plugin.IO().In <- PluginMessage{ERR, []byte("invalid request")}
 		}
 	}
 }
@@ -64,7 +64,7 @@ func handleProcessGet(plugin Plugin, repo repositories.ImageRepository, msg any)
 			if err != nil {
 				return err
 			}
-			plugin.IO() <- PluginMessage{PUT, map[string]any{
+			plugin.IO().In <- PluginMessage{PUT, map[string]any{
 				"action": "metadata",
 				"data":   meta,
 			}}

@@ -8,15 +8,16 @@ import (
 )
 
 type pythonPlugin struct {
-	name     string
-	process  *exec.Cmd
-	io       chan PluginMessage
-	ioCloser func()
+	name          string
+	process       *exec.Cmd
+	io            PluginIo
+	ioCloser      func()
+	processCloser context.CancelFunc
 }
 
 // Initialize a plugin from a command that has not run yet.
 // This function will run the command and capture I/O.
-func Init(name string, process *exec.Cmd, cancel context.CancelFunc) (Plugin, error) {
+func InitPlugin(name string, process *exec.Cmd, cancel context.CancelFunc) (Plugin, error) {
 	in, err := process.StdinPipe()
 	if err != nil {
 		return nil, err
@@ -30,10 +31,10 @@ func Init(name string, process *exec.Cmd, cancel context.CancelFunc) (Plugin, er
 	if err != nil {
 		return nil, err
 	}
-	io <- PluginMessage{READY, nil}
+	io.In <- PluginMessage{READY, nil}
 readyLoop:
 	for {
-		msg, ok := <-io
+		msg, ok := <-io.Out
 		if !ok {
 			goto initProblem
 		}
@@ -50,8 +51,30 @@ readyLoop:
 			goto initProblem
 		}
 	}
-	return pythonPlugin{name, process, io, ioCloser}, nil
+	return pythonPlugin{name, process, io, ioCloser, cancel}, nil
 initProblem:
 	cancel()
 	return nil, fmt.Errorf("Plugin failed to initialize")
+}
+
+func (pp pythonPlugin) Shutdown() error {
+	pp.io.In <- PluginMessage{SHUTDOWN, nil}
+shutdownLoop:
+	for {
+		msg := <-pp.io.Out
+		switch msg.Type {
+		case SHUTDOWN:
+			break shutdownLoop
+		case ERR:
+			log.Printf("%s [ERR]: %s", pp.name, string(msg.Contents.([]byte)))
+			break shutdownLoop
+		case LOG:
+			log.Printf("%s: %s", pp.name, string(msg.Contents.([]byte)))
+		default:
+			log.Printf("%s [ERR]: bad shutdown message from plugin", pp.name)
+		}
+	}
+	pp.ioCloser()
+	pp.processCloser()
+	return nil
 }
