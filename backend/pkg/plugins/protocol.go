@@ -31,6 +31,7 @@ type PluginMessage struct {
 }
 
 type Plugin interface {
+	Name() string
 	IO() chan PluginMessage
 }
 
@@ -159,4 +160,8 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 
 func (pp pythonPlugin) IO() chan PluginMessage {
 	return pp.io
+}
+
+func (pp pythonPlugin) Name() string {
+	return pp.name
 }
