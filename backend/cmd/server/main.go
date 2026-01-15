@@ -12,6 +12,7 @@ import (
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/formats"
 	"freezetag/backend/pkg/repositories"
+	"freezetag/backend/pkg/services"
 	"log"
 
 	docs "freezetag/backend/cmd/docs"
@@ -34,9 +35,11 @@ const defaultImageFolder = "./images"
 func main() {
 	router := gin.Default()
 	docs.SwaggerInfo.BasePath = "/"
-	repo := initRepository(defaultImageFolder)
-	jobRepo := initJobRepository()
-	RegisterEndpoints(router, repo, jobRepo)
+	imageRepo := initDefaultImageRepository(defaultImageFolder)
+	jobRepo := initDefaultJobRepository()
+	jobService := services.InitDefaultJobService(jobRepo, imageRepo)
+	
+	RegisterEndpoints(router, imageRepo, jobRepo, jobService)
 	router.GET("/swagger/*any", func(c *gin.Context) {
 		if c.Param("any") == "" || c.Param("any") == "/" {
 			c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
@@ -58,8 +61,8 @@ func initParserCollection() images.Parser {
 	return parserCollection
 }
 
-// initRepository initializes the image repository with a SQLite database and an image parser collection.
-func initRepository(imageFolder string) repositories.ImageRepository {
+// initDefaultImageRepository initializes the image repository with a SQLite database and an image parser collection.
+func initDefaultImageRepository(imageFolder string) repositories.ImageRepository {
 	db, err := database.InitSQLiteImageDatabase("database.db")
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err.Error())
@@ -68,12 +71,12 @@ func initRepository(imageFolder string) repositories.ImageRepository {
 	return repositories.InitImageRepository(db, parserCollection, imageFolder)
 }
 
-func initJobRepository() repositories.JobRepository {
+func initDefaultJobRepository() repositories.JobRepository {
 	return repositories.NewDefaultJobRepository()
 }
 
-func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository, jobRepo repositories.JobRepository) {
-	upload.InitUploadEndpoint(repo, jobRepo).RegisterEndpoints(router)	
+func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository, jobRepo repositories.JobRepository, jobService services.JobService) {
+	upload.InitUploadEndpoint(jobService).RegisterEndpoints(router)	
 
 	thumbnails.InitThumbnailEndpoint(repo).RegisterEndpoints(router)
 	search.InitSearchEndpoint(repo).RegisterEndpoints(router)

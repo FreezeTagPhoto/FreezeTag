@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -15,6 +16,9 @@ type JobBatch struct {
 
 	mutex sync.Mutex  `json:"-"`
 	timer *time.Timer `json:"-"`
+
+	Ctx    context.Context    `json:"-"` // Given to the service
+	Cancel context.CancelFunc `json:"-"` // Called by the repository when the job is killed due to idleness or when the batch is deleted
 }
 
 type FileJob struct {
@@ -22,6 +26,8 @@ type FileJob struct {
 	Status string `json:"status"`
 	Bytes  []byte `json:"-"`
 }
+
+type JobBatchID uuid.UUID
 
 const (
 	MaxIdleTime   = 1 * time.Hour    // if a job batch is idle for 1 hour, assume something has happened to the job and kill it
@@ -34,8 +40,8 @@ type JobRepository interface {
 	Delete(uuid.UUID) error
 
 	AddInProgressFileJob(batchID uuid.UUID, file FileJob) error
-	CompleteFileJob(batchID uuid.UUID, fileName string, result UploadResult) error
 	UpdateJobStatus(batchID uuid.UUID, fileName string, status string) error
+	CompleteFileJob(batchID uuid.UUID, fileName string, result UploadResult) error
 }
 
 type DefaultJobRepository struct {
@@ -47,6 +53,10 @@ func NewDefaultJobRepository() *DefaultJobRepository {
 }
 
 func (r *DefaultJobRepository) Create(batch *JobBatch) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	batch.Ctx = ctx
+	batch.Cancel = cancel
+
 	r.jobs.Store(batch.UUID, batch)
 	batch.timer = time.AfterFunc(MaxIdleTime, func() {
 		_ = r.Delete(batch.UUID)
@@ -63,6 +73,13 @@ func (r *DefaultJobRepository) Get(id uuid.UUID) (*JobBatch, error) {
 }
 
 func (r *DefaultJobRepository) Delete(id uuid.UUID) error {
+	value, err := r.Get(id)
+	if err != nil {
+		return err
+	}
+
+	batch := value
+	batch.Cancel()
 	r.jobs.Delete(id)
 	return nil
 }
@@ -76,32 +93,6 @@ func (r *DefaultJobRepository) AddInProgressFileJob(batchID uuid.UUID, fileJob F
 	defer batch.mutex.Unlock()
 	batch.InProgress = append(batch.InProgress, &fileJob)
 	return nil
-}
-
-func (r *DefaultJobRepository) CompleteFileJob(batchID uuid.UUID, fileName string, result UploadResult) error {
-	batch, err := r.Get(batchID)
-	if err != nil {
-		return err
-	}
-	batch.mutex.Lock()
-	defer batch.mutex.Unlock()
-	batch.updateIdleStatus(MaxIdleTime)
-
-	for i, job := range batch.InProgress {
-		if job.Name == fileName {
-			batch.Results = append(batch.Results, &result)
-			batch.InProgress = append(batch.InProgress[:i], batch.InProgress[i+1:]...)
-
-			if len(batch.InProgress) == 0 {
-				if batch.timer != nil {
-					batch.timer.Stop()
-					batch.timer.Reset(RetentionTime)
-				}
-			}
-			return nil
-		}
-	}
-	return fmt.Errorf("file name not found")
 }
 
 func (r *DefaultJobRepository) UpdateJobStatus(batchID uuid.UUID, fileName string, status string) error {
@@ -131,4 +122,30 @@ func (batch *JobBatch) updateIdleStatus(reset time.Duration) {
 		batch.timer.Stop()
 		batch.timer.Reset(reset)
 	}
+}
+
+func (r *DefaultJobRepository) CompleteFileJob(batchID uuid.UUID, fileName string, result UploadResult) error {
+	batch, err := r.Get(batchID)
+	if err != nil {
+		return err
+	}
+	batch.mutex.Lock()
+	defer batch.mutex.Unlock()
+	batch.updateIdleStatus(MaxIdleTime)
+
+	for i, job := range batch.InProgress {
+		if job.Name == fileName {
+			batch.Results = append(batch.Results, &result)
+			batch.InProgress = append(batch.InProgress[:i], batch.InProgress[i+1:]...)
+
+			if len(batch.InProgress) == 0 {
+				if batch.timer != nil {
+					batch.timer.Stop()
+					batch.timer.Reset(RetentionTime)
+				}
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("file name not found")
 }

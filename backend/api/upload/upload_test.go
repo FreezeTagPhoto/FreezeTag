@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"freezetag/backend/api"
-	mockImageRepo "freezetag/backend/mocks/ImageRepository"
-	mockJobRepo "freezetag/backend/mocks/JobRepository"
+	mockJobService "freezetag/backend/mocks/JobService"
 	"freezetag/backend/pkg/repositories"
 	"mime/multipart"
 	"net/http"
@@ -21,26 +20,13 @@ import (
 
 func initTest(t *testing.T) *gin.Engine {
 	t.Helper()
-	m := mockImageRepo.NewMockImageRepository(t)
-	j := mockJobRepo.NewMockJobRepository(t)
-	m.EXPECT().
-		StoreImageBytes(mock.Anything, mock.AnythingOfType("string")).
-		RunAndReturn(func(_ []byte, filename string) repositories.UploadResult {
-			return repositories.UploadResult{
-				Success: &repositories.ImageUploadSuccess{
-					Id:       67,
-					Filename: filename,
-				},
-			}
-		}).Maybe()
+	j := mockJobService.NewMockJobService(t)
+	j.EXPECT().CreateJobBatch(mock.Anything).Return(&repositories.JobBatch{UUID: uuid.New()}, nil).Maybe()
+	j.EXPECT().RunUploadJobs(mock.Anything).Return(nil).Maybe()
 
-	j.EXPECT().Create(mock.Anything).Return(nil).Maybe()
-	j.EXPECT().AddInProgressFileJob(mock.Anything, mock.Anything).Return(nil).Maybe()
-	j.EXPECT().CompleteFileJob(mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
-	j.EXPECT().UpdateJobStatus(mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 
 	router := gin.Default()
-	InitUploadEndpoint(m, j).RegisterEndpoints(router)
+	InitUploadEndpoint(j).RegisterEndpoints(router)
 	return router
 }
 

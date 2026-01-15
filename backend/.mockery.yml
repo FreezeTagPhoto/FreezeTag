@@ -40,3 +40,12 @@ packages:
       structname: "Mock{{.InterfaceName}}"
     interfaces:
       Parser:
+
+  freezetag/backend/pkg/services:
+    config:
+      dir: "./mocks/{{.InterfaceName}}"
+      filename: "{{.InterfaceName}}_mock.go"
+      pkgname: "mocks"
+      structname: "Mock{{.InterfaceName}}"
+    interfaces:
+      JobService:

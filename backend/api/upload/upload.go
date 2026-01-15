@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/repositories"
+	"freezetag/backend/pkg/services"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -13,17 +14,15 @@ import (
 
 /* Types */
 type UploadEndpoint struct {
-	imageRepository repositories.ImageRepository
-	jobRepository   repositories.JobRepository
+	jobService   services.JobService
 }
 
 /* Functions */
 
 // Creates a new UploadEndpoint with the given image repository.
-func InitUploadEndpoint(repository repositories.ImageRepository, jobRepository repositories.JobRepository) UploadEndpoint {
+func InitUploadEndpoint(jobService services.JobService) UploadEndpoint {
 	return UploadEndpoint{
-		imageRepository: repository,
-		jobRepository:   jobRepository,
+		jobService:   jobService,
 	}
 }
 
@@ -54,7 +53,6 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 	}
 
 	jobs := []*repositories.FileJob{}
-
 	for _, file := range files {
 		bytes, err := readFileBytes(file)
 
@@ -65,26 +63,13 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 		jobs = append(jobs, &repositories.FileJob{Name: file.Filename, Bytes: bytes})
 	}
 
-	UUID := repositories.NewJobBatchID()
-	jobBatch := repositories.JobBatch{
-		UUID:       UUID,
-		InProgress: jobs,
-	}
-
-	err = ue.jobRepository.Create(&jobBatch)
+	batch, err := ue.jobService.CreateJobBatch(jobs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to create job batch: " + err.Error()})
 		return
 	}
-
-	for _, file := range jobs {
-		go func(name string, data []byte) {
-			result := ue.imageRepository.StoreImageBytes(data, name)
-			_ = ue.jobRepository.CompleteFileJob(jobBatch.UUID, name, result)
-		}(file.Name, file.Bytes)
-	}
-
-	c.JSON(http.StatusAccepted, &UUID)
+	ue.jobService.RunUploadJobs(batch)
+	c.JSON(http.StatusAccepted, &batch.UUID)
 }
 
 // Reads the bytes from a multipart.FileHeader

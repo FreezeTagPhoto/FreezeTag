@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"freezetag/backend/pkg/database"
@@ -10,6 +11,14 @@ import (
 	"os"
 	"strconv"
 	"strings"
+)
+
+const ( 
+	max_height = 512
+	quality = float32(0)
+
+	max_height_large = 0
+	quality_large = float32(1)
 )
 
 type ImageUploadSuccess struct {
@@ -45,7 +54,7 @@ type ImageTagResult struct {
 type ImageRepository interface {
 	SearchImage(query queries.DatabaseQuery) ([]database.ImageId, error)
 	SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder) ([]database.ImageId, error)
-	StoreImageBytes(data []byte, filename string) UploadResult
+	StoreImageBytes(ctx context.Context, data []byte, filename string) UploadResult
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
 	RetrieveAllTags() ([]string, error)
 	RetrieveImageTags(id database.ImageId) ([]string, error)
@@ -97,12 +106,9 @@ func safeFilePath(filepath, filename string) (string, error) {
 
 // errors and results are given using the simple filename,
 // the full filepath (e.g /tmp/filename) is given to the database
-func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string) UploadResult {
-	max_height := 512
-	quality := float32(0)
-
-	max_height_large := 0
-	quality_large := float32(1)
+// takes in a context to know when to stop processing the image if the job batch is cancelled
+func (repo *DefaultImageRepository) StoreImageBytes(ctx context.Context, data []byte, filename string) UploadResult {
+	
 
 	filename, err := safeFilePath(repo.folderPath, filename)
 	if err != nil {
@@ -110,24 +116,42 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	}
 	filepath := repo.folderPath + filename
 
+	if ctx.Err() != nil {
+		return errorUploadResult(filename, fmt.Errorf("upload cancelled"))
+	}
+
 	imagedata, err := repo.parser.ParseImage(filename, data)
 	if err != nil {
 		return errorUploadResult(filename, err)
+	}
+
+	if ctx.Err() != nil {
+		return errorUploadResult(filename, fmt.Errorf("upload cancelled"))
 	}
 	thumbSmall, err := images.CreateThumbnail(imagedata, max_height, quality)
 	if err != nil {
 		return errorUploadResult(filename, err)
 	}
+
+	if ctx.Err() != nil {
+		return errorUploadResult(filename, fmt.Errorf("upload cancelled"))
+	}
 	thumbLarge, err := images.CreateThumbnail(imagedata, max_height_large, quality_large)
 	if err != nil {
 		return errorUploadResult(filename, err)
 	}
-
+	
+	if ctx.Err() != nil {
+		return errorUploadResult(filename, fmt.Errorf("upload cancelled"))
+	}
 	id, err := repo.db.AddImage(filepath, imagedata)
 	if err != nil {
 		return errorUploadResult(filename, err)
 	}
 
+	if ctx.Err() != nil {
+		return errorUploadResult(filename, fmt.Errorf("upload cancelled"))
+	}
 	ok, err := repo.db.AddImageThumbnail(id, 1, thumbSmall)
 	if err != nil {
 		return errorUploadResult(filename, err)
@@ -136,6 +160,9 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 		return errorUploadResult(filename, fmt.Errorf("database returned false when adding thumbnail"))
 	}
 
+	if ctx.Err() != nil {
+		return errorUploadResult(filename, fmt.Errorf("upload cancelled"))
+	}
 	ok, err = repo.db.AddImageThumbnail(id, 2, thumbLarge)
 	if err != nil {
 		return errorUploadResult(filename, err)
@@ -144,6 +171,9 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 		return errorUploadResult(filename, fmt.Errorf("database returned false when adding thumbnail"))
 	}
 
+	if ctx.Err() != nil {
+		return errorUploadResult(filename, fmt.Errorf("upload cancelled"))
+	}
 	// 0644 is rw-r--r-- permissions for this new file
 	// 0755 is rwxr-xr-x permissions for this new directory (if it doesn't exist)
 	if err := os.MkdirAll(repo.folderPath, 0755); err != nil {
@@ -240,3 +270,5 @@ func (repo *DefaultImageRepository) GetImageMetadata(id database.ImageId) (image
 	}
 	return metadata, nil
 }
+
+
