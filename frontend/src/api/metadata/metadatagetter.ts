@@ -20,35 +20,28 @@ export type MetadataGetResult = Result<
 >;
 type MetadataGetResponse = ImageMetadata;
 
-/**
- * Fetch metadata for a single image (GET /metadata/id).
- */
 export default async function MetadataGetter(
     image_id: number,
 ): Promise<MetadataGetResult> {
     return get_metadata_with_handler(
-        ApiHandler<MetadataGetResponse>(SERVER_ADDRESS + "metadata")(
-            Method.GET,
-        ),
+        ApiHandler<MetadataGetResponse>(SERVER_ADDRESS + "metadata")(Method.GET),
         image_id,
     );
 }
 
 async function get_metadata_with_handler(
-    handler: (
-        data: BodyInit,
-    ) => Promise<Result<MetadataGetResponse, RequestError>>,
+    handler: (data: BodyInit) => Promise<Result<MetadataGetResponse, RequestError>>,
     image_id: number,
 ): Promise<MetadataGetResult> {
     const result = await handler(`/${image_id}`);
 
     if (!result.ok) {
         const status = result.error.status_code;
+        const resp = result.error.response;
+        const respClone = resp.clone();
 
         try {
-            const body = (await result.error.response.json()) as {
-                error?: string;
-            };
+            const body = (await respClone.json()) as { error?: string };
             if (typeof body?.error === "string") {
                 return Err({ status, message: body.error });
             }
@@ -58,7 +51,7 @@ async function get_metadata_with_handler(
 
         return Err({
             status,
-            message: await result.error.response.text(),
+            message: await resp.text(),
         });
     }
 
