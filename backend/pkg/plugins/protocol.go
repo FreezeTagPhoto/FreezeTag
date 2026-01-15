@@ -14,6 +14,7 @@ const (
 	GET MessageType = iota
 	PUT
 	BIN
+	LOG
 	ERR
 	READY
 	SHUTDOWN
@@ -72,8 +73,8 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 					Type:     msgType,
 					Contents: nil,
 				}
-			case BIN:
-				// special case with plain binary contents
+			case BIN, LOG, ERR:
+				// special case with plain binary/text contents
 				sizeBuf := make([]byte, 8)
 				_, err := io.ReadFull(outBuf, sizeBuf)
 				if err != nil {
@@ -131,8 +132,8 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (chan PluginM
 				if err != nil {
 					log.Fatalf("Failed to send plugin message: %v", err)
 				}
-			case BIN:
-				// special case with plain binary contents
+			case BIN, LOG, ERR:
+				// special case with plain binary/text contents
 				packet := append([]byte{byte(msg.Type)}, msg.Contents.([]byte)...)
 				_, err := stdin.Write(packet)
 				if err != nil {
