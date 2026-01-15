@@ -7,6 +7,7 @@ import (
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
 	"freezetag/backend/api/upload"
+	"freezetag/backend/api/metadata"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/formats"
@@ -71,5 +72,6 @@ func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository) {
 	thumbnails.InitThumbnailEndpoint(repo).RegisterEndpoints(router)
 	search.InitSearchEndpoint(repo).RegisterEndpoints(router)
 	tags.InitTagEndpoint(repo).RegisterEndpoints(router)
+	metadata.InitMetadataEndpoint(repo).RegisterEndpoints(router)
 	// Other endpoints would be registered here
 }

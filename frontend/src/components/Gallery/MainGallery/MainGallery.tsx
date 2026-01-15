@@ -10,6 +10,7 @@ import {
 } from "react";
 import styles from "./MainGallery.module.css";
 import GalleryImage from "../GalleryImage/GalleryImage";
+import MetadataGetter, { ImageMetadata } from "@/api/metadata/metadatagetter";
 
 export type GalleryProps = {
     image_ids: number[];
@@ -17,6 +18,33 @@ export type GalleryProps = {
 
 // point (fx, fy) on image expressed as fraction of width/height (after zoom)
 type PendingPan = null | { fx: number; fy: number };
+
+// if int64 timestamp is huge, treat as ms, otherwise seconds
+function toDate(ts: number): Date {
+    return new Date(ts > 1e12 ? ts : ts * 1000);
+}
+
+function formatDate(ts: number | null): string {
+    if (ts === null) return "—";
+    const d = toDate(ts);
+    return new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    }).format(d);
+}
+
+function formatLocation(lat: number | null, lon: number | null): string {
+    if (lat === null || lon === null) return "—";
+    return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+}
+
+function formatCamera(make: string | null, model: string | null): string {
+    const parts = [make, model].filter((x) => x && x.trim().length > 0) as string[];
+    return parts.length ? parts.join(" ") : "—";
+}
 
 export default function MainGallery({ image_ids }: GalleryProps) {
     // Full Screen Preview Handling
@@ -33,6 +61,50 @@ export default function MainGallery({ image_ids }: GalleryProps) {
 
     // remember where to pan after zoom has been applied
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
+
+    // metadata state
+    const [metadataById, setMetadataById] = useState<Record<number, ImageMetadata>>({});
+    const [metadataLoading, setMetadataLoading] = useState(false);
+    const [metadataError, setMetadataError] = useState<string | null>(null);
+
+    const currentMetadata: ImageMetadata | null =
+        selectedId !== null ? metadataById[selectedId] ?? null : null;
+
+    // fetch metadata whenever selectedId changes
+    useEffect(() => {
+        if (selectedId === null) return;
+
+        // already cached
+        if (metadataById[selectedId]) {
+            setMetadataError(null);
+            setMetadataLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+
+        (async () => {
+            setMetadataLoading(true);
+            setMetadataError(null);
+
+            const res = await MetadataGetter(selectedId);
+
+            if (cancelled) return;
+
+            if (!res.ok) {
+                setMetadataError(res.error.message);
+                setMetadataLoading(false);
+                return;
+            }
+
+            setMetadataById((prev) => ({ ...prev, [selectedId]: res.value }));
+            setMetadataLoading(false);
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedId, metadataById]);
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -343,27 +415,57 @@ export default function MainGallery({ image_ids }: GalleryProps) {
                             <h2 className={styles.sidebarTitle}>
                                 Image details
                             </h2>
+                            {metadataLoading && (
+                                <p className={styles.sidebarHint}>Loading metadata…</p>
+                            )}
+                            {metadataError && (
+                                <p className={styles.sidebarError}>
+                                    Failed to load metadata: {metadataError}
+                                </p>
+                            )}
                             <dl className={styles.sidebarList}>
-                                {/* TODO: placeholders, swap for real metadata later */}
                                 <div>
                                     <dt>Filename</dt>
-                                    <dd>IMG_{selectedId}.JPG</dd>
+                                    <dd>{currentMetadata?.fileName ?? "—"}</dd>
                                 </div>
                                 <div>
                                     <dt>Date taken</dt>
-                                    <dd>Jun 7, 6:41 PM</dd>
+                                    <dd>
+                                        {currentMetadata
+                                            ? formatDate(currentMetadata.dateTaken)
+                                            : "—"}
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt>Date uploaded</dt>
+                                    <dd>
+                                        {currentMetadata
+                                            ? formatDate(currentMetadata.dateUploaded)
+                                            : "—"}
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt>Location</dt>
-                                    <dd>Salt Lake City</dd>
+                                    <dd>
+                                        {currentMetadata
+                                            ? formatLocation(
+                                                  currentMetadata.latitude,
+                                                  currentMetadata.longitude,
+                                              )
+                                            : "—"}
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt>Camera</dt>
-                                    <dd>Apple iPhone 16 Pro</dd>
-                                </div>
-                                <div>
-                                    <dt>Resolution</dt>
-                                    <dd>6767 x 4141</dd>
+                                    <dd>
+                                        {currentMetadata
+                                            ? formatCamera(
+                                                  currentMetadata.cameraMake,
+                                                  currentMetadata.cameraModel,
+                                              )
+                                            : "—"}
+                                    </dd>
                                 </div>
                             </dl>
                         </aside>
