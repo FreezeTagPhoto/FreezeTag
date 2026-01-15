@@ -33,7 +33,9 @@ describe("Metadata Getter", () => {
 
     it("should get message on 400", async () => {
         const handler = async (_: BodyInit): HandlerReturnType => {
-            const response = new Response('{"error": "Invalid image ID parameter"}');
+            const response = new Response(
+                '{"error": "Invalid image ID parameter"}',
+            );
             return Err({
                 status_code: 400,
                 response,
@@ -48,11 +50,16 @@ describe("Metadata Getter", () => {
 
     it("should percolate status code on failure", async () => {
         const handler = async (_: BodyInit): HandlerReturnType => {
-            return Err({ status_code: 500, response: new Response("server died") });
+            return Err({
+                status_code: 500,
+                response: new Response("server died"),
+            });
         };
 
         const result = await testing_MetadataGetter(handler, 1);
-        expect(result).toStrictEqual(Err({ status: 500, message: "server died" }));
+        expect(result).toStrictEqual(
+            Err({ status: 500, message: "server died" }),
+        );
     });
 
     it("should receive metadata", async () => {
@@ -84,12 +91,18 @@ describe("Metadata Getter", () => {
 
     it("should fall back to text if error JSON can't be parsed", async () => {
         const handler = async (_: BodyInit): HandlerReturnType => {
-            return Err({ status_code: 400, response: new Response("{not json") });
+            return Err({
+                status_code: 400,
+                response: new Response("{not json"),
+            });
         };
 
         const result = await testing_MetadataGetter(handler, 1);
         expect(result).toStrictEqual(
-            Err({ status: 400, message: await new Response("{not json").text() }),
+            Err({
+                status: 400,
+                message: await new Response("{not json").text(),
+            }),
         );
     });
 });

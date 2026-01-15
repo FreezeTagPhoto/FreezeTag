@@ -24,13 +24,17 @@ export default async function MetadataGetter(
     image_id: number,
 ): Promise<MetadataGetResult> {
     return get_metadata_with_handler(
-        ApiHandler<MetadataGetResponse>(SERVER_ADDRESS + "metadata")(Method.GET),
+        ApiHandler<MetadataGetResponse>(SERVER_ADDRESS + "metadata")(
+            Method.GET,
+        ),
         image_id,
     );
 }
 
 async function get_metadata_with_handler(
-    handler: (data: BodyInit) => Promise<Result<MetadataGetResponse, RequestError>>,
+    handler: (
+        data: BodyInit,
+    ) => Promise<Result<MetadataGetResponse, RequestError>>,
     image_id: number,
 ): Promise<MetadataGetResult> {
     const result = await handler(`/${image_id}`);
