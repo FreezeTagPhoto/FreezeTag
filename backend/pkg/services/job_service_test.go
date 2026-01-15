@@ -45,7 +45,7 @@ func TestRunUploadJobsAsyncExecution(t *testing.T) {
 	}
 
 	i.EXPECT().
-		StoreImageBytes(ctx, fileData, fileName).
+		StoreImageBytes(fileData, fileName).
 		Return(expectedResult).
 		Once()
 	m.EXPECT().
@@ -98,7 +98,7 @@ func TestRunUploadJobsAsyncExecutionStress(t *testing.T) {
 	wg.Add(iterations)
 
 	i.EXPECT().
-		StoreImageBytes(ctx, fileData, mock.AnythingOfType("string")).
+		StoreImageBytes(fileData, mock.AnythingOfType("string")).
 		Return(repositories.UploadResult{
 			Success: &repositories.ImageUploadSuccess{Filename: "placeholder"},
 		}).
@@ -215,13 +215,14 @@ func TestRunUploadJobsEmptyBatch(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestRunUploadJobs_RespectsContext(t *testing.T) {
+func TestRunUploadJobsRespectsContextCancellation(t *testing.T) {
 	m := mockJobRepo.NewMockJobRepository(t)
 	i := mockImageRepo.NewMockImageRepository(t)
 	service := InitDefaultJobService(m, i)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
+	assert.Error(t, ctx.Err())
 
 	batch := &repositories.JobBatch{
 		UUID: repositories.NewJobBatchID(),
@@ -231,36 +232,59 @@ func TestRunUploadJobs_RespectsContext(t *testing.T) {
 		},
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	i.EXPECT().
-		StoreImageBytes(mock.MatchedBy(func(c context.Context) bool {
-			return c.Err() == context.Canceled
-		}), mock.Anything, mock.Anything).
-		Return(repositories.UploadResult{}).
-		Once()
-
-	m.EXPECT().
-		CompleteFileJob(mock.Anything, mock.Anything, mock.Anything).
-		Run(func(uuid uuid.UUID, name string, res repositories.UploadResult) {
-			wg.Done()
-		}).
-		Return(nil).
-		Once()
+	i.AssertNotCalled(t, "StoreImageBytes")
+	m.AssertNotCalled(t, "CompleteFileJob")
 
 	err := service.RunUploadJobs(batch)
 	require.NoError(t, err)
 
-	done := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
+	batch.WG.Wait() // Wait for the background goroutine to finish
+}
 
-	select {
-	case <-done:
-	case <-time.After(5 * time.Second):
-		t.Fatal("Timeout")
+func TestRunUploadJobsRespectsContextCancellationStress(t *testing.T) {
+	m := mockJobRepo.NewMockJobRepository(t)
+	i := mockImageRepo.NewMockImageRepository(t)
+	service := InitDefaultJobService(m, i)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	assert.NoError(t, ctx.Err())
+
+	jobs := make([]*repositories.FileJob, 100)
+	for i := range jobs {
+		jobs[i] = &repositories.FileJob{Name: fmt.Sprint(i), Bytes: fmt.Append(nil, "data", i)}
 	}
+
+	batchID := repositories.NewJobBatchID()
+	batch := &repositories.JobBatch{
+		UUID:       batchID,
+		Ctx:        ctx,
+		InProgress: jobs,
+	}
+
+	limit := ThreadLimit
+	var wg sync.WaitGroup
+	wg.Add(limit)
+	done := make(chan struct{})
+
+	i.EXPECT().
+		StoreImageBytes(mock.Anything, mock.AnythingOfType("string")).
+		Run(func(data []byte, name string) {
+			wg.Done()
+			<-done
+		}).
+		Return(repositories.UploadResult{
+			Success: &repositories.ImageUploadSuccess{Filename: "placeholder"},
+		}).Times(limit)
+	m.EXPECT().
+		CompleteFileJob(batchID, mock.AnythingOfType("string"), mock.Anything).
+		Return(nil).
+		Maybe()
+	err := service.RunUploadJobs(batch)
+	require.NoError(t, err)
+
+	wg.Wait()
+	cancel()
+	close(done)
+	batch.WG.Wait() // Wait for the background goroutine to finish
+	assert.Error(t, ctx.Err())
 }

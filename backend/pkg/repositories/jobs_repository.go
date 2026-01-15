@@ -19,6 +19,7 @@ type JobBatch struct {
 
 	Ctx    context.Context    `json:"-"` // Given to the service
 	Cancel context.CancelFunc `json:"-"` // Called by the repository when the job is killed due to idleness or when the batch is deleted
+	WG     sync.WaitGroup     `json:"-"` // Used by the service to wait for a job to finish
 }
 
 type FileJob struct {

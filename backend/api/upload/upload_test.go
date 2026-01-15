@@ -167,3 +167,56 @@ func TestPostWithNoFileField(t *testing.T) {
 
 	assert.Equal(t, expected, got)
 }
+
+func TestHandlePostCreateJobBatchError(t *testing.T) {
+	m := mockJobService.NewMockJobService(t)
+	m.EXPECT().CreateJobBatch(mock.Anything).Return(nil, assert.AnError).Once()
+
+	router := gin.Default()
+	InitUploadEndpoint(m).RegisterEndpoints(router)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	require.NoError(t, writeTestFile(writer, "file", "testfile.png", []byte("hello world image")))
+	require.NoError(t, writer.Close())
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/upload", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	expected := api.StatusBadRequestResponse{Error: "failed to create job batch: " + assert.AnError.Error()}
+	var got api.StatusBadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+
+	assert.Equal(t, expected, got)
+}
+
+func TestHandlePostRunUploadJobsError(t *testing.T) {
+	m := mockJobService.NewMockJobService(t)
+	m.EXPECT().CreateJobBatch(mock.Anything).Return(nil, nil).Once()
+	m.EXPECT().RunUploadJobs(mock.Anything).Return(assert.AnError).Once()
+
+	router := gin.Default()
+	InitUploadEndpoint(m).RegisterEndpoints(router)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	require.NoError(t, writeTestFile(writer, "file", "testfile.png", []byte("hello world image")))
+	require.NoError(t, writer.Close())
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/upload", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	expected := api.StatusBadRequestResponse{Error: "failed to run upload jobs: " + assert.AnError.Error()}
+	var got api.StatusBadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+
+	assert.Equal(t, expected, got)
+}
