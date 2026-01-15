@@ -10,7 +10,9 @@
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "test": "jest",
-        "test:watch": "jest --watch"
+        "test:watch": "jest --watch",
+        "deploy": "docker build -t freezetag:frontend . && docker run -d --name freezetag_frontend -p 127.0.0.1:3000:3000 freezetag:frontend",
+        "kill": "docker kill freezetag_frontend && docker rm freezetag_frontend"
     },
     "dependencies": {
         "next": "15.5.7",
