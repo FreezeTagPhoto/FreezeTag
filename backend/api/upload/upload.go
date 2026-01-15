@@ -68,7 +68,11 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to create job batch: " + err.Error()})
 		return
 	}
-	ue.jobService.RunUploadJobs(batch)
+	err = ue.jobService.RunUploadJobs(batch)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to run upload jobs: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusAccepted, &batch.UUID)
 }
 
