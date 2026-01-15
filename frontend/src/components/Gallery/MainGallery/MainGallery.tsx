@@ -42,7 +42,9 @@ function formatLocation(lat: number | null, lon: number | null): string {
 }
 
 function formatCamera(make: string | null, model: string | null): string {
-    const parts = [make, model].filter((x) => x && x.trim().length > 0) as string[];
+    const parts = [make, model].filter(
+        (x) => x && x.trim().length > 0,
+    ) as string[];
     return parts.length ? parts.join(" ") : "—";
 }
 
@@ -63,12 +65,14 @@ export default function MainGallery({ image_ids }: GalleryProps) {
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
 
     // metadata state
-    const [metadataById, setMetadataById] = useState<Record<number, ImageMetadata>>({});
+    const [metadataById, setMetadataById] = useState<
+        Record<number, ImageMetadata>
+    >({});
     const [metadataLoading, setMetadataLoading] = useState(false);
     const [metadataError, setMetadataError] = useState<string | null>(null);
 
     const currentMetadata: ImageMetadata | null =
-        selectedId !== null ? metadataById[selectedId] ?? null : null;
+        selectedId !== null ? (metadataById[selectedId] ?? null) : null;
 
     // fetch metadata whenever selectedId changes
     useEffect(() => {
@@ -412,62 +416,92 @@ export default function MainGallery({ image_ids }: GalleryProps) {
                         </div>
 
                         <aside className={styles.viewerSidebar}>
-                            <h2 className={styles.sidebarTitle}>
-                                Image details
-                            </h2>
-                            {metadataLoading && (
-                                <p className={styles.sidebarHint}>Loading metadata…</p>
-                            )}
+                            <div className={styles.detailsHeaderRow}>
+                                <h2 className={styles.sidebarTitle}>
+                                    Image details
+                                </h2>
+                                {metadataLoading && (
+                                    <span className={styles.pill}>Loading</span>
+                                )}
+                            </div>
+
                             {metadataError && (
-                                <p className={styles.sidebarError}>
+                                <div className={styles.errorBanner}>
                                     Failed to load metadata: {metadataError}
-                                </p>
-                            )}
-                            <dl className={styles.sidebarList}>
-                                <div>
-                                    <dt>Filename</dt>
-                                    <dd>{currentMetadata?.fileName ?? "—"}</dd>
                                 </div>
-                                <div>
-                                    <dt>Date taken</dt>
-                                    <dd>
-                                        {currentMetadata
-                                            ? formatDate(currentMetadata.dateTaken)
-                                            : "—"}
-                                    </dd>
+                            )}
+
+                            <div className={styles.detailGrid}>
+                                <div className={styles.detailRow}>
+                                    <div className={styles.detailLabel}>
+                                        Filename
+                                    </div>
+                                    <div className={styles.detailValue}>
+                                        {currentMetadata?.fileName ?? "—"}
+                                    </div>
                                 </div>
 
-                                <div>
-                                    <dt>Date uploaded</dt>
-                                    <dd>
+                                <div className={styles.detailRow}>
+                                    <div className={styles.detailLabel}>
+                                        Date taken
+                                    </div>
+                                    <div className={styles.detailValue}>
                                         {currentMetadata
-                                            ? formatDate(currentMetadata.dateUploaded)
+                                            ? formatDate(
+                                                  currentMetadata.dateTaken,
+                                              )
                                             : "—"}
-                                    </dd>
+                                    </div>
                                 </div>
-                                <div>
-                                    <dt>Location</dt>
-                                    <dd>
+
+                                <div className={styles.detailRow}>
+                                    <div className={styles.detailLabel}>
+                                        Date uploaded
+                                    </div>
+                                    <div className={styles.detailValue}>
+                                        {currentMetadata
+                                            ? formatDate(
+                                                  currentMetadata.dateUploaded,
+                                              )
+                                            : "—"}
+                                    </div>
+                                </div>
+
+                                <div className={styles.detailRow}>
+                                    <div className={styles.detailLabel}>
+                                        Location
+                                    </div>
+                                    <div className={styles.detailValue}>
                                         {currentMetadata
                                             ? formatLocation(
                                                   currentMetadata.latitude,
                                                   currentMetadata.longitude,
                                               )
                                             : "—"}
-                                    </dd>
+                                    </div>
                                 </div>
-                                <div>
-                                    <dt>Camera</dt>
-                                    <dd>
+
+                                <div className={styles.detailRow}>
+                                    <div className={styles.detailLabel}>
+                                        Camera
+                                    </div>
+                                    <div className={styles.detailValue}>
                                         {currentMetadata
                                             ? formatCamera(
                                                   currentMetadata.cameraMake,
                                                   currentMetadata.cameraModel,
                                               )
                                             : "—"}
-                                    </dd>
+                                    </div>
                                 </div>
-                            </dl>
+                                {/* TODO: Implement metadata for resolution*/}
+                                {/* <div className={styles.detailRow}>
+                                    <div className={styles.detailLabel}>
+                                        Resolution
+                                    </div>
+                                    <div className={styles.detailValue}>—</div>
+                                </div> */}
+                            </div>
                         </aside>
                     </div>
                 </div>

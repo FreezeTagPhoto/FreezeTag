@@ -223,7 +223,7 @@
     height: 32px;
     padding: 0 10px;
     border-radius: 999px;
-    font-size: 0.8rem; /* we *do* show the 1x / 2x text */
+    font-size: 0.8rem; /* 1x / 2x text */
 }
 
 /* ===========================
@@ -247,20 +247,58 @@
     text-transform: uppercase;
 }
 
-.sidebarList {
+.detailsHeaderRow {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-    font-size: 0.9rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
-.sidebarList dt {
+.pill {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: #e5e7eb;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.errorBanner {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #fee2e2;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    font-size: 0.85rem;
+    line-height: 1.2rem;
+}
+
+.detailGrid {
+    display: grid;
+    gap: 10px;
+}
+
+.detailRow {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.detailLabel {
+    font-size: 0.75rem;
     font-weight: 600;
     color: #9ca3af;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
 }
 
-.sidebarList dd {
-    margin: 0;
+.detailValue {
+    font-size: 0.95rem;
+    font-weight: 500;
     color: #e5e7eb;
+    word-break: break-word;
 }
