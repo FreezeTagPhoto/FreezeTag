@@ -16,14 +16,18 @@ type JobResponse = {
         status: string;
     }[];
     results: {
-        error: {
-            filename: string;
-            reason: string;
-        };
-        success: {
-            filename: string;
-            id: 0;
-        };
+        error:
+            | {
+                  filename: string;
+                  reason: string;
+              }
+            | undefined;
+        success:
+            | {
+                  filename: string;
+                  id: number;
+              }
+            | undefined;
     }[];
     uuid: string;
 };
@@ -37,9 +41,9 @@ export default async function JobsHandler(event: string): Promise<JobsResult> {
 
 async function job_query_with_handler(
     handler: (data: BodyInit) => Promise<Result<JobResponse, RequestError>>,
-    event: string,
+    job_code: string,
 ): Promise<JobsResult> {
-    const request_result = await handler(event);
+    const request_result = await handler(job_code);
 
     if (!request_result.ok) {
         const status = request_result.error.status_code;
@@ -74,6 +78,12 @@ async function job_query_with_handler(
         if (result.error) {
             image_map.set(result.error.filename, Err(result.error.reason));
         } else {
+            if (!result.success) {
+                console.error(
+                    `Image didn't have any data in the return! Job code: ${job_code}`,
+                );
+                continue;
+            }
             image_map.set(result.success.filename, Ok(result.success.id));
         }
     }
