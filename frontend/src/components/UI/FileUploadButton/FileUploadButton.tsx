@@ -3,6 +3,7 @@ import FileChangeHandler from "@/api/upload/filechangehandler";
 import styles from "./FileUploadButton.module.css";
 import { useRef } from "react";
 import { useDropzone } from "react-dropzone";
+import JobsHandler from "@/api/jobs/jobshandler";
 
 export type FileUploadProps = {
     ids_retrieved_callback: (ids: number[]) => void;
@@ -60,7 +61,19 @@ const handleSubmit = async (
 
         const ids = [];
         if (result.ok) {
-            for (const [key, value] of result.value) {
+            let images;
+            while (true) {
+                images = await JobsHandler(result.value);
+                if (!images.ok) {
+                    console.error("Error querying jobs:", images.error);
+                    return;
+                }
+                if (images.value.ok) {
+                    break;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+            for (const [key, value] of images.value.value) {
                 if (value.ok) {
                     ids.push(value.value);
                 } else {
