@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/repositories"
+	"freezetag/backend/pkg/services"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -13,15 +14,15 @@ import (
 
 /* Types */
 type UploadEndpoint struct {
-	imageRepository repositories.ImageRepository
+	jobService   services.JobService
 }
 
 /* Functions */
 
 // Creates a new UploadEndpoint with the given image repository.
-func InitUploadEndpoint(repository repositories.ImageRepository) UploadEndpoint {
+func InitUploadEndpoint(jobService services.JobService) UploadEndpoint {
 	return UploadEndpoint{
-		imageRepository: repository,
+		jobService:   jobService,
 	}
 }
 
@@ -35,8 +36,9 @@ func (ue UploadEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @produce     application/json
 // @router      /upload [post]
 // @param       file formData []file true "image file to upload" collectionFormat(multi)
-// @success     200 {object} api.StatusOkUploadResponse
+// @success     202 {object} string "the UUID of the created job batch for the upload"
 // @failure     400 {object} api.StatusBadRequestResponse
+// @failure     500 {object} api.StatusServerErrorResponse
 func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -50,7 +52,7 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 		return
 	}
 
-	results := make(chan repositories.UploadResult, len(files))
+	jobs := []*repositories.FileJob{}
 	for _, file := range files {
 		bytes, err := readFileBytes(file)
 
@@ -58,27 +60,20 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
 			return
 		}
-		go func(data []byte, filename string) {
-			results <- ue.imageRepository.StoreImageBytes(data, filename)
-		}(bytes, file.Filename)
+		jobs = append(jobs, &repositories.FileJob{Name: file.Filename, Bytes: bytes})
 	}
 
-	uploaded := make([]repositories.ImageUploadSuccess, 0, len(files))
-	errors := make([]repositories.ImageUploadFail, 0)
-	for range files {
-		result := <-results
-		if result.Err != nil {
-			errors = append(errors, *result.Err)
-		} else {
-			uploaded = append(uploaded, *result.Success)
-		}
+	batch, err := ue.jobService.CreateJobBatch(jobs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to create job batch: " + err.Error()})
+		return
 	}
-
-	response := api.StatusOkUploadResponse{
-		Uploaded: uploaded,
-		Errors:   errors,
+	err = ue.jobService.RunUploadJobs(batch)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to run upload jobs: " + err.Error()})
+		return
 	}
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusAccepted, &batch.UUID)
 }
 
 // Reads the bytes from a multipart.FileHeader

@@ -39,3 +39,5 @@ type ApiEndpoint interface {
 }
 
 type MetadataResponse imagedata.Metadata
+
+type JobBatch repositories.JobBatch
