@@ -8,9 +8,23 @@ export type UploadResult = Result<
     Map<string, Result<number, string>>,
     { status: number; message: string }
 >;
-type UploadResponse = {
-    uploaded: { id: number; filename: string }[];
-    errors: { reason: string; filename: string }[];
+type UploadResponse = string;
+type JobResponse = {
+    in_progress: {
+        name: string;
+        status: string;
+    }[];
+    results: {
+        error: {
+            filename: string;
+            reason: string;
+        };
+        success: {
+            filename: string;
+            id: 0;
+        };
+    }[];
+    uuid: string;
 };
 
 export default async function ImageUploader(
@@ -46,14 +60,32 @@ async function image_upload_with_handler(
             });
     }
 
-    const body = request_result.value;
+    const job_id = request_result.value;
+
+    const job_handler = ApiHandler<JobResponse>(SERVER_ADDRESS + "jobquery/")(
+        Method.GET,
+    );
+    let job_query;
+    while (true) {
+        job_query = await job_handler(job_id);
+        if (!job_query.ok) {
+            return Err({ status: 7000, message: "" });
+        }
+        if (!job_query.value.in_progress.length) {
+            break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    const body = job_query.value.results;
 
     const image_map = new Map();
-    for (const image of body.uploaded) {
-        image_map.set(image.filename, Ok(image.id));
-    }
-    for (const error of body.errors) {
-        image_map.set(error.filename, Err(error.reason));
+    for (const result of body) {
+        if (result.error) {
+            image_map.set(result.error.filename, Err(result.error.reason));
+        } else {
+            image_map.set(result.success.filename, Ok(result.success.id));
+        }
     }
 
     return Ok(image_map);
