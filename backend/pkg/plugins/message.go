@@ -7,13 +7,8 @@ import (
 	"log"
 )
 
-type imageAction struct {
-	action string
-	id     database.ImageId
-}
-
 func ProcessImage(plugin Plugin, id database.ImageId, repo repositories.ImageRepository) error {
-	plugin.IO().In <- PluginMessage{GET, imageAction{"process", id}}
+	plugin.IO().In <- PluginMessage{GET, map[string]any{"action": "process", "id": id}}
 	webp, err := repo.RetrieveThumbnail(id, 2)
 	if err != nil {
 		return err
@@ -39,11 +34,28 @@ func ProcessImage(plugin Plugin, id database.ImageId, repo repositories.ImageRep
 	}
 }
 
+func definitelyStrings(s any) []string {
+	sl := s.([]any)
+	strings := make([]string, len(sl))
+	for i, v := range sl {
+		strings[i] = v.(string)
+	}
+	return strings
+}
+
+func definitelyId(i any) database.ImageId {
+	return database.ImageId(int64(i.(float64)))
+}
+
 func handleProcessResponse(plugin Plugin, repo repositories.ImageRepository, msg any) error {
 	if m, ok := msg.(map[string]any); ok {
 		switch m["action"] {
+		case "skip":
+			// skip this image, nothing needs done
 		case "tag":
-			res := repo.AddImageTags(database.ImageId(m["id"].(int)), m["tags"].([]string))
+			id := definitelyId(m["id"])
+			tags := definitelyStrings(m["tags"])
+			res := repo.AddImageTags(database.ImageId(id), tags)
 			if res.Err != nil {
 				return fmt.Errorf("failed to tag image %d: %s", res.Err.Id, res.Err.Reason)
 			}
@@ -60,7 +72,8 @@ func handleProcessGet(plugin Plugin, repo repositories.ImageRepository, msg any)
 	if m, ok := msg.(map[string]any); ok {
 		switch m["action"] {
 		case "metadata":
-			meta, err := repo.GetImageMetadata(database.ImageId(m["id"].(int)))
+			id := definitelyId(m["id"])
+			meta, err := repo.GetImageMetadata(id)
 			if err != nil {
 				return err
 			}

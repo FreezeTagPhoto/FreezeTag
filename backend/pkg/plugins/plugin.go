@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 )
 
@@ -26,6 +27,7 @@ func InitPlugin(name string, process *exec.Cmd, cancel context.CancelFunc) (Plug
 	if err != nil {
 		return nil, err
 	}
+	process.Stderr = os.Stderr
 	io, ioCloser := protocolFromPipes(in, out)
 	err = process.Start()
 	if err != nil {
