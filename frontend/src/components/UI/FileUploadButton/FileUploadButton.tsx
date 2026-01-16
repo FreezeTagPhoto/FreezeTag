@@ -3,10 +3,9 @@ import FileChangeHandler from "@/api/upload/filechangehandler";
 import styles from "./FileUploadButton.module.css";
 import { useRef } from "react";
 import { useDropzone } from "react-dropzone";
-import JobsHandler from "@/api/jobs/jobshandler";
 
 export type FileUploadProps = {
-    ids_retrieved_callback: (ids: number[]) => void;
+    job_id_callback: (id: string) => void;
 };
 
 export default function FileUploadButton(props: FileUploadProps) {
@@ -32,7 +31,7 @@ export default function FileUploadButton(props: FileUploadProps) {
     });
 
     return (
-        <form action={(e) => handleSubmit(e, props.ids_retrieved_callback)}>
+        <form action={(e) => handleSubmit(e, props.job_id_callback)}>
             <div {...getRootProps({ className: styles.label })}>
                 {" "}
                 Upload images{" "}
@@ -54,34 +53,13 @@ export default function FileUploadButton(props: FileUploadProps) {
 
 const handleSubmit = async (
     event: FormData,
-    ids_retrieved_callback: (ids: number[]) => void,
+    job_id_callback: (id: string) => void,
 ) => {
     try {
         const result = await ImageUploader(event);
 
-        const ids = [];
         if (result.ok) {
-            let images;
-            while (true) {
-                images = await JobsHandler(result.value);
-                if (!images.ok) {
-                    console.error("Error querying jobs:", images.error);
-                    return;
-                }
-                if (images.value.ok) {
-                    break;
-                }
-                await new Promise((resolve) => setTimeout(resolve, 500));
-            }
-            for (const [key, value] of images.value.value) {
-                if (value.ok) {
-                    ids.push(value.value);
-                } else {
-                    console.error(
-                        `Error uploading ${key} because of ${value.error}`,
-                    );
-                }
-            }
+            job_id_callback(result.value);
         } else {
             console.error(
                 "Error uploading images (is the backend running?):",
@@ -89,8 +67,6 @@ const handleSubmit = async (
             );
             // TODO: show error to user
         }
-
-        ids_retrieved_callback(ids);
     } catch (error) {
         console.error(
             "Error uploading images (is the backend running?):",
