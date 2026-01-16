@@ -9,7 +9,7 @@ import (
 
 type StatusOkUploadResponse struct {
 	Uploaded []repositories.ImageUploadSuccess `json:"uploaded"`
-	Errors   []repositories.ImageUploadFail    `json:"errors"`
+	Errors   []repositories.ImageUploadFailure `json:"errors"`
 }
 
 type StatusOkTagDeleteResponse struct {

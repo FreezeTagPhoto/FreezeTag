@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"freezetag/backend/pkg/database"
 	"sync"
 	"time"
 
@@ -10,9 +11,11 @@ import (
 )
 
 type JobBatch struct {
-	UUID       uuid.UUID       `json:"uuid"`
-	Results    []*UploadResult `json:"results"`
-	InProgress []*FileJob      `json:"in_progress"`
+	UUID      uuid.UUID             `json:"uuid"`
+	Completed []*ImageUploadSuccess `json:"completed"`
+	Failed    []*ImageUploadFailure `json:"failed"`
+
+	InProgress []*FileJob `json:"in_progress"`
 
 	mutex sync.Mutex  `json:"-"`
 	timer *time.Timer `json:"-"`
@@ -42,7 +45,8 @@ type JobRepository interface {
 
 	AddInProgressFileJob(batchID uuid.UUID, file FileJob) error
 	UpdateJobStatus(batchID uuid.UUID, fileName string, status string) error
-	CompleteFileJob(batchID uuid.UUID, fileName string, result UploadResult) error
+	CompleteFileJob(batchID uuid.UUID, fileName string, id database.ImageId) error
+	FailFileJob(batchID uuid.UUID, fileName string, reason error) error
 }
 
 type DefaultJobRepository struct {
@@ -125,7 +129,7 @@ func (batch *JobBatch) updateIdleStatus(reset time.Duration) {
 	}
 }
 
-func (r *DefaultJobRepository) CompleteFileJob(batchID uuid.UUID, fileName string, result UploadResult) error {
+func (r *DefaultJobRepository) CompleteFileJob(batchID uuid.UUID, fileName string, id database.ImageId) error {
 	batch, err := r.Get(batchID)
 	if err != nil {
 		return err
@@ -136,7 +140,39 @@ func (r *DefaultJobRepository) CompleteFileJob(batchID uuid.UUID, fileName strin
 
 	for i, job := range batch.InProgress {
 		if job.Name == fileName {
-			batch.Results = append(batch.Results, &result)
+			batch.Completed = append(batch.Completed, &ImageUploadSuccess{
+				Filename: fileName,
+				Id:       id,
+			})
+			batch.InProgress = append(batch.InProgress[:i], batch.InProgress[i+1:]...)
+
+			if len(batch.InProgress) == 0 {
+				if batch.timer != nil {
+					batch.timer.Stop()
+					batch.timer.Reset(RetentionTime)
+				}
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("file name not found")
+}
+
+func (r *DefaultJobRepository) FailFileJob(batchID uuid.UUID, fileName string, reason error) error {
+	batch, err := r.Get(batchID)
+	if err != nil {
+		return err
+	}
+	batch.mutex.Lock()
+	defer batch.mutex.Unlock()
+	batch.updateIdleStatus(MaxIdleTime)
+
+	for i, job := range batch.InProgress {
+		if job.Name == fileName {
+			batch.Failed = append(batch.Failed, &ImageUploadFailure{
+				Filename: job.Name,
+				Reason:   reason.Error(),
+			})
 			batch.InProgress = append(batch.InProgress[:i], batch.InProgress[i+1:]...)
 
 			if len(batch.InProgress) == 0 {

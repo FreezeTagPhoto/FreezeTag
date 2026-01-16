@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"freezetag/backend/pkg/database"
 	"strconv"
 	"testing"
 
@@ -15,7 +16,8 @@ func TestJobBatchBasic(t *testing.T) {
 	batch := &JobBatch{
 		UUID: id,
 		InProgress: nil, 
-		Results: nil,
+		Completed: nil,
+		Failed: nil,
 	}
 
 	err := repo.Create(batch)
@@ -58,12 +60,12 @@ func TestFileJobLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "uploading", batch.InProgress[0].Status)
 
-	mockResult := UploadResult{}
+	mockResult := database.ImageId(42)
 	err = repo.CompleteFileJob(id, filename, mockResult)
 	require.NoError(t, err)
 
 	require.Len(t, batch.InProgress, 0, "InProgress should be empty")
-	require.Len(t, batch.Results, 1, "Results should have 1 item")
+	require.Len(t, batch.Completed, 1, "Results should have 1 item")
 }
 
 func TestCompleteFileJobFileNotFound(t *testing.T) {
@@ -71,7 +73,7 @@ func TestCompleteFileJobFileNotFound(t *testing.T) {
 	id := NewJobBatchID()
 	require.NoError(t, repo.Create(&JobBatch{UUID: id}))
 
-	err := repo.CompleteFileJob(id, "ghost_file.png", UploadResult{})
+	err := repo.CompleteFileJob(id, "ghost_file.png", database.ImageId(0))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "file name not found")
 }
@@ -135,7 +137,7 @@ func TestWithConcurrencyStress(t *testing.T) {
 	for range iterations {
 		job := <- jobs
 		go func(job FileJob) {
-			done <- repo.CompleteFileJob(id, job.Name, UploadResult{})
+			done <- repo.CompleteFileJob(id, job.Name, database.ImageId(0))
 		}(job)
 	}
 
