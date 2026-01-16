@@ -54,29 +54,38 @@ export default function Home() {
 
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-    if (ids.length === 0) {
-        return (
-            <div className={styles.pageEmpty}>
-                <FileUploadButton job_id_callback={job_id_callback} />
-            </div>
-        );
-    }
-
     return (
-        <div className={styles.page}>
-            <div className={styles.toolbar}>
+        <div className={ids.length > 0 ? styles.page : styles.pageEmpty}>
+            <div className={ids.length > 0 ? styles.toolbar : styles.none}>
                 <FileUploadButton job_id_callback={job_id_callback} />
             </div>
 
-            <div className={styles.gallery_tags_container}>
-                <div className={styles.gallery}>
-                    <MassTaggingGallery
-                        image_ids={ids}
-                        onChange={(ids) => setSelectedIds(ids)}
-                    />
+            {progress > 0 && (
+                <div className={styles.viewerBackdrop}>
+                    <label htmlFor="upload-progress" className={styles.hidden}>
+                        Upload Progress:
+                    </label>
+                    <progress
+                        id="upload-progress"
+                        value={progress}
+                        className={styles.progressBar}
+                    >
+                        {progress * 100}%
+                    </progress>
                 </div>
-                <TagChangeButton image_ids={selectedIds} />
-            </div>
+            )}
+
+            {ids.length > 0 && (
+                <div className={styles.gallery_tags_container}>
+                    <div className={styles.gallery}>
+                        <MassTaggingGallery
+                            image_ids={ids}
+                            onChange={(ids) => setSelectedIds(ids)}
+                        />
+                    </div>
+                    <TagChangeButton image_ids={selectedIds} />
+                </div>
+            )}
         </div>
     );
 }

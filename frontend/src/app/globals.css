@@ -1,6 +1,9 @@
 :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --accent_one: #579dd7;
+    --accent_two: #aedbf0;
+    --accent_three: #ffffff;
 }
 
 html,
