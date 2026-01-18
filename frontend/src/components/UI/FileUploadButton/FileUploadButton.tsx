@@ -6,6 +6,7 @@ import { useDropzone } from "react-dropzone";
 
 export type FileUploadProps = {
     job_id_callback: (id: string) => void;
+    disabled?: boolean;
 };
 
 export default function FileUploadButton(props: FileUploadProps) {
@@ -32,7 +33,13 @@ export default function FileUploadButton(props: FileUploadProps) {
 
     return (
         <form action={(e) => handleSubmit(e, props.job_id_callback)}>
-            <div {...getRootProps({ className: styles.label })}>
+            <div
+                {...getRootProps({
+                    className: props.disabled
+                        ? styles.label_disabled
+                        : styles.label,
+                })}
+            >
                 {" "}
                 Upload images{" "}
                 <input
@@ -44,8 +51,13 @@ export default function FileUploadButton(props: FileUploadProps) {
                     className={styles.button}
                     id="file-upload"
                     ref={hiddenInputRef}
+                    disabled={props.disabled}
                 />
-                <input {...getInputProps()} className={styles.button} />
+                <input
+                    {...getInputProps()}
+                    className={styles.button}
+                    disabled={props.disabled}
+                />
             </div>
         </form>
     );

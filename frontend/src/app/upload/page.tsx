@@ -57,7 +57,10 @@ export default function Home() {
     return (
         <div className={ids.length > 0 ? styles.page : styles.pageEmpty}>
             <div className={ids.length > 0 ? styles.toolbar : styles.none}>
-                <FileUploadButton job_id_callback={job_id_callback} />
+                <FileUploadButton
+                    job_id_callback={job_id_callback}
+                    disabled={!!jobId}
+                />
             </div>
 
             {progress > 0 && (
