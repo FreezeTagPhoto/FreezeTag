@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import styles from "./page.module.css";
 import TagChangeButton from "@/components/UI/TagChangeButton/TagChangeButton";
 import JobsHandler from "@/api/jobs/jobshandler";
+import ProgressBar from "@/components/UI/ProgressBar/ProgressBar";
 
 const POLLING_DELAY = 200; // 0.2 seconds, in milliseconds
 
@@ -63,20 +64,7 @@ export default function Home() {
                 />
             </div>
 
-            {progress > 0 && (
-                <div className={styles.viewerBackdrop}>
-                    <label htmlFor="upload-progress" className={styles.hidden}>
-                        Upload Progress:
-                    </label>
-                    <progress
-                        id="upload-progress"
-                        value={progress}
-                        className={styles.progressBar}
-                    >
-                        {progress * 100}%
-                    </progress>
-                </div>
-            )}
+            {progress > 0 && <ProgressBar progress={progress} />}
 
             {ids.length > 0 && (
                 <div className={styles.gallery_tags_container}>
