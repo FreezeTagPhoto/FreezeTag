@@ -5,7 +5,8 @@ import { useRef } from "react";
 import { useDropzone } from "react-dropzone";
 
 export type FileUploadProps = {
-    ids_retrieved_callback: (ids: number[]) => void;
+    job_id_callback: (id: string) => void;
+    disabled?: boolean;
 };
 
 export default function FileUploadButton(props: FileUploadProps) {
@@ -31,8 +32,14 @@ export default function FileUploadButton(props: FileUploadProps) {
     });
 
     return (
-        <form action={(e) => handleSubmit(e, props.ids_retrieved_callback)}>
-            <div {...getRootProps({ className: styles.label })}>
+        <form action={(e) => handleSubmit(e, props.job_id_callback)}>
+            <div
+                {...getRootProps({
+                    className: props.disabled
+                        ? styles.label_disabled
+                        : styles.label,
+                })}
+            >
                 {" "}
                 Upload images{" "}
                 <input
@@ -44,8 +51,13 @@ export default function FileUploadButton(props: FileUploadProps) {
                     className={styles.button}
                     id="file-upload"
                     ref={hiddenInputRef}
+                    disabled={props.disabled}
                 />
-                <input {...getInputProps()} className={styles.button} />
+                <input
+                    {...getInputProps()}
+                    className={styles.button}
+                    disabled={props.disabled}
+                />
             </div>
         </form>
     );
@@ -53,22 +65,13 @@ export default function FileUploadButton(props: FileUploadProps) {
 
 const handleSubmit = async (
     event: FormData,
-    ids_retrieved_callback: (ids: number[]) => void,
+    job_id_callback: (id: string) => void,
 ) => {
     try {
         const result = await ImageUploader(event);
 
-        const ids = [];
         if (result.ok) {
-            for (const [key, value] of result.value) {
-                if (value.ok) {
-                    ids.push(value.value);
-                } else {
-                    console.error(
-                        `Error uploading ${key} because of ${value.error}`,
-                    );
-                }
-            }
+            job_id_callback(result.value);
         } else {
             console.error(
                 "Error uploading images (is the backend running?):",
@@ -76,8 +79,6 @@ const handleSubmit = async (
             );
             // TODO: show error to user
         }
-
-        ids_retrieved_callback(ids);
     } catch (error) {
         console.error(
             "Error uploading images (is the backend running?):",
