@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev --turbopack",
+        "dev": "export FREEZETAG_BACKEND_ADDRESS=\"127.0.0.1\" && next dev --turbopack",
         "build": "next build --turbopack",
         "start": "next start",
         "lint": "eslint",
