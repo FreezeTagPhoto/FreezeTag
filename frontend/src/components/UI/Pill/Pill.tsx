@@ -9,6 +9,7 @@ export default function Pill({
     onClick,
     className = "",
     type = "button",
+    invertCaret,
 }: {
     label: string;
     caret?: boolean;
@@ -16,6 +17,7 @@ export default function Pill({
     onClick?: () => void;
     className?: string;
     type?: "button" | "submit" | "reset";
+    invertCaret?: boolean;
 }) {
     const variantClass =
         variant === "menu"
@@ -27,11 +29,12 @@ export default function Pill({
     return (
         <button
             type={type}
-            className={`${styles.pill} ${variantClass} ${className}`}
+            className={`${styles.pill} ${variantClass} ${className} ${invertCaret ? styles.open : ""}`}
             onClick={onClick}
         >
             <span className={styles.label}>{label}</span>
-            {caret && <span className={styles.caret}>▾</span>}
+            {caret && !invertCaret && <span className={styles.caret}>▾</span>}
+            {caret && invertCaret && <span className={styles.caret}>▴</span>}
         </button>
     );
 }

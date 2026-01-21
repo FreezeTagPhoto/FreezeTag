@@ -31,3 +31,9 @@ export function isDateKey(
         k === "uploadedAfter"
     );
 }
+
+export function isSearchValueKey(
+    k: FieldKey,
+): k is Extract<FieldKey, "sortBy" | "sortOrder"> {
+    return k === "sortBy" || k === "sortOrder";
+}

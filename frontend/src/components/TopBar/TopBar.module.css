@@ -17,3 +17,30 @@
     gap: 10px;
     padding-top: 10px;
 }
+
+.search_dropdown {
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+    position: fixed;
+    top: 54px;
+    padding: 12px;
+    background: rgba(38, 42, 56, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    gap: 12px;
+}
+
+.search_dropdown select {
+    border-radius: 12px;
+}
+
+.search_dropdown option {
+    padding: 3px 12px;
+}
+
+.search_container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}

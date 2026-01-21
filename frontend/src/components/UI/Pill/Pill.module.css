@@ -25,6 +25,10 @@
         box-shadow 120ms ease;
 }
 
+.pill.open {
+    border-radius: 12px 12px 0px 0px;
+}
+
 .pill:hover {
     background: rgba(46, 51, 69, 0.85);
 }
