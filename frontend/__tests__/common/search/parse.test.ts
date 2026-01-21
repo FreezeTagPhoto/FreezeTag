@@ -254,4 +254,53 @@ describe("common/search/parse.parseUserQuery", () => {
             expect(t.error).toBe("Missing closing quote");
         }
     });
+
+    it("handles sorting queries", () => {
+        const tokens = parseUserQuery(`sortBy=DateCreated;sortOrder=DESC;`);
+        expect(tokens).toHaveLength(2);
+
+        const t = tokens[0];
+        expect(t.kind).toBe("field");
+        if (t.kind === "field") {
+            expect(t.key).toBe("sortBy");
+            expect(t.exact).toBe(false);
+            expect(t.error).toBe(undefined);
+            expect(t.value).toBe("DateCreated");
+        }
+
+        const t2 = tokens[1];
+        expect(t2.kind).toBe("field");
+        if (t2.kind === "field") {
+            expect(t2.key).toBe("sortOrder");
+            expect(t2.exact).toBe(false);
+            expect(t2.error).toBe(undefined);
+            expect(t2.value).toBe("DESC");
+        }
+    });
+
+    it("handles bad sorting order", () => {
+        const tokens = parseUserQuery(`sortOrder=RANDOM;`);
+        expect(tokens).toHaveLength(1);
+
+        const t = tokens[0];
+        expect(t.kind).toBe("field");
+        if (t.kind === "field") {
+            expect(t.key).toBe("sortOrder");
+            expect(t.exact).toBe(false);
+            expect(t.error).toBe("Invalid Sorting Order");
+        }
+    });
+
+    it("handles bad sorting strategy", () => {
+        const tokens = parseUserQuery(`sortBy=RANDOM;`);
+        expect(tokens).toHaveLength(1);
+
+        const t = tokens[0];
+        expect(t.kind).toBe("field");
+        if (t.kind === "field") {
+            expect(t.key).toBe("sortBy");
+            expect(t.exact).toBe(false);
+            expect(t.error).toBe("Invalid Sorting Strategy");
+        }
+    });
 });

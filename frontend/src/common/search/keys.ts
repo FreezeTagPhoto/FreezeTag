@@ -6,6 +6,8 @@ export const FIELD_KEYS = [
     "uploadedBefore",
     "uploadedAfter",
     "near",
+    "sortBy",
+    "sortOrder",
 ] as const;
 
 export type FieldKey = (typeof FIELD_KEYS)[number];

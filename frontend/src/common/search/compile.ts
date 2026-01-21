@@ -44,8 +44,8 @@ export function compileTokensToApiQuery(tokens: Token[]): string {
             continue;
         }
 
-        if (t.key === "near") {
-            parts.push(`near=${encode(t.value)}`);
+        if (t.key === "near" || t.key === "sortBy" || t.key === "sortOrder") {
+            parts.push(`${t.key}=${encode(t.value)}`);
             continue;
         }
     }

@@ -253,6 +253,40 @@ export function parseUserQuery(input: string): Token[] {
             continue;
         }
 
+        // sorting normalization
+        if (keyRaw === "sortBy") {
+            tokens.push({
+                kind: "field",
+                key: keyRaw,
+                valueRaw,
+                value: text,
+                exact,
+                range,
+                error:
+                    quoteError ??
+                    (text !== "DateAdded" && text !== "DateCreated"
+                        ? "Invalid Sorting Strategy"
+                        : undefined),
+            });
+            continue;
+        }
+        if (keyRaw === "sortOrder") {
+            tokens.push({
+                kind: "field",
+                key: keyRaw,
+                valueRaw,
+                value: text,
+                exact,
+                range,
+                error:
+                    quoteError ??
+                    (text !== "ASC" && text !== "DESC"
+                        ? "Invalid Sorting Order"
+                        : undefined),
+            });
+            continue;
+        }
+
         // regular field
         tokens.push({
             kind: "field",
