@@ -1,21 +1,79 @@
 .pill {
-    height: 36px;
+    height: 34px;
     padding: 0 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: #262a38;
+    border-radius: 12px;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(38, 42, 56, 0.75);
+
     color: #dfe3f0;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 500;
+
     display: inline-flex;
     align-items: center;
     gap: 8px;
+
     cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        transform 80ms ease,
+        box-shadow 120ms ease;
 }
 
 .pill:hover {
-    background: #2e3345;
+    background: rgba(46, 51, 69, 0.85);
+}
+
+.pill:active {
+    transform: scale(0.98);
+}
+
+.pill:focus-visible {
+    outline: none;
+    border-color: rgba(120, 140, 255, 0.55);
+    box-shadow: 0 0 0 4px rgba(120, 140, 255, 0.14);
+}
+
+.label {
+    opacity: 0.98;
 }
 
 .caret {
-    opacity: 0.8;
+    opacity: 0.75;
+    font-size: 12px;
+    transform: translateY(1px);
+}
+
+/* dropdown menu */
+.menu {
+    background: rgba(38, 42, 56, 0.78);
+}
+
+/* filter tokens */
+.token {
+    height: 32px;
+    border-radius: 999px;
+    padding: 0 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* error */
+.error {
+    height: 32px;
+    border-radius: 999px;
+    padding: 0 10px;
+
+    background: rgba(255, 80, 80, 0.1);
+    border-color: rgba(255, 80, 80, 0.25);
+    color: #ffd7d7;
+}
+
+.error:hover {
+    background: rgba(255, 80, 80, 0.14);
 }
