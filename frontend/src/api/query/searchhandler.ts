@@ -2,37 +2,13 @@
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
+import { parseUserQuery } from "@/common/search/parse";
+import { compileTokensToApiQuery } from "@/common/search/compile";
 
-export type SearchResult = Result<
-    number[],
-    { status: number; message: string }
->;
+export type SearchResult = Result<number[], { status: number; message: string }>;
 type SearchResponse = number[];
 
-const regex = /\s*(.*?(?:".*?")?)\s*(?:;|$)/g;
-
-function parseDateOrUnix(raw: string): string | null {
-    let value = raw.trim();
-
-    if (value.startsWith(`"`) && value.endsWith(`"`) && value.length >= 2) {
-        value = value.slice(1, -1);
-    }
-
-    if (/^[0-9]+$/.test(value)) {
-        return value;
-    }
-
-    const date = new Date(value);
-    if (!Number.isNaN(date.getTime())) {
-        return Math.floor(date.getTime() / 1000).toString();
-    }
-
-    return null;
-}
-
-export default async function SearchHandler(
-    user_query: string,
-): Promise<SearchResult> {
+export default async function SearchHandler(user_query: string): Promise<SearchResult> {
     return search_with_handler(
         ApiHandler<SearchResponse>(SERVER_ADDRESS + "search?")(Method.GET),
         user_query,
@@ -43,71 +19,8 @@ async function search_with_handler(
     handler: (data: BodyInit) => Promise<Result<SearchResponse, RequestError>>,
     user_query: string,
 ): Promise<SearchResult> {
-    const queries = user_query.matchAll(regex);
-    const compiled_api_queries = [];
-
-    for (const query of queries) {
-        const query_string = query[1];
-        let new_query = "";
-
-        if (query_string === "") {
-            continue;
-        } else if (query_string.startsWith("make=")) {
-            const sub_query = query_string.slice("make=".length);
-            if (sub_query.startsWith(`"`)) {
-                new_query =
-                    "make=" +
-                    encodeURIComponent(
-                        sub_query.slice(1, sub_query.length - 1),
-                    );
-            } else {
-                new_query = "makeLike=" + encodeURIComponent(sub_query);
-            }
-        } else if (query_string.startsWith("model=")) {
-            const sub_query = query_string.slice("model=".length);
-            if (sub_query.startsWith(`"`)) {
-                new_query =
-                    "model=" +
-                    encodeURIComponent(
-                        sub_query.slice(1, sub_query.length - 1),
-                    );
-            } else {
-                new_query = "modelLike=" + encodeURIComponent(sub_query);
-            }
-        } else if (
-            query_string.startsWith("takenBefore=") ||
-            query_string.startsWith("takenAfter=") ||
-            query_string.startsWith("uploadedBefore=") ||
-            query_string.startsWith("uploadedAfter=")
-        ) {
-            const [key, ...rest] = query_string.split("=");
-            const rawValue = rest.join("=");
-            const parsed = parseDateOrUnix(rawValue);
-
-            if (parsed === null) {
-                new_query = `${key}=${encodeURIComponent(rawValue)}`;
-            } else {
-                new_query = `${key}=${parsed}`;
-            }
-        } else if (query_string.startsWith("near=")) {
-            new_query = `near=${encodeURIComponent(query_string.slice("near=".length))}`;
-        } else {
-            // Handle tags
-            if (query_string.startsWith(`"`)) {
-                new_query =
-                    "tag=" +
-                    encodeURIComponent(
-                        query_string.slice(1, query_string.length - 1),
-                    );
-            } else {
-                new_query = "tagLike=" + encodeURIComponent(query_string);
-            }
-        }
-
-        compiled_api_queries.push(new_query);
-    }
-    const api_query = compiled_api_queries.join("&");
-
+    const tokens = parseUserQuery(user_query);
+    const api_query = compileTokensToApiQuery(tokens);
     const result = await handler(api_query);
 
     if (!result.ok) {
