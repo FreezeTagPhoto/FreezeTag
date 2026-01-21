@@ -13,6 +13,15 @@ import { Result, Ok, Err } from "@/common/result";
 
 type HandlerReturnType = Promise<Result<testing_SearchResponse, RequestError>>;
 
+function kmToAngularDegrees(km: number): number {
+    const EARTH_RADIUS_KM = 6371;
+    return (km / EARTH_RADIUS_KM) * (180 / Math.PI);
+}
+
+function formatDeg(deg: number): string {
+    return deg.toFixed(6).replace(/\.?0+$/, "");
+}
+
 describe("Search Handler", () => {
     it("Should percolate images in order", async () => {
         const handler = async (_: BodyInit): HandlerReturnType => {
@@ -86,9 +95,11 @@ describe("Search Handler", () => {
         expect(result).toStrictEqual(Err({ status: 400, message: "true" }));
     });
 
-    it("Should have working near queries", async () => {
+    it("Should have working near queries (unitless defaults to km)", async () => {
         const handler = async (query: BodyInit): HandlerReturnType => {
-            expect(query).toBe("near=1%2C2%2C3");
+            // near=1,2,3  -> distance=3km -> converted to degrees and formatted
+            const deg = formatDeg(kmToAngularDegrees(3));
+            expect(query).toBe(`near=1%2C2%2C${encodeURIComponent(deg)}`);
             return Ok([]);
         };
 
@@ -119,9 +130,10 @@ describe("Search Handler", () => {
         await testing_SearchHandler(handler, user_query);
     });
 
-    it("Should reasonably handle NAN", async () => {
+    it("Should drop invalid date tokens (date parse fails => token error => omitted)", async () => {
         const handler = async (query: BodyInit): HandlerReturnType => {
-            expect(query).toBe(`takenAfter=FakeDate`); // Passes through user query if it cannot be parsed
+            // compileTokensToApiQuery skips tokens with t.error, so nothing gets sent
+            expect(query).toBe("");
             return Ok([]);
         };
 
