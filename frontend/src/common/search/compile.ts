@@ -26,7 +26,9 @@ export function compileTokensToApiQuery(tokens: Token[]): string {
 
         if (t.kind === "tag") {
             parts.push(
-                t.exact ? `tag=${encode(t.value)}` : `tagLike=${encode(t.value)}`,
+                t.exact
+                    ? `tag=${encode(t.value)}`
+                    : `tagLike=${encode(t.value)}`,
             );
             continue;
         }
