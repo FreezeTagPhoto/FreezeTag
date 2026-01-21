@@ -11,17 +11,19 @@ type StripResult = {
 function stripOuterQuotes(s: string): StripResult {
     const t = s.trim();
 
-    if (t.startsWith(`"`)) {
-        const hadOpenQuote = true;
-
-        if (t.endsWith(`"`) && t.length >= 2) {
-            return { text: t.slice(1, -1), exact: true, hadOpenQuote };
-        }
-
-        return { text: t.slice(1), exact: true, hadOpenQuote };
+    if (!t.startsWith(`"`)) {
+        return { text: t, exact: false, hadOpenQuote: false };
     }
 
-    return { text: t, exact: false, hadOpenQuote: false };
+    const hadOpenQuote = true;
+    const exact = true;
+    const text = t.endsWith(`"`) && t.length >= 2 ? t.slice(1, -1) : t.slice(1);
+
+    return { text, exact, hadOpenQuote };
+}
+
+function missingClosingQuote(hadOpenQuote: boolean, raw: string): boolean {
+    return hadOpenQuote && !raw.trim().endsWith(`"`);
 }
 
 function parseDateOrUnixText(text: string): string | null {
@@ -55,6 +57,33 @@ function formatDeg(deg: number): string {
 
 type CanonUnit = "km" | "m" | "mi" | "deg" | "ft" | "yd";
 
+const UNIT_ALIASES: Readonly<Record<string, CanonUnit>> = {
+    km: "km",
+    kms: "km",
+    kilometer: "km",
+    kilometers: "km",
+
+    m: "m",
+    meter: "m",
+    meters: "m",
+
+    mi: "mi",
+    mile: "mi",
+    miles: "mi",
+
+    deg: "deg",
+    degree: "deg",
+    degrees: "deg",
+
+    ft: "ft",
+    foot: "ft",
+    feet: "ft",
+
+    yd: "yd",
+    yard: "yd",
+    yards: "yd",
+};
+
 function parseDistanceToAngularDegrees(raw: string): {
     deg: number | null;
     error?: string;
@@ -77,51 +106,29 @@ function parseDistanceToAngularDegrees(raw: string): {
     }
 
     const distNum = Number(match[1]);
-    const unitRaw = match[2] ?? "km"; // if no unit, km default
+    const unitRaw = match[2] ?? "km"; // unitless defaults to km
 
     if (!Number.isFinite(distNum) || distNum <= 0) {
         return { deg: null, error: `near distance must be a positive number` };
     }
 
-    const unit: CanonUnit | null =
-        unitRaw === "km" ||
-        unitRaw === "kms" ||
-        unitRaw === "kilometer" ||
-        unitRaw === "kilometers"
-            ? "km"
-            : unitRaw === "m" || unitRaw === "meter" || unitRaw === "meters"
-              ? "m"
-              : unitRaw === "mi" || unitRaw === "mile" || unitRaw === "miles"
-                ? "mi"
-                : unitRaw === "deg" ||
-                    unitRaw === "degree" ||
-                    unitRaw === "degrees"
-                  ? "deg"
-                  : unitRaw === "ft" || unitRaw === "foot" || unitRaw === "feet"
-                    ? "ft"
-                    : unitRaw === "yd" ||
-                        unitRaw === "yard" ||
-                        unitRaw === "yards"
-                      ? "yd"
-                      : null;
-
-    if (unit === null) {
+    const unit = UNIT_ALIASES[unitRaw];
+    if (!unit) {
         return { deg: null, error: `Unsupported near unit "${unitRaw}"` };
     }
 
-    if (unit === "deg") {
-        return { deg: distNum };
-    }
+    if (unit === "deg") return { deg: distNum };
 
-    let km: number;
-    if (unit === "km") km = distNum;
-    else if (unit === "m") km = distNum / 1000;
-    else if (unit === "mi") km = distNum * 1.609344;
-    else if (unit === "ft")
-        km = distNum * 0.0003048; // 1ft = 0.3048m
-    else if (unit === "yd")
-        km = distNum * 0.0009144; // 1yd = 0.9144m
-    else return { deg: null, error: `Unsupported near unit "${unit}"` };
+    const km =
+        unit === "km"
+            ? distNum
+            : unit === "m"
+              ? distNum / 1000
+              : unit === "mi"
+                ? distNum * 1.609344
+                : unit === "ft"
+                  ? distNum * 0.0003048 // 1ft = 0.3048m
+                  : distNum * 0.0009144; // unit === "yd", 1yd = 0.9144m
 
     return { deg: kmToAngularDegrees(km) };
 }
@@ -130,47 +137,38 @@ function parseNear(text: string): {
     normalized: string | null;
     error?: string;
 } {
+    const fail = (error: string) => ({ normalized: null, error });
+
     const parts = text
         .split(",")
         .map((p) => p.trim())
         .filter((p) => p.length > 0);
 
     if (parts.length !== 3) {
-        return {
-            normalized: null,
-            error: `near expects 3 comma-separated values: lat, lon, distance (e.g. near=40,-110,5km)`,
-        };
+        return fail(
+            `near expects 3 comma-separated values: lat, lon, distance (e.g. near=40,-110,5km)`,
+        );
     }
 
     const lat = Number(parts[0]);
     const lon = Number(parts[1]);
 
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-        return {
-            normalized: null,
-            error: `near lat/lon must be numbers (e.g. 40,-110,5km)`,
-        };
+        return fail(`near lat/lon must be numbers (e.g. 40,-110,5km)`);
     }
     if (lat < -90 || lat > 90) {
-        return {
-            normalized: null,
-            error: `near latitude must be between -90 and 90`,
-        };
+        return fail(`near latitude must be between -90 and 90`);
     }
     if (lon < -180 || lon > 180) {
-        return {
-            normalized: null,
-            error: `near longitude must be between -180 and 180`,
-        };
+        return fail(`near longitude must be between -180 and 180`);
     }
 
     const dist = parseDistanceToAngularDegrees(parts[2]);
     if (dist.deg === null) {
-        return { normalized: null, error: dist.error };
+        return fail(dist.error ?? "Invalid near distance");
     }
 
-    const normalized = `${lat},${lon},${formatDeg(dist.deg)}`;
-    return { normalized };
+    return { normalized: `${lat},${lon},${formatDeg(dist.deg)}` };
 }
 
 export function parseUserQuery(input: string): Token[] {
@@ -182,70 +180,29 @@ export function parseUserQuery(input: string): Token[] {
         if (!trimmed) continue;
 
         const range = computeRangeFromChunk(chunk, trimmed);
-
         const equalsAt = trimmed.indexOf("=");
-        if (equalsAt !== -1) {
-            const keyRaw = trimmed.slice(0, equalsAt).trim();
-            const valueRaw = trimmed.slice(equalsAt + 1);
 
-            if (isFieldKey(keyRaw)) {
-                const { text, exact, hadOpenQuote } =
-                    stripOuterQuotes(valueRaw);
+        // tag (no '=')
+        if (equalsAt === -1) {
+            const { text, exact, hadOpenQuote } = stripOuterQuotes(trimmed);
+            tokens.push({
+                kind: "tag",
+                valueRaw: trimmed,
+                value: text,
+                exact,
+                range,
+                error: missingClosingQuote(hadOpenQuote, trimmed)
+                    ? "Missing closing quote"
+                    : undefined,
+            });
+            continue;
+        }
 
-                const missingClosingQuote =
-                    hadOpenQuote && !valueRaw.trim().endsWith(`"`);
+        const keyRaw = trimmed.slice(0, equalsAt).trim();
+        const valueRaw = trimmed.slice(equalsAt + 1);
 
-                // normalize
-                if (keyRaw === "near") {
-                    const parsed = parseNear(text);
-                    tokens.push({
-                        kind: "field",
-                        key: keyRaw,
-                        valueRaw,
-                        value: parsed.normalized ?? text,
-                        exact,
-                        range,
-                        error: missingClosingQuote
-                            ? "Missing closing quote"
-                            : parsed.error,
-                    });
-                    continue;
-                }
-
-                if (isDateKey(keyRaw)) {
-                    const parsed = parseDateOrUnixText(text);
-
-                    tokens.push({
-                        kind: "field",
-                        key: keyRaw,
-                        valueRaw,
-                        value: parsed ?? text,
-                        exact,
-                        range,
-                        error: missingClosingQuote
-                            ? "Missing closing quote"
-                            : parsed === null
-                              ? "Invalid date (use YYYY-MM-DD or unix seconds)"
-                              : undefined,
-                    });
-                } else {
-                    tokens.push({
-                        kind: "field",
-                        key: keyRaw,
-                        valueRaw,
-                        value: text,
-                        exact,
-                        range,
-                        error: missingClosingQuote
-                            ? "Missing closing quote"
-                            : undefined,
-                    });
-                }
-
-                continue;
-            }
-
-            // unknown key, treat as tag with error
+        // if unknown key, tag token with error
+        if (!isFieldKey(keyRaw)) {
             tokens.push({
                 kind: "tag",
                 valueRaw: trimmed,
@@ -254,20 +211,57 @@ export function parseUserQuery(input: string): Token[] {
                 range,
                 error: `Unknown filter "${keyRaw}"`,
             });
-
             continue;
         }
 
-        const { text, exact, hadOpenQuote } = stripOuterQuotes(trimmed);
-        const missingClosingQuote = hadOpenQuote && !trimmed.endsWith(`"`);
+        const { text, exact, hadOpenQuote } = stripOuterQuotes(valueRaw);
+        const quoteError = missingClosingQuote(hadOpenQuote, valueRaw)
+            ? "Missing closing quote"
+            : undefined;
 
+        // near normalization
+        if (keyRaw === "near") {
+            const parsed = parseNear(text);
+            tokens.push({
+                kind: "field",
+                key: keyRaw,
+                valueRaw,
+                value: parsed.normalized ?? text,
+                exact,
+                range,
+                error: quoteError ?? parsed.error,
+            });
+            continue;
+        }
+
+        // date normalization
+        if (isDateKey(keyRaw)) {
+            const parsed = parseDateOrUnixText(text);
+            tokens.push({
+                kind: "field",
+                key: keyRaw,
+                valueRaw,
+                value: parsed ?? text,
+                exact,
+                range,
+                error:
+                    quoteError ??
+                    (parsed === null
+                        ? "Invalid date (use YYYY-MM-DD or unix seconds)"
+                        : undefined),
+            });
+            continue;
+        }
+
+        // regular field
         tokens.push({
-            kind: "tag",
-            valueRaw: trimmed,
+            kind: "field",
+            key: keyRaw,
+            valueRaw,
             value: text,
             exact,
             range,
-            error: missingClosingQuote ? "Missing closing quote" : undefined,
+            error: quoteError,
         });
     }
 
