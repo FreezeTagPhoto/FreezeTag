@@ -140,4 +140,15 @@ describe("Search Handler", () => {
         const user_query = `takenAfter=FakeDate`;
         await testing_SearchHandler(handler, user_query);
     });
+
+    it("Should handle sorting queries well", async () => {
+        const handler = async (query: BodyInit): HandlerReturnType => {
+            // compileTokensToApiQuery skips tokens with t.error, so nothing gets sent
+            expect(query).toBe(`sortBy=DateAdded&sortOrder=ASC`);
+            return Ok([]);
+        };
+
+        const user_query = `sortBy=DateAdded;sortOrder=ASC;`;
+        await testing_SearchHandler(handler, user_query);
+    });
 });

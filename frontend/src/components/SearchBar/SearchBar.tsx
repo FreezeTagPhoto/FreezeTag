@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./SearchBar.module.css";
 import Pill from "@/components/UI/Pill/Pill";
 import { parseUserQuery } from "@/common/search/parse";
-import { FIELD_KEYS } from "@/common/search/keys";
+import { FIELD_KEYS, isSearchValueKey } from "@/common/search/keys";
 
 type Props = {
     value: string;
@@ -43,8 +43,8 @@ function buildSuggestions(input: string, caret: number): Suggestion[] {
 
     const needle = trimmed.toLowerCase();
 
-    const keyMatches = FIELD_KEYS.filter((k) =>
-        k.toLowerCase().startsWith(needle),
+    const keyMatches = FIELD_KEYS.filter(
+        (k) => !isSearchValueKey(k) && k.toLowerCase().startsWith(needle),
     ).map((k) => ({
         kind: "key" as const,
         label: `${k}=`,

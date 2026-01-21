@@ -6,6 +6,8 @@ export const FIELD_KEYS = [
     "uploadedBefore",
     "uploadedAfter",
     "near",
+    "sortBy",
+    "sortOrder",
 ] as const;
 
 export type FieldKey = (typeof FIELD_KEYS)[number];
@@ -28,4 +30,10 @@ export function isDateKey(
         k === "uploadedBefore" ||
         k === "uploadedAfter"
     );
+}
+
+export function isSearchValueKey(
+    k: FieldKey,
+): k is Extract<FieldKey, "sortBy" | "sortOrder"> {
+    return k === "sortBy" || k === "sortOrder";
 }
