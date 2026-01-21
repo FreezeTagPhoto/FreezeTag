@@ -5,10 +5,15 @@ import { Result, Err } from "@/common/result";
 import { parseUserQuery } from "@/common/search/parse";
 import { compileTokensToApiQuery } from "@/common/search/compile";
 
-export type SearchResult = Result<number[], { status: number; message: string }>;
+export type SearchResult = Result<
+    number[],
+    { status: number; message: string }
+>;
 type SearchResponse = number[];
 
-export default async function SearchHandler(user_query: string): Promise<SearchResult> {
+export default async function SearchHandler(
+    user_query: string,
+): Promise<SearchResult> {
     return search_with_handler(
         ApiHandler<SearchResponse>(SERVER_ADDRESS + "search?")(Method.GET),
         user_query,

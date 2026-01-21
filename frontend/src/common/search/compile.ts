@@ -1,11 +1,14 @@
 import type { Token } from "./tokens";
 
-const DATE_KEYS = new Set([
-    "takenBefore",
-    "takenAfter",
-    "uploadedBefore",
-    "uploadedAfter",
-] as const);
+const DATE_KEYS: Record<
+    "takenBefore" | "takenAfter" | "uploadedBefore" | "uploadedAfter",
+    true
+> = {
+    takenBefore: true,
+    takenAfter: true,
+    uploadedBefore: true,
+    uploadedAfter: true,
+};
 
 function encode(v: string) {
     return encodeURIComponent(v);
@@ -34,7 +37,7 @@ export function compileTokensToApiQuery(tokens: Token[]): string {
             continue;
         }
 
-        if (DATE_KEYS.has(t.key as any)) {
+        if (t.key in DATE_KEYS) {
             parts.push(`${t.key}=${encode(t.value)}`);
             continue;
         }

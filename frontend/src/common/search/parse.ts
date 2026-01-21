@@ -24,7 +24,6 @@ function stripOuterQuotes(s: string): StripResult {
     return { text: t, exact: false, hadOpenQuote: false };
 }
 
-
 function parseDateOrUnixText(text: string): string | null {
     if (/^[0-9]+$/.test(text)) return text;
 
@@ -56,9 +55,10 @@ function formatDeg(deg: number): string {
 
 type CanonUnit = "km" | "m" | "mi" | "deg" | "ft" | "yd";
 
-function parseDistanceToAngularDegrees(
-    raw: string,
-): { deg: number | null; error?: string } {
+function parseDistanceToAngularDegrees(raw: string): {
+    deg: number | null;
+    error?: string;
+} {
     const cleaned = raw
         .toLowerCase()
         .replace(/\s+/g, "")
@@ -117,14 +117,19 @@ function parseDistanceToAngularDegrees(
     if (unit === "km") km = distNum;
     else if (unit === "m") km = distNum / 1000;
     else if (unit === "mi") km = distNum * 1.609344;
-    else if (unit === "ft") km = distNum * 0.0003048; // 1ft = 0.3048m
-    else if (unit === "yd") km = distNum * 0.0009144; // 1yd = 0.9144m
+    else if (unit === "ft")
+        km = distNum * 0.0003048; // 1ft = 0.3048m
+    else if (unit === "yd")
+        km = distNum * 0.0009144; // 1yd = 0.9144m
     else return { deg: null, error: `Unsupported near unit "${unit}"` };
 
     return { deg: kmToAngularDegrees(km) };
 }
 
-function parseNear(text: string): { normalized: string | null; error?: string } {
+function parseNear(text: string): {
+    normalized: string | null;
+    error?: string;
+} {
     const parts = text
         .split(",")
         .map((p) => p.trim())
@@ -147,10 +152,16 @@ function parseNear(text: string): { normalized: string | null; error?: string } 
         };
     }
     if (lat < -90 || lat > 90) {
-        return { normalized: null, error: `near latitude must be between -90 and 90` };
+        return {
+            normalized: null,
+            error: `near latitude must be between -90 and 90`,
+        };
     }
     if (lon < -180 || lon > 180) {
-        return { normalized: null, error: `near longitude must be between -180 and 180` };
+        return {
+            normalized: null,
+            error: `near longitude must be between -180 and 180`,
+        };
     }
 
     const dist = parseDistanceToAngularDegrees(parts[2]);
@@ -178,7 +189,8 @@ export function parseUserQuery(input: string): Token[] {
             const valueRaw = trimmed.slice(equalsAt + 1);
 
             if (isFieldKey(keyRaw)) {
-                const { text, exact, hadOpenQuote } = stripOuterQuotes(valueRaw);
+                const { text, exact, hadOpenQuote } =
+                    stripOuterQuotes(valueRaw);
 
                 const missingClosingQuote =
                     hadOpenQuote && !valueRaw.trim().endsWith(`"`);
@@ -224,7 +236,9 @@ export function parseUserQuery(input: string): Token[] {
                         value: text,
                         exact,
                         range,
-                        error: missingClosingQuote ? "Missing closing quote" : undefined,
+                        error: missingClosingQuote
+                            ? "Missing closing quote"
+                            : undefined,
                     });
                 }
 

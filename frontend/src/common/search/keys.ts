@@ -16,7 +16,9 @@ export function isFieldKey(k: string): k is FieldKey {
     return FIELD_KEY_SET.has(k);
 }
 
-export function isDateKey(k: FieldKey): k is Extract<
+export function isDateKey(
+    k: FieldKey,
+): k is Extract<
     FieldKey,
     "takenBefore" | "takenAfter" | "uploadedBefore" | "uploadedAfter"
 > {

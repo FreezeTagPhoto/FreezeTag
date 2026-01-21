@@ -3,7 +3,7 @@
     padding: 0 12px;
     border-radius: 12px;
 
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(38, 42, 56, 0.75);
 
     color: #dfe3f0;
@@ -69,7 +69,7 @@
     border-radius: 999px;
     padding: 0 10px;
 
-    background: rgba(255, 80, 80, 0.10);
+    background: rgba(255, 80, 80, 0.1);
     border-color: rgba(255, 80, 80, 0.25);
     color: #ffd7d7;
 }

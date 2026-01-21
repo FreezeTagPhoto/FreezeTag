@@ -58,7 +58,11 @@ function buildSuggestions(input: string, caret: number): Suggestion[] {
     ];
 }
 
-function removeTokenFromQuery(input: string, start: number, end: number): string {
+function removeTokenFromQuery(
+    input: string,
+    start: number,
+    end: number,
+): string {
     let before = input.slice(0, start);
     let after = input.slice(end);
 
@@ -74,7 +78,10 @@ function removeTokenFromQuery(input: string, start: number, end: number): string
     out += after.replace(/^\s+/, "");
 
     // Final cleanup
-    out = out.replace(/^\s*;\s*/, "").replace(/\s*;\s*$/, "").trim();
+    out = out
+        .replace(/^\s*;\s*/, "")
+        .replace(/\s*;\s*$/, "")
+        .trim();
 
     return out;
 }
@@ -192,7 +199,11 @@ export default function SearchBar({
                         setManualClosed(false);
                         inputRef.current?.focus();
                     }}
-                    title={suggestionsEnabled ? "Suggestions on" : "Suggestions off"}
+                    title={
+                        suggestionsEnabled
+                            ? "Suggestions on"
+                            : "Suggestions off"
+                    }
                 >
                     🔍
                 </button>
@@ -237,30 +248,32 @@ export default function SearchBar({
                     ✕
                 </button>
 
-                {suggestionsEnabled && dropdownOpen && suggestions.length > 0 && (
-                    <div
-                        className={styles.dropdown}
-                        role="listbox"
-                        aria-label="Search suggestions"
-                    >
-                        {suggestions.map((s, idx) => (
-                            <button
-                                key={`${s.kind}-${s.label}-${idx}`}
-                                className={styles.dropdownItem}
-                                type="button"
-                                onMouseDown={(e) => e.preventDefault()}
-                                onClick={() => applySuggestion(s)}
-                            >
-                                <span className={styles.dropdownLabel}>
-                                    {s.label}
-                                </span>
-                                <span className={styles.dropdownMeta}>
-                                    {s.kind === "key" ? "filter" : "text"}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                )}
+                {suggestionsEnabled &&
+                    dropdownOpen &&
+                    suggestions.length > 0 && (
+                        <div
+                            className={styles.dropdown}
+                            role="listbox"
+                            aria-label="Search suggestions"
+                        >
+                            {suggestions.map((s, idx) => (
+                                <button
+                                    key={`${s.kind}-${s.label}-${idx}`}
+                                    className={styles.dropdownItem}
+                                    type="button"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={() => applySuggestion(s)}
+                                >
+                                    <span className={styles.dropdownLabel}>
+                                        {s.label}
+                                    </span>
+                                    <span className={styles.dropdownMeta}>
+                                        {s.kind === "key" ? "filter" : "text"}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
             </div>
 
             {tokens.length > 0 ? (
@@ -270,13 +283,13 @@ export default function SearchBar({
                             t.kind === "tag"
                                 ? `tag: ${t.value}`
                                 : `${t.key}: ${
-                                        t.key === "takenBefore" ||
-                                        t.key === "takenAfter" ||
-                                        t.key === "uploadedBefore" ||
-                                        t.key === "uploadedAfter"
-                                            ? (t.valueRaw ?? t.value)
-                                            : t.value
-                                    }`;
+                                      t.key === "takenBefore" ||
+                                      t.key === "takenAfter" ||
+                                      t.key === "uploadedBefore" ||
+                                      t.key === "uploadedAfter"
+                                          ? (t.valueRaw ?? t.value)
+                                          : t.value
+                                  }`;
 
                         return (
                             <span
@@ -290,7 +303,10 @@ export default function SearchBar({
                                     const el = inputRef.current;
                                     if (!el) return;
                                     el.focus();
-                                    el.setSelectionRange(t.range.start, t.range.end);
+                                    el.setSelectionRange(
+                                        t.range.start,
+                                        t.range.end,
+                                    );
                                 }}
                             >
                                 <Pill
@@ -325,7 +341,8 @@ export default function SearchBar({
                 <div className={styles.hintRow}>
                     Try:{" "}
                     <code>
-                        make="Toyota"; model=Camry; takenAfter=2025-01-01; "beach"
+                        make=&quot;Toyota&quot;; model=Camry; takenAfter=2025-01-01;
+                        &quot;beach&quot;
                     </code>
                 </div>
             )}
