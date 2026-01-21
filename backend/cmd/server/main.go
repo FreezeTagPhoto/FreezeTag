@@ -48,7 +48,7 @@ func main() {
 		}
 		ginSwagger.WrapHandler(swaggerfiles.Handler)(c)
 	})
-	router.Run("localhost:3824") //nolint:errcheck // no need to check return value
+	router.Run("0.0.0.0:3824") //nolint:errcheck // no need to check return value
 }
 
 func initParserCollection() images.Parser {

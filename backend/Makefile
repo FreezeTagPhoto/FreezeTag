@@ -1,4 +1,4 @@
-.PHONY: run test mocks lint tidy clean docs
+.PHONY: run test mocks lint tidy clean docs build deploy kill
 .SILENT:
 
 TAGS=sqlite_math_functions,sqlite_foreign_keys
@@ -46,3 +46,13 @@ mocks: tidy
 clean:
 	rm -rf ./coverage
 	rm -rf ./mocks
+
+build:
+	docker build -t freezetag:backend .
+
+deploy: build
+	docker run -d --name freezetag_backend -p 3824:3824 freezetag:backend
+
+kill:
+	docker kill freezetag_backend
+	docker rm freezetag_backend

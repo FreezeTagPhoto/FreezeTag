@@ -1,0 +1,17 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - FREEZETAG_BACKEND_ADDRESS=backend
+
+  backend:
+    build: ./backend
+    ports:
+      - "3824:3824"
+    volumes:
+      - backend:/backend
+
+volumes:
+  backend:
