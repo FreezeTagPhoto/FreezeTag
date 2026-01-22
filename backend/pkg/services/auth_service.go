@@ -2,6 +2,7 @@ package services
 
 import (
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/repositories"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -20,22 +21,22 @@ type AuthService interface {
 }
 
 type DefaultAuthService struct {
-	userDB database.UserDatabase
+	userRepo repositories.UserRepository
 }
 
-func InitAuthService(userDB database.UserDatabase) *DefaultAuthService {
+func InitAuthService(userRepo repositories.UserRepository) *DefaultAuthService {
 	return &DefaultAuthService{
-		userDB: userDB,
+		userRepo: userRepo,
 	}
 }
 
 func (s *DefaultAuthService) AuthenticateUser(username string, password string) (string, error) {
 
-	user, err := s.userDB.GetUserByUsername(username)
+	user, err := s.userRepo.GetUserByUsername(username)
 	if err != nil {
 		return "", err
 	}
-	storedHash, err := s.userDB.GetPasswordHash(user.ID)
+	storedHash, err := s.userRepo.GetUserPasswordHash(user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -52,7 +53,7 @@ func (s *DefaultAuthService) AddUser(username string, password string) error {
 	if err != nil {
 		return err
 	}
-	return s.userDB.AddUser(username, string(hash))
+	return s.userRepo.AddUser(username, string(hash))
 }
 
 func createToken(userID database.UserID) (string, error) {
