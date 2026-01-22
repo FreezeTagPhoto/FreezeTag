@@ -77,16 +77,6 @@ func InitImageRepository(db database.ImageDatabase, paser images.Parser, folderP
 	}
 }
 
-func errorUploadResult(filename string, err error) UploadResult {
-	return UploadResult{
-		Success: nil,
-		Err: &ImageUploadFailure{
-			Reason:   err.Error(),
-			Filename: filename,
-		},
-	}
-}
-
 func safeFilePath(filepath, filename string) (string, error) {
 	tmpName := filename
 	for i := int64(1); ; i++ {
