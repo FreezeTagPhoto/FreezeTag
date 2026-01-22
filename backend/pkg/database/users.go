@@ -3,6 +3,10 @@ package database
 import (
 	"database/sql"
 	_ "embed"
+	"fmt"
+	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type UserID int64
@@ -10,7 +14,9 @@ type UserID int64
 type UserDatabase interface {
 	AddUser(username string, passwordHash string) error
 	GetUserIDByUsername(username string) (UserID, error)
-	AuthenticateUser(username string, passwordHash string) (bool, error)
+	GetUserPasswordHashByID(userID UserID) (string, error)
+	ResetPassword(userID UserID, newPasswordHash string) error
+	ListUsernames() ([]string, error)
 }
 
 type SqliteUserDatabase struct {
@@ -19,6 +25,7 @@ type SqliteUserDatabase struct {
 
 //go:embed user_schema.sql
 var user_schema string
+
 func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
 	db, err := sql.Open("sqlite3", datasource)
 	if err != nil {
@@ -32,9 +39,13 @@ func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
 }
 
 func (s SqliteUserDatabase) AddUser(username string, passwordHash string) error {
+
+	dateCreated := time.Now().Unix()
 	_, err := s.db.Exec(
-		"INSERT INTO Users (username, passwordHash, createdAt) VALUES (?, ?, strftime('%s','now'))",
-		username, passwordHash,
+		"INSERT INTO Users (username, passwordHash, createdAt) VALUES (?, ?, ?)",
+		username,
+		passwordHash,
+		dateCreated,
 	)
 	return err
 }
@@ -51,18 +62,37 @@ func (s SqliteUserDatabase) GetUserIDByUsername(username string) (UserID, error)
 	return id, nil
 }
 
-func (s SqliteUserDatabase) AuthenticateUser(username string, passwordHash string) (bool, error) {
-	var storedHash string
+func (s SqliteUserDatabase) GetUserPasswordHashByID(userID UserID) (string, error) {
+	var passwordHash string
 	err := s.db.QueryRow(
-		"SELECT passwordHash FROM Users WHERE username = ?",
-		username,
-	).Scan(&storedHash)
-	
+		"SELECT passwordHash FROM Users WHERE id = ?",
+		userID,
+	).Scan(&passwordHash)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, err
+		return "", err
 	}
-	return storedHash == passwordHash, nil
+	return passwordHash, nil
+}
+
+func (s SqliteUserDatabase) ResetPassword(userID UserID, newPasswordHash string) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (s SqliteUserDatabase) ListUsernames() ([]string, error) {
+	rows, err := s.db.Query("SELECT username FROM Users")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var usernames []string
+	for rows.Next() {
+		var username string
+		err := rows.Scan(&username)
+		if err != nil {
+			return nil, err
+		}
+		usernames = append(usernames, username)
+	}
+	return usernames, nil
 }
