@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"log"
 
 	"freezetag/backend/pkg/repositories"
@@ -59,7 +58,7 @@ func (s *defaultJobService) RunUploadJobs(batch *repositories.JobBatch) error {
 				if err != nil {
 					log.Printf("Failed to store image bytes for file %s in batch %v: %v", f.Name, batch.UUID, err)
 					if err := s.jobRepository.FailFileJob(batch.UUID, f.Name, err); err != nil {
-						return fmt.Errorf("%s", err.Error())
+						return err
 					}
 				} else { 
 					if err := s.jobRepository.CompleteFileJob(batch.UUID, f.Name, id); err != nil {
