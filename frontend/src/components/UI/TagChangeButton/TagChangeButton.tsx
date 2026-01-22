@@ -31,37 +31,25 @@ export default function TagChangeButton(props: TagChangeProps) {
     };
 
     const handleSubmit = async (event: FormData, image_ids: Set<number>) => {
-        try {
-            const tags = event
-                .getAll("tag_menu")
-                .map((entry) => entry.toString());
-            const new_tag = event.get("new_tag")?.toString();
-            if ((tags.length === 0 && !new_tag) || image_ids.size === 0) {
-                console.error(
-                    "Must have at least some tags and some images selected!",
-                );
-            } else {
-                if (new_tag) tags.push(new_tag);
-                const image_id_array = image_ids.values().toArray();
-                const result = await TagAdder(image_id_array, tags);
-
-                if (result.ok) {
-                    console.log(
-                        "Successfully added tags! result: ",
-                        result.value,
-                    );
-                } else {
-                    console.error("Error adding tags!", result.error);
-                }
-            }
-            updateTags();
-        } catch (error) {
+        const tags = event.getAll("tag_menu").map((entry) => entry.toString());
+        const new_tag = event.get("new_tag")?.toString();
+        if ((tags.length === 0 && !new_tag) || image_ids.size === 0) {
             console.error(
-                "Error adding tags (is the backend running?):",
-                error,
+                "Must have at least some tags and some images selected!",
             );
-            // TODO: show error to user
+        } else {
+            if (new_tag) tags.push(new_tag);
+            const image_id_array = image_ids.values().toArray();
+            const result = await TagAdder(image_id_array, tags);
+
+            if (result.ok) {
+                console.log("Successfully added tags! result: ", result.value);
+            } else {
+                console.error("Error adding tags!", result.error);
+                // TODO: show error to user
+            }
         }
+        updateTags();
     };
 
     useEffect(updateTags, []);
