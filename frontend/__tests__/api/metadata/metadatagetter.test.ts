@@ -92,7 +92,7 @@ describe("Metadata Getter", () => {
     it("should fall back to text if error JSON can't be parsed", async () => {
         const handler = async (_: BodyInit): HandlerReturnType => {
             return Err({
-                status_code: 400,
+                status_code: 401,
                 response: new Response("{not json"),
             });
         };
@@ -100,7 +100,7 @@ describe("Metadata Getter", () => {
         const result = await testing_MetadataGetter(handler, 1);
         expect(result).toStrictEqual(
             Err({
-                status: 400,
+                status: 401,
                 message: await new Response("{not json").text(),
             }),
         );
