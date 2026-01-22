@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	_ "embed"
-	"fmt"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -11,11 +10,18 @@ import (
 
 type UserID int64
 
+type PublicUser struct {
+	ID        UserID `json:"id"`
+	Username  string `json:"username"`
+	CreatedAt int64  `json:"created_at"`
+}
+
 type UserDatabase interface {
 	AddUser(username string, passwordHash string) error
-	GetUserIDByUsername(username string) (UserID, error)
-	GetUserPasswordHashByID(userID UserID) (string, error)
-	ResetPassword(userID UserID, newPasswordHash string) error
+	GetUserByUsername(username string) (*PublicUser, error)
+	GetUserById(id UserID) (*PublicUser, error)
+	SetUserPassword(userID UserID, newPasswordHash string) error
+	GetPasswordHash(userID UserID) (string, error)
 	ListUsernames() ([]string, error)
 }
 
@@ -39,30 +45,52 @@ func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
 }
 
 func (s SqliteUserDatabase) AddUser(username string, passwordHash string) error {
-
-	dateCreated := time.Now().Unix()
 	_, err := s.db.Exec(
 		"INSERT INTO Users (username, passwordHash, createdAt) VALUES (?, ?, ?)",
 		username,
 		passwordHash,
-		dateCreated,
+		time.Now().Unix(),
 	)
 	return err
 }
 
-func (s SqliteUserDatabase) GetUserIDByUsername(username string) (UserID, error) {
-	var id UserID
+func (s SqliteUserDatabase) GetUserById(id UserID) (*PublicUser, error) {
+	var username string
+	var passwordHash string
+	var createdAt int64
 	err := s.db.QueryRow(
-		"SELECT id FROM Users WHERE username = ?",
-		username,
-	).Scan(&id)
+		"SELECT (username, passwordHash, createdAt) FROM Users WHERE id = ?",
+		id,
+	).Scan(&username, &passwordHash, &createdAt)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return id, nil
+	return &PublicUser{
+		ID:        id,
+		Username:  username,
+		CreatedAt: createdAt,
+	}, nil
 }
 
-func (s SqliteUserDatabase) GetUserPasswordHashByID(userID UserID) (string, error) {
+func (s SqliteUserDatabase) GetUserByUsername(username string) (*PublicUser, error) {
+	var id UserID
+	var passwordHash string
+	var createdAt int64
+	err := s.db.QueryRow(
+		"SELECT (id, passwordHash, createdAt) FROM Users WHERE username = ?",
+		username,
+	).Scan(&id, &passwordHash, &createdAt)
+	if err != nil {
+		return nil, err
+	}
+	return &PublicUser{
+		ID:        id,
+		Username:  username,
+		CreatedAt: createdAt,
+	}, nil
+}
+
+func (s SqliteUserDatabase) GetPasswordHash(userID UserID) (string, error) {
 	var passwordHash string
 	err := s.db.QueryRow(
 		"SELECT passwordHash FROM Users WHERE id = ?",
@@ -74,8 +102,13 @@ func (s SqliteUserDatabase) GetUserPasswordHashByID(userID UserID) (string, erro
 	return passwordHash, nil
 }
 
-func (s SqliteUserDatabase) ResetPassword(userID UserID, newPasswordHash string) error {
-	return fmt.Errorf("not implemented")
+func (s SqliteUserDatabase) SetUserPassword(userID UserID, newPasswordHash string) error {
+	_, err := s.db.Exec(
+		"UPDATE Users SET passwordHash = ? WHERE id = ?",
+		newPasswordHash,
+		userID,
+	)
+	return err
 }
 
 func (s SqliteUserDatabase) ListUsernames() ([]string, error) {

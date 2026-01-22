@@ -31,11 +31,11 @@ func InitAuthService(userDB database.UserDatabase) *DefaultAuthService {
 
 func (s *DefaultAuthService) AuthenticateUser(username string, password string) (string, error) {
 
-	userID, err := s.userDB.GetUserIDByUsername(username)
+	user, err := s.userDB.GetUserByUsername(username)
 	if err != nil {
 		return "", err
 	}
-	storedHash, err := s.userDB.GetUserPasswordHashByID(userID)
+	storedHash, err := s.userDB.GetPasswordHash(user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -44,7 +44,7 @@ func (s *DefaultAuthService) AuthenticateUser(username string, password string) 
 	if err != nil {
 		return "", err
 	}
-	return createToken(userID)
+	return createToken(user.ID)
 }
 
 func (s *DefaultAuthService) AddUser(username string, password string) error {
