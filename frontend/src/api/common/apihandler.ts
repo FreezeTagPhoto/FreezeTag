@@ -15,10 +15,18 @@ export function ApiHandler<T>(address: string, body_request: boolean = true) {
     return (method: Method) => {
         if (method === Method.POST && body_request) {
             return async (data: BodyInit): Promise<Result<T, RequestError>> => {
-                const response = await fetch(address, {
-                    method: method,
-                    body: data,
-                });
+                let response;
+                try {
+                    response = await fetch(address, {
+                        method: method,
+                        body: data,
+                    });
+                } catch (error) {
+                    return Err({
+                        status_code: 0,
+                        response: new Response(`Catastrophic Error: ${error}`),
+                    });
+                }
 
                 if (response.ok) {
                     return Ok((await response.json()) as T);
@@ -28,9 +36,17 @@ export function ApiHandler<T>(address: string, body_request: boolean = true) {
             };
         } else {
             return async (data: BodyInit): Promise<Result<T, RequestError>> => {
-                const response = await fetch(address + data, {
-                    method: method,
-                });
+                let response;
+                try {
+                    response = await fetch(address + data, {
+                        method: method,
+                    });
+                } catch (error) {
+                    return Err({
+                        status_code: 0,
+                        response: new Response(`Catastrophic Error: ${error}`),
+                    });
+                }
 
                 if (response.ok) {
                     return Ok((await response.json()) as T);

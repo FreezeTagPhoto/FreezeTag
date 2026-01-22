@@ -39,4 +39,28 @@ describe("API Handler", () => {
             expect(response.error.status_code).toBe(405);
         }
     });
+
+    it("properly handles a failed request (no server)", async () => {
+        const handler = ApiHandler("http://fake_website.fakefakefakefake/")(
+            Method.GET,
+        );
+        const response = await handler("sus");
+
+        expect(response.ok).toBeFalsy();
+        if (!response.ok) {
+            expect(response.error.status_code).toBe(0);
+        }
+    });
+
+    it("properly handles a failed request (no server) for post", async () => {
+        const handler = ApiHandler("http://fake_website.fakefakefakefake/")(
+            Method.POST,
+        );
+        const response = await handler("sus");
+
+        expect(response.ok).toBeFalsy();
+        if (!response.ok) {
+            expect(response.error.status_code).toBe(0);
+        }
+    });
 });
