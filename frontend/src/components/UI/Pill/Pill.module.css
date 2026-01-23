@@ -25,10 +25,6 @@
         box-shadow 120ms ease;
 }
 
-.pill.open {
-    border-radius: 12px 12px 0px 0px;
-}
-
 .pill:hover {
     background: rgba(46, 51, 69, 0.85);
 }
@@ -41,6 +37,19 @@
     outline: none;
     border-color: rgba(120, 140, 255, 0.55);
     box-shadow: 0 0 0 4px rgba(120, 140, 255, 0.14);
+}
+
+.pill.open {
+    border-radius: 12px 12px 0 0;
+    background: rgba(55, 61, 84, 0.92);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.35),
+        0 0 0 3px rgba(120, 140, 255, 0.12);
+}
+
+.pill.open:hover {
+    background: rgba(62, 70, 98, 0.95);
 }
 
 .label {

@@ -11,9 +11,12 @@ import {
 import styles from "./MainGallery.module.css";
 import GalleryImage from "../GalleryImage/GalleryImage";
 import MetadataGetter, { ImageMetadata } from "@/api/metadata/metadatagetter";
+import TagGetter from "@/api/tags/taggetter";
+import Pill from "@/components/UI/Pill/Pill";
 
 export type GalleryProps = {
     image_ids: number[];
+    onSearchTag?: (tag: string) => void;
 };
 
 // point (fx, fy) on image expressed as fraction of width/height (after zoom)
@@ -48,12 +51,11 @@ function formatCamera(make: string | null, model: string | null): string {
     return parts.length ? parts.join(" ") : "—";
 }
 
-export default function MainGallery({ image_ids }: GalleryProps) {
+export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
     // Full Screen Preview Handling
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
-    const gridRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     // zoom: 1 = fit, 2 = zoomed
@@ -109,6 +111,49 @@ export default function MainGallery({ image_ids }: GalleryProps) {
             cancelled = true;
         };
     }, [selectedId, metadataById]);
+
+    // tags state
+    const [tagsById, setTagsById] = useState<Record<number, string[]>>({});
+    const [tagsLoading, setTagsLoading] = useState(false);
+    const [tagsError, setTagsError] = useState<string | null>(null);
+
+    const currentTags: string[] | null =
+        selectedId !== null ? (tagsById[selectedId] ?? null) : null;
+
+    useEffect(() => {
+        if (selectedId === null) return;
+
+        // already cached
+        if (tagsById[selectedId]) {
+            setTagsError(null);
+            setTagsLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+
+        (async () => {
+            setTagsLoading(true);
+            setTagsError(null);
+
+            const res = await TagGetter(selectedId);
+
+            if (cancelled) return;
+
+            if (!res.ok) {
+                setTagsError(res.error.message);
+                setTagsLoading(false);
+                return;
+            }
+
+            setTagsById((prev) => ({ ...prev, [selectedId]: res.value }));
+            setTagsLoading(false);
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedId, tagsById]);
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -296,7 +341,6 @@ export default function MainGallery({ image_ids }: GalleryProps) {
             {/* thumbnails */}
             <div
                 className={styles.grid}
-                ref={gridRef}
                 tabIndex={0}
                 onKeyDown={handleGridKeyDown}
                 aria-label="Photo gallery"
@@ -501,6 +545,43 @@ export default function MainGallery({ image_ids }: GalleryProps) {
                                     </div>
                                     <div className={styles.detailValue}>—</div>
                                 </div> */}
+                                <div className={styles.detailRow}>
+                                    <div className={styles.detailLabel}>
+                                        Tags
+                                    </div>
+                                    <div className={styles.detailValue}>
+                                        {tagsError ? (
+                                            <span
+                                                className={styles.inlineError}
+                                            >
+                                                {tagsError}
+                                            </span>
+                                        ) : tagsLoading ? (
+                                            "Loading…"
+                                        ) : currentTags &&
+                                          currentTags.length > 0 ? (
+                                            <div className={styles.tagWrap}>
+                                                {currentTags.map((t) => (
+                                                    <Pill
+                                                        key={t}
+                                                        label={t}
+                                                        variant="token"
+                                                        className={
+                                                            styles.tagPill
+                                                        }
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onSearchTag?.(t);
+                                                            setSelectedId(null);
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            "—"
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </aside>
                     </div>

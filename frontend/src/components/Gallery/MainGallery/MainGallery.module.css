@@ -302,3 +302,21 @@
     color: #e5e7eb;
     word-break: break-word;
 }
+
+.tagWrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.tagPill {
+    height: 28px;
+    padding: 0 10px;
+}
+
+.inlineError {
+    color: #fca5a5;
+    font-size: 0.85rem;
+    line-height: 1.2rem;
+}

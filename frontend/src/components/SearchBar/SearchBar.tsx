@@ -35,10 +35,8 @@ function getActiveSegment(input: string, caret: number) {
 function buildSuggestions(input: string, caret: number): Suggestion[] {
     const { trimmed } = getActiveSegment(input, caret);
 
-    // Keep the UI clean: no giant list when segment is empty
     if (!trimmed) return [];
 
-    // If they’re typing a value (key=...), don’t suggest keys
     if (trimmed.includes("=") || trimmed.startsWith(`"`)) return [];
 
     const needle = trimmed.toLowerCase();
@@ -51,7 +49,6 @@ function buildSuggestions(input: string, caret: number): Suggestion[] {
         insert: `${k}=`,
     }));
 
-    // Always provide “treat as tag” fallback last
     return [
         ...keyMatches,
         { kind: "tag", label: `tag: ${trimmed}`, insert: trimmed },
@@ -98,36 +95,26 @@ export default function SearchBar({
 
     const [caret, setCaret] = useState(0);
 
-    // Suggestions master toggle (now the left 🔍 button)
     const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
 
-    // Dropdown open state
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
-    // If user pressed Esc, don’t auto-reopen until they type/click again
     const [manualClosed, setManualClosed] = useState(false);
 
-    const updateCaret = () => {
-        const el = inputRef.current;
-        if (!el) return;
-        setCaret(el.selectionStart ?? 0);
-    };
-
-    const suggestions = useMemo(() => {
+    const rawSuggestions = useMemo(() => {
         if (!suggestionsEnabled) return [];
-        if (!dropdownOpen) return [];
+        if (manualClosed) return [];
         return buildSuggestions(value, caret);
-    }, [suggestionsEnabled, dropdownOpen, value, caret]);
+    }, [suggestionsEnabled, manualClosed, value, caret]);
+
+    const suggestions = dropdownOpen ? rawSuggestions : [];
 
     const maybeOpenDropdown = () => {
         if (!suggestionsEnabled) return;
         if (manualClosed) return;
-
-        const next = buildSuggestions(value, caret);
-        setDropdownOpen(next.length > 0);
+        setDropdownOpen(rawSuggestions.length > 0);
     };
 
-    // Click-outside closes dropdown
     useEffect(() => {
         const onMouseDown = (e: MouseEvent) => {
             const root = wrapRef.current;
@@ -141,7 +128,6 @@ export default function SearchBar({
         return () => document.removeEventListener("mousedown", onMouseDown);
     }, []);
 
-    // Escape closes dropdown and stays closed
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key !== "Escape") return;
@@ -177,10 +163,15 @@ export default function SearchBar({
         });
     };
 
+    const updateCaret = () => {
+        const el = inputRef.current;
+        if (!el) return;
+        setCaret(el.selectionStart ?? 0);
+    };
+
     return (
         <div ref={wrapRef} className={styles.wrap}>
             <div className={styles.searchRow}>
-                {/* Left icon is now the suggestions toggle */}
                 <button
                     className={`${styles.searchIconBtn} ${
                         suggestionsEnabled ? styles.iconOn : styles.iconDisabled
@@ -233,8 +224,6 @@ export default function SearchBar({
                         maybeOpenDropdown();
                     }}
                 />
-
-                {/* Clear is always visible; disabled when empty */}
                 <button
                     className={`${styles.clear} ${
                         value.length === 0 ? styles.iconDisabled : styles.iconOn
@@ -248,32 +237,30 @@ export default function SearchBar({
                     ✕
                 </button>
 
-                {suggestionsEnabled &&
-                    dropdownOpen &&
-                    suggestions.length > 0 && (
-                        <div
-                            className={styles.dropdown}
-                            role="listbox"
-                            aria-label="Search suggestions"
-                        >
-                            {suggestions.map((s, idx) => (
-                                <button
-                                    key={`${s.kind}-${s.label}-${idx}`}
-                                    className={styles.dropdownItem}
-                                    type="button"
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    onClick={() => applySuggestion(s)}
-                                >
-                                    <span className={styles.dropdownLabel}>
-                                        {s.label}
-                                    </span>
-                                    <span className={styles.dropdownMeta}>
-                                        {s.kind === "key" ? "filter" : "text"}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                {dropdownOpen && suggestions.length > 0 && (
+                    <div
+                        className={styles.dropdown}
+                        role="listbox"
+                        aria-label="Search suggestions"
+                    >
+                        {suggestions.map((s, idx) => (
+                            <button
+                                key={`${s.kind}-${s.label}-${idx}`}
+                                className={styles.dropdownItem}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => applySuggestion(s)}
+                            >
+                                <span className={styles.dropdownLabel}>
+                                    {s.label}
+                                </span>
+                                <span className={styles.dropdownMeta}>
+                                    {s.kind === "key" ? "filter" : "text"}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {tokens.length > 0 ? (
@@ -339,11 +326,7 @@ export default function SearchBar({
                 </div>
             ) : (
                 <div className={styles.hintRow}>
-                    Try:{" "}
-                    <code>
-                        make=&quot;Toyota&quot;; model=Camry;
-                        takenAfter=2025-01-01; &quot;beach&quot;
-                    </code>
+                    Try: <code>make=&quot;Toyota&quot;; model=Camry;</code>
                 </div>
             )}
         </div>
