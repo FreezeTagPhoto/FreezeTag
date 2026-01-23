@@ -13,7 +13,7 @@ type UserRepository interface {
 	GetUserByUsername(username string) (*database.PublicUser, error)
 	GetUserById(username string) (database.UserID, error)
 	GetUserPasswordHash(userID database.UserID) (string, error)
-	AddUser(username string, passwordHash string) error
+	AddUser(username string, passwordHash string) (database.UserID, error)
 	ChangePassword(userID database.UserID, newPasswordHash string) error
 	ListUsernames() ([]string, error)	
 }
@@ -66,15 +66,15 @@ func (r *DefaultUserRepository) GetUserPasswordHash(userID database.UserID) (str
 	return passwordHash, nil
 }
 
-func (r *DefaultUserRepository) AddUser(username string, passwordHash string) error {
-	err := r.SqliteUserDatabase.AddUser(username, passwordHash)
+func (r *DefaultUserRepository) AddUser(username string, passwordHash string) (database.UserID, error) {
+	id, err := r.SqliteUserDatabase.AddUser(username, passwordHash)
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code == sqlite3.ErrConstraint {
-			return ErrDuplicateUsername 
+			return 0, ErrDuplicateUsername 
 		}
 	}
-	return nil
+	return id, nil
 }
 
 func (r *DefaultUserRepository) ChangePassword(userID database.UserID, newPasswordHash string) error {
