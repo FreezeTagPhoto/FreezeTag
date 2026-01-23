@@ -1,4 +1,5 @@
 import styles from "./Pill.module.css";
+import type React from "react";
 
 type PillVariant = "menu" | "token" | "error";
 
@@ -14,7 +15,7 @@ export default function Pill({
     label: string;
     caret?: boolean;
     variant?: PillVariant;
-    onClick?: () => void;
+    onClick?: React.MouseEventHandler<HTMLButtonElement>;
     className?: string;
     type?: "button" | "submit" | "reset";
     invertCaret?: boolean;

@@ -16,6 +16,7 @@ import Pill from "@/components/UI/Pill/Pill";
 
 export type GalleryProps = {
     image_ids: number[];
+    onSearchTag?: (tag: string) => void;
 };
 
 // point (fx, fy) on image expressed as fraction of width/height (after zoom)
@@ -50,7 +51,7 @@ function formatCamera(make: string | null, model: string | null): string {
     return parts.length ? parts.join(" ") : "—";
 }
 
-export default function MainGallery({ image_ids }: GalleryProps) {
+export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
     // Full Screen Preview Handling
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
@@ -541,20 +542,34 @@ export default function MainGallery({ image_ids }: GalleryProps) {
                                 </div>
 
                                 <div className={styles.detailRow}>
-                                    <div className={styles.detailLabel}>Tags</div>
+                                    <div className={styles.detailLabel}>
+                                        Tags
+                                    </div>
                                     <div className={styles.detailValue}>
                                         {tagsError ? (
-                                            <span className={styles.inlineError}>{tagsError}</span>
+                                            <span
+                                                className={styles.inlineError}
+                                            >
+                                                {tagsError}
+                                            </span>
                                         ) : tagsLoading ? (
                                             "Loading…"
-                                        ) : currentTags && currentTags.length > 0 ? (
+                                        ) : currentTags &&
+                                          currentTags.length > 0 ? (
                                             <div className={styles.tagWrap}>
                                                 {currentTags.map((t) => (
                                                     <Pill
                                                         key={t}
                                                         label={t}
                                                         variant="token"
-                                                        className={styles.tagPill}
+                                                        className={
+                                                            styles.tagPill
+                                                        }
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onSearchTag?.(t);
+                                                            setSelectedId(null);
+                                                        }}
                                                     />
                                                 ))}
                                             </div>

@@ -1,40 +1,42 @@
 "use client";
+
 import { useState } from "react";
 import styles from "./TopBar.module.css";
 import SearchBar from "@/components/SearchBar/SearchBar";
 import Pill from "@/components/UI/Pill/Pill";
 
-type TopBarProps = { onChangeHandler: (value: string) => void };
+type TopBarProps = {
+    searchTerm: string;
+    onSearchTermChange: (value: string) => void;
 
-export default function TopBar({ onChangeHandler }: TopBarProps) {
-    const [searchTerm, setSearchTerm] = useState("");
+    sortBy: string;
+    onSortByChange: (value: string) => void;
 
-    // Sort Dropdown
-    const [sortBy, setSortBy] = useState<string>("DateAdded");
-    const [sortOrder, setSortOrder] = useState<string>("DESC");
+    sortOrder: string;
+    onSortOrderChange: (value: string) => void;
+};
+
+export default function TopBar({
+    searchTerm,
+    onSearchTermChange,
+    sortBy,
+    onSortByChange,
+    sortOrder,
+    onSortOrderChange,
+}: TopBarProps) {
+    // Sort Dropdown open/close can stay local UI state
     const [visibleSortMenu, setVisibleSortMenu] = useState<boolean>(false);
-
-    const formQueryAndChangeHandler = (
-        sortBy: string,
-        sortOrder: string,
-        searchBarString: string,
-    ) => {
-        const query = `sortBy=${sortBy};sortOrder=${sortOrder};${searchBarString}`;
-        onChangeHandler(query);
-    };
 
     return (
         <div className={styles.bar}>
             <SearchBar
                 value={searchTerm}
-                onChange={(v) => {
-                    setSearchTerm(v);
-                    formQueryAndChangeHandler(sortBy, sortOrder, v);
-                }}
+                onChange={(v) => onSearchTermChange(v)}
             />
 
             <div className={styles.pills}>
                 <Pill label="Tags" caret variant="menu" />
+
                 <div className={styles.search_container}>
                     <Pill
                         label="Sort"
@@ -43,17 +45,13 @@ export default function TopBar({ onChangeHandler }: TopBarProps) {
                         variant="menu"
                         onClick={() => setVisibleSortMenu(!visibleSortMenu)}
                     />
+
                     {visibleSortMenu && (
                         <div className={styles.search_dropdown}>
                             <select
-                                defaultValue={sortBy}
+                                value={sortBy}
                                 onChange={(event) => {
-                                    setSortBy(event.target.value);
-                                    formQueryAndChangeHandler(
-                                        event.target.value,
-                                        sortOrder,
-                                        searchTerm,
-                                    );
+                                    onSortByChange(event.target.value);
                                 }}
                                 size={2}
                             >
@@ -62,15 +60,11 @@ export default function TopBar({ onChangeHandler }: TopBarProps) {
                                 </option>
                                 <option value="DateAdded">Date Added</option>
                             </select>
+
                             <select
-                                defaultValue={sortOrder}
+                                value={sortOrder}
                                 onChange={(event) => {
-                                    setSortOrder(event.target.value);
-                                    formQueryAndChangeHandler(
-                                        sortBy,
-                                        event.target.value,
-                                        searchTerm,
-                                    );
+                                    onSortOrderChange(event.target.value);
                                 }}
                                 size={2}
                             >
@@ -80,6 +74,7 @@ export default function TopBar({ onChangeHandler }: TopBarProps) {
                         </div>
                     )}
                 </div>
+
                 <Pill label="Export" caret variant="menu" />
             </div>
         </div>

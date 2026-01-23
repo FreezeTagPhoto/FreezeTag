@@ -101,24 +101,18 @@ export default function SearchBar({
 
     const [manualClosed, setManualClosed] = useState(false);
 
-    const updateCaret = () => {
-        const el = inputRef.current;
-        if (!el) return;
-        setCaret(el.selectionStart ?? 0);
-    };
-
-    const suggestions = useMemo(() => {
+    const rawSuggestions = useMemo(() => {
         if (!suggestionsEnabled) return [];
-        if (!dropdownOpen) return [];
+        if (manualClosed) return [];
         return buildSuggestions(value, caret);
-    }, [suggestionsEnabled, dropdownOpen, value, caret]);
+    }, [suggestionsEnabled, manualClosed, value, caret]);
+
+    const suggestions = dropdownOpen ? rawSuggestions : [];
 
     const maybeOpenDropdown = () => {
         if (!suggestionsEnabled) return;
         if (manualClosed) return;
-
-        const next = buildSuggestions(value, caret);
-        setDropdownOpen(next.length > 0);
+        setDropdownOpen(rawSuggestions.length > 0);
     };
 
     useEffect(() => {
@@ -167,6 +161,12 @@ export default function SearchBar({
             setDropdownOpen(false);
             setManualClosed(false);
         });
+    };
+
+    const updateCaret = () => {
+        const el = inputRef.current;
+        if (!el) return;
+        setCaret(el.selectionStart ?? 0);
     };
 
     return (
@@ -237,8 +237,7 @@ export default function SearchBar({
                     ✕
                 </button>
 
-                {suggestionsEnabled &&
-                    dropdownOpen &&
+                {dropdownOpen &&
                     suggestions.length > 0 && (
                         <div
                             className={styles.dropdown}
@@ -331,7 +330,6 @@ export default function SearchBar({
                     Try:{" "}
                     <code>
                         make=&quot;Toyota&quot;; model=Camry;
-                        takenAfter=2025-01-01; &quot;beach&quot;
                     </code>
                 </div>
             )}
