@@ -42,9 +42,7 @@ export default function TagChangeButton(props: TagChangeProps) {
             const image_id_array = image_ids.values().toArray();
             const result = await TagAdder(image_id_array, tags);
 
-            if (result.ok) {
-                console.log("Successfully added tags! result: ", result.value);
-            } else {
+            if (!result.ok) {
                 console.error("Error adding tags!", result.error);
                 // TODO: show error to user
             }

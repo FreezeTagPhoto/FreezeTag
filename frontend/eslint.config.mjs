@@ -33,6 +33,12 @@ const eslintConfig = [
                 },
             ],
             "@next/next/no-img-element": ["off"],
+            "no-console": [
+                "error",
+                {
+                    allow: ["warn", "error"],
+                },
+            ],
         },
     },
 ];
