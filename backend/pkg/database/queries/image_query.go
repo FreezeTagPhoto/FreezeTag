@@ -151,7 +151,7 @@ func buildTagMatcher(tags []queryTag) (string, []any) {
 		matcher += fmt.Sprintf("(%s)", fuzzyBuilder.String())
 	}
 	return fmt.Sprintf(
-		`(id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE %s) GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?))`,
+		`(id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE %s) GROUP BY imageId HAVING COUNT(DISTINCT tagId) = ?))`,
 		matcher,
 	), append(append(exactArgs, fuzzyArgs...), len(tags))
 }
