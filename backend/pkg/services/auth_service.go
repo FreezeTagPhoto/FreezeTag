@@ -16,7 +16,7 @@ const (
 )
 
 type AuthService interface {
-	AddUser(username string, passwordHash string) error
+	AddUser(username string, passwordHash string) (database.UserID, error)
 	AuthenticateUser(username string, password string) (string, error)
 }
 
@@ -48,10 +48,10 @@ func (s *DefaultAuthService) AuthenticateUser(username string, password string) 
 	return createToken(user.ID)
 }
 
-func (s *DefaultAuthService) AddUser(username string, password string) error {
+func (s *DefaultAuthService) AddUser(username string, password string) (database.UserID, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	return s.userRepo.AddUser(username, string(hash))
 }
