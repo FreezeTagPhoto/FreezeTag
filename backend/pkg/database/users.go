@@ -14,11 +14,13 @@ type PublicUser struct {
 	ID        UserID `json:"id"`
 	Username  string `json:"username"`
 	CreatedAt int64  `json:"created_at"`
+
+	PasswordHash string `json:"-"`
 }
 
 type UserDatabase interface {
 	// Add a new User, return error if username already exists
-	AddUser(username string, passwordHash string) (UserID, error)
+	AddUser(username string, passwordHash string) (*PublicUser, error)
 	// return a User by Username, return error if not found
 	GetUserByUsername(username string) (*PublicUser, error)
 	// Get User by ID, return error if not found
@@ -50,21 +52,28 @@ func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
 	return SqliteUserDatabase{db}, nil
 }
 
-func (s SqliteUserDatabase) AddUser(username string, passwordHash string) (UserID, error) {
+func (s SqliteUserDatabase) AddUser(username string, passwordHash string) (*PublicUser, error) {
+	
+	createdAt := time.Now().Unix()
 	result, err := s.db.Exec(
 		"INSERT INTO Users (username, passwordHash, createdAt) VALUES (?, ?, ?)",
 		username,
 		passwordHash,
-		time.Now().Unix(),
+		createdAt,
 	)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return UserID(id), nil
+	return &PublicUser{
+		ID:        UserID(id),
+		Username:  username,
+		CreatedAt: createdAt,
+		PasswordHash: passwordHash,
+	}, nil
 }
 
 func (s SqliteUserDatabase) GetUserById(id UserID) (*PublicUser, error) {
@@ -82,16 +91,18 @@ func (s SqliteUserDatabase) GetUserById(id UserID) (*PublicUser, error) {
 		ID:        id,
 		Username:  username,
 		CreatedAt: createdAt,
+		PasswordHash: passwordHash,
 	}, nil
 }
 
 func (s SqliteUserDatabase) GetUserByUsername(username string) (*PublicUser, error) {
 	var id UserID
 	var createdAt int64
+	var passwordHash string
 	err := s.db.QueryRow(
-		"SELECT id, createdAt FROM Users WHERE username = ?",
+		"SELECT id, createdAt, passwordHash FROM Users WHERE username = ?",
 		username,
-	).Scan(&id, &createdAt)
+	).Scan(&id, &createdAt, &passwordHash)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +110,7 @@ func (s SqliteUserDatabase) GetUserByUsername(username string) (*PublicUser, err
 		ID:        id,
 		Username:  username,
 		CreatedAt: createdAt,
+		PasswordHash: passwordHash,
 	}, nil
 }
 

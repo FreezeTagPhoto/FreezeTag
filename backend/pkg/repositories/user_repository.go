@@ -3,7 +3,6 @@ package repositories
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"freezetag/backend/pkg/database"
 
 	"github.com/mattn/go-sqlite3"
@@ -11,9 +10,10 @@ import (
 
 type UserRepository interface {
 	GetUserByUsername(username string) (*database.PublicUser, error)
-	GetUserById(username string) (database.UserID, error)
+	GetUserById(id database.UserID) (*database.PublicUser, error)
+	AddUser(username string, passwordHash string) (*database.PublicUser, error)
+
 	GetUserPasswordHash(userID database.UserID) (string, error)
-	AddUser(username string, passwordHash string) (database.UserID, error)
 	ChangePassword(userID database.UserID, newPasswordHash string) error
 	ListUsernames() ([]string, error)	
 }
@@ -21,31 +21,32 @@ type UserRepository interface {
 var ( 
 	ErrUserNotFound = errors.New("user not found")
 	ErrDuplicateUsername = errors.New("username already exists")
+	ErrPasswordChangeFailed = errors.New("password change failed")
 )
 
 type DefaultUserRepository struct {
-	database.SqliteUserDatabase
+	database.UserDatabase
 }
 
-func InitDefaultUserRepository(db database.SqliteUserDatabase) UserRepository {
+func InitDefaultUserRepository(db database.UserDatabase) UserRepository {
 	return &DefaultUserRepository{
-		SqliteUserDatabase: db,
+		UserDatabase: db,
 	}
 }
 
-func (r *DefaultUserRepository) GetUserById(username string) (database.UserID, error) {
-	user, err := r.SqliteUserDatabase.GetUserByUsername(username)
+func (r *DefaultUserRepository) GetUserById(id database.UserID) (*database.PublicUser, error) {
+	user, err := r.UserDatabase.GetUserById(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return 0, ErrUserNotFound 
+			return nil, ErrUserNotFound 
 		}
-		return 0, err
+		return nil, err
 	}
-	return user.ID, nil
+	return user, nil
 }
 
 func (r *DefaultUserRepository) GetUserByUsername(username string) (*database.PublicUser, error) {
-	user, err := r.SqliteUserDatabase.GetUserByUsername(username)
+	user, err := r.UserDatabase.GetUserByUsername(username)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrUserNotFound 
@@ -56,7 +57,7 @@ func (r *DefaultUserRepository) GetUserByUsername(username string) (*database.Pu
 }
 
 func (r *DefaultUserRepository) GetUserPasswordHash(userID database.UserID) (string, error) {
-	passwordHash, err := r.SqliteUserDatabase.GetPasswordHash(userID)
+	passwordHash, err := r.UserDatabase.GetPasswordHash(userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", ErrUserNotFound 
@@ -66,22 +67,30 @@ func (r *DefaultUserRepository) GetUserPasswordHash(userID database.UserID) (str
 	return passwordHash, nil
 }
 
-func (r *DefaultUserRepository) AddUser(username string, passwordHash string) (database.UserID, error) {
-	id, err := r.SqliteUserDatabase.AddUser(username, passwordHash)
+func (r *DefaultUserRepository) AddUser(username string, passwordHash string) (*database.PublicUser, error) {
+	user, err := r.UserDatabase.AddUser(username, passwordHash)
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code == sqlite3.ErrConstraint {
-			return 0, ErrDuplicateUsername 
+			return nil, ErrDuplicateUsername 
 		}
+		return nil, err
 	}
-	return id, nil
+	return user, nil
 }
 
 func (r *DefaultUserRepository) ChangePassword(userID database.UserID, newPasswordHash string) error {
-	return fmt.Errorf("not implemented")
+	success, err := r.UserDatabase.SetUserPassword(userID, newPasswordHash)
+	if err != nil {
+		return err
+	}
+	if !success {
+		return ErrPasswordChangeFailed
+	}
+	return nil
 }
 
 func (r *DefaultUserRepository) ListUsernames() ([]string, error) {
-	return nil, fmt.Errorf("not implemented")
+	return r.UserDatabase.ListUsernames()
 }
 

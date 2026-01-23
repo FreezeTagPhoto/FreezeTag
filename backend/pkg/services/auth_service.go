@@ -15,8 +15,12 @@ const (
 	JwtExpirationHours = time.Duration(24) * time.Hour
 )
 
+var ( 
+	JwtSigningMethod = jwt.SigningMethodHS256
+)
+
 type AuthService interface {
-	AddUser(username string, passwordHash string) (database.UserID, error)
+	AddUser(username string, password string) (*database.PublicUser, error)
 	AuthenticateUser(username string, password string) (string, error)
 }
 
@@ -36,28 +40,24 @@ func (s *DefaultAuthService) AuthenticateUser(username string, password string) 
 	if err != nil {
 		return "", err
 	}
-	storedHash, err := s.userRepo.GetUserPasswordHash(user.ID)
-	if err != nil {
-		return "", err
-	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
 		return "", err
 	}
 	return createToken(user.ID)
 }
 
-func (s *DefaultAuthService) AddUser(username string, password string) (database.UserID, error) {
+func (s *DefaultAuthService) AddUser(username string, password string) (*database.PublicUser, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	return s.userRepo.AddUser(username, string(hash))
 }
 
 func createToken(userID database.UserID) (string, error) {
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	claims := jwt.NewWithClaims(JwtSigningMethod, jwt.MapClaims{
 		"sub": userID,
 		"exp": time.Now().Add(JwtExpirationHours).Unix(),
 	})
