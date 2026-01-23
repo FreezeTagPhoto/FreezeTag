@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/repositories"
 	"time"
@@ -9,19 +10,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// TODO: change this so that its not horrifically insecure
-const ( 
-	JwtSecretKey = "CHANGEME"
-	JwtExpirationHours = time.Duration(24) * time.Hour
-)
-
+// TODO : Move JWT config to .prop file
 var ( 
 	JwtSigningMethod = jwt.SigningMethodHS256
+	JwtSecretKey = "CHANGEME"
+	JwtExpirationHours = time.Duration(24) * time.Hour
 )
 
 type AuthService interface {
 	AddUser(username string, password string) (*database.PublicUser, error)
 	AuthenticateUser(username string, password string) (string, error)
+	ValidateJWT(tokenString string) (bool, error)
 }
 
 type DefaultAuthService struct {
@@ -56,6 +55,10 @@ func (s *DefaultAuthService) AddUser(username string, password string) (*databas
 	return s.userRepo.AddUser(username, string(hash))
 }
 
+func (s *DefaultAuthService) ValidateJWT(tokenString string) (bool, error) {
+	return false, fmt.Errorf("not implemented")
+}
+
 func createToken(userID database.UserID) (string, error) {
 	claims := jwt.NewWithClaims(JwtSigningMethod, jwt.MapClaims{
 		"sub": userID,
@@ -67,3 +70,4 @@ func createToken(userID database.UserID) (string, error) {
 	}
 	return tokenString, nil
 }
+
