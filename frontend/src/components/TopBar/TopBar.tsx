@@ -24,15 +24,11 @@ export default function TopBar({
     sortOrder,
     onSortOrderChange,
 }: TopBarProps) {
-    // Sort Dropdown open/close can stay local UI state
-    const [visibleSortMenu, setVisibleSortMenu] = useState<boolean>(false);
+    const [visibleSortMenu, setVisibleSortMenu] = useState(false);
 
     return (
         <div className={styles.bar}>
-            <SearchBar
-                value={searchTerm}
-                onChange={(v) => onSearchTermChange(v)}
-            />
+            <SearchBar value={searchTerm} onChange={onSearchTermChange} />
 
             <div className={styles.pills}>
                 <Pill label="Tags" caret variant="menu" />

@@ -56,7 +56,6 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
-    const gridRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     // zoom: 1 = fit, 2 = zoomed
@@ -342,7 +341,6 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
             {/* thumbnails */}
             <div
                 className={styles.grid}
-                ref={gridRef}
                 tabIndex={0}
                 onKeyDown={handleGridKeyDown}
                 aria-label="Photo gallery"
@@ -540,7 +538,13 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                             : "—"}
                                     </div>
                                 </div>
-
+                                {/* TODO: Implement metadata for resolution*/}
+                                {/* <div className={styles.detailRow}>
+                                    <div className={styles.detailLabel}>
+                                        Resolution
+                                    </div>
+                                    <div className={styles.detailValue}>—</div>
+                                </div> */}
                                 <div className={styles.detailRow}>
                                     <div className={styles.detailLabel}>
                                         Tags
@@ -578,13 +582,6 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                         )}
                                     </div>
                                 </div>
-                                {/* TODO: Implement metadata for resolution*/}
-                                {/* <div className={styles.detailRow}>
-                                    <div className={styles.detailLabel}>
-                                        Resolution
-                                    </div>
-                                    <div className={styles.detailValue}>—</div>
-                                </div> */}
                             </div>
                         </aside>
                     </div>
