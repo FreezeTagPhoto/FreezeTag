@@ -31,7 +31,6 @@ export default function Home() {
                 return;
             }
             if (!result.value.ok) {
-                console.log(`Progress: ${result.value.error}`);
                 setProgress(result.value.error);
                 return;
             }

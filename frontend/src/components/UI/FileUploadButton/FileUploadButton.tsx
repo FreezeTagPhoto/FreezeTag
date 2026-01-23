@@ -72,7 +72,6 @@ const handleSubmit = async (
     if (result.ok) {
         job_id_callback(result.value);
     } else {
-        console.log(result);
         console.error(
             "Error uploading images (is the backend running?):",
             result.error,
