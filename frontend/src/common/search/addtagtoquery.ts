@@ -14,10 +14,16 @@ export function addTagToQuery(input: string, tag: string): string {
     if (!t) return input;
 
     const tokens = parseUserQuery(input);
-    const alreadyHas = tokens.some((tok) => tok.kind === "tag" && tok.value === t);
+    const alreadyHas = tokens.some(
+        (tok) => tok.kind === "tag" && tok.value === t,
+    );
     if (alreadyHas) {
         const trimmed = input.trimEnd();
-        return trimmed.endsWith(";") ? `${trimmed} ` : trimmed.endsWith("; ") ? trimmed : `${trimmed}; `;
+        return trimmed.endsWith(";")
+            ? `${trimmed} `
+            : trimmed.endsWith("; ")
+              ? trimmed
+              : `${trimmed}; `;
     }
 
     const tokenText = formatTagToken(t);

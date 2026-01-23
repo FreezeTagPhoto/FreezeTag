@@ -237,31 +237,30 @@ export default function SearchBar({
                     ✕
                 </button>
 
-                {dropdownOpen &&
-                    suggestions.length > 0 && (
-                        <div
-                            className={styles.dropdown}
-                            role="listbox"
-                            aria-label="Search suggestions"
-                        >
-                            {suggestions.map((s, idx) => (
-                                <button
-                                    key={`${s.kind}-${s.label}-${idx}`}
-                                    className={styles.dropdownItem}
-                                    type="button"
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    onClick={() => applySuggestion(s)}
-                                >
-                                    <span className={styles.dropdownLabel}>
-                                        {s.label}
-                                    </span>
-                                    <span className={styles.dropdownMeta}>
-                                        {s.kind === "key" ? "filter" : "text"}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                {dropdownOpen && suggestions.length > 0 && (
+                    <div
+                        className={styles.dropdown}
+                        role="listbox"
+                        aria-label="Search suggestions"
+                    >
+                        {suggestions.map((s, idx) => (
+                            <button
+                                key={`${s.kind}-${s.label}-${idx}`}
+                                className={styles.dropdownItem}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => applySuggestion(s)}
+                            >
+                                <span className={styles.dropdownLabel}>
+                                    {s.label}
+                                </span>
+                                <span className={styles.dropdownMeta}>
+                                    {s.kind === "key" ? "filter" : "text"}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {tokens.length > 0 ? (
@@ -327,10 +326,7 @@ export default function SearchBar({
                 </div>
             ) : (
                 <div className={styles.hintRow}>
-                    Try:{" "}
-                    <code>
-                        make=&quot;Toyota&quot;; model=Camry;
-                    </code>
+                    Try: <code>make=&quot;Toyota&quot;; model=Camry;</code>
                 </div>
             )}
         </div>

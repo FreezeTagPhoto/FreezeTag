@@ -40,10 +40,13 @@ export default function Home() {
     const reqIdRef = useRef(0);
 
     useEffect(() => {
+        let cancelled = false;
         const myReqId = ++reqIdRef.current;
 
         (async () => {
             const result = await SearchHandler(query);
+
+            if (cancelled) return;
             if (myReqId !== reqIdRef.current) return;
 
             if (result.ok) {
@@ -60,7 +63,7 @@ export default function Home() {
         })();
 
         return () => {
-            reqIdRef.current++;
+            cancelled = true;
         };
     }, [query]);
 
