@@ -13,12 +13,13 @@ export default function Home() {
         if (result.ok) {
             set_image_ids(result.value);
         } else {
-            console.log(
+            console.error(
                 "Got " +
                     result.error.status +
                     " from backend with message " +
                     result.error.message,
             );
+            // TODO: Show error to user
         }
     };
 

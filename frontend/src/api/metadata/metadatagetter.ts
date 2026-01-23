@@ -42,21 +42,18 @@ async function get_metadata_with_handler(
     if (!result.ok) {
         const status = result.error.status_code;
         const resp = result.error.response;
-        const respClone = resp.clone();
 
-        try {
-            const body = (await respClone.json()) as { error?: string };
-            if (typeof body?.error === "string") {
-                return Err({ status, message: body.error });
-            }
-        } catch {
-            // ignore and fall back to text
+        if (status === 400) {
+            return Err({
+                status,
+                message: ((await resp.json()) as { error: string }).error,
+            });
+        } else {
+            return Err({
+                status,
+                message: await resp.text(),
+            });
         }
-
-        return Err({
-            status,
-            message: await resp.text(),
-        });
     }
 
     return result;

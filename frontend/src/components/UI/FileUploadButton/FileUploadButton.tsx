@@ -67,22 +67,15 @@ const handleSubmit = async (
     event: FormData,
     job_id_callback: (id: string) => void,
 ) => {
-    try {
-        const result = await ImageUploader(event);
+    const result = await ImageUploader(event);
 
-        if (result.ok) {
-            job_id_callback(result.value);
-        } else {
-            console.error(
-                "Error uploading images (is the backend running?):",
-                result.error,
-            );
-            // TODO: show error to user
-        }
-    } catch (error) {
+    if (result.ok) {
+        job_id_callback(result.value);
+    } else {
+        console.log(result);
         console.error(
             "Error uploading images (is the backend running?):",
-            error,
+            result.error,
         );
         // TODO: show error to user
     }
