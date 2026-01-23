@@ -147,7 +147,7 @@ func (s SqliteUserDatabase) ListUsernames() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var usernames []string
 	for rows.Next() {

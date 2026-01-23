@@ -57,7 +57,7 @@ func (r *DefaultUserRepository) GetUserByUsername(username string) (*database.Pu
 }
 
 func (r *DefaultUserRepository) GetUserPasswordHash(userID database.UserID) (string, error) {
-	passwordHash, err := r.UserDatabase.GetPasswordHash(userID)
+	passwordHash, err := r.GetPasswordHash(userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", ErrUserNotFound 
@@ -80,7 +80,7 @@ func (r *DefaultUserRepository) AddUser(username string, passwordHash string) (*
 }
 
 func (r *DefaultUserRepository) ChangePassword(userID database.UserID, newPasswordHash string) error {
-	success, err := r.UserDatabase.SetUserPassword(userID, newPasswordHash)
+	success, err := r.SetUserPassword(userID, newPasswordHash)
 	if err != nil {
 		return err
 	}
