@@ -1,1 +1,188 @@
 package database
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func createTempUserDatabase(t *testing.T) UserDatabase {
+	tmp := createTempFile(t)
+	db, err := InitSQLiteUserDatabase(tmp.Name())
+	require.NoError(t, err)
+	return db
+}
+
+func TestAddUser(t *testing.T) {
+	db := createTempUserDatabase(t)
+	_, err := db.AddUser("1", "hashedpassword")
+	require.NoError(t, err)
+}
+
+func TestAddAndGetUser(t *testing.T) {
+	db := createTempUserDatabase(t)
+	id1, err := db.AddUser("1", "hashedpassword")
+	require.NoError(t, err)
+	id2, err := db.AddUser("2", "hashedpassword")
+	require.NoError(t, err)
+
+	user, err := db.GetUserByUsername("1")
+	require.NoError(t, err)
+	require.Equal(t, "1", user.Username)
+	assert.Equal(t, id1, user.ID)
+
+	user2, err := db.GetUserByUsername("2")
+	require.NoError(t, err)
+	require.Equal(t, "2", user2.Username)
+	assert.Equal(t, id2, user2.ID)
+}
+
+
+func TestAddDuplicateUser(t *testing.T) {
+	db := createTempUserDatabase(t)
+	id1, err := db.AddUser("1", "hashedpassword")
+	require.NoError(t, err)
+	_, err = db.AddUser("1", "different password")
+	require.Error(t, err)
+
+	user, err := db.GetUserByUsername("1")
+	require.NoError(t, err)
+	require.Equal(t, "1", user.Username)
+	assert.Equal(t, id1, user.ID)
+}
+
+func TestGetNonexistentUser(t *testing.T) {
+	db := createTempUserDatabase(t)
+	_, err := db.GetUserByUsername("nonexistent")
+	require.Error(t, err)
+}
+
+func TestGetPasswordHash(t *testing.T) {
+	db := createTempUserDatabase(t)
+	_, err := db.AddUser("1", "hashedpassword")
+	require.NoError(t, err)
+
+	user, err := db.GetUserByUsername("1")
+	require.NoError(t, err)
+
+	passwordHash, err := db.GetPasswordHash(user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "hashedpassword", passwordHash)
+}	
+func TestAddDuplicateUserNoPasswordOverwrite(t *testing.T) {
+	db := createTempUserDatabase(t)
+	id1, err := db.AddUser("1", "hashedpassword")
+	require.NoError(t, err)
+	_, err = db.AddUser("1", "different password")
+	require.Error(t, err)
+
+	user, err := db.GetUserByUsername("1")
+	require.NoError(t, err)
+	require.Equal(t, "1", user.Username)
+	assert.Equal(t, id1, user.ID)
+
+	passwordHash, err := db.GetPasswordHash(user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "hashedpassword", passwordHash)
+}
+
+func TestGetPasswordHashNonexistentUser(t *testing.T) {
+	db := createTempUserDatabase(t)
+	_, err := db.GetPasswordHash(999)
+	require.Error(t, err)
+}
+
+func TestListUsernames(t *testing.T) {
+	db := createTempUserDatabase(t)
+	_, err := db.AddUser("homer", "hash1")
+	require.NoError(t, err)
+	_, err = db.AddUser("bart", "hash2")
+	require.NoError(t, err)
+
+	usernames, err := db.ListUsernames()
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"homer", "bart"}, usernames)
+}
+
+func TestSetUserPassword(t *testing.T) {
+	db := createTempUserDatabase(t)
+	_, err := db.AddUser("1", "hashedpassword")
+	require.NoError(t, err)
+
+	user, err := db.GetUserByUsername("1")
+	require.NoError(t, err)
+
+	result, err := db.SetUserPassword(user.ID, "newhashedpassword")
+	require.NoError(t, err)
+	assert.True(t, result)
+
+	passwordHash, err := db.GetPasswordHash(user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "newhashedpassword", passwordHash)
+}
+
+func TestSetUserPasswordNonexistentUser(t *testing.T) {
+	db := createTempUserDatabase(t)
+	result, err := db.SetUserPassword(999, "newhashedpassword")
+	require.NoError(t, err) // Should not error even if user does not exist
+	assert.False(t, result)
+}
+
+func TestGetUserById(t *testing.T) {
+    db := createTempUserDatabase(t)
+    id, err := db.AddUser("John Paras", "hash1")
+    require.NoError(t, err)
+
+    byName, err := db.GetUserByUsername("John Paras")
+    require.NoError(t, err)
+
+    byId, err := db.GetUserById(id)
+    require.NoError(t, err)
+
+    assert.Equal(t, byName.ID, byId.ID)
+    assert.Equal(t, byName.Username, byId.Username)
+}
+
+func TestGetUserByIdNonexistent(t *testing.T) {
+    db := createTempUserDatabase(t)
+    _, err := db.GetUserById(99999)
+    require.Error(t, err)
+}
+
+func TestCreatedAtSet(t *testing.T) {
+    db := createTempUserDatabase(t)
+    _, err := db.AddUser("carol sturka", "hash")
+    require.NoError(t, err)
+
+    user, err := db.GetUserByUsername("carol sturka")
+    require.NoError(t, err)
+    assert.True(t, user.CreatedAt > 0)
+}
+
+func TestListUsernamesEmpty(t *testing.T) {
+    db := createTempUserDatabase(t)
+    names, err := db.ListUsernames()
+    require.NoError(t, err)
+    assert.Equal(t, 0, len(names))
+}
+
+func TestSetUserPasswordDoesNotAffectOthers(t *testing.T) {
+    db := createTempUserDatabase(t)
+    idA, err := db.AddUser("rickby", "hashedPassA")
+    require.NoError(t, err)
+    idB, err := db.AddUser("mortycai", "hashedPassB")
+    require.NoError(t, err)
+
+    ok, err := db.SetUserPassword(idA, "newA")
+    require.NoError(t, err)
+    assert.True(t, ok)
+
+    hashA, err := db.GetPasswordHash(idA)
+    require.NoError(t, err)
+    assert.Equal(t, "newA", hashA)
+
+    hashB, err := db.GetPasswordHash(idB)
+    require.NoError(t, err)
+    assert.Equal(t, "hashedPassB", hashB)
+}
