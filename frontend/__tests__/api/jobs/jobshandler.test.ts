@@ -18,13 +18,10 @@ describe("Jobs Handler", () => {
         const handler = async (_: BodyInit): HandlerReturnType => {
             return Ok({
                 in_progress: [{ name: "gopher.png", status: "almost!" }],
-                results: [
+                completed: [
                     {
-                        success: {
-                            filename: "mocha.png",
-                            id: 1,
-                        },
-                        error: undefined,
+                        filename: "mocha.png",
+                        id: 1,
                     },
                 ],
                 uuid: "uuid",
@@ -45,21 +42,16 @@ describe("Jobs Handler", () => {
     it("Should get completed images", async () => {
         const handler = async (_: BodyInit): HandlerReturnType => {
             return Ok({
-                in_progress: [],
-                results: [
+                completed: [
                     {
-                        success: {
-                            filename: "mocha.png",
-                            id: 1,
-                        },
-                        error: undefined,
+                        filename: "mocha.png",
+                        id: 1,
                     },
+                ],
+                failed: [
                     {
-                        success: undefined,
-                        error: {
-                            filename: "gopher.png",
-                            reason: "gopher died",
-                        },
+                        filename: "gopher.png",
+                        reason: "gopher died",
                     },
                 ],
                 uuid: "uuid",
@@ -76,35 +68,6 @@ describe("Jobs Handler", () => {
                 expect(map.size).toBe(2);
                 expect(map.get("gopher.png")).toStrictEqual(Err("gopher died"));
                 expect(map.get("mocha.png")).toStrictEqual(Ok(1));
-            }
-        }
-    });
-
-    it("Should skip bad images", async () => {
-        // Mostly a symptom of the API datatype being temporarily incorrect
-        const handler = async (_: BodyInit): HandlerReturnType => {
-            return Ok({
-                in_progress: [],
-                results: [
-                    {
-                        success: undefined,
-                        error: undefined,
-                    },
-                ],
-                uuid: "uuid",
-            });
-        };
-
-        const spy = jest.spyOn(console, "error").mockImplementation(() => {});
-        const result = await testing_JobsHandler(handler, "uuid");
-        expect(result.ok).toBeTruthy();
-        expect(spy).toHaveBeenCalled();
-
-        if (result.ok) {
-            expect(result.value.ok).toBeTruthy();
-            if (result.value.ok) {
-                const map = result.value.value;
-                expect(map.size).toBe(0);
             }
         }
     });
