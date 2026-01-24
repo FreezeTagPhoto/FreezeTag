@@ -51,3 +51,4 @@ packages:
       structname: "Mock{{.InterfaceName}}"
     interfaces:
       JobService:
+      AuthService:
