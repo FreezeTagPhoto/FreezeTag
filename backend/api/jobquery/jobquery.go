@@ -13,8 +13,6 @@ type JobQueryEndpoint struct {
 	jobRepository repositories.JobRepository
 }
 
-/* Functions */
-
 // Creates a new JobQueryEndpoint with the given image repository.
 func InitJobQueryEndpoint(jobRepository repositories.JobRepository) JobQueryEndpoint {
 	return JobQueryEndpoint{
