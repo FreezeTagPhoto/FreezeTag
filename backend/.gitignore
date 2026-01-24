@@ -4,3 +4,4 @@ gl-codequality.json
 *.db
 /images/
 /cmd/docs
+.env
