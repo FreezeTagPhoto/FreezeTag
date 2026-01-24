@@ -58,12 +58,10 @@ func TestStoreImageBytesSuccess(t *testing.T) {
 
 	data, err := os.ReadFile("./test_resources/gopher1.png")
 	require.NoError(t, err)
-	result := repo.StoreImageBytes(data, "gopher.png")
+	id, err := repo.StoreImageBytes(data, "gopher.png")
 
-	assert.Nil(t, result.Err, "expected no error in result")
-	assert.NotNil(t, result.Success, "expected success in result")
-	assert.Equal(t, result.Success.Id, database.ImageId(42))
-
+	assert.NoError(t, err, "expected no error in result")
+	assert.Equal(t, id, database.ImageId(42))
 	data2, err := os.ReadFile("test_resources/gopher1.png")
 	assert.NoError(t, err, "failed to read file2")
 	assert.Equal(t, data, data2, "written file is not the uploaded file")
@@ -80,11 +78,9 @@ func TestStoreImageBytesFailParse(t *testing.T) {
 
 	data, err := os.ReadFile("./test_resources/notimage.txt")
 	require.NoError(t, err)
-	result := repo.StoreImageBytes(data, "notimage.txt")
+	_, err = repo.StoreImageBytes(data, "notimage.txt")
 
-	assert.NotNil(t, result.Err, "expected an error in the result")
-	assert.Equal(t, result.Err.Filename, "notimage.txt")
-	assert.Contains(t, result.Err.Reason, "mock error")
+	assert.Error(t, err, "expected an error in the result")
 }
 
 func TestStoreImageBytesFailThumbnailGen(t *testing.T) {
@@ -100,10 +96,9 @@ func TestStoreImageBytesFailThumbnailGen(t *testing.T) {
 
 	data, err := os.ReadFile("./test_resources/notimage.txt")
 	require.NoError(t, err)
-	result := repo.StoreImageBytes(data, "notimage.txt")
+	_, err = repo.StoreImageBytes(data, "notimage.txt")
 
-	assert.NotNil(t, result.Err, "expected an error in the restult")
-	assert.Equal(t, result.Err.Filename, "notimage.txt")
+	assert.Error(t, err, "expected an error in the restult")
 	// not testing error message since we are not trying to test CreateThumbnail directly here
 }
 
@@ -116,11 +111,11 @@ func TestStoreImageAddImageFails(t *testing.T) {
 
 	data, err := os.ReadFile("./test_resources/gopher1.png")
 	require.NoError(t, err)
-	result := repo.StoreImageBytes(data, "gopher1.png")
+	_, err = repo.StoreImageBytes(data, "gopher1.png")
 
-	assert.NotNil(t, result.Err, "expected an error in the restult")
-	assert.Equal(t, result.Err.Filename, "gopher1.png")
-	assert.Contains(t, result.Err.Reason, "mock fail")
+	assert.Error(t, err, "expected an error in the restult")
+	assert.Equal(t, "gopher1.png", "gopher1.png")
+	assert.Contains(t, err.Error(), "mock fail")
 }
 
 func TestStoreImageThumbnailFailsBool(t *testing.T) {
@@ -133,11 +128,11 @@ func TestStoreImageThumbnailFailsBool(t *testing.T) {
 
 	data, err := os.ReadFile("./test_resources/gopher1.png")
 	require.NoError(t, err)
-	result := repo.StoreImageBytes(data, "gopher1.png")
+	_, err = repo.StoreImageBytes(data, "gopher1.png")
 
-	assert.NotNil(t, result.Err, "expected an error in the restult")
-	assert.Equal(t, result.Err.Filename, "gopher1.png")
-	assert.Contains(t, result.Err.Reason, "database returned false when adding thumbnail")
+	assert.Error(t, err, "expected an error in the restult")
+	assert.Equal(t, "gopher1.png", "gopher1.png")
+	assert.Contains(t, err.Error(), "database returned false when adding thumbnail")
 }
 
 func TestStoreImageThumbnailFailsError(t *testing.T) {
@@ -150,11 +145,11 @@ func TestStoreImageThumbnailFailsError(t *testing.T) {
 
 	data, err := os.ReadFile("./test_resources/gopher1.png")
 	require.NoError(t, err)
-	result := repo.StoreImageBytes(data, "gopher1.png")
+	_, err = repo.StoreImageBytes(data, "gopher1.png")
 
-	assert.NotNil(t, result.Err, "expected an error in the restult")
-	assert.Equal(t, result.Err.Filename, "gopher1.png")
-	assert.Contains(t, result.Err.Reason, "mock error")
+	assert.Error(t, err, "expected an error in the restult")
+	assert.Equal(t, "gopher1.png", "gopher1.png")
+	assert.Contains(t, err.Error(), "mock error")
 }
 
 func TestStoreImageBytesNameCollision(t *testing.T) {
@@ -175,12 +170,12 @@ func TestStoreImageBytesNameCollision(t *testing.T) {
 	data, err := os.ReadFile("./test_resources/gopher1.png")
 	require.NoError(t, err)
 
-	result := repo.StoreImageBytes(data, "gopher1.png")
-	assert.Nil(t, result.Err, "no error in result")
+	_, err = repo.StoreImageBytes(data, "gopher1.png")
+	assert.NoError(t, err, "no error in result")
 	assert.FileExists(t, tmpDir+"/"+"gopher1.png")
 
-	result2 := repo.StoreImageBytes(data, "gopher1.png")
-	assert.Nil(t, result2.Err, "expected error in result")
+	_, err = repo.StoreImageBytes(data, "gopher1.png")
+	assert.NoError(t, err, "expected error in result")
 	assert.FileExists(t, tmpDir+"/"+"copy 1 gopher1.png")
 }
 

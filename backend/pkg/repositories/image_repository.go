@@ -12,12 +12,12 @@ import (
 	"strings"
 )
 
-const ( 
+const (
 	max_height = 512
-	quality = float32(0)
+	quality    = float32(0)
 
 	max_height_large = 0
-	quality_large = float32(1)
+	quality_large    = float32(1)
 )
 
 type ImageUploadSuccess struct {
@@ -25,14 +25,14 @@ type ImageUploadSuccess struct {
 	Filename string           `json:"filename"`
 }
 
-type ImageUploadFail struct {
+type ImageUploadFailure struct {
 	Reason   string `json:"reason"`
 	Filename string `json:"filename"`
 }
 
 type UploadResult struct {
 	Success *ImageUploadSuccess `json:"success"`
-	Err     *ImageUploadFail    `json:"error"`
+	Err     *ImageUploadFailure `json:"error"`
 }
 
 type ImageTagFail struct {
@@ -53,7 +53,7 @@ type ImageTagResult struct {
 type ImageRepository interface {
 	SearchImage(query queries.DatabaseQuery) ([]database.ImageId, error)
 	SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder) ([]database.ImageId, error)
-	StoreImageBytes(data []byte, filename string) UploadResult
+	StoreImageBytes(data []byte, filename string) (database.ImageId, error)
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
 	RetrieveAllTags() ([]string, error)
 	RetrieveImageTags(id database.ImageId) ([]string, error)
@@ -77,16 +77,6 @@ func InitImageRepository(db database.ImageDatabase, paser images.Parser, folderP
 	}
 }
 
-func errorUploadResult(filename string, err error) UploadResult {
-	return UploadResult{
-		Success: nil,
-		Err: &ImageUploadFail{
-			Reason:   err.Error(),
-			Filename: filename,
-		},
-	}
-}
-
 func safeFilePath(filepath, filename string) (string, error) {
 	tmpName := filename
 	for i := int64(1); ; i++ {
@@ -106,71 +96,59 @@ func safeFilePath(filepath, filename string) (string, error) {
 // errors and results are given using the simple filename,
 // the full filepath (e.g /tmp/filename) is given to the database
 // takes in a context to know when to stop processing the image if the job batch is cancelled
-func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string) UploadResult {
-	
+func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string) (database.ImageId, error) {
 
 	filename, err := safeFilePath(repo.folderPath, filename)
 	if err != nil {
-		return errorUploadResult(filename, err)
+		return 0, err
 	}
 	filepath := repo.folderPath + filename
 
 	imagedata, err := repo.parser.ParseImage(filename, data)
 	if err != nil {
-		return errorUploadResult(filename, err)
+		return 0, err
 	}
-
 
 	thumbSmall, err := images.CreateThumbnail(imagedata, max_height, quality)
 	if err != nil {
-		return errorUploadResult(filename, err)
+		return 0, err
 	}
-
 
 	thumbLarge, err := images.CreateThumbnail(imagedata, max_height_large, quality_large)
 	if err != nil {
-		return errorUploadResult(filename, err)
+		return 0, err
 	}
-	
 
 	id, err := repo.db.AddImage(filepath, imagedata)
 	if err != nil {
-		return errorUploadResult(filename, err)
+		return 0, err
 	}
-
 
 	ok, err := repo.db.AddImageThumbnail(id, 1, thumbSmall)
 	if err != nil {
-		return errorUploadResult(filename, err)
+		return 0, err
 	}
 	if !ok {
-		return errorUploadResult(filename, fmt.Errorf("database returned false when adding thumbnail"))
+		return 0, fmt.Errorf("database returned false when adding thumbnail")
 	}
-
 
 	ok, err = repo.db.AddImageThumbnail(id, 2, thumbLarge)
 	if err != nil {
-		return errorUploadResult(filename, err)
+		return 0, err
 	}
 	if !ok {
-		return errorUploadResult(filename, fmt.Errorf("database returned false when adding thumbnail"))
+		return 0, fmt.Errorf("database returned false when adding thumbnail")
 	}
 
 	// 0644 is rw-r--r-- permissions for this new file
 	// 0755 is rwxr-xr-x permissions for this new directory (if it doesn't exist)
 	if err := os.MkdirAll(repo.folderPath, 0755); err != nil {
-		return errorUploadResult(filename, err)
+		return 0, err
 	}
 	if err := os.WriteFile(filepath, data, 0644); err != nil {
-		return errorUploadResult(filename, err)
+		return 0, err
 	}
-	return UploadResult{
-		Success: &ImageUploadSuccess{
-			Id:       id,
-			Filename: filename,
-		},
-		Err: nil,
-	}
+	return id, nil
 }
 
 func (repo *DefaultImageRepository) RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error) {
@@ -252,5 +230,3 @@ func (repo *DefaultImageRepository) GetImageMetadata(id database.ImageId) (image
 	}
 	return metadata, nil
 }
-
-

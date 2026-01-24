@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"log"
 
 	"freezetag/backend/pkg/repositories"
@@ -52,15 +51,22 @@ func (s *defaultJobService) RunUploadJobs(batch *repositories.JobBatch) error {
 					log.Printf("Job batch %v canceled, skipping job for file %s", batch.UUID, file.Name)
 					return ctx.Err()
 				}
-				result := s.imageRepository.StoreImageBytes(f.Bytes, f.Name)
-				if result.Err != nil {
-					_ = s.jobRepository.UpdateJobStatus(batch.UUID, f.Name, "failure")
-					return fmt.Errorf("%s", result.Err.Reason)
-				}
-				if err := s.jobRepository.CompleteFileJob(batch.UUID, f.Name, result); err != nil {
-					return err
+
+				// if a single job fails, it doesnt necessarily mean 
+				// all the other jobs should be canceled, so we log the error but return nil to let other jobs keep running
+				id, err := s.imageRepository.StoreImageBytes(f.Bytes, f.Name)
+				if err != nil {
+					log.Printf("Failed to store image bytes for file %s in batch %v: %v", f.Name, batch.UUID, err)
+					if err := s.jobRepository.FailFileJob(batch.UUID, f.Name, err); err != nil {
+						return err
+					}
+				} else { 
+					if err := s.jobRepository.CompleteFileJob(batch.UUID, f.Name, id); err != nil {
+						return err
+					}
 				}
 				return nil
+
 			})
 		}
 		if err := g.Wait(); err != nil {

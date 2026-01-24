@@ -9,6 +9,7 @@ import (
 
 	mockImageRepo "freezetag/backend/mocks/ImageRepository"
 	mockJobRepo "freezetag/backend/mocks/JobRepository"
+	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/repositories"
 
 	"github.com/google/uuid"
@@ -40,17 +41,17 @@ func TestRunUploadJobsAsyncExecution(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	expectedResult := repositories.UploadResult{
-		Success: &repositories.ImageUploadSuccess{Filename: fileName},
-	}
+	// expectedResult := repositories.UploadResult{
+	// 	Success: &repositories.ImageUploadSuccess{Filename: fileName},
+	// }
 
 	i.EXPECT().
 		StoreImageBytes(fileData, fileName).
-		Return(expectedResult).
+		Return(database.ImageId(42), nil).
 		Once()
 	m.EXPECT().
-		CompleteFileJob(batchID, fileName, expectedResult).
-		Run(func(uuid uuid.UUID, name string, res repositories.UploadResult) {
+		CompleteFileJob(batchID, fileName, database.ImageId(42)).
+		Run(func(uuid uuid.UUID, name string, id database.ImageId) {
 			wg.Done() // Signal that CompleteFileJob was called
 		}).
 		Return(nil).
@@ -99,13 +100,11 @@ func TestRunUploadJobsAsyncExecutionStress(t *testing.T) {
 
 	i.EXPECT().
 		StoreImageBytes(fileData, mock.AnythingOfType("string")).
-		Return(repositories.UploadResult{
-			Success: &repositories.ImageUploadSuccess{Filename: "placeholder"},
-		}).
+		Return(database.ImageId(42), nil).
 		Times(iterations)
 	m.EXPECT().
 		CompleteFileJob(batchID, mock.AnythingOfType("string"), mock.Anything).
-		Run(func(id uuid.UUID, name string, res repositories.UploadResult) {
+		Run(func(BatchId uuid.UUID, name string, ImageId database.ImageId) {
 			wg.Done() // Decrement counter 100 times
 		}).
 		Return(nil).
@@ -272,9 +271,7 @@ func TestRunUploadJobsRespectsContextCancellationStress(t *testing.T) {
 			wg.Done()
 			<-done
 		}).
-		Return(repositories.UploadResult{
-			Success: &repositories.ImageUploadSuccess{Filename: "placeholder"},
-		}).Times(limit)
+		Return(database.ImageId(42), nil).Times(limit)
 	m.EXPECT().
 		CompleteFileJob(batchID, mock.AnythingOfType("string"), mock.Anything).
 		Return(nil).
@@ -316,9 +313,7 @@ func TestRunUploadJobsCompletesStress(t *testing.T) {
 		Run(func(data []byte, name string) {
 			wg.Done()
 		}).
-		Return(repositories.UploadResult{
-			Success: &repositories.ImageUploadSuccess{Filename: "placeholder"},
-		}).Times(100)
+		Return(database.ImageId(42), nil).Times(100)
 	m.EXPECT().
 		CompleteFileJob(batchID, mock.AnythingOfType("string"), mock.Anything).
 		Return(nil).
