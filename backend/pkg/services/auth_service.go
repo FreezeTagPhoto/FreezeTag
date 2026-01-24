@@ -8,7 +8,6 @@ import (
 	"os"
 	"time"
 
-
 	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/joho/godotenv/autoload"
 	"golang.org/x/crypto/bcrypt"
@@ -30,7 +29,7 @@ type DefaultAuthService struct {
 	userRepo repositories.UserRepository
 }
 
-func InitAuthService(userRepo repositories.UserRepository) *DefaultAuthService {
+func InitDefaultAuthService(userRepo repositories.UserRepository) *DefaultAuthService {
 	key, exists := os.LookupEnv("JWT_SECRET_KEY")
 	if !exists || key == "" {
 		log.Fatal("JWT_SECRET_KEY in .env file was not found or was empty")
