@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/repositories"
+	"log"
+	"os"
 	"time"
 
+
 	"github.com/golang-jwt/jwt/v5"
+	_ "github.com/joho/godotenv/autoload"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// TODO : Move JWT config to .prop file
-var ( 
-	JwtSigningMethod = jwt.SigningMethodHS256
-	JwtSecretKey = "CHANGEME"
+var (
+	JwtSigningMethod   = jwt.SigningMethodHS256
+	JwtSecretKey       = ""
 	JwtExpirationHours = time.Duration(24) * time.Hour
 )
 
@@ -28,6 +31,12 @@ type DefaultAuthService struct {
 }
 
 func InitAuthService(userRepo repositories.UserRepository) *DefaultAuthService {
+	key, exists := os.LookupEnv("JWT_SECRET_KEY")
+	if !exists || key == "" {
+		log.Fatal("JWT_SECRET_KEY in .env file was not found or was empty")
+	}
+	JwtSecretKey = key
+
 	return &DefaultAuthService{
 		userRepo: userRepo,
 	}
@@ -70,4 +79,3 @@ func createToken(userID database.UserID) (string, error) {
 	}
 	return tokenString, nil
 }
-

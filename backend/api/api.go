@@ -38,6 +38,14 @@ type ApiEndpoint interface {
 	RegisterEndpoints(e *gin.Engine)
 }
 
+type StatusLoginFail struct {
+	Error string `json:"error"`
+}
+
+type StatusLoginSuccess struct {
+	Token string `json:"token"`
+}
+
 type MetadataResponse imagedata.Metadata
 
 type JobBatch repositories.JobBatch
