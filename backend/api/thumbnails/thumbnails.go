@@ -27,6 +27,7 @@ func (te ThumbnailEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @summary     Get thumbnail
 // @description Get a WEBP format image thumbnail for an image
 // @produce     image/webp
+// @tags        thumbnails, images
 // @router      /thumbnails/{id} [get]
 // @param       id path int true "Image ID"
 // @success     200 {file}   string "thumbnail file data"

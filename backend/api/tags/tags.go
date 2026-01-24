@@ -30,6 +30,7 @@ func (te TagEndpoint) RegisterEndpoints(e *gin.Engine) {
 
 // @summary     Delete tags
 // @description Delete tags from images
+// @tags        tags
 // @produce     application/json
 // @router      /tag/remove [delete]
 // @param       tag query []string true "tags to remove"           collectionFormat(multi)
@@ -87,6 +88,7 @@ func (te TagEndpoint) HandleDelete(c *gin.Context) {
 
 // @summary     Add tags
 // @description Add tags to images
+// @tags        tags, upload
 // @produce     application/json
 // @router      /tag/add [post]
 // @param       tag query []string true "tags to add"         collectionFormat(multi)
@@ -145,6 +147,7 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 // @summary     List all tags
 // @description Get all the tags in the database
 // @produce     application/json
+// @tags        tags, search
 // @router      /tag/list [get]
 // @success     200 {array}  string
 // @failure     500 {object} api.StatusServerErrorResponse
@@ -160,6 +163,7 @@ func (te TagEndpoint) HandleGetAllTags(c *gin.Context) {
 // @summary     List image tags
 // @description Get all the tags associated with an image
 // @produce     application/json
+// @tags        tags
 // @router      /tag/list/{id} [get]
 // @param       id path int true "image ID to get the tags of"
 // @success     200 {array}  string
