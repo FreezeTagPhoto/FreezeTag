@@ -4,14 +4,19 @@ from PIL import Image
 
 from .message import Message, MessageType
 
-_plugin_hooks: dict[string, Callable] = {}
+_plugin_hooks: dict[str, Callable] = {}
 _plugin_init = None
 _plugin_teardown = None
 
 class HookAction(Message):
     mtype = MessageType.PUT
-    def __init__(self, info: dict[string, object], action="skip"):
+    def __init__(self, info: dict[str, object], action="skip"):
         self.contents = info | {"action" : action}
+
+class Error(Message):
+    mtype = MessageType.ERR
+    def __init__(self, msg: str):
+        self.contents = msg.encode("utf-8")
 
 class SkipAction(HookAction):
     def __init__(self):
@@ -21,7 +26,7 @@ class TagAction(HookAction):
     def __init__(self, id: int, tags: list[str]):
         HookAction.__init__(self, {"tags": tags, "id": id}, "tag")
 
-def init_func(func: Callable[[]]):
+def init_func(func: Callable[[], None | Message]):
     global _plugin_init
     @wraps(func)
     def wrapper():
@@ -38,7 +43,7 @@ def process_func(func: Callable[[Image, int], HookAction]):
     _plugin_hooks[func.__name__] = func
     return wrapper
 
-def teardown_func(func: Callable[[]]):
+def teardown_func(func: Callable[[], None | Message]):
     global _plugin_teardown
     @wraps(func)
     def wrapper():

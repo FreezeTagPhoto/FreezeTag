@@ -50,7 +50,6 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 	cancelFunc := func() {
 		cancel <- struct{}{}
 		close(in)
-		close(out)
 		err := stdout.Close()
 		if err != nil {
 			log.Fatalf("Failed to close plugin stdout: %v", err)
@@ -65,12 +64,19 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 			// check for cancellation here just in case output closed because it's done
 			select {
 			case <-cancel:
+				close(out)
 				break ReadOut
 			default:
 				// continue on, no cancel yet
 			}
-			if err != nil {
+			if err == io.EOF {
+				log.Fatalf("Failed to read from plugin stdout: %v. Did you remember to call freezetag.run() in the plugin?", err)
+				close(out)
+				break ReadOut
+			} else if err != nil {
 				log.Fatalf("Failed to read from plugin stdout: %v", err)
+				close(out)
+				break ReadOut
 			}
 			typeByte := typeBuf[0]
 			msgType := MessageType(typeByte)

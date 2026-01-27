@@ -13,6 +13,7 @@ import (
 
 	mocks "freezetag/backend/mocks/ImageRepository"
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/images/imagedata"
 	"freezetag/backend/pkg/repositories"
 )
 
@@ -92,6 +93,25 @@ func TestTaggingPythonPlugin(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestPluginWithBadInitHook(t *testing.T) {
+	initVenv(t)
+	ctx, cancel := context.WithCancel(t.Context())
+	cmd := exec.CommandContext(ctx, "./.venv/bin/python", "test_resources/bad_init_hook.py")
+	plugin, err := PluginFromProcess("badinit", cmd, cancel)
+	assert.Error(t, err)
+	assert.Zero(t, plugin)
+}
+
+func TestPluginWithBadTeardownHook(t *testing.T) {
+	initVenv(t)
+	ctx, cancel := context.WithCancel(t.Context())
+	cmd := exec.CommandContext(ctx, "./.venv/bin/python", "test_resources/bad_shutdown_hook.py")
+	plugin, err := PluginFromProcess("badteardown", cmd, cancel)
+	require.NoError(t, err)
+	err = plugin.Shutdown()
+	assert.Error(t, err)
+}
+
 func TestTaggingPluginWithManifest(t *testing.T) {
 	t.Cleanup(func() {
 		os.RemoveAll("test_resources/tagger/.venv") //nolint:errcheck
@@ -165,6 +185,39 @@ func TestMultipleActionsOnePlugin(t *testing.T) {
 		err := ProcessImage(plugin, plugin.GetHooks(PostUpload, ImageProcess)[0], database.ImageId(i), repo)
 		assert.NoError(t, err)
 	}
+	err = plugin.Shutdown()
+	assert.NoError(t, err)
+}
+
+func TestPluginProcessError(t *testing.T) {
+	t.Cleanup(func() {
+		os.RemoveAll("test_resources/tagger/.venv") //nolint:errcheck
+	})
+	repo := createMockRepo(t)
+	manifest, err := ReadManifest("test_resources/tagger")
+	require.NoError(t, err)
+	plugin, err := PluginFromManifest(manifest, t.Context())
+	require.NoError(t, err)
+	err = ProcessImage(plugin, plugin.GetHooks(PostUpload, ImageProcess)[0], database.ImageId(67), repo)
+	assert.Error(t, err)
+	err = plugin.Shutdown()
+	assert.NoError(t, err)
+}
+
+func TestPluginMetadataRequest(t *testing.T) {
+	t.Cleanup(func() {
+		os.RemoveAll("test_resources/tagger/.venv") //nolint:errcheck
+	})
+	repo := createMockRepo(t)
+	filename := "abc.png"
+	repo.EXPECT().GetImageMetadata(database.ImageId(76)).Return(imagedata.Metadata{FileName: &filename}, nil)
+	repo.EXPECT().AddImageTags(database.ImageId(76), []string{"abc.png"}).Return(repositories.ImageTagResult{})
+	manifest, err := ReadManifest("test_resources/tagger")
+	require.NoError(t, err)
+	plugin, err := PluginFromManifest(manifest, t.Context())
+	require.NoError(t, err)
+	err = ProcessImage(plugin, plugin.GetHooks(PostUpload, ImageProcess)[0], database.ImageId(76), repo)
+	assert.NoError(t, err)
 	err = plugin.Shutdown()
 	assert.NoError(t, err)
 }

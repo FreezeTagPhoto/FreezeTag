@@ -1,5 +1,6 @@
 
 from .protocol import read_message, write_message, MessageType, Message
+from .message import log
 from . import hooks
 
 from PIL import Image
@@ -9,8 +10,15 @@ def run():
     msg = read_message()
     assert msg.mtype == MessageType.READY
     if hooks._plugin_init is not None:
-        hooks._plugin_init()
-    write_message(Message(MessageType.READY))
+        msg = hooks._plugin_init()
+        if msg is not None:
+            write_message(msg)
+            exit(0)
+        else:
+            write_message(Message(MessageType.READY))
+    else:
+        write_message(Message(MessageType.READY))
+    
     while True:
         msg = read_message()
         if msg.mtype == MessageType.SHUTDOWN:
@@ -37,6 +45,12 @@ def run():
                 write_message(Message(MessageType.ERR, f'{msg.mtype.name} not supported yet'.encode("utf-8")))
     
     if hooks._plugin_teardown is not None:
-        hooks._plugin_teardown()
-    write_message(Message(MessageType.SHUTDOWN))
+        msg = hooks._plugin_teardown()
+        if msg is not None:
+            write_message(msg)
+            exit(0)
+        else:
+            write_message(Message(MessageType.SHUTDOWN))
+    else:
+        write_message(Message(MessageType.SHUTDOWN))
     exit(0)

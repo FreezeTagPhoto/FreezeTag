@@ -81,6 +81,7 @@ readyLoop:
 	for {
 		msg, ok := <-io.Out
 		if !ok {
+			log.Printf("%s [ERR]: failed to read from stdout during plugin init", name)
 			goto initProblem
 		}
 		switch msg.Type {
@@ -98,6 +99,7 @@ readyLoop:
 	}
 	return pythonPlugin{name, process, io, ioCloser, cancel}, nil
 initProblem:
+	ioCloser()
 	cancel()
 	return nil, fmt.Errorf("Plugin failed to initialize")
 }
@@ -112,7 +114,9 @@ shutdownLoop:
 			break shutdownLoop
 		case ERR:
 			log.Printf("%s [ERR]: %s", pp.name, string(msg.Contents.([]byte)))
-			break shutdownLoop
+			pp.ioCloser()
+			pp.processCloser()
+			return fmt.Errorf("failed to shut down plugin gracefully")
 		case LOG:
 			log.Printf("%s: %s", pp.name, string(msg.Contents.([]byte)))
 		default:
