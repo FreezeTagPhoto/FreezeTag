@@ -101,3 +101,23 @@ func TestPhonyPostUploadJobMultiHooks(t *testing.T) {
 		assert.NoError(t, err)
 	}
 }
+
+func TestNonexistentPluginDirectory(t *testing.T) {
+	repo := mocks.NewMockImageRepository(t)
+	serv, err := InitDefaultPluginService("./nonexistent", repo)
+	assert.Error(t, err)
+	assert.Zero(t, serv)
+}
+
+func TestNonexistentPluginJob(t *testing.T) {
+	repo := mocks.NewMockImageRepository(t)
+	serv, err := InitDefaultPluginService("./test_resources", repo)
+	assert.NoError(t, err)
+	fakeUploadJob := []*repositories.ImageUploadSuccess{
+		{Id: database.ImageId(1), Filename: "foo.png"},
+		{Id: database.ImageId(2), Filename: "bar.jpg"},
+	}
+	results, err := serv.RunPostUpload("nonexistent", t.Context(), fakeUploadJob)
+	assert.Error(t, err)
+	assert.Zero(t, results)
+}
