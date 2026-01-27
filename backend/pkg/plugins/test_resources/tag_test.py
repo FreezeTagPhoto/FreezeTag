@@ -1,9 +1,9 @@
 import freezetag
-from freezetag.message import add_tags
+from freezetag.hooks import process_func, TagAction
 
-@freezetag.hooks.process_func
+@process_func
 def process(img, id):
-    add_tags(id, ["foo", "bar"])
+    return TagAction(id, ["foo", "bar"])
 
 if __name__ == "__main__":
     freezetag.run()

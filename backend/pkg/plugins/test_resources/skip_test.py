@@ -1,11 +1,12 @@
 import freezetag
-from freezetag.message import skip, log
+from freezetag.hooks import process_func, SkipAction
+from freezetag.message import log
 
-@freezetag.hooks.process_func
+@process_func
 def process(img, id):
     width, height = img.size
     log(f"image is {width}x{height}")
-    skip()
+    return SkipAction()
 
 if __name__ == "__main__":
     freezetag.run()

@@ -1,5 +1,5 @@
 {
-    "name": "tagger",
+    "name": "tagger-numpy",
     "version": "0.0.1",
     "main_file": "main.py",
     "hooks": {
@@ -7,5 +7,6 @@
             "type": "post_upload",
             "signature": "process_image"
         }
-    }
+    },
+    "requirements": "requirements.txt"
 }

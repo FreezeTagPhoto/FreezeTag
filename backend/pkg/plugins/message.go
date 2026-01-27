@@ -7,8 +7,8 @@ import (
 	"log"
 )
 
-func ProcessImage(plugin Plugin, id database.ImageId, repo repositories.ImageRepository) error {
-	plugin.IO().In <- PluginMessage{GET, map[string]any{"action": "process", "id": id}}
+func ProcessImage(plugin Plugin, hook string, id database.ImageId, repo repositories.ImageRepository) error {
+	plugin.IO().In <- PluginMessage{GET, map[string]any{"action": "process-image", "id": id, "hook": hook}}
 	webp, err := repo.RetrieveThumbnail(id, 2)
 	if err != nil {
 		return err
