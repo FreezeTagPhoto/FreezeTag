@@ -4,11 +4,11 @@ package main
 
 import (
 	"freezetag/backend/api/jobquery"
+	"freezetag/backend/api/metadata"
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
 	"freezetag/backend/api/upload"
-	"freezetag/backend/api/metadata"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/formats"
@@ -39,7 +39,7 @@ func main() {
 	imageRepo := initDefaultImageRepository(defaultImageFolder)
 	jobRepo := initDefaultJobRepository()
 	jobService := services.InitDefaultJobService(jobRepo, imageRepo)
-	
+
 	RegisterEndpoints(router, imageRepo, jobRepo, jobService)
 	router.GET("/swagger/*any", func(c *gin.Context) {
 		if c.Param("any") == "" || c.Param("any") == "/" {
@@ -77,7 +77,7 @@ func initDefaultJobRepository() repositories.JobRepository {
 }
 
 func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository, jobRepo repositories.JobRepository, jobService services.JobService) {
-	upload.InitUploadEndpoint(jobService).RegisterEndpoints(router)	
+	upload.InitUploadEndpoint(jobService).RegisterEndpoints(router)
 
 	thumbnails.InitThumbnailEndpoint(repo).RegisterEndpoints(router)
 	search.InitSearchEndpoint(repo).RegisterEndpoints(router)

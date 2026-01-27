@@ -3,7 +3,7 @@
 FILES=$(gofmt -l $(find . -type f -name '*.go' -not -path "./.go/*"))
 LINES=$(echo "$FILES" | wc -l)
 
-if ((LINES == 0)); then
+if ((LINES <= 1)); then # there's 1 line of whitespace if the command succeeds
     echo "All Go files are correctly formatted."
 else
     echo "Some files are not formatted correctly:"

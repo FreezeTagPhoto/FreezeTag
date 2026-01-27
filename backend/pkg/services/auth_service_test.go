@@ -20,9 +20,9 @@ func TestAddUser(t *testing.T) {
 	dummyHash := "dummyHash"
 
 	user := &database.PublicUser{
-		ID:        database.UserID(42),
-		Username:  "newuser",
-		CreatedAt: time.Now().Unix(),
+		ID:           database.UserID(42),
+		Username:     "newuser",
+		CreatedAt:    time.Now().Unix(),
 		PasswordHash: dummyHash,
 	}
 
@@ -71,9 +71,9 @@ func TestAuthenticateUser(t *testing.T) {
 	mockRepo.EXPECT().
 		GetUserByUsername("authuser").
 		Return(&database.PublicUser{
-			ID:        database.UserID(7),
-			Username:  "authuser",
-			CreatedAt: time.Now().Unix(),
+			ID:           database.UserID(7),
+			Username:     "authuser",
+			CreatedAt:    time.Now().Unix(),
 			PasswordHash: string(hashedPassword),
 		}, nil).
 		Once()
@@ -93,9 +93,9 @@ func TestAuthenticateUserFails(t *testing.T) {
 	mockRepo.EXPECT().
 		GetUserByUsername("authuser").
 		Return(&database.PublicUser{
-			ID:        database.UserID(7),
-			Username:  "authuser",
-			CreatedAt: time.Now().Unix(),
+			ID:           database.UserID(7),
+			Username:     "authuser",
+			CreatedAt:    time.Now().Unix(),
 			PasswordHash: string(hashedPassword),
 		}, nil).
 		Once()
@@ -133,7 +133,7 @@ func TestCreateToken(t *testing.T) {
 	require.Equal(t, float64(userID), claims["sub"])
 }
 
-func TestLoginCreatesValidJWT(t *testing.T) { 
+func TestLoginCreatesValidJWT(t *testing.T) {
 	mockRepo := mockUserRepository.NewMockUserRepository(t)
 
 	uid := database.UserID(123)
@@ -166,7 +166,7 @@ func TestLoginCreatesValidJWT(t *testing.T) {
 	if !ok {
 		t.Fatal("Could not parse claims")
 	}
-	sub := claims["sub"] 
+	sub := claims["sub"]
 	if fmt.Sprintf("%v", sub) != fmt.Sprintf("%d", uid) {
 		t.Errorf("Expected sub claim %d, got %v", uid, sub)
 	}

@@ -52,7 +52,6 @@ func TestStoreImageBytesSuccess(t *testing.T) {
 		AddImageThumbnail(mock.Anything, mock.Anything, mock.Anything).
 		Return(true, nil).Times(2)
 
-
 	parser := initParserCollection()
 	repo := InitImageRepository(mockdb, parser, tmpDir)
 

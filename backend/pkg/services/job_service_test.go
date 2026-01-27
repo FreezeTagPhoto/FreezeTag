@@ -291,8 +291,6 @@ func TestRunUploadJobsCompletesStress(t *testing.T) {
 	i := mockImageRepo.NewMockImageRepository(t)
 	service := InitDefaultJobService(m, i)
 
-
-
 	jobs := make([]*repositories.FileJob, 100)
 	for i := range jobs {
 		jobs[i] = &repositories.FileJob{Name: fmt.Sprint(i), Bytes: fmt.Append(nil, "data", i)}

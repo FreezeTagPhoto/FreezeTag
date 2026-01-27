@@ -11,9 +11,9 @@ import (
 )
 
 // TODO : Move JWT config to .prop file
-var ( 
-	JwtSigningMethod = jwt.SigningMethodHS256
-	JwtSecretKey = "CHANGEME"
+var (
+	JwtSigningMethod   = jwt.SigningMethodHS256
+	JwtSecretKey       = "CHANGEME"
 	JwtExpirationHours = time.Duration(24) * time.Hour
 )
 
@@ -70,4 +70,3 @@ func createToken(userID database.UserID) (string, error) {
 	}
 	return tokenString, nil
 }
-
