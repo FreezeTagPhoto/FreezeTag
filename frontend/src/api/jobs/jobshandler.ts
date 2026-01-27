@@ -11,23 +11,17 @@ export type JobsResult = Result<
     { status: number; message: string }
 >;
 type JobResponse = {
-    in_progress: {
+    in_progress?: {
         name: string;
         status: string;
     }[];
-    results: {
-        error:
-            | {
-                  filename: string;
-                  reason: string;
-              }
-            | undefined;
-        success:
-            | {
-                  filename: string;
-                  id: number;
-              }
-            | undefined;
+    completed?: {
+        filename: string;
+        id: number;
+    }[];
+    failed?: {
+        filename: string;
+        reason: string;
     }[];
     uuid: string;
 };
@@ -64,28 +58,27 @@ async function job_query_with_handler(
     }
 
     const job_response = request_result.value;
-    const count_in_progress = job_response.in_progress.length;
-    const count_done = job_response.results ? job_response.results.length : 0;
+    const count_in_progress = job_response.in_progress
+        ? job_response.in_progress.length
+        : 0;
+    const count_done =
+        (job_response.completed ? job_response.completed.length : 0) +
+        (job_response.failed ? job_response.failed.length : 0);
 
     if (count_in_progress != 0) {
         return Ok(Err(count_done / (count_done + count_in_progress)));
     }
 
-    const body = job_response.results;
+    const completed = job_response.completed ?? [];
+    const failed = job_response.failed ?? [];
 
     const image_map = new Map();
-    for (const result of body) {
-        if (result.error) {
-            image_map.set(result.error.filename, Err(result.error.reason));
-        } else {
-            if (!result.success) {
-                console.error(
-                    `Image didn't have any data in the return! Job code: ${job_code}`,
-                );
-                continue;
-            }
-            image_map.set(result.success.filename, Ok(result.success.id));
-        }
+    for (const result of completed) {
+        image_map.set(result.filename, Ok(result.id));
+    }
+
+    for (const result of failed) {
+        image_map.set(result.filename, Err(result.reason));
     }
 
     return Ok(Ok(image_map));
