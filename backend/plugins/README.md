@@ -11,7 +11,7 @@ Each plugin is launched as a separate Python process by the backend server when 
 ### Plugin Lifecycle
 The life cycle of a plugin is separated into 3 phases:
 - **Initialization:** The function registered to the init hook (if there is one) is run before the server makes any requests. This is when the plugin can load models, initialize API connections, etc.
-- **Processing**: The process hook (different for different plugin types) is executed at least 1 and potentially many times. This happens synchronously (the backend waits for process to complete before requesting another)
+- **Processing**: The process hook (different for different plugin types) is executed at least 1 and potentially many times. If there are multiple process hooks of the same type, they are executed sequentially per job (however, the order is not guaranteed). This happens synchronously (the backend waits for process to complete before requesting another)
 - **Shutdown**: The function registered to the teardown hook (if there is one) is run once the server is done making requests. This allows plugins to clean up, save persistent files for the next run, etc...
 
 ## Plugin Protocol Implementation

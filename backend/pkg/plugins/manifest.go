@@ -48,14 +48,17 @@ type HookType uint8
 
 const (
 	PostUpload HookType = iota
+	PreUpload
 )
 
 var stringHookMap map[string]HookType = map[string]HookType{
 	"post_upload": PostUpload,
+	"pre_upload":  PreUpload,
 }
 
 var hookStringMap map[HookType]string = map[HookType]string{
 	PostUpload: "post_upload",
+	PreUpload:  "pre_upload",
 }
 
 func (h *HookType) UnmarshalJSON(data []byte) error {
@@ -81,14 +84,17 @@ type HookSignature uint8
 
 const (
 	ImageProcess HookSignature = iota
+	MetadataProcess
 )
 
 var stringSignatureMap map[string]HookSignature = map[string]HookSignature{
-	"process_image": ImageProcess,
+	"process_image":    ImageProcess,
+	"process_metadata": MetadataProcess,
 }
 
 var signatureStringMap map[HookSignature]string = map[HookSignature]string{
-	ImageProcess: "process_image",
+	ImageProcess:    "process_image",
+	MetadataProcess: "process_metadata",
 }
 
 func (s *HookSignature) UnmarshalJSON(data []byte) error {
