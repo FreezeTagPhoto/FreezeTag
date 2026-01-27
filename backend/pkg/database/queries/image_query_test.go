@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	OnlyTagsQuery = "((id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE %s) GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?)))"
+	OnlyTagsQuery = "((id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE %s) GROUP BY imageId HAVING COUNT(DISTINCT tagId) = ?)))"
 )
 
 func TestImageQueryEmpty(t *testing.T) {
@@ -185,7 +185,7 @@ func TestImageQueryTagAndMake(t *testing.T) {
 		WithTag("test").
 		WithMake("foo")
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE tag IN (?)) GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?)) AND (cameraMake = ?))", s)
+	assert.Equal(t, "((id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE tag IN (?)) GROUP BY imageId HAVING COUNT(DISTINCT tagId) = ?)) AND (cameraMake = ?))", s)
 	assert.Equal(t, []any{"test", 1, "foo"}, as)
 }
 
@@ -197,6 +197,6 @@ func TestImageQueryAllPieces(t *testing.T) {
 		WithModel("baz").
 		WithLocation(6.9, 42.0, 67.0)
 	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE tag IN (?) OR (tag LIKE ? ESCAPE '!')) GROUP BY imageId HAVING COUNT(DISTINCT imageId) = ?)) AND (cameraMake = ?) AND (cameraModel = ?))", s)
+	assert.Equal(t, "((id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE tag IN (?) OR (tag LIKE ? ESCAPE '!')) GROUP BY imageId HAVING COUNT(DISTINCT tagId) = ?)) AND (cameraMake = ?) AND (cameraModel = ?))", s)
 	assert.Equal(t, []any{"test", "%foo%", 2, "bar", "baz"}, as)
 }

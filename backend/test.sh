@@ -6,7 +6,7 @@ set -e
 TAGS=$1
 
 mkdir -p coverage
-go test -coverprofile="coverage/coverage.out.tmp" -covermode count -tags=test,$TAGS $(go list ./... | grep -v /mocks/)
+go test -coverprofile="coverage/coverage.out.tmp" -covermode count -tags=test,$TAGS $(go list ./... | grep -v -e /mocks/ -e /cmd/)
 cat coverage/coverage.out.tmp | grep -v "_mock.go" > coverage/coverage.out
 rm coverage/coverage.out.tmp
 go tool cover -html=coverage/coverage.out -o coverage/coverage.html
