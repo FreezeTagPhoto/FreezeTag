@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 uv venv --seed
 source .venv/bin/activate
