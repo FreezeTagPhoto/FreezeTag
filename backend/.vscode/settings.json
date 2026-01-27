@@ -1,4 +1,9 @@
 {
-    "go.lintTool": "golangci-lint",
-    "go.buildTags": "sqlite_math_functions sqlite_foreign_keys"
+    "go.buildTags": "sqlite_math_functions sqlite_foreign_keys",
+    "go.lintTool": "golangci-lint-v2",
+    "go.formatTool": "gofmt",
+    "go.lintOnSave": "workspace",
+    "go.alternateTools": {
+        "golangci-lint-v2": "/usr/bin/golangci-lint"
+    }
 }

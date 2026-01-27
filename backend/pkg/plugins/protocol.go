@@ -64,7 +64,7 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 			_, err := io.ReadFull(outBuf, typeBuf)
 			// check for cancellation here just in case output closed because it's done
 			select {
-			case _ = <-cancel:
+			case <-cancel:
 				break ReadOut
 			default:
 				// continue on, no cancel yet

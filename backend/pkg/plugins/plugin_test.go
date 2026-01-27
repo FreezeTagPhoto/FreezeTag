@@ -47,7 +47,7 @@ func TestEchoedPluginEchoes(t *testing.T) {
 func initVenv(t *testing.T) {
 	t.Helper()
 	cleanup := func() {
-		exec.Command("./test_resources/teardown.sh").Run()
+		exec.Command("./test_resources/teardown.sh").Run() //nolint:errcheck
 	}
 	cleanup()
 	t.Cleanup(cleanup)
@@ -94,7 +94,7 @@ func TestTaggingPythonPlugin(t *testing.T) {
 
 func TestTaggingPluginWithManifest(t *testing.T) {
 	t.Cleanup(func() {
-		os.RemoveAll("test_resources/tagger/.venv")
+		os.RemoveAll("test_resources/tagger/.venv") //nolint:errcheck
 	})
 	repo := createMockRepo(t)
 	repo.EXPECT().AddImageTags(database.ImageId(42), []string{"foo", "bar"}).Return(repositories.ImageTagResult{})
@@ -112,7 +112,7 @@ func TestTaggingPluginWithManifest(t *testing.T) {
 
 func TestTaggingPluginWithManifestAndRequirements(t *testing.T) {
 	t.Cleanup(func() {
-		os.RemoveAll("test_resources/tagger_numpy/.venv")
+		os.RemoveAll("test_resources/tagger_numpy/.venv") //nolint:errcheck
 	})
 	repo := createMockRepo(t)
 	repo.EXPECT().AddImageTags(database.ImageId(42), []string{"2", "3", "4", "5", "6"}).Return(repositories.ImageTagResult{})
@@ -130,7 +130,7 @@ func TestTaggingPluginWithManifestAndRequirements(t *testing.T) {
 
 func TestReuseSameVenv(t *testing.T) {
 	t.Cleanup(func() {
-		os.RemoveAll("test_resources/tagger/.venv")
+		os.RemoveAll("test_resources/tagger/.venv") //nolint:errcheck
 	})
 	repo := createMockRepo(t)
 	repo.EXPECT().AddImageTags(database.ImageId(1), []string{"foo", "bar"}).Return(repositories.ImageTagResult{})
@@ -151,7 +151,7 @@ func TestReuseSameVenv(t *testing.T) {
 
 func TestMultipleActionsOnePlugin(t *testing.T) {
 	t.Cleanup(func() {
-		os.RemoveAll("test_resources/tagger/.venv")
+		os.RemoveAll("test_resources/tagger/.venv") //nolint:errcheck
 	})
 	repo := createMockRepo(t)
 	for i := 1; i <= 4; i++ {
