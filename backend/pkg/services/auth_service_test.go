@@ -37,7 +37,7 @@ func TestAddUser(t *testing.T) {
 			}).
 		Once()
 
-	authService := InitAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockRepo)
 	userGot, err := authService.AddUser("newuser", plaintextPassword)
 	require.NoError(t, err)
 	require.Equal(t, user, userGot)
@@ -56,7 +56,7 @@ func TestAddUserFails(t *testing.T) {
 		Return(nil, assert.AnError).
 		Once()
 
-	authService := InitAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockRepo)
 	userGot, err := authService.AddUser("domer", plaintextPassword)
 	require.Error(t, err)
 	assert.Nil(t, userGot)
@@ -78,7 +78,7 @@ func TestAuthenticateUser(t *testing.T) {
 		}, nil).
 		Once()
 
-	authService := InitAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockRepo)
 	_, err = authService.AuthenticateUser("authuser", plaintextPassword)
 	require.NoError(t, err)
 }
@@ -100,7 +100,7 @@ func TestAuthenticateUserFails(t *testing.T) {
 		}, nil).
 		Once()
 
-	authService := InitAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockRepo)
 	_, err = authService.AuthenticateUser("authuser", wrongPassword)
 	require.Error(t, err)
 }
@@ -112,7 +112,7 @@ func TestAuthenticateNonexistentUser(t *testing.T) {
 		Return(nil, assert.AnError).
 		Once()
 
-	authService := InitAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockRepo)
 	_, err := authService.AuthenticateUser("nonexistent", "anyPassword")
 	require.Error(t, err)
 }
@@ -149,7 +149,7 @@ func TestLoginCreatesValidJWT(t *testing.T) {
 		}, nil).
 		Once()
 
-	service := InitAuthService(mockRepo)
+	service := InitDefaultAuthService(mockRepo)
 	tokenString, err := service.AuthenticateUser("testuser", password)
 	require.NoError(t, err)
 	assert.NotEmpty(t, tokenString)

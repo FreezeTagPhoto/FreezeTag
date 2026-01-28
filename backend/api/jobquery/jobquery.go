@@ -13,8 +13,6 @@ type JobQueryEndpoint struct {
 	jobRepository repositories.JobRepository
 }
 
-/* Functions */
-
 // Creates a new JobQueryEndpoint with the given image repository.
 func InitJobQueryEndpoint(jobRepository repositories.JobRepository) JobQueryEndpoint {
 	return JobQueryEndpoint{
@@ -31,6 +29,7 @@ func (je JobQueryEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @description Retrieves the current status of a job batch, including pending files and completed results.
 // @produce     application/json
 // @router      /jobquery/{id} [get]
+// @tags        jobs
 // @param       id   path      string  true  "Job Batch UUID" format(uuid)
 // @success     200  {object}  repositories.JobBatch
 // @failure     400  {object}  api.StatusBadRequestResponse

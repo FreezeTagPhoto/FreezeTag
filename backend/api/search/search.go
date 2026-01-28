@@ -55,6 +55,7 @@ func parseNearParam(near string) ([3]float64, error) {
 // @description Search for an image given information
 // @produce     application/json
 // @router      /search [get]
+// @tags        search, images
 // @param       make           query string   false "camera make"
 // @param       makeLike       query string   false "camera make fuzzy"
 // @param       model          query string   false "camera model"

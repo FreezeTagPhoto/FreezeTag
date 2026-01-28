@@ -27,6 +27,7 @@ func (me MetadataEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @summary     Get metadata
 // @description Retrieve metadata for an image
 // @produce     application/json
+// @tags        metadata, images, search
 // @router      /metadata/{id} [get]
 // @param       id path int true "Image ID"
 // @success     200 {object} api.MetadataResponse

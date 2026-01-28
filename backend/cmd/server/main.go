@@ -4,6 +4,7 @@ package main
 
 import (
 	"freezetag/backend/api/jobquery"
+	"freezetag/backend/api/login"
 	"freezetag/backend/api/metadata"
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
@@ -28,6 +29,15 @@ import (
 
 const defaultImageFolder = "./images"
 
+type dependencies struct {
+	imageRepository repositories.ImageRepository
+	jobRepository   repositories.JobRepository
+	userRepository  repositories.UserRepository
+	
+	jobService      services.JobService
+	authService     services.AuthService
+}
+
 // @title FreezeTag API
 // @version 0.1
 // @description This is the API access for the backend of the FreezeTag app.
@@ -36,11 +46,9 @@ const defaultImageFolder = "./images"
 func main() {
 	router := gin.Default()
 	docs.SwaggerInfo.BasePath = "/"
-	imageRepo := initDefaultImageRepository(defaultImageFolder)
-	jobRepo := initDefaultJobRepository()
-	jobService := services.InitDefaultJobService(jobRepo, imageRepo)
+	deps := initializeDependencies()
 
-	RegisterEndpoints(router, imageRepo, jobRepo, jobService)
+	RegisterEndpoints(router, deps)
 	router.GET("/swagger/*any", func(c *gin.Context) {
 		if c.Param("any") == "" || c.Param("any") == "/" {
 			c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
@@ -48,7 +56,7 @@ func main() {
 		}
 		ginSwagger.WrapHandler(swaggerfiles.Handler)(c)
 	})
-	router.Run("0.0.0.0:3824") //nolint:errcheck // no need to check return value
+	router.Run("0.0.0.0:3824") //nolint:errcheck
 }
 
 func initParserCollection() images.Parser {
@@ -62,7 +70,31 @@ func initParserCollection() images.Parser {
 	return parserCollection
 }
 
-// initDefaultImageRepository initializes the image repository with a SQLite database and an image parser collection.
+func initializeDependencies() *dependencies {
+	jobRepo := repositories.NewDefaultJobRepository()
+	imageRepo := initDefaultImageRepository(defaultImageFolder)
+	userRepo := initDefaultUserRepository()
+
+	jobService := services.InitDefaultJobService(jobRepo, imageRepo)
+	authService := services.InitDefaultAuthService(userRepo)
+
+	return &dependencies{
+		imageRepository: imageRepo,
+		jobRepository:   jobRepo,
+		userRepository:  userRepo,
+		jobService:      jobService,
+		authService:     authService,
+	}
+}
+
+func initDefaultUserRepository() repositories.UserRepository {
+	db, err := database.InitSQLiteUserDatabase("users.db")
+	if err != nil {
+		log.Fatalf("failed to initialize user database: %v", err.Error())
+	}
+	return repositories.InitDefaultUserRepository(db)
+}
+
 func initDefaultImageRepository(imageFolder string) repositories.ImageRepository {
 	db, err := database.InitSQLiteImageDatabase("database.db")
 	if err != nil {
@@ -72,17 +104,13 @@ func initDefaultImageRepository(imageFolder string) repositories.ImageRepository
 	return repositories.InitImageRepository(db, parserCollection, imageFolder)
 }
 
-func initDefaultJobRepository() repositories.JobRepository {
-	return repositories.NewDefaultJobRepository()
-}
+func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
+	upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(router)
+	login.InitLoginEndpoint(deps.authService).RegisterEndpoints(router)
 
-func RegisterEndpoints(router *gin.Engine, repo repositories.ImageRepository, jobRepo repositories.JobRepository, jobService services.JobService) {
-	upload.InitUploadEndpoint(jobService).RegisterEndpoints(router)
-
-	thumbnails.InitThumbnailEndpoint(repo).RegisterEndpoints(router)
-	search.InitSearchEndpoint(repo).RegisterEndpoints(router)
-	tags.InitTagEndpoint(repo).RegisterEndpoints(router)
-	metadata.InitMetadataEndpoint(repo).RegisterEndpoints(router)
-	jobquery.InitJobQueryEndpoint(jobRepo).RegisterEndpoints(router)
-	// Other endpoints would be registered here
+	thumbnails.InitThumbnailEndpoint(deps.imageRepository).RegisterEndpoints(router)
+	search.InitSearchEndpoint(deps.imageRepository).RegisterEndpoints(router)
+	tags.InitTagEndpoint(deps.imageRepository).RegisterEndpoints(router)
+	metadata.InitMetadataEndpoint(deps.imageRepository).RegisterEndpoints(router)
+	jobquery.InitJobQueryEndpoint(deps.jobRepository).RegisterEndpoints(router)
 }

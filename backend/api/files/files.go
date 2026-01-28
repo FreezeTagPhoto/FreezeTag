@@ -27,6 +27,7 @@ func (fe FileEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @summary     Get file
 // @description Get an image file given an ID
 // @produce     application/octet-stream
+// @tags        files, images
 // @router      /file/{id} [get]
 // @param       id path int true "Image ID"
 // @success     200 {file}   string "thumbnail file data"

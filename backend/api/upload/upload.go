@@ -35,6 +35,7 @@ func (ue UploadEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @description Upload a set of image files to the server
 // @produce     application/json
 // @router      /upload [post]
+// @tags        upload
 // @param       file formData []file true "image file to upload" collectionFormat(multi)
 // @success     202 {object} string "the UUID of the created job batch for the upload"
 // @failure     400 {object} api.StatusBadRequestResponse

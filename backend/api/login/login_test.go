@@ -1,0 +1,104 @@
+package login
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"freezetag/backend/api"
+	mockUserService "freezetag/backend/mocks/AuthService"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+type badLoginCredentials struct {
+	Wrongtype string
+}
+
+func TestLogin(t *testing.T) {
+	plaintextPassword := "securepassword"
+
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	NewMockAuthService.EXPECT().
+		AuthenticateUser("testuser", plaintextPassword).
+		Return("json_token", nil).Once()
+
+	router := gin.Default()
+	jsonBytes, err := json.Marshal(api.LoginCredentials{
+		Username: "testuser",
+		Password: plaintextPassword,
+	})
+	require.NoError(t, err)
+
+	req, err := http.NewRequest("POST", "/login", bytes.NewReader(jsonBytes))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	InitLoginEndpoint(NewMockAuthService).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	var got api.StatusLoginSuccess
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.Equal(t, "json_token", got.Token)
+}
+
+func TestLoginFailure(t *testing.T) {
+	plaintextPassword := "securepassword"
+
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	NewMockAuthService.EXPECT().
+		AuthenticateUser("testuser", plaintextPassword).
+		Return("", fmt.Errorf("authentication failed")).Once()
+
+	router := gin.Default()
+	loginCredentials := api.LoginCredentials{
+		Username: "testuser",
+		Password: plaintextPassword,
+	}
+	jsonBytes, err := json.Marshal(loginCredentials)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest("POST", "/login", bytes.NewReader(jsonBytes))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	InitLoginEndpoint(NewMockAuthService).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	var got api.StatusLoginFail
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expected := api.StatusLoginFail{Error: "authentication failed: authentication failed"}
+	assert.Equal(t, expected, got)
+}
+
+func TestLoginBadCredentialFormat(t *testing.T) {
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	router := gin.Default()
+	loginCredentials := badLoginCredentials{
+		Wrongtype: "bad",
+	}
+
+	jsonBytes, err := json.Marshal(loginCredentials)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest("POST", "/login", bytes.NewReader(jsonBytes))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	InitLoginEndpoint(NewMockAuthService).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.StatusBadRequestResponse
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.Contains(t, got.Error, "invalid request")
+}
