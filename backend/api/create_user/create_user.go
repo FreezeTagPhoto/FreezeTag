@@ -34,8 +34,6 @@ func (ce CreateUserEndpoint) RegisterEndpoints(e *gin.Engine) {
 // @failure      400 {object} api.StatusBadRequestResponse "Failed to create user"
 // @router       /createuser [post]
 func (ce CreateUserEndpoint) HandleCreateUser(c *gin.Context) {
-	// username := c.PostForm("username")
-	// password := c.PostForm("password")
 	var req api.LoginCredentials
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "invalid request: " + err.Error()})
