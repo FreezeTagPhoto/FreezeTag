@@ -14,9 +14,7 @@ export default async function LoginHandler(
     event: FormData,
 ): Promise<LoginError> {
     return login_with_handler(
-        ApiHandler<LoginResponse>((await SERVER_ADDRESS()) + "login")(
-            Method.POST,
-        ),
+        ApiHandler<LoginResponse>(SERVER_ADDRESS + "login")(Method.POST),
         event,
     );
 }

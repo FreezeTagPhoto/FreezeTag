@@ -14,9 +14,7 @@ export default async function SearchHandler(
     user_query: string,
 ): Promise<SearchResult> {
     return search_with_handler(
-        ApiHandler<SearchResponse>((await SERVER_ADDRESS()) + "search?")(
-            Method.GET,
-        ),
+        ApiHandler<SearchResponse>(SERVER_ADDRESS + "search?")(Method.GET),
         user_query,
     );
 }

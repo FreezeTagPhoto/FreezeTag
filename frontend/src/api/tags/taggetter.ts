@@ -17,9 +17,7 @@ export default async function TagGetter(
     image_id?: number,
 ): Promise<TagGetResult> {
     return get_tag_with_handler(
-        ApiHandler<TagGetResponse>((await SERVER_ADDRESS()) + "tag/list")(
-            Method.GET,
-        ),
+        ApiHandler<TagGetResponse>(SERVER_ADDRESS + "tag/list")(Method.GET),
         image_id,
     );
 }

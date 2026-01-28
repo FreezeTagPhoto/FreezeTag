@@ -22,7 +22,7 @@ export default async function MetadataGetter(
     image_id: number,
 ): Promise<MetadataGetResult> {
     return get_metadata_with_handler(
-        ApiHandler<MetadataGetResponse>((await SERVER_ADDRESS()) + "metadata")(
+        ApiHandler<MetadataGetResponse>(SERVER_ADDRESS + "metadata")(
             Method.GET,
         ),
         image_id,

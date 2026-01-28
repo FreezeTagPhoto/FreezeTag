@@ -10,9 +10,7 @@ export default async function ImageUploader(
     event: FormData,
 ): Promise<UploadResult> {
     return image_upload_with_handler(
-        ApiHandler<UploadResponse>((await SERVER_ADDRESS()) + "upload")(
-            Method.POST,
-        ),
+        ApiHandler<UploadResponse>(SERVER_ADDRESS + "upload")(Method.POST),
         event,
     );
 }

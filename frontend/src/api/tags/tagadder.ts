@@ -20,7 +20,7 @@ export default async function TagAdder(
 ): Promise<TagAddResult> {
     return add_tag_with_handler(
         ApiHandler<TagAddResponse>(
-            (await SERVER_ADDRESS()) + "tag/add?",
+            SERVER_ADDRESS + "tag/add?",
             false,
         )(Method.POST),
         image_ids,

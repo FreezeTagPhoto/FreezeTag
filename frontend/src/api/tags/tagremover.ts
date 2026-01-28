@@ -19,7 +19,7 @@ export default async function TagRemover(
     tags: string[],
 ): Promise<TagRemoveResult> {
     return remove_tag_with_handler(
-        ApiHandler<TagRemoveResponse>((await SERVER_ADDRESS()) + "tag/remove?")(
+        ApiHandler<TagRemoveResponse>(SERVER_ADDRESS + "tag/remove?")(
             Method.DELETE,
         ),
         image_ids,

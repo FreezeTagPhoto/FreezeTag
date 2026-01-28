@@ -1,5 +1,2 @@
-"use server";
-
-export default async function SERVER_ADDRESS() {
-    return `/backend/`;
-}
+const SERVER_ADDRESS = "/backend/";
+export default SERVER_ADDRESS;
