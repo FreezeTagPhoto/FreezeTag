@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-
-	// "fmt"
 	"freezetag/backend/api"
 	mockUserService "freezetag/backend/mocks/AuthService"
 	"net/http"
@@ -16,6 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type badLoginCredentials struct {
+	wrongtype string
+}
 
 func TestLogin(t *testing.T) {
 	plaintextPassword := "securepassword"
@@ -75,4 +77,28 @@ func TestLoginFailure(t *testing.T) {
 	assert.NoError(t, err)
 	expected := api.StatusLoginFail{Error: "authentication failed: authentication failed"}
 	assert.Equal(t, expected, got)
+}
+
+func TestLoginBadCredentialFormat(t *testing.T) {
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	router := gin.Default()
+	loginCredentials := badLoginCredentials{
+		wrongtype: "bad",
+	}
+
+	jsonBytes, err := json.Marshal(loginCredentials)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest("POST", "/login", bytes.NewReader(jsonBytes))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	InitLoginEndpoint(NewMockAuthService).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.StatusBadRequestResponse
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.Contains(t, got.Error, "invalid request")
 }
