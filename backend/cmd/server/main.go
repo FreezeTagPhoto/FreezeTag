@@ -10,6 +10,7 @@ import (
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
 	"freezetag/backend/api/upload"
+	"freezetag/backend/api/create_user"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/formats"
@@ -107,6 +108,7 @@ func initDefaultImageRepository(imageFolder string) repositories.ImageRepository
 func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(router)
 	login.InitLoginEndpoint(deps.authService).RegisterEndpoints(router)
+	createuser.InitCreateUserEndpoint(deps.authService).RegisterEndpoints(router)
 
 	thumbnails.InitThumbnailEndpoint(deps.imageRepository).RegisterEndpoints(router)
 	search.InitSearchEndpoint(deps.imageRepository).RegisterEndpoints(router)
