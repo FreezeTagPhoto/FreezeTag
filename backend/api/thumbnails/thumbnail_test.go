@@ -83,7 +83,6 @@ func TestGetThumbnailDatabaseFail(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-
 func TestGetThumbnailDatabaseNilReturn(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().RetrieveThumbnail(mock.Anything, mock.Anything).Return(nil, nil)

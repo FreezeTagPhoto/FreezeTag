@@ -15,12 +15,12 @@ type UserRepository interface {
 
 	GetUserPasswordHash(userID database.UserID) (string, error)
 	ChangePassword(userID database.UserID, newPasswordHash string) error
-	ListUsernames() ([]string, error)	
+	ListUsernames() ([]string, error)
 }
 
-var ( 
-	ErrUserNotFound = errors.New("user not found")
-	ErrDuplicateUsername = errors.New("username already exists")
+var (
+	ErrUserNotFound         = errors.New("user not found")
+	ErrDuplicateUsername    = errors.New("username already exists")
 	ErrPasswordChangeFailed = errors.New("password change failed")
 )
 
@@ -38,7 +38,7 @@ func (r *DefaultUserRepository) GetUserById(id database.UserID) (*database.Publi
 	user, err := r.UserDatabase.GetUserById(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrUserNotFound 
+			return nil, ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (r *DefaultUserRepository) GetUserByUsername(username string) (*database.Pu
 	user, err := r.UserDatabase.GetUserByUsername(username)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrUserNotFound 
+			return nil, ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (r *DefaultUserRepository) GetUserPasswordHash(userID database.UserID) (str
 	passwordHash, err := r.GetPasswordHash(userID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", ErrUserNotFound 
+			return "", ErrUserNotFound
 		}
 		return "", err
 	}
@@ -72,7 +72,7 @@ func (r *DefaultUserRepository) AddUser(username string, passwordHash string) (*
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.Code == sqlite3.ErrConstraint {
-			return nil, ErrDuplicateUsername 
+			return nil, ErrDuplicateUsername
 		}
 		return nil, err
 	}
@@ -93,4 +93,3 @@ func (r *DefaultUserRepository) ChangePassword(userID database.UserID, newPasswo
 func (r *DefaultUserRepository) ListUsernames() ([]string, error) {
 	return r.UserDatabase.ListUsernames()
 }
-

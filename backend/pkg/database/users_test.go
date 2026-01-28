@@ -18,7 +18,7 @@ func TestAddUser(t *testing.T) {
 	db := createTempUserDatabase(t)
 	hashedPassword := "hashedpassword"
 	user, err := db.AddUser("1", hashedPassword)
-	
+
 	require.NoError(t, err)
 	assert.Equal(t, "1", user.Username)
 	assert.NotNil(t, user.ID)
@@ -49,7 +49,6 @@ func TestAddAndGetUser(t *testing.T) {
 	assert.NotEqual(t, user1.ID, user2.ID)
 
 }
-
 
 func TestAddDuplicateUser(t *testing.T) {
 	db := createTempUserDatabase(t)
@@ -84,11 +83,11 @@ func TestGetPasswordHash(t *testing.T) {
 	passwordHash, err := db.GetPasswordHash(user.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "hashedpassword", passwordHash)
-}	
+}
 func TestAddDuplicateUserNoPasswordOverwrite(t *testing.T) {
 	db := createTempUserDatabase(t)
 	hashedPassword := "hashedpassword"
-	
+
 	user1, err := db.AddUser("1", hashedPassword)
 	require.NoError(t, err)
 	user2, err := db.AddUser("1", "different password")
@@ -143,59 +142,59 @@ func TestSetUserPasswordNonexistentUser(t *testing.T) {
 }
 
 func TestGetUserById(t *testing.T) {
-    db := createTempUserDatabase(t)
-    user, err := db.AddUser("John Paras", "hash1")
-    require.NoError(t, err)
+	db := createTempUserDatabase(t)
+	user, err := db.AddUser("John Paras", "hash1")
+	require.NoError(t, err)
 
-    byName, err := db.GetUserByUsername("John Paras")
-    require.NoError(t, err)
+	byName, err := db.GetUserByUsername("John Paras")
+	require.NoError(t, err)
 
-    byId, err := db.GetUserById(user.ID)
-    require.NoError(t, err)
+	byId, err := db.GetUserById(user.ID)
+	require.NoError(t, err)
 
-    assert.Equal(t, byName.ID, byId.ID)
-    assert.Equal(t, byName.Username, byId.Username)
+	assert.Equal(t, byName.ID, byId.ID)
+	assert.Equal(t, byName.Username, byId.Username)
 }
 
 func TestGetUserByIdNonexistent(t *testing.T) {
-    db := createTempUserDatabase(t)
-    _, err := db.GetUserById(99999)
-    require.Error(t, err)
+	db := createTempUserDatabase(t)
+	_, err := db.GetUserById(99999)
+	require.Error(t, err)
 }
 
 func TestCreatedAtSet(t *testing.T) {
-    db := createTempUserDatabase(t)
-    _, err := db.AddUser("carol sturka", "hash")
-    require.NoError(t, err)
+	db := createTempUserDatabase(t)
+	_, err := db.AddUser("carol sturka", "hash")
+	require.NoError(t, err)
 
-    user, err := db.GetUserByUsername("carol sturka")
-    require.NoError(t, err)
-    assert.True(t, user.CreatedAt > 0)
+	user, err := db.GetUserByUsername("carol sturka")
+	require.NoError(t, err)
+	assert.True(t, user.CreatedAt > 0)
 }
 
 func TestListUsernamesEmpty(t *testing.T) {
-    db := createTempUserDatabase(t)
-    names, err := db.ListUsernames()
-    require.NoError(t, err)
-    assert.Equal(t, 0, len(names))
+	db := createTempUserDatabase(t)
+	names, err := db.ListUsernames()
+	require.NoError(t, err)
+	assert.Equal(t, 0, len(names))
 }
 
 func TestSetUserPasswordDoesNotAffectOthers(t *testing.T) {
-    db := createTempUserDatabase(t)
-    userA, err := db.AddUser("rickby", "hashedPassA")
-    require.NoError(t, err)
-    userB, err := db.AddUser("mortycai", "hashedPassB")
-    require.NoError(t, err)
+	db := createTempUserDatabase(t)
+	userA, err := db.AddUser("rickby", "hashedPassA")
+	require.NoError(t, err)
+	userB, err := db.AddUser("mortycai", "hashedPassB")
+	require.NoError(t, err)
 
-    ok, err := db.SetUserPassword(userA.ID, "newA")
-    require.NoError(t, err)
-    assert.True(t, ok)
+	ok, err := db.SetUserPassword(userA.ID, "newA")
+	require.NoError(t, err)
+	assert.True(t, ok)
 
-    hashA, err := db.GetPasswordHash(userA.ID)
-    require.NoError(t, err)
-    assert.Equal(t, "newA", hashA)
+	hashA, err := db.GetPasswordHash(userA.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "newA", hashA)
 
-    hashB, err := db.GetPasswordHash(userB.ID)
-    require.NoError(t, err)
-    assert.Equal(t, "hashedPassB", hashB)
+	hashB, err := db.GetPasswordHash(userB.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "hashedPassB", hashB)
 }

@@ -131,14 +131,7 @@ format-backend:
     - cd $BACK_DIR
     - go mod tidy
   script:
-    - if gofmt -l $(find . -type f -name '*.go' -not -path "./.go/*"); then
-    -   echo "All Go files are correctly formatted."
-    - else
-    -   echo "Some files are not formatted correctly."
-    -   echo "diffs:"
-    -   gofmt -d .
-    -   exit 1
-    - fi
+    - make format
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
       changes:

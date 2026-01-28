@@ -24,7 +24,6 @@ func initTest(t *testing.T) *gin.Engine {
 	j.EXPECT().CreateJobBatch(mock.Anything).Return(&repositories.JobBatch{UUID: uuid.New()}, nil).Maybe()
 	j.EXPECT().RunUploadJobs(mock.Anything).Return(nil).Maybe()
 
-
 	router := gin.Default()
 	InitUploadEndpoint(j).RegisterEndpoints(router)
 	return router

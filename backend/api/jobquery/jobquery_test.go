@@ -59,8 +59,8 @@ func TestJobQueryEndpointCorrectUUID(t *testing.T) {
 	job := repositories.JobBatch{
 		UUID:       uuid,
 		InProgress: nil,
-		Completed:    nil,
-		Failed: nil,
+		Completed:  nil,
+		Failed:     nil,
 	}
 
 	j := mockJobRepo.NewMockJobRepository(t)

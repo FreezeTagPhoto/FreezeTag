@@ -1,0 +1,11 @@
+{
+    "name": "tagger",
+    "version": "0.0.1",
+    "main_file": "main.py",
+    "hooks": {
+        "tag_image": {
+            "type": "post_upload",
+            "signature": "process_image"
+        }
+    }
+}

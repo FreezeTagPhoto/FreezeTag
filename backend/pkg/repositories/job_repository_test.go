@@ -14,10 +14,10 @@ func TestJobBatchBasic(t *testing.T) {
 	repo := NewDefaultJobRepository()
 	id := NewJobBatchID()
 	batch := &JobBatch{
-		UUID: id,
-		InProgress: nil, 
-		Completed: nil,
-		Failed: nil,
+		UUID:       id,
+		InProgress: nil,
+		Completed:  nil,
+		Failed:     nil,
 	}
 
 	err := repo.Create(batch)
@@ -44,7 +44,6 @@ func TestFileJobLifecycle(t *testing.T) {
 	id := NewJobBatchID()
 	batch := &JobBatch{UUID: id}
 	require.NoError(t, repo.Create(batch))
-
 
 	filename := "test.png"
 	file := FileJob{Name: filename, Status: "pending"}
@@ -117,17 +116,17 @@ func TestWithConcurrencyStress(t *testing.T) {
 	iterations := 100
 
 	require.NoError(t, repo.AddInProgressFileJob(id, FileJob{Name: "race.png"}))
-	done := make(chan error, iterations * 2)
+	done := make(chan error, iterations*2)
 
 	for i := range iterations {
 		go func(i int) {
 			done <- repo.UpdateJobStatus(id, "race.png", strconv.Itoa(i))
-		}(i)			
+		}(i)
 	}
 
 	jobs := make(chan FileJob, iterations)
-	for i := range iterations { 
-		go func(i int) { 
+	for i := range iterations {
+		go func(i int) {
 			FileJob := FileJob{Name: "file" + strconv.Itoa(i)}
 			_ = repo.AddInProgressFileJob(id, FileJob)
 			jobs <- FileJob
@@ -135,13 +134,13 @@ func TestWithConcurrencyStress(t *testing.T) {
 	}
 
 	for range iterations {
-		job := <- jobs
+		job := <-jobs
 		go func(job FileJob) {
 			done <- repo.CompleteFileJob(id, job.Name, database.ImageId(0))
 		}(job)
 	}
 
-	for range iterations * 2 {	
+	for range iterations * 2 {
 		assert.NoError(t, <-done)
 	}
 }

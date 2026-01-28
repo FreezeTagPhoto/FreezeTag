@@ -14,7 +14,7 @@ import (
 
 /* Types */
 type UploadEndpoint struct {
-	jobService   services.JobService
+	jobService services.JobService
 }
 
 /* Functions */
@@ -22,7 +22,7 @@ type UploadEndpoint struct {
 // Creates a new UploadEndpoint with the given image repository.
 func InitUploadEndpoint(jobService services.JobService) UploadEndpoint {
 	return UploadEndpoint{
-		jobService:   jobService,
+		jobService: jobService,
 	}
 }
 

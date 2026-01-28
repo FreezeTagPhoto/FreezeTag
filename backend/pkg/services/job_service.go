@@ -52,7 +52,7 @@ func (s *defaultJobService) RunUploadJobs(batch *repositories.JobBatch) error {
 					return ctx.Err()
 				}
 
-				// if a single job fails, it doesnt necessarily mean 
+				// if a single job fails, it doesnt necessarily mean
 				// all the other jobs should be canceled, so we log the error but return nil to let other jobs keep running
 				id, err := s.imageRepository.StoreImageBytes(f.Bytes, f.Name)
 				if err != nil {
@@ -60,7 +60,7 @@ func (s *defaultJobService) RunUploadJobs(batch *repositories.JobBatch) error {
 					if err := s.jobRepository.FailFileJob(batch.UUID, f.Name, err); err != nil {
 						return err
 					}
-				} else { 
+				} else {
 					if err := s.jobRepository.CompleteFileJob(batch.UUID, f.Name, id); err != nil {
 						return err
 					}
