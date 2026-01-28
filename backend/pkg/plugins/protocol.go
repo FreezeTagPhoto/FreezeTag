@@ -70,7 +70,8 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 				// continue on, no cancel yet
 			}
 			if err == io.EOF {
-				log.Fatalf("Failed to read from plugin stdout: %v. Did you remember to call freezetag.run() in the plugin?", err)
+				log.Printf("[WARN] Plugin stdout may have closed at an unexpected time.")
+				log.Printf("[WARN] Did you remember to call 'freezetag.run()' in the plugin's main file?")
 				close(out)
 				break ReadOut
 			} else if err != nil {
