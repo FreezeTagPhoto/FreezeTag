@@ -7,22 +7,38 @@ import { ApiHandler, Method } from "@/api/common/apihandler";
 
 describe("API Handler", () => {
     it("can receive a response", async () => {
-        const handler = ApiHandler(
-            "https://jsonplaceholder.typicode.com/todos/1",
-        )(Method.GET);
-        const response = await handler("");
+        global.fetch = jest.fn((request: string) => {
+            expect(request).toStrictEqual(
+                "http://good_url.test/valid_endpoint",
+            );
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return { sus: "sus" };
+                },
+            });
+        }) as jest.Mock;
+
+        const handler = ApiHandler("http://good_url.test/")(Method.GET);
+        const response = await handler("valid_endpoint");
 
         expect(response.ok).toBeTruthy();
         if (response.ok) {
-            expect(response.value).not.toBeNull();
+            expect(response.value).toStrictEqual({ sus: "sus" });
         }
     });
 
     it("properly handles a 404", async () => {
-        const handler = ApiHandler("http://google.com/free-ice-cream")(
-            Method.GET,
-        );
-        const response = await handler("");
+        global.fetch = jest.fn(() =>
+            Promise.resolve({
+                status: 404,
+                ok: false,
+            }),
+        ) as jest.Mock;
+
+        const handler = ApiHandler("http://good_url.test/")(Method.GET);
+        const response = await handler("bad_endpoint");
 
         expect(response.ok).toBeFalsy();
         if (!response.ok) {
@@ -30,17 +46,59 @@ describe("API Handler", () => {
         }
     });
 
-    it("properly handles a 405 response", async () => {
-        const handler = ApiHandler("http://www.google.com")(Method.POST);
-        const response = await handler("{status: 'good'}");
+    it("properly can post request", async () => {
+        global.fetch = jest.fn((request: string, init: RequestInit) => {
+            expect(request).toBe("http://good_url.test/");
+            expect(init.body).toStrictEqual(new FormData());
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return { sus: "sus" };
+                },
+            });
+        }) as jest.Mock;
+
+        const handler = ApiHandler("http://good_url.test/", true)(Method.POST);
+        const response = await handler(new FormData());
+
+        expect(response.ok).toBeTruthy();
+        if (response.ok) {
+            expect(response.value).toStrictEqual({ sus: "sus" });
+        }
+    });
+
+    it("handles bad post request", async () => {
+        global.fetch = jest.fn((request: string, init: RequestInit) => {
+            expect(request).toBe("http://good_url.test/bad_endpoint");
+            expect(init.body).toStrictEqual(new FormData());
+            return Promise.resolve({
+                status: 405,
+                ok: false,
+                json: () => {
+                    return { sus: "sus" };
+                },
+            });
+        }) as jest.Mock;
+
+        const handler = ApiHandler(
+            "http://good_url.test/bad_endpoint",
+            true,
+        )(Method.POST);
+        const response = await handler(new FormData());
 
         expect(response.ok).toBeFalsy();
         if (!response.ok) {
+            expect(response.error.response.json()).toStrictEqual({
+                sus: "sus",
+            });
             expect(response.error.status_code).toBe(405);
         }
     });
 
     it("properly handles a failed request (no server)", async () => {
+        global.fetch = jest.fn(() => Promise.reject("error")) as jest.Mock;
+
         const handler = ApiHandler("http://fake_website.fakefakefakefake/")(
             Method.GET,
         );
@@ -53,6 +111,8 @@ describe("API Handler", () => {
     });
 
     it("properly handles a failed request (no server) for post", async () => {
+        global.fetch = jest.fn(() => Promise.reject("error")) as jest.Mock;
+
         const handler = ApiHandler("http://fake_website.fakefakefakefake/")(
             Method.POST,
         );
