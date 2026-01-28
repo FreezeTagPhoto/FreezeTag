@@ -15,7 +15,11 @@ func ProcessImage(plugin Plugin, hook string, id database.ImageId, repo reposito
 	}
 	plugin.IO().In <- PluginMessage{BIN, webp}
 	for {
-		msg := <-plugin.IO().Out
+		msg, ok := <-plugin.IO().Out
+		if !ok {
+			plugin.Shutdown() //nolint:errcheck
+			return fmt.Errorf("FATAL: plugin stdout closed during processing")
+		}
 		switch msg.Type {
 		case ERR:
 			return fmt.Errorf("%s", string(msg.Contents.([]byte)))

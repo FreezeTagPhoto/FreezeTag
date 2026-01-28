@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 type PluginService interface {
@@ -125,11 +126,16 @@ func (ps defaultPluginService) RunPostUpload(plugin string, ctx context.Context,
 	go func() {
 		// hook functions of the same type will run sequentially for each job.
 		hooks := ps.Hooks(plugin, plugins.PostUpload, plugins.ImageProcess)
+	jobLoop:
 		for _, job := range uploadJob {
 			for _, hook := range hooks {
 				err := plugins.ProcessImage(process, hook, job.Id, ps.imgRepo)
 				if err != nil {
 					results <- fmt.Errorf("hook %s failed to process image %v: %w", hook, job.Filename, err)
+					if strings.Contains(err.Error(), "FATAL") {
+						// unrecoverable error, don't bother continuing
+						break jobLoop
+					}
 				}
 			}
 		}
