@@ -3,6 +3,7 @@
 package main
 
 import (
+	createuser "freezetag/backend/api/create_user"
 	"freezetag/backend/api/jobquery"
 	"freezetag/backend/api/login"
 	"freezetag/backend/api/metadata"
@@ -10,7 +11,6 @@ import (
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
 	"freezetag/backend/api/upload"
-	"freezetag/backend/api/create_user"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/formats"
@@ -25,6 +25,7 @@ import (
 
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,9 +35,9 @@ type dependencies struct {
 	imageRepository repositories.ImageRepository
 	jobRepository   repositories.JobRepository
 	userRepository  repositories.UserRepository
-	
-	jobService      services.JobService
-	authService     services.AuthService
+
+	jobService  services.JobService
+	authService services.AuthService
 }
 
 // @title FreezeTag API
@@ -57,6 +58,7 @@ func main() {
 		}
 		ginSwagger.WrapHandler(swaggerfiles.Handler)(c)
 	})
+	router.Use(cors.Default())
 	router.Run("0.0.0.0:3824") //nolint:errcheck
 }
 
