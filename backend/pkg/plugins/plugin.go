@@ -108,7 +108,13 @@ func (pp pythonPlugin) Shutdown() error {
 	pp.io.In <- PluginMessage{SHUTDOWN, nil}
 shutdownLoop:
 	for {
-		msg := <-pp.io.Out
+		msg, ok := <-pp.io.Out
+		if !ok {
+			log.Printf("%s [ERR]: plugin closed stdout before shutdown", pp.name)
+			pp.ioCloser()
+			pp.processCloser()
+			return fmt.Errorf("plugin closed stdout before shutdown")
+		}
 		switch msg.Type {
 		case SHUTDOWN:
 			break shutdownLoop
