@@ -3,6 +3,7 @@
 package main
 
 import (
+	createuser "freezetag/backend/api/create_user"
 	"freezetag/backend/api/jobquery"
 	"freezetag/backend/api/login"
 	"freezetag/backend/api/metadata"
@@ -33,9 +34,9 @@ type dependencies struct {
 	imageRepository repositories.ImageRepository
 	jobRepository   repositories.JobRepository
 	userRepository  repositories.UserRepository
-	
-	jobService      services.JobService
-	authService     services.AuthService
+
+	jobService  services.JobService
+	authService services.AuthService
 }
 
 // @title FreezeTag API
@@ -107,6 +108,7 @@ func initDefaultImageRepository(imageFolder string) repositories.ImageRepository
 func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(router)
 	login.InitLoginEndpoint(deps.authService).RegisterEndpoints(router)
+	createuser.InitCreateUserEndpoint(deps.authService).RegisterEndpoints(router)
 
 	thumbnails.InitThumbnailEndpoint(deps.imageRepository).RegisterEndpoints(router)
 	search.InitSearchEndpoint(deps.imageRepository).RegisterEndpoints(router)

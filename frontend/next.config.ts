@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
             },
         ],
     },
+    async rewrites() {
+        return [
+            {
+                source: "/backend/:path*",
+                destination: `http://${process.env.FREEZETAG_BACKEND_ADDRESS}:3824/:path*`,
+            },
+        ];
+    },
 };
 
 export default nextConfig;

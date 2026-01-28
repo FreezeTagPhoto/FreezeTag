@@ -1,2 +1,2 @@
-const SERVER_ADDRESS = `http://${process.env.FREEZETAG_BACKEND_ADDRESS}:3824/`;
+const SERVER_ADDRESS = "/backend/";
 export default SERVER_ADDRESS;
