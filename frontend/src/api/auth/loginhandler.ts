@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result } from "@/common/result";
@@ -15,7 +15,9 @@ export default async function LoginHandler(
     event: FormData,
 ): Promise<LoginError> {
     return login_with_handler(
-        ApiHandler<LoginResponse>(SERVER_ADDRESS + "login")(Method.POST),
+        ApiHandler<LoginResponse>((await SERVER_ADDRESS()) + "login")(
+            Method.POST,
+        ),
         event,
     );
 }

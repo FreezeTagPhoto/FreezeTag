@@ -1,9 +1,7 @@
+"use client";
 import { Result, Ok, Err } from "@/common/result";
-import { install } from "undici";
 
-install();
-
-export enum Method {
+export const enum Method {
     GET = "GET",
     POST = "POST",
     DELETE = "DELETE",

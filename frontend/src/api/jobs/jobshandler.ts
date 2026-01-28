@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err, Ok } from "@/common/result";
@@ -28,7 +28,9 @@ type JobResponse = {
 
 export default async function JobsHandler(event: string): Promise<JobsResult> {
     return job_query_with_handler(
-        ApiHandler<JobResponse>(SERVER_ADDRESS + "jobquery/")(Method.GET),
+        (await ApiHandler<JobResponse>((await SERVER_ADDRESS()) + "jobquery/"))(
+            Method.GET,
+        ),
         event,
     );
 }

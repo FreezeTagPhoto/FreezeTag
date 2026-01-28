@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err, Ok } from "@/common/result";
@@ -21,7 +21,7 @@ export default async function TagAdder(
 ): Promise<TagAddResult> {
     return add_tag_with_handler(
         ApiHandler<TagAddResponse>(
-            SERVER_ADDRESS + "tag/add?",
+            (await SERVER_ADDRESS()) + "tag/add?",
             false,
         )(Method.POST),
         image_ids,

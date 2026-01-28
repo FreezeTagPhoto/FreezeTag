@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
@@ -18,7 +18,9 @@ export default async function TagGetter(
     image_id?: number,
 ): Promise<TagGetResult> {
     return get_tag_with_handler(
-        ApiHandler<TagGetResponse>(SERVER_ADDRESS + "tag/list")(Method.GET),
+        ApiHandler<TagGetResponse>((await SERVER_ADDRESS()) + "tag/list")(
+            Method.GET,
+        ),
         image_id,
     );
 }

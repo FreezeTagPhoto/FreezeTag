@@ -1,4 +1,4 @@
-"use server";
+"use client";
 
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
@@ -24,7 +24,7 @@ export default async function MetadataGetter(
     image_id: number,
 ): Promise<MetadataGetResult> {
     return get_metadata_with_handler(
-        ApiHandler<MetadataGetResponse>(SERVER_ADDRESS + "metadata")(
+        ApiHandler<MetadataGetResponse>((await SERVER_ADDRESS()) + "metadata")(
             Method.GET,
         ),
         image_id,

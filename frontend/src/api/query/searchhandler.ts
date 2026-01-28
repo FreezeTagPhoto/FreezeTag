@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
@@ -15,7 +15,9 @@ export default async function SearchHandler(
     user_query: string,
 ): Promise<SearchResult> {
     return search_with_handler(
-        ApiHandler<SearchResponse>(SERVER_ADDRESS + "search?")(Method.GET),
+        ApiHandler<SearchResponse>((await SERVER_ADDRESS()) + "search?")(
+            Method.GET,
+        ),
         user_query,
     );
 }

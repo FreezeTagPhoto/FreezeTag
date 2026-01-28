@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err, Ok } from "@/common/result";
@@ -20,7 +20,7 @@ export default async function TagRemover(
     tags: string[],
 ): Promise<TagRemoveResult> {
     return remove_tag_with_handler(
-        ApiHandler<TagRemoveResponse>(SERVER_ADDRESS + "tag/remove?")(
+        ApiHandler<TagRemoveResponse>((await SERVER_ADDRESS()) + "tag/remove?")(
             Method.DELETE,
         ),
         image_ids,

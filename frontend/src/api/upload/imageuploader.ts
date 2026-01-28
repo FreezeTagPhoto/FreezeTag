@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err, Ok } from "@/common/result";
@@ -11,7 +11,9 @@ export default async function ImageUploader(
     event: FormData,
 ): Promise<UploadResult> {
     return image_upload_with_handler(
-        ApiHandler<UploadResponse>(SERVER_ADDRESS + "upload")(Method.POST),
+        ApiHandler<UploadResponse>((await SERVER_ADDRESS()) + "upload")(
+            Method.POST,
+        ),
         event,
     );
 }
