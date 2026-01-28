@@ -44,7 +44,7 @@ func TestGetMetadataSuccessOneValue(t *testing.T) {
 	m.EXPECT().
 		GetImageMetadata(mock.AnythingOfType("database.ImageId")).
 		Return(imagedata.Metadata{
-			CameraMake:       ptrString("Canon"),
+			CameraMake: ptrString("Canon"),
 		}, nil)
 
 	router := gin.Default()

@@ -13,13 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 func TestGetUserByUsername(t *testing.T) {
 	time := time.Now().Unix()
 	user := &database.PublicUser{
-		ID: 1,
-		Username: "testuser",
-		CreatedAt: time,
+		ID:           1,
+		Username:     "testuser",
+		CreatedAt:    time,
 		PasswordHash: "hashedpassword",
 	}
 	mockDB := mockUserDatabase.NewMockUserDatabase(t)
@@ -27,7 +26,7 @@ func TestGetUserByUsername(t *testing.T) {
 		GetUserByUsername("testuser").
 		Return(user, nil).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	userGot, err := userRepo.GetUserByUsername("testuser")
 	require.NoError(t, err)
@@ -37,9 +36,9 @@ func TestGetUserByUsername(t *testing.T) {
 func TestGetUserById(t *testing.T) {
 	time := time.Now().Unix()
 	user := &database.PublicUser{
-		ID: 100,
-		Username: "testuser",
-		CreatedAt: time,
+		ID:           100,
+		Username:     "testuser",
+		CreatedAt:    time,
 		PasswordHash: "hashedpassword",
 	}
 	mockDB := mockUserDatabase.NewMockUserDatabase(t)
@@ -47,7 +46,7 @@ func TestGetUserById(t *testing.T) {
 		GetUserById(database.UserID(100)).
 		Return(user, nil).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	userGot, err := userRepo.GetUserById(database.UserID(100))
 	require.NoError(t, err)
@@ -60,9 +59,9 @@ func TestGetUserByUsernameNotFound(t *testing.T) {
 		GetUserByUsername("nonexistent").
 		Return(nil, sql.ErrNoRows).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
-	_,  err := userRepo.GetUserByUsername("nonexistent")
+	_, err := userRepo.GetUserByUsername("nonexistent")
 	require.Error(t, err)
 	assert.Equal(t, ErrUserNotFound, err)
 }
@@ -73,9 +72,9 @@ func TestGetUserByIdNotFound(t *testing.T) {
 		GetUserById(database.UserID(1)).
 		Return(nil, sql.ErrNoRows).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
-	_,  err := userRepo.GetUserById(database.UserID(1))
+	_, err := userRepo.GetUserById(database.UserID(1))
 	require.Error(t, err)
 	assert.Equal(t, ErrUserNotFound, err)
 }
@@ -87,9 +86,9 @@ func TestGetUserByUsernameInternalError(t *testing.T) {
 		GetUserByUsername("someuser").
 		Return(nil, err).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
-	_,  err2 := userRepo.GetUserByUsername("someuser")
+	_, err2 := userRepo.GetUserByUsername("someuser")
 	require.Error(t, err2)
 	assert.Equal(t, err, err2)
 }
@@ -101,9 +100,9 @@ func TestGetUserByIdInternalError(t *testing.T) {
 		GetUserById(database.UserID(1)).
 		Return(nil, err).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
-	_,  err2 := userRepo.GetUserById(database.UserID(1))
+	_, err2 := userRepo.GetUserById(database.UserID(1))
 	require.Error(t, err2)
 	assert.Equal(t, err, err2)
 }
@@ -115,7 +114,7 @@ func TestListUsernames(t *testing.T) {
 		ListUsernames().
 		Return(expectedUsernames, nil).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	usernames, err := userRepo.ListUsernames()
 	require.NoError(t, err)
@@ -124,9 +123,9 @@ func TestListUsernames(t *testing.T) {
 
 func TestAddUserDuplicateUsername(t *testing.T) {
 	user := &database.PublicUser{
-		ID: database.UserID(0),
-		Username: "duplicateuser",
-		CreatedAt: time.Now().Unix(),
+		ID:           database.UserID(0),
+		Username:     "duplicateuser",
+		CreatedAt:    time.Now().Unix(),
 		PasswordHash: "hashedpassword",
 	}
 	mockDB := mockUserDatabase.NewMockUserDatabase(t)
@@ -134,7 +133,7 @@ func TestAddUserDuplicateUsername(t *testing.T) {
 		AddUser("duplicateuser", "hashedpassword").
 		Return(user, sqlite3.Error{Code: sqlite3.ErrConstraint}).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	_, err := userRepo.AddUser("duplicateuser", "hashedpassword")
 	require.Error(t, err)
@@ -143,9 +142,9 @@ func TestAddUserDuplicateUsername(t *testing.T) {
 
 func TestAddUserInternalError(t *testing.T) {
 	user := &database.PublicUser{
-		ID: database.UserID(0),
-		Username: "duplicateuser",
-		CreatedAt: time.Now().Unix(),
+		ID:           database.UserID(0),
+		Username:     "duplicateuser",
+		CreatedAt:    time.Now().Unix(),
 		PasswordHash: "hashedpassword",
 	}
 	err := fmt.Errorf("internal error")
@@ -154,7 +153,7 @@ func TestAddUserInternalError(t *testing.T) {
 		AddUser("duplicateuser", "hashedpassword").
 		Return(user, err).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	_, err = userRepo.AddUser("duplicateuser", "hashedpassword")
 	require.Error(t, err)
@@ -167,7 +166,7 @@ func TestChangePasswordTrue(t *testing.T) {
 		SetUserPassword(database.UserID(1), "newhashedpassword").
 		Return(true, nil).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	err := userRepo.ChangePassword(database.UserID(1), "newhashedpassword")
 	require.NoError(t, err)
@@ -179,7 +178,7 @@ func TestChangePasswordFalse(t *testing.T) {
 		SetUserPassword(database.UserID(1), "newhashedpassword").
 		Return(false, nil).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	err := userRepo.ChangePassword(database.UserID(1), "newhashedpassword")
 	require.Error(t, err)
@@ -193,7 +192,7 @@ func TestChangePasswordInternalError(t *testing.T) {
 		SetUserPassword(database.UserID(1), "newhashedpassword").
 		Return(false, err).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	err2 := userRepo.ChangePassword(database.UserID(1), "newhashedpassword")
 	require.Error(t, err2)
@@ -206,20 +205,20 @@ func TestGetUserPasswordHash(t *testing.T) {
 		GetPasswordHash(database.UserID(1)).
 		Return("hashedpassword", nil).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	passwordHash, err := userRepo.GetUserPasswordHash(database.UserID(1))
 	require.NoError(t, err)
 	assert.Equal(t, "hashedpassword", passwordHash)
 }
 
-func TestGetUserPasswordHashUserNotFound(t *testing.T) { 
+func TestGetUserPasswordHashUserNotFound(t *testing.T) {
 	mockDB := mockUserDatabase.NewMockUserDatabase(t)
 	mockDB.EXPECT().
 		GetPasswordHash(database.UserID(1)).
 		Return("", sql.ErrNoRows).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	_, err := userRepo.GetUserPasswordHash(database.UserID(1))
 	require.Error(t, err)
@@ -233,7 +232,7 @@ func TestGetUserPasswordHasInternalServerError(t *testing.T) {
 		GetPasswordHash(database.UserID(1)).
 		Return("", err).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	_, err2 := userRepo.GetUserPasswordHash(database.UserID(1))
 	require.Error(t, err2)
@@ -242,9 +241,9 @@ func TestGetUserPasswordHasInternalServerError(t *testing.T) {
 
 func TestAddUserSuccess(t *testing.T) {
 	user := &database.PublicUser{
-		ID: database.UserID(0),
-		Username: "duplicateuser",
-		CreatedAt: time.Now().Unix(),
+		ID:           database.UserID(0),
+		Username:     "duplicateuser",
+		CreatedAt:    time.Now().Unix(),
 		PasswordHash: "hashedpassword",
 	}
 	mockDB := mockUserDatabase.NewMockUserDatabase(t)
@@ -252,7 +251,7 @@ func TestAddUserSuccess(t *testing.T) {
 		AddUser("newuser", "hashedpassword").
 		Return(user, nil).
 		Once()
-	
+
 	userRepo := InitDefaultUserRepository(mockDB)
 	userGot, err := userRepo.AddUser("newuser", "hashedpassword")
 	require.NoError(t, err)

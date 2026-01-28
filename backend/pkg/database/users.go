@@ -53,7 +53,7 @@ func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
 }
 
 func (s SqliteUserDatabase) AddUser(username string, passwordHash string) (*PublicUser, error) {
-	
+
 	createdAt := time.Now().Unix()
 	result, err := s.db.Exec(
 		"INSERT INTO Users (username, passwordHash, createdAt) VALUES (?, ?, ?)",
@@ -69,9 +69,9 @@ func (s SqliteUserDatabase) AddUser(username string, passwordHash string) (*Publ
 		return nil, err
 	}
 	return &PublicUser{
-		ID:        UserID(id),
-		Username:  username,
-		CreatedAt: createdAt,
+		ID:           UserID(id),
+		Username:     username,
+		CreatedAt:    createdAt,
 		PasswordHash: passwordHash,
 	}, nil
 }
@@ -88,9 +88,9 @@ func (s SqliteUserDatabase) GetUserById(id UserID) (*PublicUser, error) {
 		return nil, err
 	}
 	return &PublicUser{
-		ID:        id,
-		Username:  username,
-		CreatedAt: createdAt,
+		ID:           id,
+		Username:     username,
+		CreatedAt:    createdAt,
 		PasswordHash: passwordHash,
 	}, nil
 }
@@ -107,9 +107,9 @@ func (s SqliteUserDatabase) GetUserByUsername(username string) (*PublicUser, err
 		return nil, err
 	}
 	return &PublicUser{
-		ID:        id,
-		Username:  username,
-		CreatedAt: createdAt,
+		ID:           id,
+		Username:     username,
+		CreatedAt:    createdAt,
 		PasswordHash: passwordHash,
 	}, nil
 }
