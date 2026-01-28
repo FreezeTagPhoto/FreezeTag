@@ -8,6 +8,8 @@ import {
     testing_TagRemover,
 } from "@/api/tags/tagremover";
 
+import TagRemover from "@/api/tags/tagremover";
+
 import { Result, Ok, Err } from "@/common/result";
 
 type HandlerReturnType = Promise<
@@ -55,5 +57,20 @@ describe("Tag Adder", () => {
         expect(result).toStrictEqual(
             Err({ status: 404, message: await new Response().text() }),
         );
+    });
+
+    it("should pass integration tests", async () => {
+        global.fetch = jest.fn(() => {
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return { errors: {} };
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await TagRemover([], []);
+        expect(result).toStrictEqual(Ok({}));
     });
 });

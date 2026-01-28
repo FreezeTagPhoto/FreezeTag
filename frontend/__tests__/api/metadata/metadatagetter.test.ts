@@ -7,6 +7,8 @@ import {
     testing_MetadataGetResponse,
     testing_MetadataGetter,
 } from "@/api/metadata/metadatagetter";
+
+import MetadataGetter from "@/api/metadata/metadatagetter";
 import { Result, Ok, Err } from "@/common/result";
 
 type HandlerReturnType = Promise<
@@ -104,5 +106,20 @@ describe("Metadata Getter", () => {
                 message: await new Response("{not json").text(),
             }),
         );
+    });
+
+    it("should pass integration tests", async () => {
+        global.fetch = jest.fn(() => {
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return {};
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await MetadataGetter(1);
+        expect(result).toStrictEqual(Ok({}));
     });
 });

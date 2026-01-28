@@ -7,6 +7,8 @@ import {
     testing_SearchResponse,
 } from "@/api/query/searchhandler";
 
+import SearchHandler from "@/api/query/searchhandler";
+
 import { RequestError } from "@/api/common/apihandler";
 
 import { Result, Ok, Err } from "@/common/result";
@@ -150,5 +152,20 @@ describe("Search Handler", () => {
 
         const user_query = `sortBy=DateAdded;sortOrder=ASC;`;
         await testing_SearchHandler(handler, user_query);
+    });
+
+    it("should pass integration tests", async () => {
+        global.fetch = jest.fn(() => {
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return {};
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await SearchHandler("");
+        expect(result).toStrictEqual(Ok({}));
     });
 });

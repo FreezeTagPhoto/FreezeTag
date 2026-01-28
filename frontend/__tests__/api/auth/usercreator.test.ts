@@ -7,6 +7,8 @@ import {
     testing_UserCreateResponse,
 } from "@/api/auth/usercreator";
 
+import UserCreator from "@/api/auth/usercreator";
+
 import { RequestError } from "@/api/common/apihandler";
 
 import { Result, Ok, Err } from "@/common/result";
@@ -55,5 +57,27 @@ describe("User Creator", () => {
 
         const result = await testing_UserCreator(handler, new FormData());
         expect(result).toStrictEqual(Err({ status: 400, message: "true" }));
+    });
+
+    it("should pass full integration test", async () => {
+        const formData = new FormData();
+        formData.set("username", "sus");
+        formData.set("password", "secure");
+
+        global.fetch = jest.fn((_, body: RequestInit) => {
+            expect(body.body).toStrictEqual(formData);
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return { createdAt: 0, id: 0, username: "sus" };
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await UserCreator(formData);
+        expect(result).toStrictEqual(
+            Ok({ createdAt: 0, id: 0, username: "sus" }),
+        );
     });
 });

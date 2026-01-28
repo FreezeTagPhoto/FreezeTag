@@ -7,6 +7,8 @@ import {
     testing_JobResponse,
 } from "@/api/jobs/jobshandler";
 
+import JobsHandler from "@/api/jobs/jobshandler";
+
 import { RequestError } from "@/api/common/apihandler";
 
 import { Result, Ok, Err } from "@/common/result";
@@ -94,5 +96,38 @@ describe("Jobs Handler", () => {
 
         const result = await testing_JobsHandler(handler, "uuid");
         expect(result).toStrictEqual(Err({ status: 400, message: "true" }));
+    });
+
+    it("should pass full integration test", async () => {
+        global.fetch = jest.fn(() => {
+            return Promise.resolve({
+                status: 404,
+                ok: false,
+                json: () => {
+                    return { error: "Not Found" };
+                },
+                text: () => {
+                    return "Broken :(";
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await JobsHandler("id");
+        expect(result.ok).toBeFalsy();
+    });
+
+    it("should pass full integration test for error cases", async () => {
+        global.fetch = jest.fn(() => {
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return {};
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await JobsHandler("id");
+        expect(result).toStrictEqual(Ok(Ok(new Map())));
     });
 });
