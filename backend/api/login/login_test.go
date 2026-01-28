@@ -16,7 +16,7 @@ import (
 )
 
 type badLoginCredentials struct {
-	wrongtype string
+	Wrongtype string
 }
 
 func TestLogin(t *testing.T) {
@@ -83,7 +83,7 @@ func TestLoginBadCredentialFormat(t *testing.T) {
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 	router := gin.Default()
 	loginCredentials := badLoginCredentials{
-		wrongtype: "bad",
+		Wrongtype: "bad",
 	}
 
 	jsonBytes, err := json.Marshal(loginCredentials)
