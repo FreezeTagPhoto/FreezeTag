@@ -73,4 +73,8 @@ describe("common/search/addtagtoquery.addTagToQuery", () => {
     it("handles input that ends with a semicolon + spaces when alreadyHas is true", () => {
         expect(addTagToQuery(`beach;     `, "beach")).toBe(`beach; `);
     });
+
+    it("handles blank tag but non-blank input", () => {
+        expect(addTagToQuery("tag; ", "")).toBe("tag; ");
+    });
 });
