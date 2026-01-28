@@ -37,11 +37,12 @@ func (le LoginEndpoint) HandleLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "invalid request: " + err.Error()})
 		return
 	}
-	
-	token, err := le.authService.AuthenticateUser(req.Username, req.Password)	
+
+	token, err := le.authService.AuthenticateUser(req.Username, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "authentication failed: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, api.StatusLoginSuccess{Token: token})
+
 }
