@@ -25,7 +25,6 @@ import (
 
 	"net/http"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,7 +57,6 @@ func main() {
 		}
 		ginSwagger.WrapHandler(swaggerfiles.Handler)(c)
 	})
-	router.Use(cors.Default())
 	router.Run("0.0.0.0:3824") //nolint:errcheck
 }
 
