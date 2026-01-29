@@ -46,7 +46,6 @@ func (le LoginEndpoint) HandleLogin(c *gin.Context) {
 	c.SetCookieData(&http.Cookie{
 		Name:     "token",
 		Value:    token,
-		MaxAge:   -1,
 		Secure:   false,
 		HttpOnly: true,
 	})
