@@ -109,8 +109,8 @@ func initDefaultImageRepository(imageFolder string) repositories.ImageRepository
 
 func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	authGroup := router.Group("/")
-	authGroup.Use(middleware.RequireAuth(deps.authService)) 
-	{ 
+	authGroup.Use(middleware.RequireAuth(deps.authService))
+	{
 		upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(authGroup)
 		thumbnails.InitThumbnailEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
 		search.InitSearchEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)

@@ -81,7 +81,7 @@ func (s *DefaultAuthService) ValidateJWT(tokenString string) (jwt.MapClaims, err
 		return nil, err
 	}
 	if !token.Valid {
-		return nil, fmt.Errorf("Token Not Valid")
+		return nil, fmt.Errorf("token not valid")
 	}
 
 	for key, val := range claims {
