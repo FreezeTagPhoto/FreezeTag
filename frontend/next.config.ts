@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
             // This is basically completely arbitrary and should be set with a command line arg or env variable
             bodySizeLimit: "25gb",
         },
+        proxyClientMaxBodySize: "25gb",
     },
     images: {
         remotePatterns: [
