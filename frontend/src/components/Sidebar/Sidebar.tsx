@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import logoUrl from "@/icons/freezetag+text.svg";
 import styles from "./Sidebar.module.css";
+import { ClearToken } from "@/api/auth/tokenhelpers";
 
 const navItems = [
     { label: "Gallery", href: "/" },
@@ -17,6 +18,13 @@ const navItems = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+
+    const onLogout = () => {
+        ClearToken();
+        router.replace("/login");
+        router.refresh();
+    };
 
     return (
         <div className={styles.wrap}>
@@ -52,6 +60,18 @@ export default function Sidebar() {
                         </Link>
                     );
                 })}
+
+                <div className={styles.sectionBreak} aria-hidden="true">
+                    <div className={styles.sectionLine} />
+                </div>
+
+                <button
+                    type="button"
+                    className={`${styles.item} ${styles.logoutItem}`}
+                    onClick={onLogout}
+                >
+                    <span>Log out</span>
+                </button>
             </nav>
         </div>
     );

@@ -61,3 +61,21 @@
     border-color: rgba(255, 255, 255, 0.22);
     color: #ffffff;
 }
+
+.sectionBreak {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 2px;
+}
+
+.sectionLine {
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.logoutItem:hover {
+    background: rgba(255, 90, 90, 0.12);
+    border-color: rgba(255, 90, 90, 0.28);
+}
