@@ -11,11 +11,13 @@ import (
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
 	"freezetag/backend/api/upload"
+	"freezetag/backend/middleware"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/formats"
 	"freezetag/backend/pkg/repositories"
 	"freezetag/backend/pkg/services"
+
 	"log"
 	"strings"
 
@@ -118,13 +120,17 @@ func initDefaultImageRepository(imageFolder string) repositories.ImageRepository
 }
 
 func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
-	upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(router)
+	authGroup := router.Group("/")
+	authGroup.Use(middleware.RequireAuth(deps.authService))
+	{
+		upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(authGroup)
+		thumbnails.InitThumbnailEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+		search.InitSearchEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+		tags.InitTagEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+		metadata.InitMetadataEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+		jobquery.InitJobQueryEndpoint(deps.jobRepository).RegisterEndpoints(authGroup)
+	}
+
 	login.InitLoginEndpoint(deps.authService).RegisterEndpoints(router)
 	createuser.InitCreateUserEndpoint(deps.authService).RegisterEndpoints(router)
-
-	thumbnails.InitThumbnailEndpoint(deps.imageRepository).RegisterEndpoints(router)
-	search.InitSearchEndpoint(deps.imageRepository).RegisterEndpoints(router)
-	tags.InitTagEndpoint(deps.imageRepository).RegisterEndpoints(router)
-	metadata.InitMetadataEndpoint(deps.imageRepository).RegisterEndpoints(router)
-	jobquery.InitJobQueryEndpoint(deps.jobRepository).RegisterEndpoints(router)
 }

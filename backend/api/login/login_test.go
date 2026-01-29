@@ -42,10 +42,17 @@ func TestLogin(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	var got api.StatusLoginSuccess
-	err = json.Unmarshal(w.Body.Bytes(), &got)
+	got := w.Body.Bytes()
+	var gotResponse api.StatusLoginSuccess
+	err = json.Unmarshal(got, &gotResponse)
 	assert.NoError(t, err)
-	assert.Equal(t, "json_token", got.Token)
+	expected := api.StatusLoginSuccess{Token: "json_token"}
+	assert.Equal(t, expected, gotResponse)
+
+	cookies := w.Result().Cookies()
+	assert.Len(t, cookies, 1)
+	assert.Equal(t, "token", cookies[0].Name)
+	assert.Equal(t, "json_token", cookies[0].Value)
 }
 
 func TestLoginFailure(t *testing.T) {

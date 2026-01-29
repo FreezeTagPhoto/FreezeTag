@@ -18,7 +18,7 @@ func InitLoginEndpoint(authService services.AuthService) LoginEndpoint {
 	}
 }
 
-func (le LoginEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (le LoginEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.POST("/login", le.HandleLogin)
 }
 
@@ -43,6 +43,11 @@ func (le LoginEndpoint) HandleLogin(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "authentication failed: " + err.Error()})
 		return
 	}
+	c.SetCookieData(&http.Cookie{
+		Name:     "token",
+		Value:    token,
+		Secure:   false,
+		HttpOnly: true,
+	})
 	c.JSON(http.StatusOK, api.StatusLoginSuccess{Token: token})
-
 }

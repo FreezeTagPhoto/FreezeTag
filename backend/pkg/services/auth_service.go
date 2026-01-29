@@ -24,7 +24,7 @@ var (
 type AuthService interface {
 	AddUser(username string, password string) (*database.PublicUser, error)
 	AuthenticateUser(username string, password string) (string, error)
-	ValidateJWT(tokenString string) (bool, error)
+	ValidateJWT(tokenString string) (jwt.MapClaims, error)
 }
 
 type DefaultAuthService struct {
@@ -71,8 +71,19 @@ func (s *DefaultAuthService) AddUser(username string, password string) (*databas
 	return s.userRepo.AddUser(username, string(hash))
 }
 
-func (s *DefaultAuthService) ValidateJWT(tokenString string) (bool, error) {
-	return false, fmt.Errorf("not implemented")
+func (s *DefaultAuthService) ValidateJWT(tokenString string) (jwt.MapClaims, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+		return []byte(JwtSecretKey), nil
+	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
+
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, fmt.Errorf("token not valid")
+	}
+	return claims, nil
 }
 
 func createToken(userID database.UserID) (string, error) {

@@ -20,7 +20,7 @@ func InitMetadataEndpoint(repo repositories.ImageRepository) MetadataEndpoint {
 	}
 }
 
-func (me MetadataEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (me MetadataEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.GET("/metadata/:id", me.HandleGetMetadata)
 }
 

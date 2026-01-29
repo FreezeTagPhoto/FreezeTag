@@ -20,7 +20,7 @@ func InitCreateUserEndpoint(authService services.AuthService) CreateUserEndpoint
 }
 
 // Registers the job query endpoints to the given Gin engine.
-func (ce CreateUserEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (ce CreateUserEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.POST("/createuser", ce.HandleCreateUser)
 }
 

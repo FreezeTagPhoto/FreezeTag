@@ -23,7 +23,7 @@ func InitSearchEndpoint(repository repositories.ImageRepository) SearchEndpoint 
 	}
 }
 
-func (se SearchEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (se SearchEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.GET("/search", se.HandleGet)
 }
 
