@@ -41,13 +41,17 @@ func InitDefaultPluginService(dir string, repo repositories.ImageRepository) (de
 	seen := make(map[string]struct{})
 	var names []string
 	for _, e := range entries {
+		if e.Name() == "freezetag-core" {
+			// core plugin, not actually a plugin
+			continue
+		}
 		if e.IsDir() {
 			manifest, err := plugins.ReadManifest(path.Join(baseDir, e.Name()))
 			if err != nil {
-				log.Printf("[ERR] failed to read plugin manifest at %v: %s", e.Name(), err.Error())
+				log.Printf("[ERR]  failed to read plugin manifest at %v: %s", e.Name(), err.Error())
 			}
 			if _, exists := seen[manifest.Name]; exists {
-				log.Printf("[ERR] detected duplicate plugins of the same name.")
+				log.Printf("[ERR]  detected duplicate plugins of the same name.")
 			} else {
 				seen[manifest.Name] = struct{}{}
 				names = append(names, manifest.Name)
@@ -142,7 +146,7 @@ func (ps defaultPluginService) RunPostUpload(plugin string, ctx context.Context,
 		close(results)
 		err := process.Shutdown()
 		if err != nil {
-			log.Printf("failed to shut down plugin %v gracefully: %s", plugin, err.Error())
+			log.Printf("[WARN] failed to shut down plugin %v gracefully: %s", plugin, err.Error())
 		}
 	}()
 	return results, nil

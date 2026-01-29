@@ -52,3 +52,4 @@ packages:
     interfaces:
       JobService:
       AuthService:
+      PluginService:

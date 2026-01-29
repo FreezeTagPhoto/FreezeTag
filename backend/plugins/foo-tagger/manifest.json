@@ -1,0 +1,10 @@
+{
+    "name": "foo-tagger",
+    "main_file": "main.py",
+    "hooks": {
+        "tag_image": {
+            "type": "post_upload",
+            "signature": "process_image"
+        }
+    }
+}
