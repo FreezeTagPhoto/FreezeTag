@@ -7,3 +7,7 @@ export const SaveToken = (token: string) => {
 export const GetToken = () => {
     return localStorage.getItem("freezetag_token");
 };
+
+export const ClearToken = () => {
+    localStorage.removeItem("freezetag_token");
+};
