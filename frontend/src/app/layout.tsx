@@ -2,9 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-import styles from "./page.module.css";
-
-import Sidebar from "@/components/Sidebar/Sidebar";
 import favicon from "@/icons/favicon.ico";
 
 const geistSans = Geist({
@@ -34,13 +31,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${geistSans.variable} ${geistMono.variable}`}>
-                <div className={styles.shell}>
-                    <aside className={styles.nav}>
-                        <Sidebar />
-                    </aside>
-
-                    <div className={styles.content}>{children}</div>
-                </div>
+                {children}
             </body>
         </html>
     );

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import SearchHandler from "@/api/query/searchhandler";
 import TagGetter from "@/api/tags/taggetter";
-import styles from "./page.module.css";
+import styles from "../page.module.css";
 import MainGallery from "@/components/Gallery/MainGallery/MainGallery";
 import TopBar from "@/components/TopBar/TopBar";
 import { addTagToQuery } from "@/common/search/addtagtoquery";
