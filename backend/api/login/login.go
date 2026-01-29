@@ -50,5 +50,5 @@ func (le LoginEndpoint) HandleLogin(c *gin.Context) {
 		Secure:   false,
 		HttpOnly: true,
 	})
-	c.String(http.StatusOK, "ok")
+	c.JSON(http.StatusOK, api.StatusLoginSuccess{Token: token})
 }
