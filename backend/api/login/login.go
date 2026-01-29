@@ -43,6 +43,12 @@ func (le LoginEndpoint) HandleLogin(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "authentication failed: " + err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, api.StatusLoginSuccess{Token: token})
-
+	c.SetCookieData(&http.Cookie{
+		Name:     "token",
+		Value:    token,
+		MaxAge:   -1,
+		Secure:   false,
+		HttpOnly: true,
+	})
+	c.String(http.StatusOK, "ok")
 }
