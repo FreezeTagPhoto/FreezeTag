@@ -15,8 +15,8 @@
         "kill": "docker kill freezetag_frontend && docker rm freezetag_frontend"
     },
     "dependencies": {
-        "next": "15.5.7",
-        "react": "19.1.2",
+        "next": "16.1.6",
+        "react": "19.2.4",
         "react-dom": "19.1.2",
         "react-dropzone": "^14.3.8",
         "undici": "^7.16.0"
