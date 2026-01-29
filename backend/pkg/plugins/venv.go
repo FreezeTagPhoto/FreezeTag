@@ -5,12 +5,18 @@ package plugins
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os/exec"
 	"path"
 )
 
-func createVenv(absPath string, requirements *string) error {
-	if _, err := exec.Command("uv", "venv", "--seed", path.Join(absPath, ".venv")).Output(); err != nil {
+func createVenv(absPath string, requirements *string, pyVersion *string) error {
+	log.Printf("[INFO] creating venv from scratch for '%s', expect it to take a while", absPath)
+	args := []string{"venv", "--seed", path.Join(absPath, ".venv")}
+	if pyVersion != nil {
+		args = append(args, "--python", *pyVersion)
+	}
+	if _, err := exec.Command("uv", args...).Output(); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
 			return fmt.Errorf("failed to initialize venv: %s", string(exitErr.Stderr))

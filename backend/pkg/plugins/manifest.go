@@ -14,12 +14,13 @@ type PluginHook struct {
 }
 
 type PluginManifest struct {
-	Name         string                `json:"name"`
-	Version      string                `json:"version"`
-	Hooks        map[string]PluginHook `json:"hooks"`
-	AbsPath      string                `json:"-"`
-	MainFile     string                `json:"main_file"`
-	Requirements *string               `json:"requirements"`
+	Name          string                `json:"name"`
+	Version       string                `json:"version"`
+	Hooks         map[string]PluginHook `json:"hooks"`
+	AbsPath       string                `json:"-"`
+	MainFile      string                `json:"main_file"`
+	Requirements  *string               `json:"requirements"`
+	PythonVersion *string               `json:"python_version"`
 }
 
 // This function reads a manifest

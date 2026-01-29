@@ -33,7 +33,7 @@ func PluginFromManifest(manifest PluginManifest, ctx context.Context) (HookedPlu
 	info, err := os.Stat(path.Join(manifest.AbsPath, ".venv"))
 	if os.IsNotExist(err) {
 		// create venv
-		if err := createVenv(manifest.AbsPath, manifest.Requirements); err != nil {
+		if err := createVenv(manifest.AbsPath, manifest.Requirements, manifest.PythonVersion); err != nil {
 			return HookedPlugin{}, fmt.Errorf("failed to load plugin: %w", err)
 		}
 	} else {
