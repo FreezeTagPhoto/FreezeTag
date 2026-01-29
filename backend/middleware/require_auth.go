@@ -1,0 +1,30 @@
+package middleware
+
+import (
+	"freezetag/backend/api"
+	"freezetag/backend/pkg/services"
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+)
+
+
+func RequireAuth(auth services.AuthService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		JWT := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
+		if JWT == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, api.StatusBadRequestResponse{Error: "Missing Authorization Token"})
+			return
+		}
+		
+		
+		claims, err := auth.ValidateJWT(JWT)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, api.StatusBadRequestResponse{Error: "Invalid token: " + err.Error()})
+			return
+		}
+		c.Set("userID", claims["sub"])
+		c.Next()
+	}
+}
