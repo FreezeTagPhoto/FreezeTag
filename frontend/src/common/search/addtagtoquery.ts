@@ -19,15 +19,10 @@ export function addTagToQuery(input: string, tag: string): string {
     );
     if (alreadyHas) {
         const trimmed = input.trimEnd();
-        return trimmed.endsWith(";")
-            ? `${trimmed} `
-            : trimmed.endsWith("; ")
-              ? trimmed
-              : `${trimmed}; `;
+        return trimmed.endsWith(";") ? `${trimmed} ` : `${trimmed}; `;
     }
 
     const tokenText = formatTagToken(t);
-    if (!tokenText) return input;
 
     const cleaned = input
         .trim()

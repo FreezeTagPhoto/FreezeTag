@@ -7,6 +7,8 @@ import {
     testing_UploadResponse,
 } from "@/api/upload/imageuploader";
 
+import ImageUploader from "@/api/upload/imageuploader";
+
 import { RequestError } from "@/api/common/apihandler";
 
 import { Result, Ok, Err } from "@/common/result";
@@ -51,5 +53,20 @@ describe("Image Uploader", () => {
 
         const result = await testing_ImageUploader(handler, new FormData());
         expect(result).toStrictEqual(Err({ status: 400, message: "true" }));
+    });
+
+    it("should pass integration tests", async () => {
+        global.fetch = jest.fn(() => {
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return "UUID";
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await ImageUploader(new FormData());
+        expect(result).toStrictEqual(Ok("UUID"));
     });
 });

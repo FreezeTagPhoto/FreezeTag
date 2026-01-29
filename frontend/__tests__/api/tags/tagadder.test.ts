@@ -5,6 +5,8 @@
 import { RequestError } from "@/api/common/apihandler";
 import { testing_TagAddResponse, testing_TagAdder } from "@/api/tags/tagadder";
 
+import TagAdder from "@/api/tags/tagadder";
+
 import { Result, Ok, Err } from "@/common/result";
 
 type HandlerReturnType = Promise<Result<testing_TagAddResponse, RequestError>>;
@@ -50,5 +52,20 @@ describe("Tag Adder", () => {
         expect(result).toStrictEqual(
             Err({ status: 404, message: await new Response().text() }),
         );
+    });
+
+    it("should pass integration tests", async () => {
+        global.fetch = jest.fn(() => {
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return { errors: {} };
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await TagAdder([], []);
+        expect(result).toStrictEqual(Ok({}));
     });
 });

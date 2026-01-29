@@ -5,8 +5,10 @@ import {
     testing_LoginHandler,
     testing_LoginResponse,
 } from "@/api/auth/loginhandler";
+import LoginHandler from "@/api/auth/loginhandler";
 
 import { RequestError } from "@/api/common/apihandler";
+import { None } from "@/common/option";
 
 import { Result, Ok } from "@/common/result";
 
@@ -29,4 +31,19 @@ describe("Login Handler", () => {
     });
 
     // TODO: Figure out how to polyfill rejected tests (JSDom doesn't have Response/TextEncoder/ReadableStream for ???)
+
+    it("should pass full integration test", async () => {
+        global.fetch = jest.fn(() => {
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return { token: "sus" };
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await LoginHandler(new FormData());
+        expect(result).toStrictEqual(None());
+    });
 });

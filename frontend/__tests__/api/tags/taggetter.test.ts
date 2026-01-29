@@ -8,6 +8,8 @@ import {
     testing_TagGetter,
 } from "@/api/tags/taggetter";
 
+import TagGetter from "@/api/tags/taggetter";
+
 import { Result, Ok, Err } from "@/common/result";
 
 type HandlerReturnType = Promise<Result<testing_TagGetResponse, RequestError>>;
@@ -62,5 +64,20 @@ describe("Tag Getter", () => {
 
         const result = await testing_TagGetter(handler);
         expect(result).toStrictEqual(Ok(["arches", "wedding", "banquet"]));
+    });
+
+    it("should pass integration tests", async () => {
+        global.fetch = jest.fn(() => {
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return {};
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await TagGetter(0);
+        expect(result).toStrictEqual(Ok({}));
     });
 });
