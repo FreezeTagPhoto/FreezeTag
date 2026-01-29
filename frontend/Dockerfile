@@ -1,20 +1,23 @@
 # syntax=docker/dockerfile:1
-FROM node:latest
+FROM node:latest AS builder
 
-COPY src /frontend/src
-COPY next.config.ts /frontend/next.config.ts
-COPY package.json /frontend/package.json
-COPY pnpm-lock.yaml /frontend/pnpm-lock.yaml
-COPY pnpm-workspace.yaml /frontend/pnpm-workspace.yaml
-COPY tsconfig.json /frontend/tsconfig.json
+ARG FREEZETAG_BACKEND_ADDRESS=backend
+ENV CI=true
 
-WORKDIR /frontend
+WORKDIR /build
+
+COPY . .
 RUN npm install --global pnpm@latest-10
-RUN mkdir -p .pnpm-store
-RUN pnpm config set store-dir .pnpm-store
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 RUN pnpm build
 
+FROM node:current-alpine AS runner
+
+WORKDIR /frontend
+COPY --from=builder /build/.next/standalone ./
+COPY --from=builder /build/.next/static ./.next/static
+
+ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["pnpm",  "start"]
+CMD ["node", "server.js"]

@@ -1,7 +1,6 @@
 coverage
 gl-codequality.json
 /mocks/
-*.db
-/images/
+/data/
 /cmd/docs
 .env

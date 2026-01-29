@@ -1,17 +1,36 @@
 services:
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        FREEZETAG_BACKEND_ADDRESS=backend
+    image: freezetag/frontend
     ports:
       - "3000:3000"
-    environment:
-      - FREEZETAG_BACKEND_ADDRESS=backend
 
   backend:
     build: ./backend
+    image: freezetag/backend
     ports:
       - "3824:3824"
     volumes:
-      - backend:/backend
+      - type: bind
+        source: ./backend/data
+        target: /backend/data
+      - type: bind
+        source: ./backend/plugins
+        target: /backend/plugins
 
-volumes:
-  backend:
+# volumes:
+#   data:
+#     driver: local
+#     driver-opts:
+#       type: none
+#       o: bind
+#       device: ./backend/data
+#   plugins:
+#     driver: local
+#     driver-opts:
+#       type: none
+#       o: bind
+#       device: ./backend/plugins
