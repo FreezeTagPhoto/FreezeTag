@@ -1,0 +1,28 @@
+.screen {
+    min-height: 100svh;
+    background: #12131a;
+    color: var(--foreground);
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
+.logoRow {
+    display: flex;
+    justify-content: center;
+    padding-top: 36px;
+    padding-bottom: 10px;
+}
+
+.cardRow {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 18px 16px 42px 16px;
+}
+
+@media (min-height: 820px) {
+    .cardRow {
+        align-items: center;
+        padding-bottom: 64px;
+    }
+}
