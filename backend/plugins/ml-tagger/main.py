@@ -16,7 +16,7 @@ def init():
     log("loading models...")
     nlp = spacy.load("en_core_web_sm")
     processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
-    model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large").to("cuda")
+    model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
     log("finished loading models")
 
 @process_func
@@ -25,7 +25,7 @@ def tag_image(img: Image.Image, id: int) -> TagAction:
     img.thumbnail((1024, 1024))
     input_image = img.convert("RGB")
     log("generating sentence...")
-    inputs = processor(input_image, return_tensors="pt").to("cuda")
+    inputs = processor(input_image, return_tensors="pt")
     out = model.generate(**inputs)
     sentence = processor.decode(out[0], skip_special_tokens=True)
     log(f"sentence = {sentence}")
