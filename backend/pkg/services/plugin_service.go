@@ -45,6 +45,10 @@ func InitDefaultPluginService(dir string, repo repositories.ImageRepository) (de
 			// core plugin, not actually a plugin
 			continue
 		}
+		if strings.HasPrefix(e.Name(), ".") {
+			// dot files are ignored (this allows you to 'disable' a plugin)
+			continue
+		}
 		if e.IsDir() {
 			manifest, err := plugins.ReadManifest(path.Join(baseDir, e.Name()))
 			if err != nil {
