@@ -108,7 +108,7 @@ func initDefaultImageRepository(imageFolder string) repositories.ImageRepository
 }
 
 func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
-	authGroup := router.Group("/auth")
+	authGroup := router.Group("/")
 	authGroup.Use(middleware.RequireAuth(deps.authService)) 
 	{ 
 		upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(authGroup)
