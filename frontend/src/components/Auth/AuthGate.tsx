@@ -4,11 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { GetToken } from "@/api/auth/tokenhelpers";
 
-export default function AuthGate({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function AuthGate({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
 

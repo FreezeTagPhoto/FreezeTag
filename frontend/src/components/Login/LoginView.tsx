@@ -11,12 +11,29 @@ import UserCreator from "@/api/auth/usercreator";
 
 import styles from "./LoginView.module.css";
 
+type OptionSome<T> = { kind: "some"; value: T };
+type OptionNone = { kind: "none" };
+
+function isOptionSome<T>(x: unknown): x is OptionSome<T> {
+    if (!x || typeof x !== "object") return false;
+    const o = x as Record<string, unknown>;
+    return o.kind === "some" && "value" in o;
+}
+
+function isOptionNone(x: unknown): x is OptionNone {
+    if (!x || typeof x !== "object") return false;
+    const o = x as Record<string, unknown>;
+    return o.kind === "none";
+}
+
 function optionToValue<T>(opt: unknown): T | null {
-    if (!opt || typeof opt !== "object") return null;
-    const anyOpt = opt as any;
-    if (anyOpt.kind === "some") return anyOpt.value as T;
-    if (anyOpt.kind === "none") return null;
-    if ("value" in anyOpt) return anyOpt.value as T;
+    if (isOptionSome<T>(opt)) return opt.value;
+    if (isOptionNone(opt)) return null;
+
+    if (opt && typeof opt === "object") {
+        const o = opt as Record<string, unknown>;
+        if ("value" in o) return o.value as T;
+    }
     return null;
 }
 
@@ -48,17 +65,15 @@ function toTitle(s: string) {
         "without",
     ]);
 
-    const words = s
-        .trim()
-        .replace(/\s+/g, " ")
-        .split(" ")
-        .filter(Boolean);
+    const words = s.trim().replace(/\s+/g, " ").split(" ").filter(Boolean);
 
     return words
         .map((w, i) => {
             const lower = w.toLowerCase();
             if (i !== 0 && small.has(lower)) return lower;
-            return lower.length ? lower[0].toUpperCase() + lower.slice(1) : lower;
+            return lower.length
+                ? lower[0].toUpperCase() + lower.slice(1)
+                : lower;
         })
         .join(" ");
 }
@@ -69,7 +84,9 @@ function splitAuthMessage(raw: string): { title: string; body: string } {
     if (parts.length >= 2) {
         const title = toTitle(parts[0]);
         const body = parts.slice(1).join(":").trim();
-        const bodyNorm = body.length ? body[0].toUpperCase() + body.slice(1) : body;
+        const bodyNorm = body.length
+            ? body[0].toUpperCase() + body.slice(1)
+            : body;
         return { title, body: bodyNorm };
     }
     return { title: "Error", body: msg };
@@ -101,7 +118,9 @@ function normalizeErrorMessage(raw: string, status?: number) {
     let out: { title: string; body: string };
 
     if (status === 401 || status === 403) {
-        out = splitAuthMessage("authentication failed: invalid username or password");
+        out = splitAuthMessage(
+            "authentication failed: invalid username or password",
+        );
     } else if (inner) {
         out = splitAuthMessage(inner);
     } else if (trimmed) {
@@ -161,7 +180,11 @@ export default function LoginView({ mode }: { mode: Mode }) {
                 link: "Create one",
             };
         }
-        return { text: "Already have an account?", href: "/login", link: "Sign in" };
+        return {
+            text: "Already have an account?",
+            href: "/login",
+            link: "Sign in",
+        };
     }, [mode]);
 
     async function doLogin(u: string, p: string) {
@@ -170,10 +193,14 @@ export default function LoginView({ mode }: { mode: Mode }) {
         fd.set("password", p);
 
         const optErr = await LoginHandler(fd);
-        const errVal = optionToValue<{ status: number; message: string }>(optErr);
+        const errVal = optionToValue<{ status: number; message: string }>(
+            optErr,
+        );
 
         if (errVal) {
-            setError(normalizeErrorMessage(errVal.message ?? "", errVal.status));
+            setError(
+                normalizeErrorMessage(errVal.message ?? "", errVal.status),
+            );
             return false;
         }
 
@@ -227,14 +254,19 @@ export default function LoginView({ mode }: { mode: Mode }) {
             const res = await UserCreator(fd);
             if (!res.ok) {
                 setError(
-                    normalizeErrorMessage(res.error.message ?? "", res.error.status),
+                    normalizeErrorMessage(
+                        res.error.message ?? "",
+                        res.error.status,
+                    ),
                 );
                 return;
             }
 
             const loggedIn = await doLogin(u, password);
             if (!loggedIn) {
-                setSuccess(`User "${res.value.username}" created. Please sign in.`);
+                setSuccess(
+                    `User "${res.value.username}" created. Please sign in.`,
+                );
             }
         } finally {
             setBusy(false);
@@ -258,7 +290,9 @@ export default function LoginView({ mode }: { mode: Mode }) {
                         className={styles.input}
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        autoComplete={mode === "login" ? "username" : "new-username"}
+                        autoComplete={
+                            mode === "login" ? "username" : "new-username"
+                        }
                         placeholder="Username"
                         disabled={busy}
                     />
@@ -277,10 +311,14 @@ export default function LoginView({ mode }: { mode: Mode }) {
                             onChange={(e) => setPassword(e.target.value)}
                             type={showPassword ? "text" : "password"}
                             autoComplete={
-                                mode === "login" ? "current-password" : "new-password"
+                                mode === "login"
+                                    ? "current-password"
+                                    : "new-password"
                             }
                             placeholder={
-                                mode === "login" ? "Your password" : "Choose a password"
+                                mode === "login"
+                                    ? "Your password"
+                                    : "Choose a password"
                             }
                             disabled={busy}
                         />
@@ -288,11 +326,17 @@ export default function LoginView({ mode }: { mode: Mode }) {
                         <button
                             type="button"
                             className={`${styles.iconBtn} ${
-                                showPassword ? styles.iconBtnOn : styles.iconBtnOff
+                                showPassword
+                                    ? styles.iconBtnOn
+                                    : styles.iconBtnOff
                             }`}
                             onClick={() => setShowPassword((v) => !v)}
-                            aria-label={showPassword ? "Hide password" : "Show password"}
-                            title={showPassword ? "Hide password" : "Show password"}
+                            aria-label={
+                                showPassword ? "Hide password" : "Show password"
+                            }
+                            title={
+                                showPassword ? "Hide password" : "Show password"
+                            }
                             aria-pressed={showPassword}
                             disabled={busy}
                         >
@@ -303,7 +347,10 @@ export default function LoginView({ mode }: { mode: Mode }) {
 
                 {mode === "create" && (
                     <div className={styles.field}>
-                        <label className={styles.label} htmlFor="confirmPassword">
+                        <label
+                            className={styles.label}
+                            htmlFor="confirmPassword"
+                        >
                             Confirm password
                         </label>
 
@@ -312,7 +359,9 @@ export default function LoginView({ mode }: { mode: Mode }) {
                                 id="confirmPassword"
                                 className={styles.input}
                                 value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                onChange={(e) =>
+                                    setConfirmPassword(e.target.value)
+                                }
                                 type={showConfirmPassword ? "text" : "password"}
                                 autoComplete="new-password"
                                 placeholder="Re-enter password"
@@ -326,7 +375,9 @@ export default function LoginView({ mode }: { mode: Mode }) {
                                         ? styles.iconBtnOn
                                         : styles.iconBtnOff
                                 }`}
-                                onClick={() => setShowConfirmPassword((v) => !v)}
+                                onClick={() =>
+                                    setShowConfirmPassword((v) => !v)
+                                }
                                 aria-label={
                                     showConfirmPassword
                                         ? "Hide confirm password"
@@ -358,7 +409,11 @@ export default function LoginView({ mode }: { mode: Mode }) {
                     </div>
                 )}
 
-                <button className={styles.primary} type="submit" disabled={busy}>
+                <button
+                    className={styles.primary}
+                    type="submit"
+                    disabled={busy}
+                >
                     {busy ? "Working…" : primaryLabel}
                 </button>
 
