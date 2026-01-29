@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
-FROM alpine:latest
+FROM archlinux:latest
 
 ARG BUILDTAGS=sqlite_math_functions,sqlite_foreign_keys
 
 RUN --mount=type=bind,source=./,target=/backend <<EOF
 set -e
 cd /backend
-apk update
-xargs -t -a .apk-requirements apk add
+pacman -Sy
+xargs -t -a .arch-requirements pacman -S --noconfirm
 go mod tidy -diff
 go install -tags=$BUILDTAGS ./cmd/server
 go clean -cache

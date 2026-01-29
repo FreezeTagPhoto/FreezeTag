@@ -1,0 +1,9 @@
+base-devel
+go
+uv
+imagemagick
+ffmpeg
+pkgconf
+libraw
+libheif
+libtiff

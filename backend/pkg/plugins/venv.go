@@ -12,7 +12,7 @@ import (
 
 func createVenv(absPath string, requirements *string, pyVersion *string) error {
 	log.Printf("[INFO] creating venv from scratch for '%s', expect it to take a while", absPath)
-	args := []string{"venv", "--seed", path.Join(absPath, ".venv")}
+	args := []string{"venv", "--managed-python", "--seed", path.Join(absPath, ".venv")}
 	if pyVersion != nil {
 		args = append(args, "--python", *pyVersion)
 	}

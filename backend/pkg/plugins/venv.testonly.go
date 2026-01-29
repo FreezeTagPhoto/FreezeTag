@@ -10,7 +10,7 @@ import (
 )
 
 func createVenv(absPath string, requirements *string, _ *string) error {
-	if _, err := exec.Command("uv", "venv", "--seed", path.Join(absPath, ".venv")).Output(); err != nil {
+	if _, err := exec.Command("uv", "venv", "--managed-python", "--seed", path.Join(absPath, ".venv")).Output(); err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
 			return fmt.Errorf("failed to initialize venv: %s", string(exitErr.Stderr))
