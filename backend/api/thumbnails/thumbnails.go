@@ -20,7 +20,7 @@ func InitThumbnailEndpoint(repository repositories.ImageRepository) ThumbnailEnd
 	}
 }
 
-func (te ThumbnailEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (te ThumbnailEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.GET("/thumbnails/:id", te.HandleGet)
 }
 

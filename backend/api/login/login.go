@@ -18,7 +18,7 @@ func InitLoginEndpoint(authService services.AuthService) LoginEndpoint {
 	}
 }
 
-func (le LoginEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (le LoginEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.POST("/login", le.HandleLogin)
 }
 

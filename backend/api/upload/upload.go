@@ -27,7 +27,7 @@ func InitUploadEndpoint(jobService services.JobService) UploadEndpoint {
 }
 
 // Registers the upload endpoints to the given Gin engine.
-func (ue UploadEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (ue UploadEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.POST("/upload", ue.HandlePost)
 }
 

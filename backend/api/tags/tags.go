@@ -21,7 +21,7 @@ func InitTagEndpoint(repo repositories.ImageRepository) TagEndpoint {
 	}
 }
 
-func (te TagEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (te TagEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.DELETE("/tag/remove", te.HandleDelete)
 	e.POST("/tag/add", te.HandlePost)
 	e.GET("/tag/list", te.HandleGetAllTags)

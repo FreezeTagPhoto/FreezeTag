@@ -21,7 +21,7 @@ func InitJobQueryEndpoint(jobRepository repositories.JobRepository) JobQueryEndp
 }
 
 // Registers the job query endpoints to the given Gin engine.
-func (je JobQueryEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (je JobQueryEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.GET("/jobquery/:id", je.HandleGet)
 }
 
