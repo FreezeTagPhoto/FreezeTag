@@ -23,7 +23,7 @@ func ParseRaw(name string, data []byte) (imagedata.Data, error) {
 	}
 	meta, err := parseEXIFData(mw)
 	if err != nil {
-		log.Printf("[WARNING] failed to extract EXIF from %v: %v", name, err)
+		log.Printf("[WARN] failed to extract EXIF from %v: %v", name, err)
 	}
 	width, height := int(mw.GetImageWidth()), int(mw.GetImageHeight())
 	return imagedata.Data{

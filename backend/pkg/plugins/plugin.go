@@ -33,7 +33,7 @@ func PluginFromManifest(manifest PluginManifest, ctx context.Context) (HookedPlu
 	info, err := os.Stat(path.Join(manifest.AbsPath, ".venv"))
 	if os.IsNotExist(err) {
 		// create venv
-		if err := createVenv(manifest.AbsPath, manifest.Requirements); err != nil {
+		if err := createVenv(manifest.AbsPath, manifest.Requirements, manifest.PythonVersion); err != nil {
 			return HookedPlugin{}, fmt.Errorf("failed to load plugin: %w", err)
 		}
 	} else {
@@ -81,19 +81,19 @@ readyLoop:
 	for {
 		msg, ok := <-io.Out
 		if !ok {
-			log.Printf("%s [ERR]: failed to read from stdout during plugin init", name)
+			log.Printf("[ERR]  %s: failed to read from stdout during plugin init", name)
 			goto initProblem
 		}
 		switch msg.Type {
 		case ERR:
-			log.Printf("%s [ERR]: %s", name, string(msg.Contents.([]byte)))
+			log.Printf("[ERR]  %s: %s", name, string(msg.Contents.([]byte)))
 			goto initProblem
 		case LOG:
-			log.Printf("%s: %s", name, string(msg.Contents.([]byte)))
+			log.Printf("[PLUG] %s: %s", name, string(msg.Contents.([]byte)))
 		case READY:
 			break readyLoop
 		default:
-			log.Printf("%s [ERR]: bad init message from plugin", name)
+			log.Printf("[ERR]  %s: bad init message from plugin", name)
 			goto initProblem
 		}
 	}
@@ -110,7 +110,7 @@ shutdownLoop:
 	for {
 		msg, ok := <-pp.io.Out
 		if !ok {
-			log.Printf("%s [ERR]: plugin closed stdout before shutdown", pp.name)
+			log.Printf("[ERR]  %s: plugin closed stdout before shutdown", pp.name)
 			pp.ioCloser()
 			pp.processCloser()
 			return fmt.Errorf("plugin closed stdout before shutdown")
@@ -119,14 +119,14 @@ shutdownLoop:
 		case SHUTDOWN:
 			break shutdownLoop
 		case ERR:
-			log.Printf("%s [ERR]: %s", pp.name, string(msg.Contents.([]byte)))
+			log.Printf("[ERR]  %s: %s", pp.name, string(msg.Contents.([]byte)))
 			pp.ioCloser()
 			pp.processCloser()
 			return fmt.Errorf("failed to shut down plugin gracefully")
 		case LOG:
-			log.Printf("%s: %s", pp.name, string(msg.Contents.([]byte)))
+			log.Printf("[PLUG] %s: %s", pp.name, string(msg.Contents.([]byte)))
 		default:
-			log.Printf("%s [ERR]: bad shutdown message from plugin", pp.name)
+			log.Printf("[ERR]  %s: bad shutdown message from plugin", pp.name)
 		}
 	}
 	pp.ioCloser()

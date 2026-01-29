@@ -34,7 +34,7 @@ type DefaultAuthService struct {
 func InitDefaultAuthService(userRepo repositories.UserRepository) *DefaultAuthService {
 	key, exists := os.LookupEnv("JWT_SECRET_KEY")
 	if !exists || key == "" {
-		log.Printf("JWT_SECRET_KEY in .env file was not found or was empty, defaulting to random bytes")
+		log.Printf("[WARN] JWT_SECRET_KEY in .env file was not found or was empty, defaulting to random bytes")
 		randomBytes := make([]byte, 32)
 		_, err := rand.Read(randomBytes)
 		if err != nil {

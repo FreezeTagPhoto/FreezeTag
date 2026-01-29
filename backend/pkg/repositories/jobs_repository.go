@@ -17,12 +17,19 @@ type JobBatch struct {
 
 	InProgress []*FileJob `json:"in_progress"`
 
+	Finished chan struct{} `json:"-"`
+
 	mutex sync.Mutex  `json:"-"`
 	timer *time.Timer `json:"-"`
 
 	Ctx    context.Context    `json:"-"` // Given to the service
 	Cancel context.CancelFunc `json:"-"` // Called by the repository when the job is killed due to idleness or when the batch is deleted
 	WG     sync.WaitGroup     `json:"-"` // Used by the service to wait for a job to finish
+}
+
+func (b *JobBatch) MarkFinished() {
+	b.Finished <- struct{}{} // notify finished
+	close(b.Finished)
 }
 
 type FileJob struct {
@@ -42,6 +49,7 @@ type JobRepository interface {
 	Create(*JobBatch) error
 	Get(uuid.UUID) (*JobBatch, error)
 	Delete(uuid.UUID) error
+	WaitFinished(uuid.UUID) <-chan []*ImageUploadSuccess
 
 	AddInProgressFileJob(batchID uuid.UUID, file FileJob) error
 	UpdateJobStatus(batchID uuid.UUID, fileName string, status string) error
@@ -53,7 +61,7 @@ type DefaultJobRepository struct {
 	jobs sync.Map // map[uuid.UUID]*JobBatch
 }
 
-func NewDefaultJobRepository() *DefaultJobRepository {
+func NewDefaultJobRepository() JobRepository {
 	return &DefaultJobRepository{}
 }
 
@@ -61,6 +69,7 @@ func (r *DefaultJobRepository) Create(batch *JobBatch) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	batch.Ctx = ctx
 	batch.Cancel = cancel
+	batch.Finished = make(chan struct{}, 1)
 
 	r.jobs.Store(batch.UUID, batch)
 	batch.timer = time.AfterFunc(MaxIdleTime, func() {
@@ -87,6 +96,25 @@ func (r *DefaultJobRepository) Delete(id uuid.UUID) error {
 	batch.Cancel()
 	r.jobs.Delete(id)
 	return nil
+}
+
+func (r *DefaultJobRepository) WaitFinished(id uuid.UUID) <-chan []*ImageUploadSuccess {
+	finished := make(chan []*ImageUploadSuccess, 1)
+	batch, err := r.Get(id)
+	if err != nil {
+		finished <- nil
+		return finished
+	}
+	go func() {
+		<-batch.Finished
+		if batch.Ctx.Err() != nil {
+			finished <- nil
+		} else {
+			finished <- batch.Completed
+		}
+		close(finished)
+	}()
+	return finished
 }
 
 func (r *DefaultJobRepository) AddInProgressFileJob(batchID uuid.UUID, fileJob FileJob) error {
@@ -151,6 +179,7 @@ func (r *DefaultJobRepository) CompleteFileJob(batchID uuid.UUID, fileName strin
 					batch.timer.Stop()
 					batch.timer.Reset(RetentionTime)
 				}
+				batch.MarkFinished()
 			}
 			return nil
 		}

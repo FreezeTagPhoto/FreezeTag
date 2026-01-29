@@ -17,6 +17,7 @@ import (
 	"freezetag/backend/pkg/repositories"
 	"freezetag/backend/pkg/services"
 	"log"
+	"strings"
 
 	docs "freezetag/backend/cmd/docs"
 
@@ -76,7 +77,18 @@ func initializeDependencies() *dependencies {
 	imageRepo := initDefaultImageRepository(defaultImageFolder)
 	userRepo := initDefaultUserRepository()
 
-	jobService := services.InitDefaultJobService(jobRepo, imageRepo)
+	pluginService, err := services.InitDefaultPluginService("./plugins", imageRepo)
+	if err != nil {
+		log.Fatalf("[ERR]  error launching plugin service: %v", err)
+	}
+	log.Printf("[INFO] loaded plugins:")
+	plugs := strings.Join(pluginService.AllPlugins(), ", ")
+	if plugs == "" {
+		log.Printf("[INFO] no plugins loaded")
+	} else {
+		log.Printf("[INFO] %s", plugs)
+	}
+	jobService := services.InitDefaultJobService(jobRepo, imageRepo, pluginService)
 	authService := services.InitDefaultAuthService(userRepo)
 
 	return &dependencies{

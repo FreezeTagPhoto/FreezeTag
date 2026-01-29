@@ -9,6 +9,7 @@ import (
 
 	mockImageRepo "freezetag/backend/mocks/ImageRepository"
 	mockJobRepo "freezetag/backend/mocks/JobRepository"
+	mockPluginService "freezetag/backend/mocks/PluginService"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/repositories"
 
@@ -22,7 +23,8 @@ func TestRunUploadJobsAsyncExecution(t *testing.T) {
 
 	m := mockJobRepo.NewMockJobRepository(t)
 	i := mockImageRepo.NewMockImageRepository(t)
-	jobService := InitDefaultJobService(m, i)
+	p := mockPluginService.NewMockPluginService(t)
+	jobService := InitDefaultJobService(m, i, p)
 
 	batchID := repositories.NewJobBatchID()
 	fileName := "test.png"
@@ -56,15 +58,28 @@ func TestRunUploadJobsAsyncExecution(t *testing.T) {
 		}).
 		Return(nil).
 		Once()
+	finishedChannel := make(chan []*repositories.ImageUploadSuccess)
+	m.EXPECT().
+		WaitFinished(batchID).
+		Return(finishedChannel)
+	done := make(chan struct{})
+	p.EXPECT().
+		AllPlugins().
+		Run(func() {
+			close(done)
+		}).
+		Return([]string{})
 
 	err := jobService.RunUploadJobs(jobBatch)
 	require.NoError(t, err)
-	done := make(chan struct{})
 
 	// make sure that the goroutine has time to execute and call CompleteFileJob
 	go func() {
 		wg.Wait()
-		close(done)
+		finishedChannel <- []*repositories.ImageUploadSuccess{
+			{Id: database.ImageId(42), Filename: fileName},
+		}
+		close(finishedChannel)
 	}()
 
 	select {
@@ -76,7 +91,8 @@ func TestRunUploadJobsAsyncExecution(t *testing.T) {
 func TestRunUploadJobsAsyncExecutionStress(t *testing.T) {
 	m := mockJobRepo.NewMockJobRepository(t)
 	i := mockImageRepo.NewMockImageRepository(t)
-	jobService := InitDefaultJobService(m, i)
+	p := mockPluginService.NewMockPluginService(t)
+	jobService := InitDefaultJobService(m, i, p)
 	iterations := 100
 
 	batchID := repositories.NewJobBatchID()
@@ -98,6 +114,7 @@ func TestRunUploadJobsAsyncExecutionStress(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(iterations)
 
+	finishedChannel := make(chan []*repositories.ImageUploadSuccess)
 	i.EXPECT().
 		StoreImageBytes(fileData, mock.AnythingOfType("string")).
 		Return(database.ImageId(42), nil).
@@ -109,15 +126,27 @@ func TestRunUploadJobsAsyncExecutionStress(t *testing.T) {
 		}).
 		Return(nil).
 		Times(iterations)
+	m.EXPECT().
+		WaitFinished(batchID).
+		Return(finishedChannel)
+	done := make(chan struct{})
+	p.EXPECT().
+		AllPlugins().
+		Run(func() {
+			close(done)
+		}).
+		Return([]string{}) // called just once for a large job
 
 	err := jobService.RunUploadJobs(jobBatch)
 	require.NoError(t, err)
-	done := make(chan struct{})
 
 	// make sure that the goroutine has time to execute and call CompleteFileJob
 	go func() {
 		wg.Wait()
-		close(done)
+		finishedChannel <- []*repositories.ImageUploadSuccess{
+			{Id: database.ImageId(42), Filename: "foo"},
+		}
+		close(finishedChannel)
 	}()
 
 	select {
@@ -130,7 +159,8 @@ func TestRunUploadJobsAsyncExecutionStress(t *testing.T) {
 func TestCreateJobBatch(t *testing.T) {
 	i := mockImageRepo.NewMockImageRepository(t)
 	m := mockJobRepo.NewMockJobRepository(t)
-	jobService := InitDefaultJobService(m, i)
+	p := mockPluginService.NewMockPluginService(t)
+	jobService := InitDefaultJobService(m, i, p)
 
 	jobs := []*repositories.FileJob{
 		{Name: "file1.png", Bytes: []byte("data1")},
@@ -159,7 +189,8 @@ func TestCreateJobBatch2(t *testing.T) {
 	// Setup
 	m := mockJobRepo.NewMockJobRepository(t)
 	i := mockImageRepo.NewMockImageRepository(t)
-	service := InitDefaultJobService(m, i)
+	p := mockPluginService.NewMockPluginService(t)
+	service := InitDefaultJobService(m, i, p)
 
 	files := []*repositories.FileJob{
 		{Name: "a.png", Bytes: []byte("a")},
@@ -183,7 +214,8 @@ func TestCreateJobBatch2(t *testing.T) {
 func TestCreateJobBatchRepoFailure(t *testing.T) {
 	m := mockJobRepo.NewMockJobRepository(t)
 	i := mockImageRepo.NewMockImageRepository(t)
-	service := InitDefaultJobService(m, i)
+	p := mockPluginService.NewMockPluginService(t)
+	service := InitDefaultJobService(m, i, p)
 
 	files := []*repositories.FileJob{{Name: "a.png"}}
 	dbError := assert.AnError
@@ -199,7 +231,8 @@ func TestCreateJobBatchRepoFailure(t *testing.T) {
 func TestRunUploadJobsEmptyBatch(t *testing.T) {
 	m := mockJobRepo.NewMockJobRepository(t)
 	i := mockImageRepo.NewMockImageRepository(t)
-	service := InitDefaultJobService(m, i)
+	p := mockPluginService.NewMockPluginService(t)
+	service := InitDefaultJobService(m, i, p)
 
 	batch := &repositories.JobBatch{
 		UUID:       repositories.NewJobBatchID(),
@@ -207,17 +240,33 @@ func TestRunUploadJobsEmptyBatch(t *testing.T) {
 		InProgress: []*repositories.FileJob{},
 	}
 
+	doneChannel := make(chan []*repositories.ImageUploadSuccess)
+	go func() {
+		doneChannel <- []*repositories.ImageUploadSuccess{}
+		close(doneChannel)
+	}()
+
+	done := make(chan struct{})
+
 	i.AssertNotCalled(t, "StoreImageBytes")
 	m.AssertNotCalled(t, "CompleteFileJob")
+	m.EXPECT().WaitFinished(batch.UUID).Return(doneChannel)
+	p.EXPECT().AllPlugins().Run(func() { close(done) }).Return([]string{})
 
 	err := service.RunUploadJobs(batch)
 	require.NoError(t, err)
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Test timed out: Background goroutine never waited for upload to finish")
+	}
 }
 
 func TestRunUploadJobsRespectsContextCancellation(t *testing.T) {
 	m := mockJobRepo.NewMockJobRepository(t)
 	i := mockImageRepo.NewMockImageRepository(t)
-	service := InitDefaultJobService(m, i)
+	p := mockPluginService.NewMockPluginService(t)
+	service := InitDefaultJobService(m, i, p)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -231,8 +280,16 @@ func TestRunUploadJobsRespectsContextCancellation(t *testing.T) {
 		},
 	}
 
+	doneChannel := make(chan []*repositories.ImageUploadSuccess)
+	go func() {
+		doneChannel <- nil
+		close(doneChannel)
+	}()
+
 	i.AssertNotCalled(t, "StoreImageBytes")
 	m.AssertNotCalled(t, "CompleteFileJob")
+	m.EXPECT().WaitFinished(batch.UUID).Return(doneChannel)
+	p.AssertNotCalled(t, "AllPlugins")
 
 	err := service.RunUploadJobs(batch)
 	require.NoError(t, err)
@@ -243,7 +300,8 @@ func TestRunUploadJobsRespectsContextCancellation(t *testing.T) {
 func TestRunUploadJobsRespectsContextCancellationStress(t *testing.T) {
 	m := mockJobRepo.NewMockJobRepository(t)
 	i := mockImageRepo.NewMockImageRepository(t)
-	service := InitDefaultJobService(m, i)
+	p := mockPluginService.NewMockPluginService(t)
+	service := InitDefaultJobService(m, i, p)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	assert.NoError(t, ctx.Err())
@@ -265,6 +323,12 @@ func TestRunUploadJobsRespectsContextCancellationStress(t *testing.T) {
 	wg.Add(limit)
 	done := make(chan struct{})
 
+	doneChannel := make(chan []*repositories.ImageUploadSuccess)
+	go func() {
+		doneChannel <- nil
+		close(doneChannel)
+	}()
+
 	i.EXPECT().
 		StoreImageBytes(mock.Anything, mock.AnythingOfType("string")).
 		Run(func(data []byte, name string) {
@@ -276,6 +340,7 @@ func TestRunUploadJobsRespectsContextCancellationStress(t *testing.T) {
 		CompleteFileJob(batchID, mock.AnythingOfType("string"), mock.Anything).
 		Return(nil).
 		Maybe()
+	m.EXPECT().WaitFinished(batch.UUID).Return(doneChannel)
 	err := service.RunUploadJobs(batch)
 	require.NoError(t, err)
 
@@ -289,7 +354,8 @@ func TestRunUploadJobsRespectsContextCancellationStress(t *testing.T) {
 func TestRunUploadJobsCompletesStress(t *testing.T) {
 	m := mockJobRepo.NewMockJobRepository(t)
 	i := mockImageRepo.NewMockImageRepository(t)
-	service := InitDefaultJobService(m, i)
+	p := mockPluginService.NewMockPluginService(t)
+	service := InitDefaultJobService(m, i, p)
 
 	jobs := make([]*repositories.FileJob, 100)
 	for i := range jobs {
@@ -303,6 +369,12 @@ func TestRunUploadJobsCompletesStress(t *testing.T) {
 		InProgress: jobs,
 	}
 
+	doneChannel := make(chan []*repositories.ImageUploadSuccess)
+	go func() {
+		doneChannel <- []*repositories.ImageUploadSuccess{}
+		close(doneChannel)
+	}()
+
 	var wg sync.WaitGroup
 	wg.Add(100)
 
@@ -315,6 +387,13 @@ func TestRunUploadJobsCompletesStress(t *testing.T) {
 	m.EXPECT().
 		CompleteFileJob(batchID, mock.AnythingOfType("string"), mock.Anything).
 		Return(nil).
+		Maybe()
+	m.EXPECT().
+		WaitFinished(batchID).
+		Return(doneChannel)
+	p.EXPECT().
+		AllPlugins().
+		Return([]string{}).
 		Maybe()
 	err := service.RunUploadJobs(batch)
 	require.NoError(t, err)

@@ -24,7 +24,7 @@ func ProcessImage(plugin Plugin, hook string, id database.ImageId, repo reposito
 		case ERR:
 			return fmt.Errorf("%s", string(msg.Contents.([]byte)))
 		case LOG:
-			log.Printf("%s: %s", plugin.Name(), string(msg.Contents.([]byte)))
+			log.Printf("[PLUG] %s: %s", plugin.Name(), string(msg.Contents.([]byte)))
 		case PUT:
 			return handleProcessResponse(plugin, repo, msg.Contents)
 		case GET:
