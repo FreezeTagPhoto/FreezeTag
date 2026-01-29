@@ -17,7 +17,7 @@ func RequireAuth(auth services.AuthService) gin.HandlerFunc {
 
 		// Fallback to Authorization header if cookie is not present
 		if err != nil || JWT == "" {
-			JWT := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
+			JWT = strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
 			if JWT == "" {
 				log.Println("No JWT token provided with request to protected endpoint")
 				c.AbortWithStatusJSON(http.StatusUnauthorized, api.StatusBadRequestResponse{Error: "Missing Authorization Token"})
