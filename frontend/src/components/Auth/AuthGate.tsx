@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { GetToken } from "@/api/auth/tokenhelpers";
+import AuthChecker from "@/api/auth/authchecker";
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -18,13 +18,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        const token = GetToken();
-        const ok = token !== null && token.trim().length > 0;
-
-        setAuthed(ok);
-        setChecked(true);
-
-        if (!ok) router.replace("/login");
+        AuthChecker().then((ok) => {
+            setAuthed(ok);
+            setChecked(true);
+            if (!ok) {
+                router.replace("/login");
+            }
+        });
     }, [pathname, router]);
 
     if (!checked) return null;
