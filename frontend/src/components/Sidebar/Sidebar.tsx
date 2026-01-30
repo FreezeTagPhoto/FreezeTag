@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import logoUrl from "@/icons/freezetag+text.svg";
 import styles from "./Sidebar.module.css";
-import { ClearToken } from "@/api/auth/tokenhelpers";
+import LogoutHandler from "@/api/auth/logouthandler";
 
 const navItems = [
     { label: "Gallery", href: "/" },
@@ -21,7 +21,7 @@ export default function Sidebar() {
     const router = useRouter();
 
     const onLogout = () => {
-        ClearToken();
+        LogoutHandler();
         router.replace("/login");
         router.refresh();
     };
