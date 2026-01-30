@@ -7,6 +7,7 @@ import (
 	"freezetag/backend/api/files"
 	"freezetag/backend/api/jobquery"
 	"freezetag/backend/api/login"
+	"freezetag/backend/api/logout"
 	"freezetag/backend/api/metadata"
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
@@ -131,6 +132,7 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 		metadata.InitMetadataEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
 		jobquery.InitJobQueryEndpoint(deps.jobRepository).RegisterEndpoints(authGroup)
 		files.InitFileEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+		logout.InitLogoutEndpoint(deps.authService).RegisterEndpoints(authGroup)
 	}
 
 	login.InitLoginEndpoint(deps.authService).RegisterEndpoints(router)
