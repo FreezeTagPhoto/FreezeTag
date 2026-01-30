@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"freezetag/backend/pkg/services"
+
 	"github.com/gin-gonic/gin"
 )
 

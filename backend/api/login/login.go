@@ -57,7 +57,7 @@ func (le LoginEndpoint) HandleLogin(c *gin.Context) {
 // @description Checks if the user is currently authenticated.
 // @tags auth, login
 // @produce application/json
-// @success 200 {object} api.StatusLoginStatus "user is authenticated"
+// @success 200 {object} api.StatusLoginUser "user is authenticated"
 // @failure 401 {object} api.StatusLoginFail "User is not authenticated"
 // @router /login [get]
 func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
@@ -77,4 +77,4 @@ func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: userID})
-}	
+}
