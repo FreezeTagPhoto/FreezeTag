@@ -2,7 +2,6 @@ import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result } from "@/common/result";
 import { Option, Some, None } from "@/common/option";
-import { SaveToken } from "@/api/auth/tokenhelpers";
 
 // Returns the error response if login didn't succeed,
 // otherwise the token is put into cookies and other code doesn't need access to it
@@ -42,8 +41,6 @@ async function login_with_handler(
                 message: await request_result.error.response.text(),
             });
     }
-
-    SaveToken(request_result.value.token);
 
     return None();
 }
