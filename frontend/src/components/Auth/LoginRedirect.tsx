@@ -2,16 +2,15 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { GetToken } from "@/api/auth/tokenhelpers";
+import AuthChecker from "@/api/auth/authchecker";
 
 export default function LoginRedirect() {
     const router = useRouter();
 
     useEffect(() => {
-        const token = GetToken();
-        if (token && token.trim().length > 0) {
-            router.replace("/");
-        }
+        AuthChecker().then((r) => {
+            if (r) router.replace("/");
+        });
     }, [router]);
 
     return null;
