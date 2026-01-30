@@ -21,7 +21,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         AuthChecker().then((ok) => {
             setAuthed(ok);
             setChecked(true);
-            if (!ok) router.replace("/login");
+            if (!ok) {
+                router.replace("/login");
+            }
         });
     }, [pathname, router]);
 

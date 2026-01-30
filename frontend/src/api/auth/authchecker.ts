@@ -16,7 +16,6 @@ async function auth_check_with_handler(
         data: BodyInit,
     ) => Promise<Result<AuthCheckResponse, RequestError>>,
 ): Promise<boolean> {
-    return true;
     return (await handler("")).ok;
 }
 

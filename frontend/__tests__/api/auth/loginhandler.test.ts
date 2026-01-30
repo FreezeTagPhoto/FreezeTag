@@ -1,9 +1,7 @@
 /**
  * @jest-environment node
  */
-import {
-    testing_LoginResponse,
-} from "@/api/auth/loginhandler";
+import { testing_LoginResponse } from "@/api/auth/loginhandler";
 import LoginHandler from "@/api/auth/loginhandler";
 
 import { RequestError } from "@/api/common/apihandler";
