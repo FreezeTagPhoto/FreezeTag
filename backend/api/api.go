@@ -55,6 +55,10 @@ type LoginCredentials struct {
 	Password string `form:"password" json:"password" binding:"required"`
 }
 
+type StatusLoginUser struct {
+	UserID string `json:"user_id"`
+}
+
 type MetadataResponse imagedata.Metadata
 
 type JobBatch repositories.JobBatch

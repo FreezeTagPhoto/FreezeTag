@@ -3,6 +3,7 @@ package login
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"freezetag/backend/api"
 	mockUserService "freezetag/backend/mocks/AuthService"
@@ -11,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -108,4 +110,85 @@ func TestLoginBadCredentialFormat(t *testing.T) {
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	assert.Contains(t, got.Error, "invalid request")
+}
+
+func TestLoginExistingLoginCookie(t *testing.T) {
+
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	NewMockAuthService.EXPECT().
+		ValidateJWT("existing_token").
+		Return(jwt.MapClaims{"sub": "testuser"}, nil).Once()
+
+	router := gin.Default()
+
+	req, err := http.NewRequest("GET", "/login", nil)
+	assert.NoError(t, err)
+	req.AddCookie(&http.Cookie{
+		Name:  "token",
+		Value: "existing_token",
+	})
+	InitLoginEndpoint(NewMockAuthService).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	var got api.StatusLoginUser
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expected := api.StatusLoginUser{UserID: "testuser"}
+	assert.Equal(t, expected, got)
+}
+
+func TestLoginExistingLoginCookieNoAuth(t *testing.T) {
+
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	NewMockAuthService.EXPECT().
+		ValidateJWT("existing_token").
+		Return(jwt.MapClaims{}, errors.New("no auth")).Once()
+
+	router := gin.Default()
+
+	req, err := http.NewRequest("GET", "/login", nil)
+	assert.NoError(t, err)
+	req.AddCookie(&http.Cookie{
+		Name:  "token",
+		Value: "existing_token",
+	})
+	InitLoginEndpoint(NewMockAuthService).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	var got api.StatusLoginFail
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expected := api.StatusLoginFail{Error: "not authenticated"}
+	assert.Equal(t, expected, got)
+}
+
+func TestLoginExistingLoginCookieNoSub(t *testing.T) {
+
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	NewMockAuthService.EXPECT().
+		ValidateJWT("existing_token").
+		Return(jwt.MapClaims{"not_sub": "testuser"}, nil).Once()
+
+	router := gin.Default()
+
+	req, err := http.NewRequest("GET", "/login", nil)
+	assert.NoError(t, err)
+	req.AddCookie(&http.Cookie{
+		Name:  "token",
+		Value: "existing_token",
+	})
+	InitLoginEndpoint(NewMockAuthService).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	var got api.StatusLoginFail
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expected := api.StatusLoginFail{Error: "no sub user id in token"}
+	assert.Equal(t, expected, got)
 }

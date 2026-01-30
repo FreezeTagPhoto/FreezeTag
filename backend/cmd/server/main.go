@@ -4,6 +4,7 @@ package main
 
 import (
 	createuser "freezetag/backend/api/create_user"
+	"freezetag/backend/api/files"
 	"freezetag/backend/api/jobquery"
 	"freezetag/backend/api/login"
 	"freezetag/backend/api/logout"
@@ -130,6 +131,7 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 		tags.InitTagEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
 		metadata.InitMetadataEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
 		jobquery.InitJobQueryEndpoint(deps.jobRepository).RegisterEndpoints(authGroup)
+		files.InitFileEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
 		logout.InitLogoutEndpoint(deps.authService).RegisterEndpoints(authGroup)
 	}
 

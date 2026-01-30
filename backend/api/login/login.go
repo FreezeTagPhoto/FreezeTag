@@ -20,6 +20,7 @@ func InitLoginEndpoint(authService services.AuthService) LoginEndpoint {
 
 func (le LoginEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.POST("/login", le.HandleLogin)
+	e.GET("/login", le.HandleLoginStatus)
 }
 
 // @summary Authenticate user and return a token
@@ -50,4 +51,30 @@ func (le LoginEndpoint) HandleLogin(c *gin.Context) {
 		HttpOnly: true,
 	})
 	c.JSON(http.StatusOK, api.StatusLoginSuccess{Token: token})
+}
+
+// @summary Check login status
+// @description Checks if the user is currently authenticated.
+// @tags auth, login
+// @produce application/json
+// @success 200 {object} api.StatusLoginUser "user is authenticated"
+// @failure 401 {object} api.StatusLoginFail "User is not authenticated"
+// @router /login [get]
+func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
+	authenticated, err := c.Cookie("token")
+	if err != nil || authenticated == "" {
+		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
+		return
+	}
+	claims, err := le.authService.ValidateJWT(authenticated)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
+		return
+	}
+	userID, ok := claims["sub"].(string)
+	if !ok || userID == "" {
+		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "no sub user id in token"})
+		return
+	}
+	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: userID})
 }

@@ -20,7 +20,7 @@ func InitFileEndpoint(repo repositories.ImageRepository) FileEndpoint {
 	}
 }
 
-func (fe FileEndpoint) RegisterEndpoints(e *gin.Engine) {
+func (fe FileEndpoint) RegisterEndpoints(e gin.IRouter) {
 	e.GET("/file/:id", fe.HandleGet)
 }
 

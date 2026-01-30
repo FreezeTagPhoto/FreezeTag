@@ -15,16 +15,15 @@ import (
 
 func TestAuthMiddleware(t *testing.T) {
 
-
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	req, _ := http.NewRequest("GET", "/", nil)
 	req.AddCookie(&http.Cookie{Name: "token", Value: "TOKENSTRING"})
 	ctx.Request = req
-	
+
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 
-		NewMockAuthService.EXPECT().
+	NewMockAuthService.EXPECT().
 		ValidateJWT("TOKENSTRING").
 		Return(jwt.MapClaims{"sub": "expectedUserID"}, nil).Once()
 
@@ -40,16 +39,15 @@ func TestAuthMiddleware(t *testing.T) {
 
 func TestAuthMiddlewareJWTparseFail(t *testing.T) {
 
-
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	req, _ := http.NewRequest("GET", "/", nil)
 	req.AddCookie(&http.Cookie{Name: "token", Value: "TOKENSTRING"})
 	ctx.Request = req
-	
+
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 
-		NewMockAuthService.EXPECT().
+	NewMockAuthService.EXPECT().
 		ValidateJWT("TOKENSTRING").
 		Return(jwt.MapClaims{}, errors.New("an error")).Once()
 
