@@ -15,7 +15,7 @@ export function addTagToQuery(input: string, tag: string): string {
 
     const tokens = parseUserQuery(input);
     const alreadyHas = tokens.some(
-        (tok) => tok.kind === "tag" && tok.value === t,
+        (tok) => tok.kind === "tag" && tok.value.trim() === t,
     );
     if (alreadyHas) {
         const trimmed = input.trimEnd();

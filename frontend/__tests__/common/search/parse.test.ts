@@ -3,6 +3,7 @@
  */
 
 import { parseUserQuery } from "@/common/search/parse";
+import { compileTokensToApiQuery } from "@/common/search/compile";
 
 function kmToAngularDegrees(km: number): number {
     const EARTH_RADIUS_KM = 6371;
@@ -302,5 +303,67 @@ describe("common/search/parse.parseUserQuery", () => {
             expect(t.exact).toBe(false);
             expect(t.error).toBe("Invalid Sorting Strategy");
         }
+    });
+
+    it("preserves trailing space for the last unclosed tag chunk (fuzzy typing)", () => {
+        const tokens = parseUserQuery(`rock `);
+        expect(tokens).toHaveLength(1);
+
+        const t = tokens[0];
+        expect(t.kind).toBe("tag");
+        if (t.kind === "tag") {
+            expect(t.value).toBe("rock ");
+            expect(t.exact).toBe(false);
+            expect(t.error).toBeUndefined();
+        }
+
+        expect(compileTokensToApiQuery(tokens)).toBe(`tagLike=rock%20`);
+    });
+
+    it("does not preserve trailing space when the tag chunk is closed by semicolon", () => {
+        const tokens = parseUserQuery(`rock ;`);
+        expect(tokens).toHaveLength(1);
+
+        const t = tokens[0];
+        expect(t.kind).toBe("tag");
+        if (t.kind === "tag") {
+            expect(t.value).toBe("rock");
+            expect(t.exact).toBe(false);
+            expect(t.error).toBeUndefined();
+        }
+
+        expect(compileTokensToApiQuery(tokens)).toBe(`tagLike=rock`);
+    });
+
+    it("preserves trailing space for the last unclosed field value too", () => {
+        const tokens = parseUserQuery(`model=Galaxy `);
+        expect(tokens).toHaveLength(1);
+
+        const t = tokens[0];
+        expect(t.kind).toBe("field");
+        if (t.kind === "field") {
+            expect(t.key).toBe("model");
+            expect(t.value).toBe("Galaxy ");
+            expect(t.exact).toBe(false);
+            expect(t.error).toBeUndefined();
+        }
+
+        expect(compileTokensToApiQuery(tokens)).toBe(`modelLike=Galaxy%20`);
+    });
+
+    it("trims trailing space for closed field value chunks", () => {
+        const tokens = parseUserQuery(`model=Galaxy ;`);
+        expect(tokens).toHaveLength(1);
+
+        const t = tokens[0];
+        expect(t.kind).toBe("field");
+        if (t.kind === "field") {
+            expect(t.key).toBe("model");
+            expect(t.value).toBe("Galaxy");
+            expect(t.exact).toBe(false);
+            expect(t.error).toBeUndefined();
+        }
+
+        expect(compileTokensToApiQuery(tokens)).toBe(`modelLike=Galaxy`);
     });
 });
