@@ -8,8 +8,13 @@ type StripResult = {
     hadOpenQuote: boolean;
 };
 
-function stripOuterQuotes(s: string): StripResult {
-    const t = s.trim();
+function stripOuterQuotes(
+    s: string,
+    opts?: { trimEnd?: boolean },
+): StripResult {
+    const trimEnd = opts?.trimEnd ?? true;
+    const t0 = s.trimStart();
+    const t = trimEnd ? t0.trimEnd() : t0;
 
     if (!t.startsWith(`"`)) {
         return { text: t, exact: false, hadOpenQuote: false };
@@ -176,15 +181,24 @@ export function parseUserQuery(input: string): Token[] {
     const tokens: Token[] = [];
 
     for (const chunk of chunks) {
-        const trimmed = chunk.raw.trim();
-        if (!trimmed) continue;
+        const isClosedBySemicolon =
+            chunk.end < input.length && input[chunk.end] === ";";
 
-        const range = computeRangeFromChunk(chunk, trimmed);
+        const rawNoLeading = chunk.raw.trimStart();
+        const trimmed = isClosedBySemicolon
+            ? rawNoLeading.trimEnd()
+            : rawNoLeading;
+
+        if (trimmed.trim().length === 0) continue;
+
+        const range = computeRangeFromChunk(chunk, trimmed.trimEnd());
         const equalsAt = trimmed.indexOf("=");
 
         // tag (no '=')
         if (equalsAt === -1) {
-            const { text, exact, hadOpenQuote } = stripOuterQuotes(trimmed);
+            const { text, exact, hadOpenQuote } = stripOuterQuotes(trimmed, {
+                trimEnd: isClosedBySemicolon,
+            });
             tokens.push({
                 kind: "tag",
                 valueRaw: trimmed,
@@ -214,7 +228,9 @@ export function parseUserQuery(input: string): Token[] {
             continue;
         }
 
-        const { text, exact, hadOpenQuote } = stripOuterQuotes(valueRaw);
+        const { text, exact, hadOpenQuote } = stripOuterQuotes(valueRaw, {
+            trimEnd: isClosedBySemicolon,
+        });
         const quoteError = missingClosingQuote(hadOpenQuote, valueRaw)
             ? "Missing closing quote"
             : undefined;
