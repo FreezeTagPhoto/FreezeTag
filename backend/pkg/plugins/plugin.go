@@ -2,11 +2,11 @@ package plugins
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
-	"path"
 )
 
 type HookedPlugin struct {
@@ -25,25 +25,29 @@ func (h HookedPlugin) GetHooks(kind HookType, sig HookSignature) []string {
 	return hooks
 }
 
+//go:embed scripts/launch_plugin.sh
+var launch_plugin string
+
 // Initialize a plugin from a loaded manifest file and a context (for cancel)
 // This function will initialize the virtual environment if it doesn't already exist, install requirements, and launch the plugin,
 // returning a hook-compatible fully initialized plugin.
 func PluginFromManifest(manifest PluginManifest, ctx context.Context) (HookedPlugin, error) {
 	// initialize venv (if it doesn't exist)
-	info, err := os.Stat(path.Join(manifest.AbsPath, ".venv"))
-	if os.IsNotExist(err) {
-		// create venv
-		if err := createVenv(manifest.AbsPath, manifest.Requirements, manifest.PythonVersion); err != nil {
-			return HookedPlugin{}, fmt.Errorf("failed to load plugin: %w", err)
-		}
-	} else {
-		if !info.IsDir() {
-			// no venv, but something weird in the way.
-			return HookedPlugin{}, fmt.Errorf("failed to load plugin: .venv is occupied by a file")
-		}
+	if err := createVenv(manifest.AbsPath, manifest.Requirements, manifest.PythonVersion); err != nil {
+		return HookedPlugin{}, fmt.Errorf("failed to load plugin: %w", err)
+	}
+	launchScript, err := os.CreateTemp("", "ftls*.sh")
+	if err != nil {
+		return HookedPlugin{}, fmt.Errorf("failed to load plugin: %w", err)
+	}
+	defer os.Remove(launchScript.Name()) //nolint:errcheck
+	_, err = launchScript.Write([]byte(launch_plugin))
+	if err != nil {
+		return HookedPlugin{}, fmt.Errorf("failed to load plugin: %w", err)
 	}
 	ctx2, cancel := context.WithCancel(ctx)
-	cmd := exec.CommandContext(ctx2, path.Join(manifest.AbsPath, ".venv", "bin", "python"), path.Join(manifest.AbsPath, manifest.MainFile))
+	cmd := exec.CommandContext(ctx2, "sh", launchScript.Name(), manifest.AbsPath, manifest.MainFile)
+	// cmd := exec.CommandContext(ctx2, path.Join(manifest.AbsPath, ".venv", "bin", "python"), path.Join(manifest.AbsPath, manifest.MainFile))
 	plugin, err := PluginFromProcess(manifest.Name, cmd, cancel)
 	if err != nil {
 		return HookedPlugin{}, err
@@ -101,7 +105,7 @@ readyLoop:
 initProblem:
 	ioCloser()
 	cancel()
-	return nil, fmt.Errorf("Plugin failed to initialize")
+	return nil, fmt.Errorf("plugin failed to initialize")
 }
 
 func (pp pythonPlugin) Shutdown() error {

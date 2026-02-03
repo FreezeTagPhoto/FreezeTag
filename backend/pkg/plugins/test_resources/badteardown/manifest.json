@@ -1,0 +1,7 @@
+{
+    "name": "badteardown",
+    "version": "0.0.1",
+    "main_file": "main.py",
+    "hooks": {
+    }
+}
