@@ -27,6 +27,7 @@ import (
 
 	docs "freezetag/backend/cmd/docs"
 
+	"github.com/joho/godotenv"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -54,6 +55,7 @@ type dependencies struct {
 //
 // @basePath /
 func main() {
+	godotenv.Load(path.Join(defaultDataDir, ".env")) //nolint:errcheck
 	router := gin.Default()
 	docs.SwaggerInfo.BasePath = "/"
 	deps := initializeDependencies()
