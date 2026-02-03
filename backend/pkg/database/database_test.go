@@ -2,6 +2,7 @@ package database
 
 import (
 	"crypto/rand"
+	"fmt"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images/imagedata"
 	"io"
@@ -354,9 +355,9 @@ func TestGetAllTags(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, num)
 
-	tags, err := tmp.GetAllTags()
+	tagCounts, err := tmp.GetAllTags()
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []string{"foo", "bar", "baz", "bat"}, tags)
+	assert.Equal(t, map[string]int64{"foo": 1, "bar": 1, "baz": 2, "bat": 1}, tagCounts)
 }
 
 func TestDeleteImage(t *testing.T) {
@@ -414,9 +415,10 @@ func TestRemoveTags(t *testing.T) {
 	tags, err = tmp.GetImageTags(idB)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"c", "d"}, tags)
-	tags, err = tmp.GetAllTags()
+	
+	tagCounts, err := tmp.GetAllTags()
 	require.NoError(t, err)
-	assert.Equal(t, []string{"a", "c", "d"}, tags)
+	assert.Equal(t, map[string]int64{"a": 1, "c": 2, "d": 1}, tagCounts)
 }
 
 func TestGetMetadata(t *testing.T) {
@@ -473,4 +475,72 @@ func TestGetMetadataPopulated(t *testing.T) {
 	assert.Nil(t, data.CameraModel)
 	assert.Equal(t, &lat, data.Latitude)
 	assert.Equal(t, &lon, data.Longitude)
+}
+
+func TestGetTagCounts(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA := insertTestImage(t, tmp)
+	idB := insertTestImage(t, tmp)
+	_, _ = tmp.AddImageTags(idA, []string{"tag1", "tag2", "tag3"})
+	_, _ = tmp.AddImageTags(idB, []string{"tag2", "tag3", "tag4"})
+	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA), fmt.Sprint(idB)})
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), counts["tag1"])
+	assert.Equal(t, int64(2), counts["tag2"])
+	assert.Equal(t, int64(2), counts["tag3"])
+	assert.Equal(t, int64(1), counts["tag4"])
+}
+
+func TestGetTagCountsNoTags(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA := insertTestImage(t, tmp)
+	idB := insertTestImage(t, tmp)
+	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA), fmt.Sprint(idB)})
+	require.NoError(t, err)
+	assert.Empty(t, counts)
+}
+
+func TestGetTagCountsNoIds(t *testing.T) {
+	tmp := createTempDatabase(t)
+	counts, err := tmp.GetTagCounts([]string{})
+	require.NoError(t, err)
+	assert.Empty(t, counts)
+}
+
+func TestGetTagCountsSomeIds(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA := insertTestImage(t, tmp)
+	_, _ = tmp.AddImageTags(idA, []string{"tag1", "tag2"})
+	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA), "9999"})
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), counts["tag1"])
+	assert.Equal(t, int64(1), counts["tag2"])
+}
+
+func TestGetTagCountsDuplicateTagsSingleId(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA := insertTestImage(t, tmp)
+	_, _ = tmp.AddImageTags(idA, []string{"tag1", "tag1", "tag2"})
+	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA)})
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), counts["tag1"])
+	assert.Equal(t, int64(1), counts["tag2"])
+}
+
+func TestMoreDuplicates(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA := insertTestImage(t, tmp)
+	idB := insertTestImage(t, tmp)
+	idC := insertTestImage(t, tmp)
+	_, _ = tmp.AddImageTags(idA, []string{"A", "B", "C"})
+	_, _ = tmp.AddImageTags(idB, []string{"A", "B", "C"})
+	_, _ = tmp.AddImageTags(idC, []string{"A", "C", "D"})
+	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA), fmt.Sprint(idB), fmt.Sprint(idC)})
+	require.NoError(t, err)
+	assert.Equal(t, map[string]int64{
+		"A": 3,
+		"B": 2,
+		"C": 3,
+		"D": 1,
+	}, counts)
 }

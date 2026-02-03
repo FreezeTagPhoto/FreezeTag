@@ -20,7 +20,7 @@ import (
 
 func TestGetAllTags(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
-	m.EXPECT().RetrieveAllTags().Return([]string{"1", "2", "3"}, nil)
+	m.EXPECT().RetrieveAllTags().Return(map[string]int64{"1": 1, "2": 1, "3": 1}, nil)
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
 
@@ -28,15 +28,15 @@ func TestGetAllTags(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/tag/list", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := []string{"1", "2", "3"}
-	var got []string
+	expected := map[string]int64{"1": 1, "2": 1, "3": 1}
+	var got map[string]int64
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-	assert.ElementsMatch(t, expected, got)
+	assert.Equal(t, expected, got)
 }
 
 func TestGetAllTagsError(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
-	m.EXPECT().RetrieveAllTags().Return([]string{}, fmt.Errorf("mock error"))
+	m.EXPECT().RetrieveAllTags().Return(map[string]int64{}, fmt.Errorf("mock error"))
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
 

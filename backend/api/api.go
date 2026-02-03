@@ -59,6 +59,8 @@ type StatusLoginUser struct {
 	UserID string `json:"user_id"`
 }
 
+type TagCounts map[string]int64
+
 type MetadataResponse imagedata.Metadata
 
 type JobBatch repositories.JobBatch

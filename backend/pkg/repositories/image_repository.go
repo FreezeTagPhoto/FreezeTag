@@ -55,12 +55,13 @@ type ImageRepository interface {
 	SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder) ([]database.ImageId, error)
 	StoreImageBytes(data []byte, filename string) (database.ImageId, error)
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
-	RetrieveAllTags() ([]string, error)
+	RetrieveAllTags() (map[string]int64, error)
 	RetrieveImageTags(id database.ImageId) ([]string, error)
 	AddImageTags(id database.ImageId, tags []string) ImageTagResult
 	RemoveImageTags(id database.ImageId, tags []string) ImageTagResult
 	GetImageFilepath(id database.ImageId) (string, error)
 	GetImageMetadata(id database.ImageId) (imagedata.Metadata, error)
+	GetTagCounts(ids []string) (map[string]int64, error)
 }
 
 type DefaultImageRepository struct {
@@ -163,7 +164,7 @@ func (repo *DefaultImageRepository) SearchImageOrdered(query queries.DatabaseQue
 	return repo.db.GetImagesOrder(query, field, order)
 }
 
-func (repo *DefaultImageRepository) RetrieveAllTags() ([]string, error) {
+func (repo *DefaultImageRepository) RetrieveAllTags() (map[string]int64, error) {
 	return repo.db.GetAllTags()
 }
 
@@ -229,4 +230,8 @@ func (repo *DefaultImageRepository) GetImageMetadata(id database.ImageId) (image
 		return imagedata.Metadata{}, err
 	}
 	return metadata, nil
+}
+
+func (repo *DefaultImageRepository) GetTagCounts(ids []string) (map[string]int64, error) {
+	return repo.db.GetTagCounts(ids)
 }
