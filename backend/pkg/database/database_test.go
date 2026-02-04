@@ -415,7 +415,7 @@ func TestRemoveTags(t *testing.T) {
 	tags, err = tmp.GetImageTags(idB)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"c", "d"}, tags)
-	
+
 	tagCounts, err := tmp.GetAllTags()
 	require.NoError(t, err)
 	assert.Equal(t, map[string]int64{"a": 1, "c": 2, "d": 1}, tagCounts)

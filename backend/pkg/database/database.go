@@ -521,7 +521,7 @@ func (db SqliteImageDatabase) GetTagCounts(imageIds []string) (map[string]int64,
 	if err != nil {
 		return map[string]int64{}, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 	counts := make(map[string]int64)
 	for rows.Next() {
 		if err := rows.Err(); err != nil {

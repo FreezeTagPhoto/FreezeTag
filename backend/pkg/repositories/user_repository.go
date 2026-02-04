@@ -17,7 +17,6 @@ type UserRepository interface {
 	ChangePassword(userID database.UserID, newPasswordHash string) error
 	ListUsernames() ([]string, error)
 	ListAllUsers() ([]*database.PublicUser, error)
-
 }
 
 var (
@@ -29,7 +28,7 @@ var (
 type DefaultUserRepository struct {
 	database.UserDatabase
 }
-	
+
 func InitDefaultUserRepository(db database.UserDatabase) UserRepository {
 	return &DefaultUserRepository{
 		UserDatabase: db,
@@ -37,7 +36,7 @@ func InitDefaultUserRepository(db database.UserDatabase) UserRepository {
 }
 
 func (r *DefaultUserRepository) GetUserByID(id database.UserID) (*database.PublicUser, error) {
-	user, err := r.UserDatabase.GetUserById(id)
+	user, err := r.GetUserById(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrUserNotFound
@@ -93,7 +92,7 @@ func (r *DefaultUserRepository) ChangePassword(userID database.UserID, newPasswo
 }
 
 func (r *DefaultUserRepository) ListUsernames() ([]string, error) {
-	users, err := r.UserDatabase.ListUsers()
+	users, err := r.ListUsers()
 	if err != nil {
 		return nil, err
 	}
@@ -105,5 +104,5 @@ func (r *DefaultUserRepository) ListUsernames() ([]string, error) {
 }
 
 func (r *DefaultUserRepository) ListAllUsers() ([]*database.PublicUser, error) {
-	return r.UserDatabase.ListUsers()
+	return r.ListUsers()
 }

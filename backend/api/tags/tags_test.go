@@ -442,7 +442,6 @@ func TestGetTagCountsBadId(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-
 func TestGetTagCountsNoIds(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
@@ -457,7 +456,6 @@ func TestGetTagCountsNoIds(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
-
 
 func TestGetTagCountsDatabaseError(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)

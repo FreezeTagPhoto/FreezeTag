@@ -36,7 +36,6 @@ func TestGetUserOK(t *testing.T) {
 	assert.Equal(t, *testUser, got)
 }
 
-
 func TestGetUserUserIDServerError(t *testing.T) {
 	mockRepo := mocks.NewMockUserRepository(t)
 	mockRepo.EXPECT().GetUserByID(database.UserID(1)).Return(&database.PublicUser{}, errors.New("not found"))

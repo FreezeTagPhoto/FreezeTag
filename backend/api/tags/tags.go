@@ -197,8 +197,7 @@ func (te TagEndpoint) HandleGetImageTags(c *gin.Context) {
 // @failure     500 {object} api.StatusServerErrorResponse
 // @produce     application/json
 func (te TagEndpoint) HandleGetTagCounts(c *gin.Context) {
-	var ids []string
-	ids = c.QueryArray("ids")
+	ids := c.QueryArray("ids")
 	if len(ids) == 0 {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no ids specified"})
 		return
