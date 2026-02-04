@@ -3,7 +3,6 @@ package services
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/repositories"
 	"log"
@@ -74,15 +73,12 @@ func (s *DefaultAuthService) AddUser(username string, password string) (*databas
 
 func (s *DefaultAuthService) ValidateJWT(tokenString string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+	_, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
 		return []byte(JwtSecretKey), nil
 	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
 
 	if err != nil {
 		return nil, err
-	}
-	if !token.Valid {
-		return nil, fmt.Errorf("token not valid")
 	}
 	return claims, nil
 }
