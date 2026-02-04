@@ -20,7 +20,7 @@ import (
 func TestEchoedPluginInitializes(t *testing.T) {
 	// this works because cat echoes stdin
 	// and the simplest protocol that succeeds is READY -> READY -> SHUTDOWN -> SHUTDOWN
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cmd := exec.CommandContext(ctx, "cat")
 	plugin, err := PluginFromProcess("cat", cmd, cancel)
 	assert.NoError(t, err)
@@ -29,7 +29,7 @@ func TestEchoedPluginInitializes(t *testing.T) {
 }
 
 func TestEchoedPluginEchoes(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	cmd := exec.CommandContext(ctx, "cat")
 	plugin, err := PluginFromProcess("cat", cmd, cancel)
 	assert.NoError(t, err)
@@ -45,15 +45,27 @@ func TestEchoedPluginEchoes(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func initVenv(t *testing.T) {
-	t.Helper()
-	cleanup := func() {
-		exec.Command("./test_resources/teardown.sh").Run() //nolint:errcheck
-	}
-	cleanup()
-	t.Cleanup(cleanup)
-	err := exec.Command("./test_resources/setup.sh").Run()
+func TestPluginWithBadInitHook(t *testing.T) {
+	t.Cleanup(func() {
+		os.RemoveAll("test_resources/badinit/.venv") //nolint:errcheck
+	})
+	manifest, err := ReadManifest("test_resources/badinit")
 	require.NoError(t, err)
+	plugin, err := PluginFromManifest(manifest, t.Context())
+	assert.Error(t, err)
+	assert.Zero(t, plugin)
+}
+
+func TestPluginWithBadTeardownHook(t *testing.T) {
+	t.Cleanup(func() {
+		os.RemoveAll("test_resources/badteardown/.venv") //nolint:errcheck
+	})
+	manifest, err := ReadManifest("test_resources/badteardown")
+	require.NoError(t, err)
+	plugin, err := PluginFromManifest(manifest, t.Context())
+	require.NoError(t, err)
+	err = plugin.Shutdown()
+	assert.Error(t, err)
 }
 
 func createMockRepo(t *testing.T) *mocks.MockImageRepository {
@@ -62,54 +74,6 @@ func createMockRepo(t *testing.T) *mocks.MockImageRepository {
 	repo := mocks.NewMockImageRepository(t)
 	repo.EXPECT().RetrieveThumbnail(mock.AnythingOfType("ImageId"), uint(2)).Return(data, nil)
 	return repo
-}
-
-func TestVeryBasicPythonPlugin(t *testing.T) {
-	initVenv(t)
-	repo := createMockRepo(t)
-	ctx, cancel := context.WithCancel(t.Context())
-	cmd := exec.CommandContext(ctx, "./.venv/bin/python", "test_resources/skip_test.py")
-	plugin, err := PluginFromProcess("basic", cmd, cancel)
-	require.NoError(t, err)
-
-	err = ProcessImage(plugin, "process", database.ImageId(42), repo)
-	assert.NoError(t, err)
-	err = plugin.Shutdown()
-	assert.NoError(t, err)
-}
-
-func TestTaggingPythonPlugin(t *testing.T) {
-	initVenv(t)
-	repo := createMockRepo(t)
-	repo.EXPECT().AddImageTags(database.ImageId(42), []string{"foo", "bar"}).Return(repositories.ImageTagResult{})
-	ctx, cancel := context.WithCancel(t.Context())
-	cmd := exec.CommandContext(ctx, "./.venv/bin/python", "test_resources/tag_test.py")
-	plugin, err := PluginFromProcess("tagging", cmd, cancel)
-	require.NoError(t, err)
-
-	err = ProcessImage(plugin, "process", database.ImageId(42), repo)
-	assert.NoError(t, err)
-	err = plugin.Shutdown()
-	assert.NoError(t, err)
-}
-
-func TestPluginWithBadInitHook(t *testing.T) {
-	initVenv(t)
-	ctx, cancel := context.WithCancel(t.Context())
-	cmd := exec.CommandContext(ctx, "./.venv/bin/python", "test_resources/bad_init_hook.py")
-	plugin, err := PluginFromProcess("badinit", cmd, cancel)
-	assert.Error(t, err)
-	assert.Zero(t, plugin)
-}
-
-func TestPluginWithBadTeardownHook(t *testing.T) {
-	initVenv(t)
-	ctx, cancel := context.WithCancel(t.Context())
-	cmd := exec.CommandContext(ctx, "./.venv/bin/python", "test_resources/bad_shutdown_hook.py")
-	plugin, err := PluginFromProcess("badteardown", cmd, cancel)
-	require.NoError(t, err)
-	err = plugin.Shutdown()
-	assert.Error(t, err)
 }
 
 func TestTaggingPluginWithManifest(t *testing.T) {

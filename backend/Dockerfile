@@ -1,24 +1,30 @@
 # syntax=docker/dockerfile:1
-FROM alpine:latest
+FROM archlinux:latest
 
-COPY api /backend/api
-COPY cmd /backend/cmd
-COPY pkg /backend/pkg
-COPY .apk-requirements /backend/.apk-requirements
-COPY go.mod /backend/go.mod
-COPY go.sum /backend/go.sum
-COPY Makefile /backend/Makefile
+ARG BUILDTAGS=sqlite_math_functions,sqlite_foreign_keys
+
+RUN --mount=type=bind,source=./,target=/backend <<EOF
+set -e
+cd /backend
+pacman -Sy
+xargs -t -a .arch-requirements pacman -S --noconfirm
+go mod tidy -diff
+go install -tags=$BUILDTAGS ./cmd/server
+go clean -cache
+go clean -modcache
+EOF
+
+RUN mkdir -p /backend
+
+COPY <<EOT /backend/entrypoint.sh
+#!/bin/sh
+export PATH="$(go env GOPATH)/bin:$PATH"
+server
+EOT
+RUN chmod +x /backend/entrypoint.sh
 
 WORKDIR /backend
-
 ENV GIN_MODE=release
-ENV PATH=".go/bin:$PATH"
-
-RUN mkdir -p /backend/.apk-cache
-RUN apk update --cache-dir /backend/.apk-cache
-RUN xargs -t -a .apk-requirements apk add --cache-dir /backend/.apk-cache
-RUN make tidy
-
 EXPOSE 3824
 
-CMD ["make", "run"]
+CMD ["./entrypoint.sh"]

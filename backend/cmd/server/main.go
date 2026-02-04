@@ -21,10 +21,13 @@ import (
 	"freezetag/backend/pkg/services"
 
 	"log"
+	"os"
+	"path"
 	"strings"
 
 	docs "freezetag/backend/cmd/docs"
 
+	"github.com/joho/godotenv"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -33,7 +36,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const defaultImageFolder = "./images"
+const (
+	defaultDataDir = "./data"
+)
 
 type dependencies struct {
 	imageRepository repositories.ImageRepository
@@ -50,6 +55,7 @@ type dependencies struct {
 //
 // @basePath /
 func main() {
+	godotenv.Load(path.Join(defaultDataDir, ".env")) //nolint:errcheck
 	router := gin.Default()
 	docs.SwaggerInfo.BasePath = "/"
 	deps := initializeDependencies()
@@ -78,8 +84,8 @@ func initParserCollection() images.Parser {
 
 func initializeDependencies() *dependencies {
 	jobRepo := repositories.NewDefaultJobRepository()
-	imageRepo := initDefaultImageRepository(defaultImageFolder)
-	userRepo := initDefaultUserRepository()
+	imageRepo := initDefaultImageRepository(defaultDataDir)
+	userRepo := initDefaultUserRepository(defaultDataDir)
 
 	pluginService, err := services.InitDefaultPluginService("./plugins", imageRepo)
 	if err != nil {
@@ -104,21 +110,29 @@ func initializeDependencies() *dependencies {
 	}
 }
 
-func initDefaultUserRepository() repositories.UserRepository {
-	db, err := database.InitSQLiteUserDatabase("users.db")
+func initDefaultUserRepository(dataDir string) repositories.UserRepository {
+	err := os.MkdirAll(dataDir, os.ModePerm)
+	if err != nil {
+		log.Fatalf("failed to create data directory")
+	}
+	db, err := database.InitSQLiteUserDatabase(path.Join(dataDir, "users.db"))
 	if err != nil {
 		log.Fatalf("failed to initialize user database: %v", err.Error())
 	}
 	return repositories.InitDefaultUserRepository(db)
 }
 
-func initDefaultImageRepository(imageFolder string) repositories.ImageRepository {
-	db, err := database.InitSQLiteImageDatabase("database.db")
+func initDefaultImageRepository(dataDir string) repositories.ImageRepository {
+	err := os.MkdirAll(dataDir, os.ModePerm)
+	if err != nil {
+		log.Fatalf("failed to create data directory")
+	}
+	db, err := database.InitSQLiteImageDatabase(path.Join(dataDir, "database.db"))
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err.Error())
 	}
 	parserCollection := initParserCollection()
-	return repositories.InitImageRepository(db, parserCollection, imageFolder)
+	return repositories.InitImageRepository(db, parserCollection, path.Join(dataDir, "images"))
 }
 
 func RegisterEndpoints(router *gin.Engine, deps *dependencies) {

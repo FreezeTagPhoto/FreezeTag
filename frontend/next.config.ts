@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+    output: "standalone",
     experimental: {
         serverActions: {
             // This is basically completely arbitrary and should be set with a command line arg or env variable
