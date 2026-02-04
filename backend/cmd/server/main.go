@@ -111,7 +111,10 @@ func initializeDependencies() *dependencies {
 }
 
 func initDefaultUserRepository(dataDir string) repositories.UserRepository {
-	os.MkdirAll(dataDir, os.ModePerm)
+	err := os.MkdirAll(dataDir, os.ModePerm)
+	if err != nil {
+		log.Fatalf("failed to create data directory")
+	}
 	db, err := database.InitSQLiteUserDatabase(path.Join(dataDir, "users.db"))
 	if err != nil {
 		log.Fatalf("failed to initialize user database: %v", err.Error())
@@ -120,7 +123,10 @@ func initDefaultUserRepository(dataDir string) repositories.UserRepository {
 }
 
 func initDefaultImageRepository(dataDir string) repositories.ImageRepository {
-	os.MkdirAll(dataDir, os.ModePerm)
+	err := os.MkdirAll(dataDir, os.ModePerm)
+	if err != nil {
+		log.Fatalf("failed to create data directory")
+	}
 	db, err := database.InitSQLiteImageDatabase(path.Join(dataDir, "database.db"))
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err.Error())
