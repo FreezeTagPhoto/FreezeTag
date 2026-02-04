@@ -288,7 +288,7 @@ func TestRunUploadJobsRespectsContextCancellation(t *testing.T) {
 
 	i.AssertNotCalled(t, "StoreImageBytes")
 	m.AssertNotCalled(t, "CompleteFileJob")
-	m.EXPECT().WaitFinished(batch.UUID).Return(doneChannel)
+	m.EXPECT().WaitFinished(batch.UUID).Return(doneChannel).Maybe()
 	p.AssertNotCalled(t, "AllPlugins")
 
 	err := service.RunUploadJobs(batch)
