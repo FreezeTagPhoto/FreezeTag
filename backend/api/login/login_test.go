@@ -192,3 +192,23 @@ func TestLoginExistingLoginCookieNoSub(t *testing.T) {
 	expected := api.StatusLoginFail{Error: "no sub user id in token"}
 	assert.Equal(t, expected, got)
 }
+
+func TestLoginNoExistingLoginCookie(t *testing.T) {
+
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+
+	router := gin.Default()
+
+	req, err := http.NewRequest("GET", "/login", nil)
+	assert.NoError(t, err)
+	InitLoginEndpoint(NewMockAuthService).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	var got api.StatusLoginFail
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expected := api.StatusLoginFail{Error: "not authenticated"}
+	assert.Equal(t, expected, got)
+}

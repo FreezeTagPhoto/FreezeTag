@@ -31,7 +31,7 @@ func (ue UserEndpoint) RegisterEndpoints(router gin.IRoutes) {
 // @Param        id   path      int  true  "User ID"
 // @Success      200  {object}  database.PublicUser
 // @Failure      400  {object}  api.StatusBadRequestResponse
-// @Failure      404  {object}  api.StatusBadRequestResponse
+// @Failure      500  {object}  api.StatusBadRequestResponse
 // @Router       /user/{id} [get]
 func (ue UserEndpoint) GetUser(c *gin.Context) {
 	userIDString := c.Param("id")
@@ -50,6 +50,14 @@ func (ue UserEndpoint) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// @Summary      List the users in the system
+// @Description  Retrieves a list of all users in the system.
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}   database.PublicUser
+// @Failure      500  {object}  api.StatusBadRequestResponse
+// @Router       /users [get]
 func (ue UserEndpoint) ListUsers(c *gin.Context) {
 	users, err := ue.userRepo.ListAllUsers()
 	if err != nil {

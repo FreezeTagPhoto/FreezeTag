@@ -48,7 +48,7 @@ func TestGetUserById(t *testing.T) {
 		Once()
 
 	userRepo := InitDefaultUserRepository(mockDB)
-	userGot, err := userRepo.GetUserById(database.UserID(100))
+	userGot, err := userRepo.GetUserByID(database.UserID(100))
 	require.NoError(t, err)
 	assert.Equal(t, user, userGot)
 }
@@ -74,7 +74,7 @@ func TestGetUserByIdNotFound(t *testing.T) {
 		Once()
 
 	userRepo := InitDefaultUserRepository(mockDB)
-	_, err := userRepo.GetUserById(database.UserID(1))
+	_, err := userRepo.GetUserByID(database.UserID(1))
 	require.Error(t, err)
 	assert.Equal(t, ErrUserNotFound, err)
 }
@@ -102,23 +102,29 @@ func TestGetUserByIdInternalError(t *testing.T) {
 		Once()
 
 	userRepo := InitDefaultUserRepository(mockDB)
-	_, err2 := userRepo.GetUserById(database.UserID(1))
+	_, err2 := userRepo.GetUserByID(database.UserID(1))
 	require.Error(t, err2)
 	assert.Equal(t, err, err2)
 }
 
 func TestListUsernames(t *testing.T) {
 	mockDB := mockUserDatabase.NewMockUserDatabase(t)
-	expectedUsernames := []string{"cant", "think", "of", "more", "usernames"}
+	expectedUsers := []*database.PublicUser{
+		{Username: "cant"},
+		{Username: "think"},
+		{Username: "of"},
+		{Username: "more"},
+		{Username: "usernames"},
+	}
 	mockDB.EXPECT().
-		ListUsernames().
-		Return(expectedUsernames, nil).
+		ListUsers().
+		Return(expectedUsers, nil).
 		Once()
 
 	userRepo := InitDefaultUserRepository(mockDB)
-	usernames, err := userRepo.ListUsernames()
+	users, err := userRepo.ListAllUsers()
 	require.NoError(t, err)
-	assert.Equal(t, expectedUsernames, usernames)
+	assert.Equal(t, expectedUsers, users)
 }
 
 func TestAddUserDuplicateUsername(t *testing.T) {

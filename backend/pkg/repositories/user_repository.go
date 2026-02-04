@@ -10,12 +10,14 @@ import (
 
 type UserRepository interface {
 	GetUserByUsername(username string) (*database.PublicUser, error)
-	GetUserById(id database.UserID) (*database.PublicUser, error)
+	GetUserByID(id database.UserID) (*database.PublicUser, error)
 	AddUser(username string, passwordHash string) (*database.PublicUser, error)
 
 	GetUserPasswordHash(userID database.UserID) (string, error)
 	ChangePassword(userID database.UserID, newPasswordHash string) error
 	ListUsernames() ([]string, error)
+	ListAllUsers() ([]*database.PublicUser, error)
+
 }
 
 var (
@@ -27,14 +29,14 @@ var (
 type DefaultUserRepository struct {
 	database.UserDatabase
 }
-
+	
 func InitDefaultUserRepository(db database.UserDatabase) UserRepository {
 	return &DefaultUserRepository{
 		UserDatabase: db,
 	}
 }
 
-func (r *DefaultUserRepository) GetUserById(id database.UserID) (*database.PublicUser, error) {
+func (r *DefaultUserRepository) GetUserByID(id database.UserID) (*database.PublicUser, error) {
 	user, err := r.UserDatabase.GetUserById(id)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -91,5 +93,17 @@ func (r *DefaultUserRepository) ChangePassword(userID database.UserID, newPasswo
 }
 
 func (r *DefaultUserRepository) ListUsernames() ([]string, error) {
-	return r.UserDatabase.ListUsernames()
+	users, err := r.UserDatabase.ListUsers()
+	if err != nil {
+		return nil, err
+	}
+	var usernames []string
+	for _, user := range users {
+		usernames = append(usernames, user.Username)
+	}
+	return usernames, nil
+}
+
+func (r *DefaultUserRepository) ListAllUsers() ([]*database.PublicUser, error) {
+	return r.UserDatabase.ListUsers()
 }

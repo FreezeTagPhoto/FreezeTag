@@ -29,8 +29,8 @@ type UserDatabase interface {
 	SetUserPassword(userID UserID, newPasswordHash string) (bool, error)
 	// Get Password Hash for a User by ID, return error if ID is not found
 	GetPasswordHash(userID UserID) (string, error)
-	// List all usernames in the database
-	ListUsernames() ([]string, error)
+	// List all users in the database
+	ListUsers() ([]*PublicUser, error)
 }
 
 type SqliteUserDatabase struct {
@@ -142,21 +142,21 @@ func (s SqliteUserDatabase) SetUserPassword(userID UserID, newPasswordHash strin
 	return rowsAffected > 0, nil
 }
 
-func (s SqliteUserDatabase) ListUsernames() ([]string, error) {
-	rows, err := s.db.Query("SELECT username FROM Users")
+func (s SqliteUserDatabase) ListUsers() ([]*PublicUser, error) {
+	rows, err := s.db.Query("SELECT id, username, createdAt, passwordHash FROM Users")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close() //nolint:errcheck
 
-	var usernames []string
+	var users []*PublicUser
 	for rows.Next() {
-		var username string
-		err := rows.Scan(&username)
+		var user PublicUser
+		err := rows.Scan(&user.ID, &user.Username, &user.CreatedAt, &user.PasswordHash)
 		if err != nil {
 			return nil, err
 		}
-		usernames = append(usernames, username)
+		users = append(users, &user)
 	}
-	return usernames, nil
+	return users, nil
 }

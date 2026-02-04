@@ -82,3 +82,21 @@ func TestCreateUserFailure(t *testing.T) {
 	expected := api.StatusBadRequestResponse{Error: "failed to create user: an error"}
 	assert.Equal(t, expected, got)
 }
+
+func TestCreateUserNoBind(t *testing.T) {
+	router := gin.Default()
+
+	req, err := http.NewRequest("POST", "/createuser", bytes.NewReader([]byte("not json")))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	InitCreateUserEndpoint(nil).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.StatusBadRequestResponse
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expected := api.StatusBadRequestResponse{Error: "invalid request"}
+	assert.Contains(t, got.Error, expected.Error)
+}
