@@ -51,5 +51,10 @@ func (ue UserEndpoint) GetUser(c *gin.Context) {
 }
 
 func (ue UserEndpoint) ListUsers(c *gin.Context) {
-	// Implementation for listing users would go here
+	users, err := ue.userRepo.ListAllUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "Failed to list users"})
+		return
+	}
+	c.JSON(http.StatusOK, users)
 }
