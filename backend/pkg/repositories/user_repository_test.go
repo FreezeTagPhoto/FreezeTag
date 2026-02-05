@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	mockUserDatabase "freezetag/backend/mocks/UserDatabase"
 	"freezetag/backend/pkg/database"
@@ -107,7 +108,7 @@ func TestGetUserByIdInternalError(t *testing.T) {
 	assert.Equal(t, err, err2)
 }
 
-func TestListUsernames(t *testing.T) {
+func TestListUsers(t *testing.T) {
 	mockDB := mockUserDatabase.NewMockUserDatabase(t)
 	expectedUsers := []*database.PublicUser{
 		{Username: "cant"},
@@ -262,4 +263,37 @@ func TestAddUserSuccess(t *testing.T) {
 	userGot, err := userRepo.AddUser("newuser", "hashedpassword")
 	require.NoError(t, err)
 	assert.Equal(t, user, userGot)
+}
+
+func TestListUsernames(t *testing.T) {
+	mockDB := mockUserDatabase.NewMockUserDatabase(t)
+	expectedUsers := []*database.PublicUser{
+		{Username: "cant"},
+		{Username: "think"},
+		{Username: "of"},
+		{Username: "more"},
+	}
+	mockDB.EXPECT().
+		ListUsers().
+		Return(expectedUsers, nil).
+		Once()
+
+	userRepo := InitDefaultUserRepository(mockDB)
+	users, err := userRepo.ListUsernames()
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"cant", "think", "of", "more"}, users)
+}
+
+func TestListUsernamesErr(t *testing.T) {
+	mockDB := mockUserDatabase.NewMockUserDatabase(t)
+
+	mockDB.EXPECT().
+		ListUsers().
+		Return(nil, errors.New("an error")).
+		Once()
+
+	userRepo := InitDefaultUserRepository(mockDB)
+	users, err := userRepo.ListUsernames()
+	require.Error(t, err)
+	assert.Nil(t, users)
 }

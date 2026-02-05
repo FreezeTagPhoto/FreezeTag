@@ -504,18 +504,18 @@ func (db SqliteImageDatabase) GetTagCounts(imageIds []string) (map[string]int64,
 		return map[string]int64{}, nil
 	}
 	var value strings.Builder
+	params := make([]any, len(imageIds))
+
 	value.WriteByte('(')
-	for i := range imageIds {
+	for i, id := range imageIds {
 		value.WriteString("?")
 		if i < len(imageIds)-1 {
 			value.WriteString(", ")
 		}
-	}
-	value.WriteByte(')')
-	params := make([]any, len(imageIds))
-	for i, id := range imageIds {
 		params[i] = id
 	}
+	value.WriteByte(')')
+
 	query := "SELECT tag, COUNT(Tags.id) as count FROM Tags LEFT JOIN ImageTags on Tags.id = ImageTags.tagId WHERE ImageTags.imageId IN " + value.String() + " GROUP BY Tags.tag"
 	rows, err := db.db.Query(query, params...)
 	if err != nil {
@@ -558,4 +558,3 @@ func nullFloat64Ptr(n sql.NullFloat64) *float64 {
 	}
 	return nil
 }
-
