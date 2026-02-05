@@ -34,7 +34,7 @@ type ImageDatabase interface {
 	// Note: This function WILL fail silently if you ask for tags that haven't been added. Only use this if you don't care about the tags absolutely existing.
 	GetTags([]string) ([]TagId, error)
 	// Get all tags present in the database
-	GetAllTags() ([]string, error)
+	GetAllTags() (map[string]int64, error)
 	// Get the thumbnail sizes an image has
 	GetImageThumbnailSizes(ImageId) ([]int, error)
 	// Add an image file and its metadata to the database
@@ -69,6 +69,10 @@ type ImageDatabase interface {
 	//
 	// returns: whether the thumbnail was removed
 	RemoveImageThumbnail(ImageId, int) (bool, error)
+	// Gets the counts of each tag in the provided list
+	//
+	// returns: a map of tag name to count
+	GetTagCounts([]string) (map[string]int64, error)
 }
 
 type SqliteImageDatabase struct {
@@ -283,22 +287,23 @@ func (db SqliteImageDatabase) RemoveTags(tags []string) (int, error) {
 	return int(rows), nil
 }
 
-func (db SqliteImageDatabase) GetAllTags() ([]string, error) {
-	rows, err := db.db.Query("SELECT tag FROM Tags")
+func (db SqliteImageDatabase) GetAllTags() (map[string]int64, error) {
+	rows, err := db.db.Query("SELECT tag, COUNT(Tags.id) as count FROM Tags LEFT JOIN ImageTags ON Tags.id = ImageTags.tagId GROUP BY tag")
 	if err != nil {
-		return []string{}, err
+		return map[string]int64{}, err
 	}
 	defer rows.Close() //nolint:errcheck
-	tags := []string{}
+	tags := map[string]int64{}
 	for rows.Next() {
 		if err := rows.Err(); err != nil {
-			return []string{}, err
+			return map[string]int64{}, err
 		}
 		var tag string
-		if err := rows.Scan(&tag); err != nil {
-			return []string{}, err
+		var count int64
+		if err := rows.Scan(&tag, &count); err != nil {
+			return map[string]int64{}, err
 		}
-		tags = append(tags, tag)
+		tags[tag] = count
 	}
 	return tags, nil
 }
@@ -492,6 +497,44 @@ func (db SqliteImageDatabase) RemoveImageThumbnail(id ImageId, size int) (bool, 
 		return false, err
 	}
 	return rows != 0, nil
+}
+
+func (db SqliteImageDatabase) GetTagCounts(imageIds []string) (map[string]int64, error) {
+	if len(imageIds) == 0 {
+		return map[string]int64{}, nil
+	}
+	var value strings.Builder
+	params := make([]any, len(imageIds))
+
+	value.WriteByte('(')
+	for i, id := range imageIds {
+		value.WriteString("?")
+		if i < len(imageIds)-1 {
+			value.WriteString(", ")
+		}
+		params[i] = id
+	}
+	value.WriteByte(')')
+
+	query := "SELECT tag, COUNT(Tags.id) as count FROM Tags LEFT JOIN ImageTags on Tags.id = ImageTags.tagId WHERE ImageTags.imageId IN " + value.String() + " GROUP BY Tags.tag"
+	rows, err := db.db.Query(query, params...)
+	if err != nil {
+		return map[string]int64{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	counts := make(map[string]int64)
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return map[string]int64{}, err
+		}
+		var tag string
+		var count int64
+		if err := rows.Scan(&tag, &count); err != nil {
+			return map[string]int64{}, err
+		}
+		counts[tag] = count
+	}
+	return counts, nil
 }
 
 // helper functions to convert sql.Null* to pointers

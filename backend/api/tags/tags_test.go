@@ -2,6 +2,7 @@ package tags
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"freezetag/backend/api"
 	mocks "freezetag/backend/mocks/ImageRepository"
@@ -20,7 +21,7 @@ import (
 
 func TestGetAllTags(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
-	m.EXPECT().RetrieveAllTags().Return([]string{"1", "2", "3"}, nil)
+	m.EXPECT().RetrieveAllTags().Return(map[string]int64{"1": 1, "2": 1, "3": 1}, nil)
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
 
@@ -28,15 +29,15 @@ func TestGetAllTags(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/tag/list", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := []string{"1", "2", "3"}
-	var got []string
+	expected := map[string]int64{"1": 1, "2": 1, "3": 1}
+	var got map[string]int64
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-	assert.ElementsMatch(t, expected, got)
+	assert.Equal(t, expected, got)
 }
 
 func TestGetAllTagsError(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
-	m.EXPECT().RetrieveAllTags().Return([]string{}, fmt.Errorf("mock error"))
+	m.EXPECT().RetrieveAllTags().Return(map[string]int64{}, fmt.Errorf("mock error"))
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
 
@@ -393,6 +394,87 @@ func TestHandleDeleteBadId(t *testing.T) {
 		Errors:  []repositories.ImageTagFail{{Reason: "unknown id a", Id: -1}, {Reason: "unknown id 9223372036854775808", Id: -1}},
 	}
 	var got api.StatusOkTagDeleteResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestGetTagCounts(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		GetTagCounts(mock.Anything).
+		Return(map[string]int64{"1": 2, "2": 3}, nil)
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/tag/counts", nil)
+	q := req.URL.Query()
+	q.Add("id", "1")
+	q.Add("id", "2")
+	req.URL.RawQuery = q.Encode()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	expected := map[string]int64{"1": 2, "2": 3}
+	var got map[string]int64
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestGetTagCountsBadId(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		GetTagCounts(mock.Anything).
+		Return(map[string]int64{"1": 2, "2": 3}, nil)
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/tag/counts", nil)
+	q := req.URL.Query()
+	q.Add("id", "1")
+	q.Add("id", "3")
+	req.URL.RawQuery = q.Encode()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	expected := map[string]int64{"1": 2, "2": 3}
+	var got map[string]int64
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestGetTagCountsNoIds(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/tag/counts", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	expected := api.StatusBadRequestResponse{Error: "no ids specified"}
+	var got api.StatusBadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestGetTagCountsDatabaseError(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		GetTagCounts(mock.Anything).
+		Return(nil, errors.New("database error"))
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/tag/counts", nil)
+	q := req.URL.Query()
+	q.Add("id", "1")
+	q.Add("id", "3")
+	req.URL.RawQuery = q.Encode()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	expected := api.StatusBadRequestResponse{Error: "database error"}
+	var got api.StatusBadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }

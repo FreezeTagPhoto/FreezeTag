@@ -256,7 +256,7 @@ func TestSearchImageOrderedSomeReturnedIDs(t *testing.T) {
 }
 
 func TestRetrieveAllTagsSuccess(t *testing.T) {
-	expected := []string{"tag1", "tag2"}
+	expected := map[string]int64{"tag1": 1, "tag2": 1}
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().GetAllTags().Return(expected, nil)
 	parser := mockParser.NewMockParser(t)
@@ -269,7 +269,7 @@ func TestRetrieveAllTagsSuccess(t *testing.T) {
 
 func TestRetrieveAllTagsFail(t *testing.T) {
 	mockdb := mockDatabase.NewMockImageDatabase(t)
-	mockdb.EXPECT().GetAllTags().Return([]string{}, fmt.Errorf("mock error"))
+	mockdb.EXPECT().GetAllTags().Return(map[string]int64{}, fmt.Errorf("mock error"))
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "")
 
@@ -461,6 +461,39 @@ func TestGetImageMetadataFail9(t *testing.T) {
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
 
 	_, err := repo.GetImageMetadata(1)
+	assert.NotNil(t, err, "error should not be nil")
+	assert.Equal(t, "mock error", err.Error())
+}
+
+func TestGetTagCount(t *testing.T) {
+	expected := map[string]int64{
+		"tag1": 5,
+		"tag2": 10,
+	}
+
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetTagCounts(mock.Anything).
+		Return(expected, nil)
+
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
+
+	result, err := repo.GetTagCounts([]string{"tag1", "tag2"})
+	assert.Nil(t, err, "error should be nil")
+	assert.Equal(t, expected, result)
+}
+
+func TestGetTagCountFail(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetTagCounts(mock.Anything).
+		Return(nil, fmt.Errorf("mock error"))
+
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
+
+	_, err := repo.GetTagCounts([]string{"tag1", "tag2"})
 	assert.NotNil(t, err, "error should not be nil")
 	assert.Equal(t, "mock error", err.Error())
 }

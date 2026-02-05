@@ -171,3 +171,33 @@ func TestLoginCreatesValidJWT(t *testing.T) {
 		t.Errorf("Expected sub claim %d, got %v", uid, sub)
 	}
 }
+
+func TestValidateJWT(t *testing.T) {
+	auth := InitDefaultAuthService(nil)
+	userID := database.UserID(456)
+	tokenString, err := createToken(userID)
+	require.NoError(t, err)
+	claims, err := auth.ValidateJWT(tokenString)
+	require.NoError(t, err)
+	require.Equal(t, fmt.Sprintf("%d", userID), claims["sub"])
+}
+
+func TestValidateJWTinvalidToken(t *testing.T) {
+	auth := InitDefaultAuthService(nil)
+	claims, err := auth.ValidateJWT("invalid token")
+	require.Error(t, err)
+	require.Nil(t, claims)
+}
+
+func TestValidateJWTexpiredToken(t *testing.T) {
+	auth := InitDefaultAuthService(nil)
+	expiredToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": "789",
+		"exp": time.Now().Add(-1 * time.Hour).Unix(),
+	})
+	tokenString, err := expiredToken.SignedString([]byte(JwtSecretKey))
+	require.NoError(t, err)
+	claims, err := auth.ValidateJWT(tokenString)
+	require.Error(t, err)
+	require.Nil(t, claims)
+}

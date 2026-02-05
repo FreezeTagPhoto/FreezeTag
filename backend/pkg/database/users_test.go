@@ -112,9 +112,10 @@ func TestListUsernames(t *testing.T) {
 	_, err = db.AddUser("bart", "hash2")
 	require.NoError(t, err)
 
-	usernames, err := db.ListUsernames()
+	users, err := db.ListUsers()
 	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"homer", "bart"}, usernames)
+	assert.Len(t, users, 2)
+	assert.ElementsMatch(t, []string{"homer", "bart"}, []string{users[0].Username, users[1].Username})
 }
 
 func TestSetUserPassword(t *testing.T) {
@@ -172,11 +173,11 @@ func TestCreatedAtSet(t *testing.T) {
 	assert.True(t, user.CreatedAt > 0)
 }
 
-func TestListUsernamesEmpty(t *testing.T) {
+func TestListUsersEmpty(t *testing.T) {
 	db := createTempUserDatabase(t)
-	names, err := db.ListUsernames()
+	users, err := db.ListUsers()
 	require.NoError(t, err)
-	assert.Equal(t, 0, len(names))
+	assert.Equal(t, 0, len(users))
 }
 
 func TestSetUserPasswordDoesNotAffectOthers(t *testing.T) {

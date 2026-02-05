@@ -26,6 +26,7 @@ func (te TagEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.POST("/tag/add", te.HandlePost)
 	e.GET("/tag/list", te.HandleGetAllTags)
 	e.GET("/tag/list/:id", te.HandleGetImageTags)
+	e.GET("/tag/counts", te.HandleGetTagCounts)
 }
 
 // @summary     Delete tags
@@ -184,4 +185,28 @@ func (te TagEndpoint) HandleGetImageTags(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, result)
+}
+
+// @summary     Get tag counts
+// @description Get all tags and the total count of the overlap for each tag associated with the provided image IDs
+// @tags        tags, search
+// @router      /tag/counts [get]
+// @param       id query []string true "image IDs to get tag counts for" collectionFormat(multi)
+// @success     200 {object} api.TagCounts
+// @failure     400 {object} api.StatusBadRequestResponse
+// @failure     500 {object} api.StatusServerErrorResponse
+// @produce     application/json
+func (te TagEndpoint) HandleGetTagCounts(c *gin.Context) {
+	ids := c.QueryArray("id")
+	if len(ids) == 0 {
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no ids specified"})
+		return
+	}
+
+	result, err := te.imageRepository.GetTagCounts(ids)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, api.TagCounts(result))
 }

@@ -340,7 +340,7 @@ func TestRunUploadJobsRespectsContextCancellationStress(t *testing.T) {
 		CompleteFileJob(batchID, mock.AnythingOfType("string"), mock.Anything).
 		Return(nil).
 		Maybe()
-	m.EXPECT().WaitFinished(batch.UUID).Return(doneChannel)
+	m.EXPECT().WaitFinished(batch.UUID).Return(doneChannel).Maybe()
 	err := service.RunUploadJobs(batch)
 	require.NoError(t, err)
 
