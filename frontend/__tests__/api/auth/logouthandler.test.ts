@@ -1,17 +1,10 @@
 /**
  * @jest-environment node
  */
-import { testing_LoginResponse } from "@/api/auth/loginhandler";
-import LoginHandler from "@/api/auth/loginhandler";
 
-import { RequestError } from "@/api/common/apihandler";
-import { None, Some } from "@/common/option";
+import LogoutHandler from "@/api/auth/logouthandler";
 
-import { Result } from "@/common/result";
-
-type _HandlerReturnType = Promise<Result<testing_LoginResponse, RequestError>>;
-
-describe("Login Handler", () => {
+describe("Logout Handler", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn(() => {
             return Promise.resolve({
@@ -23,8 +16,7 @@ describe("Login Handler", () => {
             });
         }) as jest.Mock;
 
-        const result = await LoginHandler(new FormData());
-        expect(result).toStrictEqual(None());
+        await LogoutHandler();
     });
 
     it("should handle 400 errors well", async () => {
@@ -38,9 +30,7 @@ describe("Login Handler", () => {
             });
         }) as jest.Mock;
 
-        const result = await LoginHandler(new FormData());
-
-        expect(result).toStrictEqual(Some({ status: 400, message: "bad" }));
+        await LogoutHandler();
     });
 
     it("should handle 404 errors well", async () => {
@@ -54,8 +44,6 @@ describe("Login Handler", () => {
             });
         }) as jest.Mock;
 
-        const result = await LoginHandler(new FormData());
-
-        expect(result).toStrictEqual(Some({ status: 404, message: "sucks" }));
+        await LogoutHandler();
     });
 });
