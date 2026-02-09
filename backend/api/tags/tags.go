@@ -148,9 +148,9 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 // @summary     List all tags
 // @description Get all the tags in the database
 // @produce     application/json
-// @tags        tags, search
+// @tags        tags
 // @router      /tag/list [get]
-// @success     200 {array}  string
+// @success     200 {object} api.TagCounts
 // @failure     500 {object} api.StatusServerErrorResponse
 func (te TagEndpoint) HandleGetAllTags(c *gin.Context) {
 	result, err := te.imageRepository.RetrieveAllTags()
@@ -158,7 +158,7 @@ func (te TagEndpoint) HandleGetAllTags(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, api.TagCounts(result))
 }
 
 // @summary     List image tags
@@ -167,7 +167,7 @@ func (te TagEndpoint) HandleGetAllTags(c *gin.Context) {
 // @tags        tags
 // @router      /tag/list/{id} [get]
 // @param       id path int true "image ID to get the tags of"
-// @success     200 {array}  string
+// @success     200 {array} string
 // @failure     400 {object} api.StatusBadRequestResponse
 // @failure     500 {object} api.StatusServerErrorResponse
 func (te TagEndpoint) HandleGetImageTags(c *gin.Context) {
@@ -189,7 +189,7 @@ func (te TagEndpoint) HandleGetImageTags(c *gin.Context) {
 
 // @summary     Get tag counts
 // @description Get all tags and the total count of the overlap for each tag associated with the provided image IDs
-// @tags        tags, search
+// @tags        tags
 // @router      /tag/counts [get]
 // @param       id query []string true "image IDs to get tag counts for" collectionFormat(multi)
 // @success     200 {object} api.TagCounts
