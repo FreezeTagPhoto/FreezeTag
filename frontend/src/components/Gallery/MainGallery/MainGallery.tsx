@@ -17,7 +17,11 @@ import TagAdder from "@/api/tags/tagadder";
 import TagRemover from "@/api/tags/tagremover";
 import Pill from "@/components/UI/Pill/Pill";
 import { useCachedById } from "@/common/gallery/cache";
-import { formatDate, formatLocation, formatCamera } from "@/common/gallery/format";
+import {
+    formatDate,
+    formatLocation,
+    formatCamera,
+} from "@/common/gallery/format";
 import { normalizeTag, rankTag } from "@/common/gallery/tags";
 
 export type GalleryProps = {
@@ -668,7 +672,9 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                     </div>
                                     <div className={styles.detailValue}>
                                         {tagsError ? (
-                                            <span className={styles.inlineError}>
+                                            <span
+                                                className={styles.inlineError}
+                                            >
                                                 {tagsError}
                                             </span>
                                         ) : tagsLoading &&
@@ -765,7 +771,9 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                             className={`${styles.tagPill} ${styles.tagAddPill}`}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setAddOpen(true);
+                                                                setAddOpen(
+                                                                    true,
+                                                                );
                                                                 setAddValue("");
                                                                 setTagSuggestIndex(
                                                                     0,
@@ -1080,7 +1088,9 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                                                 styles.tagSuggestLabel
                                                                                             }
                                                                                         >
-                                                                                            {t}
+                                                                                            {
+                                                                                                t
+                                                                                            }
                                                                                         </span>
                                                                                     </button>
                                                                                 ),
