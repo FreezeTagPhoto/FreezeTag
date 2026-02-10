@@ -72,12 +72,12 @@ describe("Tag Getter", () => {
                 status: 200,
                 ok: true,
                 json: () => {
-                    return {};
+                    return {"sus": 1};
                 },
             });
         }) as jest.Mock;
 
         const result = await TagGetter(0);
-        expect(result).toStrictEqual(Ok({}));
+        expect(result).toStrictEqual(Ok(["sus"]));
     });
 });
