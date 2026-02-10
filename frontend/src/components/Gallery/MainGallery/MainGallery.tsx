@@ -12,6 +12,8 @@ import styles from "./MainGallery.module.css";
 import GalleryImage from "../GalleryImage/GalleryImage";
 import MetadataGetter, { ImageMetadata } from "@/api/metadata/metadatagetter";
 import TagGetter from "@/api/tags/taggetter";
+import TagAdder from "@/api/tags/tagadder";
+import TagRemover from "@/api/tags/tagremover";
 import Pill from "@/components/UI/Pill/Pill";
 
 export type GalleryProps = {
