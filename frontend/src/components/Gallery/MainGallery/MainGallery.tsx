@@ -4,7 +4,7 @@ import {
     useEffect,
     useState,
     useRef,
-    MouseEvent,
+    MouseEvent as ReactMouseEvent,
     KeyboardEvent as ReactKeyboardEvent,
     useCallback,
 } from "react";
@@ -13,6 +13,13 @@ import GalleryImage from "../GalleryImage/GalleryImage";
 import MetadataGetter, { ImageMetadata } from "@/api/metadata/metadatagetter";
 import TagGetter from "@/api/tags/taggetter";
 import Pill from "@/components/UI/Pill/Pill";
+import { useCachedById } from "@/common/gallery/cache";
+import {
+    formatDate,
+    formatLocation,
+    formatCamera,
+} from "@/common/gallery/format";
+import { useTagEditor } from "@/common/gallery/tageditor";
 
 export type GalleryProps = {
     image_ids: number[];
@@ -21,35 +28,6 @@ export type GalleryProps = {
 
 // point (fx, fy) on image expressed as fraction of width/height (after zoom)
 type PendingPan = null | { fx: number; fy: number };
-
-// if int64 timestamp is huge, treat as ms, otherwise seconds
-function toDate(ts: number): Date {
-    return new Date(ts > 1e12 ? ts : ts * 1000);
-}
-
-function formatDate(ts: number | null): string {
-    if (ts === null) return "—";
-    const d = toDate(ts);
-    return new Intl.DateTimeFormat(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-    }).format(d);
-}
-
-function formatLocation(lat: number | null, lon: number | null): string {
-    if (lat === null || lon === null) return "—";
-    return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-}
-
-function formatCamera(make: string | null, model: string | null): string {
-    const parts = [make, model].filter(
-        (x) => x && x.trim().length > 0,
-    ) as string[];
-    return parts.length ? parts.join(" ") : "—";
-}
 
 export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
     // Full Screen Preview Handling
@@ -66,94 +44,24 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
     // remember where to pan after zoom has been applied
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
 
-    // metadata state
-    const [metadataById, setMetadataById] = useState<
-        Record<number, ImageMetadata>
-    >({});
-    const [metadataLoading, setMetadataLoading] = useState(false);
-    const [metadataError, setMetadataError] = useState<string | null>(null);
+    // metadata + tags: cached per image id
+    const metadata = useCachedById<ImageMetadata>(selectedId, MetadataGetter);
+    const tags = useCachedById<string[]>(selectedId, TagGetter);
 
-    const currentMetadata: ImageMetadata | null =
-        selectedId !== null ? (metadataById[selectedId] ?? null) : null;
+    const metadataLoading = metadata.loading;
+    const metadataError = metadata.error.some ? metadata.error.value : null;
+    const currentMetadata: ImageMetadata | null = metadata.current.some
+        ? metadata.current.value
+        : null;
 
-    // fetch metadata whenever selectedId changes
-    useEffect(() => {
-        if (selectedId === null) return;
+    const tagsById = tags.byId;
+    const setTagsById = tags.setById;
+    const tagsLoading = tags.loading;
+    const tagsError = tags.error.some ? tags.error.value : null;
 
-        // already cached
-        if (metadataById[selectedId]) {
-            setMetadataError(null);
-            setMetadataLoading(false);
-            return;
-        }
-
-        let cancelled = false;
-
-        (async () => {
-            setMetadataLoading(true);
-            setMetadataError(null);
-
-            const res = await MetadataGetter(selectedId);
-
-            if (cancelled) return;
-
-            if (!res.ok) {
-                setMetadataError(res.error.message);
-                setMetadataLoading(false);
-                return;
-            }
-
-            setMetadataById((prev) => ({ ...prev, [selectedId]: res.value }));
-            setMetadataLoading(false);
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedId, metadataById]);
-
-    // tags state
-    const [tagsById, setTagsById] = useState<Record<number, string[]>>({});
-    const [tagsLoading, setTagsLoading] = useState(false);
-    const [tagsError, setTagsError] = useState<string | null>(null);
-
-    const currentTags: string[] | null =
-        selectedId !== null ? (tagsById[selectedId] ?? null) : null;
-
-    useEffect(() => {
-        if (selectedId === null) return;
-
-        // already cached
-        if (tagsById[selectedId]) {
-            setTagsError(null);
-            setTagsLoading(false);
-            return;
-        }
-
-        let cancelled = false;
-
-        (async () => {
-            setTagsLoading(true);
-            setTagsError(null);
-
-            const res = await TagGetter(selectedId);
-
-            if (cancelled) return;
-
-            if (!res.ok) {
-                setTagsError(res.error.message);
-                setTagsLoading(false);
-                return;
-            }
-
-            setTagsById((prev) => ({ ...prev, [selectedId]: res.value }));
-            setTagsLoading(false);
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedId, tagsById]);
+    const currentTags: string[] | null = tags.current.some
+        ? tags.current.value
+        : null;
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -218,7 +126,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
         setSelectedId(null);
     };
 
-    const stopPropagation = (e: MouseEvent<HTMLDivElement>) => {
+    const stopPropagation = (e: ReactMouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
     };
 
@@ -279,7 +187,9 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
         setPendingPan({ fx: 0.5, fy: 0.5 });
     };
 
-    const handleZoomButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
+    const handleZoomButtonClick = (
+        event: ReactMouseEvent<HTMLButtonElement>,
+    ) => {
         event.stopPropagation();
         if (zoom === 1) {
             zoomInCentered();
@@ -290,7 +200,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
 
     // if click the image at 1×, it zooms to 2× and pans so clicked spot is centered
     // if click again at 2×, it zooms back out.
-    const handleImageClick = (event: MouseEvent<HTMLImageElement>) => {
+    const handleImageClick = (event: ReactMouseEvent<HTMLImageElement>) => {
         const scroller = scrollRef.current;
         if (!scroller) return; // if no scroll container, escape
 
@@ -335,6 +245,43 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
         // clear so this runs only once per zoom action
         setPendingPan(null);
     }, [zoom, pendingPan]);
+
+    const {
+        tagMutating,
+        tagMutateError,
+        tagMutateInfo,
+
+        addOpen,
+        addValue,
+        addInputRef,
+        addEditorRef,
+
+        allTagsLoading,
+        tagSuggestPinned,
+        tagSuggestIndex,
+
+        tagSuggestions,
+        showTagDropdown,
+
+        openAddEditor,
+        closeAddEditor,
+
+        removeTagFromSelected,
+        addTagToSelected,
+
+        toggleSuggestions,
+
+        onAddValueChange,
+        onAddInputFocusOrClick,
+        onAddInputKeyDown,
+
+        setTagSuggestIndex,
+    } = useTagEditor({
+        selectedId,
+        tagsById,
+        setTagsById,
+        currentTags,
+    });
 
     return (
         <>
@@ -430,7 +377,6 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                             ? "zoom-in"
                                             : "zoom-out"
                                         : "default",
-                                    // Center image at 1x; top-left anchor when zoomed
                                     justifyContent:
                                         zoom === 1 ? "center" : "flex-start",
                                     alignItems:
@@ -538,17 +484,12 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                             : "—"}
                                     </div>
                                 </div>
-                                {/* TODO: Implement metadata for resolution*/}
-                                {/* <div className={styles.detailRow}>
-                                    <div className={styles.detailLabel}>
-                                        Resolution
-                                    </div>
-                                    <div className={styles.detailValue}>—</div>
-                                </div> */}
+
                                 <div className={styles.detailRow}>
                                     <div className={styles.detailLabel}>
                                         Tags
                                     </div>
+
                                     <div className={styles.detailValue}>
                                         {tagsError ? (
                                             <span
@@ -556,29 +497,322 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                             >
                                                 {tagsError}
                                             </span>
-                                        ) : tagsLoading ? (
+                                        ) : tagsLoading &&
+                                          currentTags === null ? (
                                             "Loading…"
-                                        ) : currentTags &&
-                                          currentTags.length > 0 ? (
-                                            <div className={styles.tagWrap}>
-                                                {currentTags.map((t) => (
-                                                    <Pill
-                                                        key={t}
-                                                        label={t}
-                                                        variant="token"
-                                                        className={
-                                                            styles.tagPill
-                                                        }
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onSearchTag?.(t);
-                                                            setSelectedId(null);
-                                                        }}
-                                                    />
-                                                ))}
-                                            </div>
                                         ) : (
-                                            "—"
+                                            <>
+                                                {tagMutateError && (
+                                                    <div
+                                                        className={
+                                                            styles.errorBanner
+                                                        }
+                                                        style={{
+                                                            marginBottom: 10,
+                                                        }}
+                                                    >
+                                                        Tag update failed:{" "}
+                                                        {tagMutateError}
+                                                    </div>
+                                                )}
+
+                                                {tagMutateInfo &&
+                                                    !tagMutateError && (
+                                                        <div
+                                                            className={
+                                                                styles.tagInfoBanner
+                                                            }
+                                                        >
+                                                            {tagMutateInfo}
+                                                        </div>
+                                                    )}
+
+                                                <div className={styles.tagWrap}>
+                                                    {(currentTags ?? []).map(
+                                                        (t) => (
+                                                            <span
+                                                                key={t}
+                                                                className={
+                                                                    styles.tagTokenWrap
+                                                                }
+                                                            >
+                                                                <Pill
+                                                                    label={t}
+                                                                    variant="token"
+                                                                    className={
+                                                                        styles.tagPill
+                                                                    }
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) => {
+                                                                        e.stopPropagation();
+                                                                        onSearchTag?.(
+                                                                            t,
+                                                                        );
+                                                                        setSelectedId(
+                                                                            null,
+                                                                        );
+                                                                    }}
+                                                                />
+                                                                <button
+                                                                    className={
+                                                                        styles.tagTokenClose
+                                                                    }
+                                                                    type="button"
+                                                                    aria-label={`Remove tag ${t}`}
+                                                                    title="Remove"
+                                                                    disabled={
+                                                                        tagMutating
+                                                                    }
+                                                                    onMouseDown={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.preventDefault()
+                                                                    }
+                                                                    onClick={(
+                                                                        e,
+                                                                    ) => {
+                                                                        e.stopPropagation();
+                                                                        void removeTagFromSelected(
+                                                                            t,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            </span>
+                                                        ),
+                                                    )}
+
+                                                    {!addOpen ? (
+                                                        <Pill
+                                                            label="+"
+                                                            variant="token"
+                                                            className={`${styles.tagPill} ${styles.tagAddPill}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                void openAddEditor();
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div
+                                                            ref={addEditorRef}
+                                                            className={
+                                                                styles.tagAddEditor
+                                                            }
+                                                            onClick={(e) =>
+                                                                e.stopPropagation()
+                                                            }
+                                                        >
+                                                            <div
+                                                                className={
+                                                                    styles.tagAddInputWrap
+                                                                }
+                                                                role="combobox"
+                                                                aria-label="New tag"
+                                                                aria-haspopup="listbox"
+                                                                aria-expanded={
+                                                                    showTagDropdown
+                                                                }
+                                                                aria-controls="tag-suggest-dropdown"
+                                                            >
+                                                                <input
+                                                                    ref={
+                                                                        addInputRef
+                                                                    }
+                                                                    className={
+                                                                        styles.tagAddInput
+                                                                    }
+                                                                    placeholder={
+                                                                        allTagsLoading
+                                                                            ? "Loading tags..."
+                                                                            : "Add tag..."
+                                                                    }
+                                                                    value={
+                                                                        addValue
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        onAddValueChange(
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                    onFocus={
+                                                                        onAddInputFocusOrClick
+                                                                    }
+                                                                    onClick={
+                                                                        onAddInputFocusOrClick
+                                                                    }
+                                                                    onKeyDown={(
+                                                                        e,
+                                                                    ) => {
+                                                                        if (
+                                                                            e.key ===
+                                                                                "ArrowDown" ||
+                                                                            e.key ===
+                                                                                "ArrowUp" ||
+                                                                            e.key ===
+                                                                                "Enter"
+                                                                        ) {
+                                                                            e.preventDefault();
+                                                                            void onAddInputKeyDown(
+                                                                                e.key,
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                    aria-autocomplete="list"
+                                                                />
+
+                                                                <button
+                                                                    type="button"
+                                                                    className={
+                                                                        styles.tagSuggestToggle
+                                                                    }
+                                                                    aria-label={
+                                                                        tagSuggestPinned
+                                                                            ? "Hide tag suggestions"
+                                                                            : "Show tag suggestions"
+                                                                    }
+                                                                    aria-pressed={
+                                                                        tagSuggestPinned
+                                                                    }
+                                                                    onMouseDown={(
+                                                                        e,
+                                                                    ) =>
+                                                                        e.preventDefault()
+                                                                    }
+                                                                    onClick={async () => {
+                                                                        await toggleSuggestions();
+                                                                    }}
+                                                                    title={
+                                                                        tagSuggestPinned
+                                                                            ? "Hide suggestions"
+                                                                            : "Show suggestions"
+                                                                    }
+                                                                >
+                                                                    ...
+                                                                </button>
+
+                                                                {showTagDropdown && (
+                                                                    <div
+                                                                        id="tag-suggest-dropdown"
+                                                                        className={
+                                                                            styles.tagSuggestDropdown
+                                                                        }
+                                                                        role="listbox"
+                                                                        aria-label="Tag suggestions"
+                                                                    >
+                                                                        {allTagsLoading ? (
+                                                                            <div
+                                                                                className={
+                                                                                    styles.tagSuggestLoading
+                                                                                }
+                                                                            >
+                                                                                Loading…
+                                                                            </div>
+                                                                        ) : (
+                                                                            tagSuggestions.map(
+                                                                                (
+                                                                                    t,
+                                                                                    idx,
+                                                                                ) => (
+                                                                                    <button
+                                                                                        key={
+                                                                                            t
+                                                                                        }
+                                                                                        type="button"
+                                                                                        className={`${
+                                                                                            styles.tagSuggestItem
+                                                                                        } ${
+                                                                                            idx ===
+                                                                                            tagSuggestIndex
+                                                                                                ? styles.tagSuggestActive
+                                                                                                : ""
+                                                                                        }`}
+                                                                                        onMouseDown={(
+                                                                                            ev,
+                                                                                        ) =>
+                                                                                            ev.preventDefault()
+                                                                                        }
+                                                                                        onMouseEnter={() =>
+                                                                                            setTagSuggestIndex(
+                                                                                                idx,
+                                                                                            )
+                                                                                        }
+                                                                                        onClick={() => {
+                                                                                            void addTagToSelected(
+                                                                                                t,
+                                                                                            );
+                                                                                        }}
+                                                                                    >
+                                                                                        <span
+                                                                                            className={
+                                                                                                styles.tagSuggestLabel
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                t
+                                                                                            }
+                                                                                        </span>
+                                                                                    </button>
+                                                                                ),
+                                                                            )
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            <button
+                                                                type="button"
+                                                                className={
+                                                                    styles.tagAddBtn
+                                                                }
+                                                                onMouseDown={(
+                                                                    e,
+                                                                ) =>
+                                                                    e.preventDefault()
+                                                                }
+                                                                onClick={() => {
+                                                                    void addTagToSelected();
+                                                                }}
+                                                                disabled={
+                                                                    tagMutating ||
+                                                                    addValue.trim()
+                                                                        .length ===
+                                                                        0
+                                                                }
+                                                                title="Add"
+                                                            >
+                                                                Add
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className={
+                                                                    styles.tagCancelBtn
+                                                                }
+                                                                onMouseDown={(
+                                                                    e,
+                                                                ) =>
+                                                                    e.preventDefault()
+                                                                }
+                                                                onClick={
+                                                                    closeAddEditor
+                                                                }
+                                                                disabled={
+                                                                    tagMutating
+                                                                }
+                                                                title="Cancel"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
                                         )}
                                     </div>
                                 </div>
