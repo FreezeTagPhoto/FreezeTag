@@ -391,8 +391,8 @@
     padding: 10px 12px;
     border-radius: 12px;
     color: #e5e7eb;
-    background: rgba(120, 140, 255, 0.10);
-    border: 1px solid rgba(120, 140, 255, 0.20);
+    background: rgba(120, 140, 255, 0.1);
+    border: 1px solid rgba(120, 140, 255, 0.2);
     font-size: 0.85rem;
     line-height: 1.2rem;
 }
@@ -408,7 +408,7 @@
 
     padding: 6px 8px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.04);
 
     flex-wrap: nowrap;
@@ -453,7 +453,7 @@
     height: 28px;
     width: 28px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.04);
     color: #dfe3f0;
     cursor: pointer;
@@ -461,7 +461,9 @@
     place-items: center;
     flex: 0 0 28px;
 
-    transition: background 120ms ease, border-color 120ms ease;
+    transition:
+        background 120ms ease,
+        border-color 120ms ease;
 }
 
 .tagSuggestToggle:hover {
@@ -473,7 +475,7 @@
     height: 28px;
     padding: 0 8px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.04);
     color: #dfe3f0;
     cursor: pointer;
