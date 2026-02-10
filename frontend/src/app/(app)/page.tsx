@@ -7,6 +7,7 @@ import styles from "../page.module.css";
 import MainGallery from "@/components/Gallery/MainGallery/MainGallery";
 import TopBar from "@/components/TopBar/TopBar";
 import { addTagToQuery } from "@/common/search/addtagtoquery";
+import TagCounter from "@/api/tags/tagcounter";
 
 type TagInfo = { name: string; count?: number };
 
@@ -27,31 +28,6 @@ function buildQuery(
     return tail
         ? `sortBy=${sortBy};sortOrder=${sortOrder};${tail}`
         : `sortBy=${sortBy};sortOrder=${sortOrder}`;
-}
-
-async function mapWithConcurrency<T, R>(
-    items: T[],
-    limit: number,
-    fn: (item: T, index: number) => Promise<R>,
-): Promise<R[]> {
-    const results = new Array<R>(items.length);
-    let next = 0;
-
-    // Worker function
-    const worker = async () => {
-        while (true) {
-            const i = next++;
-            if (i >= items.length) return;
-            results[i] = await fn(items[i], i);
-        }
-    };
-
-    // Start workers
-    await Promise.all(
-        Array.from({ length: Math.min(limit, items.length) }, () => worker()),
-    );
-
-    return results;
 }
 
 export default function Home() {
@@ -102,7 +78,6 @@ export default function Home() {
         (async () => {
             const res = await TagGetter();
             if (cancelled) return;
-
             if (res.ok) setAllTags(res.value);
             else {
                 console.error("Failed to load tags:", res.error.message);
@@ -125,24 +100,14 @@ export default function Home() {
                 return;
             }
 
-            const CONCURRENCY = 10;
-
-            const perImageTags = await mapWithConcurrency(
-                imageIds,
-                CONCURRENCY,
-                async (id) => {
-                    const res = await TagGetter(id);
-                    return res.ok ? res.value : [];
-                },
-            );
-
+            const counts_result = await TagCounter(imageIds);
             if (cancelled) return;
-
-            const counts: Record<string, number> = {};
-            for (const list of perImageTags) {
-                for (const t of list) counts[t] = (counts[t] ?? 0) + 1;
+            if (counts_result.ok) {
+                setTagCounts(counts_result.value);
+            } else {
+                setTagCounts({});
+                console.error("Tag Counter did not work!");
             }
-            setTagCounts(counts);
         })();
 
         return () => {
