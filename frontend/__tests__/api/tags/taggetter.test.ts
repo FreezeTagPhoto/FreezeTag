@@ -72,7 +72,7 @@ describe("Tag Getter", () => {
                 status: 200,
                 ok: true,
                 json: () => {
-                    return {"sus": 1};
+                    return { sus: 1 };
                 },
             });
         }) as jest.Mock;

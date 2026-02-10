@@ -7,8 +7,7 @@ export type TagGetResult = Result<
     { status: number; message: string }
 >;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TagGetResponse = any; // The shape of the json object is {tag_1: 4; tag_2: 2}, which doesn't map nicely to a json generic. We parse this before returning
+type TagGetResponse = Record<string, number> | string[]; // The shape of the json object is {tag_1: 4; tag_2: 2}, which doesn't map nicely to a json generic. We parse this before returning
 
 /**
  *
