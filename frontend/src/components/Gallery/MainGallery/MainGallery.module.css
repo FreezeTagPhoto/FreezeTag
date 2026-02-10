@@ -310,6 +310,118 @@
     align-items: center;
 }
 
+.tagTokenWrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* same idea as SearchBar.tokenClose */
+.tagTokenClose {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+
+    height: 20px;
+    width: 20px;
+    border-radius: 999px;
+
+    border: 1px solid rgba(255, 90, 90, 0.35);
+    background: rgba(255, 90, 90, 0.16);
+    color: #ffd7d7;
+
+    display: grid;
+    place-items: center;
+
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.92);
+    transition:
+        opacity 120ms ease,
+        transform 120ms ease,
+        background 120ms ease;
+}
+
+.tagTokenWrap:hover .tagTokenClose,
+.tagTokenWrap:focus-within .tagTokenClose {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.tagTokenClose:hover {
+    background: rgba(255, 90, 90, 0.24);
+}
+
+.tagTokenClose:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+/* "+" pill tweaks (optional) */
+.tagAddPill {
+    opacity: 0.9;
+}
+
+/* small info banner (non-fatal) */
+.tagInfoBanner {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #e5e7eb;
+    background: rgba(120, 140, 255, 0.10);
+    border: 1px solid rgba(120, 140, 255, 0.20);
+    font-size: 0.85rem;
+    line-height: 1.2rem;
+}
+
+/* inline add editor */
+.tagAddEditor {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.tagAddInput {
+    width: 140px;
+    height: 28px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #e5e7eb;
+    font-size: 13px;
+}
+
+.tagAddInput::placeholder {
+    color: #9aa0b5;
+}
+
+.tagAddBtn,
+.tagCancelBtn {
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.04);
+    color: #dfe3f0;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.tagAddBtn:hover,
+.tagCancelBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tagAddBtn:disabled,
+.tagCancelBtn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
 .tagPill {
     height: 28px;
     padding: 0 10px;
