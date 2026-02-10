@@ -256,8 +256,7 @@ describe("common/gallery/tageditor.useTagEditor", () => {
         expect(TagAdder).toHaveBeenCalledTimes(1);
     });
 
-    it("toggleSuggestions pins (nextPinned=true): loads all tags, resets index, opens dropdown", async () => {
-        // Make sure TagGetter is actually needed (allTags starts null).
+    it("toggleSuggestions pins (nextPinned=true)", async () => {
         const { result } = setup({
             selectedId: 1,
             initialTagsById: { 1: ["beach"] },
@@ -267,17 +266,12 @@ describe("common/gallery/tageditor.useTagEditor", () => {
             await result.current.openAddEditor();
         });
 
-        // ensure no needle + not disabled, so we take the pin toggle path
         await act(async () => {
             result.current.onAddValueChange(""); // hasNeedle = false
         });
 
-        // Starting state should be unpinned
         expect(result.current.tagSuggestPinned).toBe(false);
 
-        // Toggle => nextPinned becomes true and should open + load tags (if not already)
-        // Note: openAddEditor already loads tags once; this test still covers the nextPinned
-        // branch behavior (open + pinned + index reset).
         await act(async () => {
             await result.current.toggleSuggestions();
         });
@@ -287,7 +281,7 @@ describe("common/gallery/tageditor.useTagEditor", () => {
         expect(result.current.tagSuggestOpen).toBe(true);
     });
 
-    it("toggleSuggestions unpins (nextPinned=false): sets open based on hasNeedle && !disabled", async () => {
+    it("toggleSuggestions unpins (nextPinned=false)", async () => {
         const { result } = setup({
             selectedId: 1,
             initialTagsById: { 1: [] },
@@ -297,7 +291,6 @@ describe("common/gallery/tageditor.useTagEditor", () => {
             await result.current.openAddEditor();
         });
 
-        // Step 1: pin suggestions (enter the nextPinned=true branch once)
         await act(async () => {
             result.current.onAddValueChange(""); // hasNeedle=false
         });
@@ -308,7 +301,6 @@ describe("common/gallery/tageditor.useTagEditor", () => {
         expect(result.current.tagSuggestPinned).toBe(true);
         expect(result.current.tagSuggestOpen).toBe(true);
 
-        // Step 2a: unpin while hasNeedle=false => open should become false
         await act(async () => {
             await result.current.toggleSuggestions(); // nextPinned=false, open = false
         });
@@ -316,7 +308,6 @@ describe("common/gallery/tageditor.useTagEditor", () => {
         expect(result.current.tagSuggestPinned).toBe(false);
         expect(result.current.tagSuggestOpen).toBe(false);
 
-        // Step 2b: pin again, then set needle so unpin will keep open = true
         await act(async () => {
             await result.current.toggleSuggestions(); // pin again
         });
