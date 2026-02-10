@@ -373,7 +373,6 @@
     background: rgba(255, 90, 90, 0.24);
 }
 
-/* FIX: prevent "flash" when tagMutating disables all close buttons */
 .tagTokenClose:disabled {
     cursor: default;
 }
@@ -399,7 +398,7 @@
 }
 
 /* ===========================
-   Tag add editor (FIXED: never wraps, consistent pill row)
+   Tag add editor (NO WRAP, BUT ALLOW DROPDOWN)
    =========================== */
 
 .tagAddEditor {
@@ -412,15 +411,16 @@
     border: 1px solid rgba(255, 255, 255, 0.10);
     background: rgba(255, 255, 255, 0.04);
 
-    /* THIS is the important part: do not wrap */
     flex-wrap: nowrap;
-
-    /* let it fit inside the sidebar without reflowing */
     max-width: 100%;
     min-width: 0;
 
-    /* if space is tight, clip rather than wrap */
-    overflow: hidden;
+    /* IMPORTANT: allow the absolute dropdown to render outside the pill */
+    overflow: visible;
+
+    /* helps ensure dropdown stacks above nearby elements */
+    position: relative;
+    z-index: 1;
 }
 
 .tagAddInputWrap {
@@ -429,14 +429,13 @@
     align-items: center;
     gap: 6px;
 
-    /* allow shrinking */
     min-width: 0;
     flex: 1 1 0;
 }
 
 .tagAddInput {
     width: 100%;
-    min-width: 0; /* critical: allows the input to shrink */
+    min-width: 0;
     height: 28px;
 
     border: none;
@@ -469,7 +468,6 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-/* buttons: remove big min-width so they don't force a wrap */
 .tagAddBtn,
 .tagCancelBtn {
     height: 28px;
@@ -482,8 +480,8 @@
     font-size: 12px;
 
     white-space: nowrap;
-    min-width: 0;     /* IMPORTANT: no forced wide buttons */
-    flex: 0 0 auto;   /* stay sized to content */
+    min-width: 0;
+    flex: 0 0 auto;
 }
 
 .tagAddBtn:hover,
@@ -501,7 +499,6 @@
     position: absolute;
     top: calc(100% + 8px);
     left: 0;
-    right: auto;
 
     min-width: 220px;
     width: max-content;
