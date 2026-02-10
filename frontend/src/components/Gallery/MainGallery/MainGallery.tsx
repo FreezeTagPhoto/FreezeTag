@@ -385,6 +385,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
     const [tagSuggestOpen, setTagSuggestOpen] = useState(false);
     const [tagSuggestPinned, setTagSuggestPinned] = useState(false);
     const [tagSuggestIndex, setTagSuggestIndex] = useState(0);
+    const [tagSuggestDisabled, setTagSuggestDisabled] = useState(false);
 
     const ensureAllTagsLoaded = useCallback(async () => {
         if (allTags !== null || allTagsLoading) return;
@@ -493,6 +494,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
         setTagSuggestOpen(false);
         setTagSuggestPinned(false);
         setTagSuggestIndex(0);
+        setTagSuggestDisabled(false);
     }, [selectedId]);
 
     // focus input when opening editor
@@ -556,6 +558,30 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
     }, [addOpen]);
 
     const toggleSuggestions = async () => {
+        const hasNeedle = normalizeTag(addValue).length > 0;
+
+        // If suggestions are currently "disabled", clicking turns them back on.
+        if (tagSuggestDisabled) {
+            setTagSuggestDisabled(false);
+
+            if (tagSuggestPinned || hasNeedle) {
+                await ensureAllTagsLoaded();
+                setTagSuggestIndex(0);
+                setTagSuggestOpen(true);
+            } else {
+                setTagSuggestOpen(false);
+            }
+            return;
+        }
+
+        // If user has typed something, clicking "..." means "turn OFF" and keep off.
+        if (hasNeedle && !tagSuggestPinned) {
+            setTagSuggestDisabled(true);
+            setTagSuggestOpen(false);
+            return;
+        }
+
+        // Otherwise behave like your original pin toggle:
         const nextPinned = !tagSuggestPinned;
         setTagSuggestPinned(nextPinned);
 
@@ -564,9 +590,8 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
             setTagSuggestIndex(0);
             setTagSuggestOpen(true);
         } else {
-            // only keep open if user has typed something
-            const hasNeedle = normalizeTag(addValue).length > 0;
-            setTagSuggestOpen(hasNeedle);
+            // only keep open if user has typed something AND not disabled
+            setTagSuggestOpen(hasNeedle && !tagSuggestDisabled);
         }
     };
 
@@ -876,15 +901,10 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                 e.stopPropagation();
                                                                 setAddOpen(true);
                                                                 setAddValue("");
-                                                                setTagSuggestIndex(
-                                                                    0,
-                                                                );
-                                                                setTagSuggestOpen(
-                                                                    false,
-                                                                ); // <- closed by default
-                                                                setTagSuggestPinned(
-                                                                    false,
-                                                                );
+                                                                setTagSuggestIndex(0);
+                                                                setTagSuggestOpen(false);
+                                                                setTagSuggestPinned(false);
+                                                                setTagSuggestDisabled(false);
                                                                 ensureAllTagsLoaded();
                                                             }}
                                                         />
@@ -918,69 +938,36 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                     value={
                                                                         addValue
                                                                     }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) => {
-                                                                        const v =
-                                                                            e
-                                                                                .target
-                                                                                .value;
-                                                                        setAddValue(
-                                                                            v,
-                                                                        );
-                                                                        setTagSuggestIndex(
-                                                                            0,
-                                                                        );
+                                                                    onChange={(e) => {
+                                                                        const v = e.target.value;
+                                                                        setAddValue(v);
+                                                                        setTagSuggestIndex(0);
 
-                                                                        const hasNeedle =
-                                                                            normalizeTag(
-                                                                                v,
-                                                                            )
-                                                                                .length >
-                                                                            0;
-                                                                        if (
-                                                                            hasNeedle
-                                                                        ) {
-                                                                            setTagSuggestOpen(
-                                                                                true,
-                                                                            );
+                                                                        const hasNeedle = normalizeTag(v).length > 0;
+
+                                                                        if (tagSuggestDisabled) {
+                                                                            // user explicitly turned suggestions off
+                                                                            setTagSuggestOpen(false);
+                                                                            return;
+                                                                        }
+
+                                                                        if (hasNeedle) {
+                                                                            setTagSuggestOpen(true);
                                                                         } else {
-                                                                            setTagSuggestOpen(
-                                                                                tagSuggestPinned,
-                                                                            );
+                                                                            setTagSuggestOpen(tagSuggestPinned);
                                                                         }
                                                                     }}
                                                                     onFocus={() => {
-                                                                        const hasNeedle =
-                                                                            normalizeTag(
-                                                                                addValue,
-                                                                            )
-                                                                                .length >
-                                                                            0;
-                                                                        if (
-                                                                            hasNeedle ||
-                                                                            tagSuggestPinned
-                                                                        ) {
-                                                                            setTagSuggestOpen(
-                                                                                true,
-                                                                            );
-                                                                        }
+                                                                        if (tagSuggestDisabled) return;
+
+                                                                        const hasNeedle = normalizeTag(addValue).length > 0;
+                                                                        if (hasNeedle || tagSuggestPinned) setTagSuggestOpen(true);
                                                                     }}
                                                                     onClick={() => {
-                                                                        const hasNeedle =
-                                                                            normalizeTag(
-                                                                                addValue,
-                                                                            )
-                                                                                .length >
-                                                                            0;
-                                                                        if (
-                                                                            hasNeedle ||
-                                                                            tagSuggestPinned
-                                                                        ) {
-                                                                            setTagSuggestOpen(
-                                                                                true,
-                                                                            );
-                                                                        }
+                                                                        if (tagSuggestDisabled) return;
+
+                                                                        const hasNeedle = normalizeTag(addValue).length > 0;
+                                                                        if (hasNeedle || tagSuggestPinned) setTagSuggestOpen(true);
                                                                     }}
                                                                     onKeyDown={(
                                                                         e,

@@ -26,17 +26,24 @@
     justify-content: center;
     align-items: center;
     z-index: 50;
+
+    padding: 24px;
+    box-sizing: border-box;
 }
 
 .viewer {
-    display: flex;
-    width: min(1200px, 100vw);
-    height: min(820px, 100vh);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+
+    width: min(1200px, 100%);
+    height: min(820px, 100%);
     background: #000;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: none;
     border: 2px solid #111827;
+
+    min-width: 0;
 }
 
 /* ===========================
@@ -45,7 +52,8 @@
 
 .viewerImageArea {
     position: relative;
-    flex: 3;
+    min-width: 0;
+
     display: flex;
     justify-content: center;
     align-items: center;
@@ -223,13 +231,15 @@
    =========================== */
 
 .viewerSidebar {
-    flex: 1.1;
+    width: 100%;
+    min-width: 0;
+
     background: #1e2031;
     border-left: 1px solid #111827;
     padding: 20px 24px;
 
-    /* IMPORTANT: no sidebar scrollbar */
     overflow: visible;
+    box-sizing: border-box;
 }
 
 .sidebarTitle {
@@ -272,6 +282,7 @@
 .detailGrid {
     display: grid;
     gap: 10px;
+    min-width: 0;
 }
 
 .detailRow {
@@ -279,6 +290,7 @@
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.06);
+    min-width: 0;
 }
 
 .detailLabel {
@@ -295,6 +307,7 @@
     font-weight: 500;
     color: #e5e7eb;
     word-break: break-word;
+    min-width: 0;
 }
 
 /* ===========================
@@ -307,9 +320,11 @@
     gap: 8px;
     align-items: center;
 
-    /* override detailValue word-break inside tag UI */
     word-break: normal;
     overflow-wrap: normal;
+
+    min-width: 0;
+    max-width: 100%;
 }
 
 .tagPill {
@@ -383,17 +398,29 @@
     line-height: 1.2rem;
 }
 
+/* ===========================
+   Tag add editor (FIXED: never wraps, consistent pill row)
+   =========================== */
+
 .tagAddEditor {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+
     padding: 6px 8px;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.10);
     background: rgba(255, 255, 255, 0.04);
 
-    word-break: normal;
-    overflow-wrap: normal;
+    /* THIS is the important part: do not wrap */
+    flex-wrap: nowrap;
+
+    /* let it fit inside the sidebar without reflowing */
+    max-width: 100%;
+    min-width: 0;
+
+    /* if space is tight, clip rather than wrap */
+    overflow: hidden;
 }
 
 .tagAddInputWrap {
@@ -401,20 +428,22 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+
+    /* allow shrinking */
     min-width: 0;
+    flex: 1 1 0;
 }
 
 .tagAddInput {
-    width: 140px;
+    width: 100%;
+    min-width: 0; /* critical: allows the input to shrink */
     height: 28px;
+
     border: none;
     outline: none;
     background: transparent;
     color: #e5e7eb;
     font-size: 13px;
-
-    word-break: normal;
-    overflow-wrap: normal;
 }
 
 .tagAddInput::placeholder {
@@ -431,7 +460,7 @@
     cursor: pointer;
     display: grid;
     place-items: center;
-    flex: 0 0 auto;
+    flex: 0 0 28px;
 
     transition: background 120ms ease, border-color 120ms ease;
 }
@@ -440,10 +469,11 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
+/* buttons: remove big min-width so they don't force a wrap */
 .tagAddBtn,
 .tagCancelBtn {
     height: 28px;
-    padding: 0 10px;
+    padding: 0 8px;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.10);
     background: rgba(255, 255, 255, 0.04);
@@ -452,8 +482,8 @@
     font-size: 12px;
 
     white-space: nowrap;
-    min-width: 64px;
-    flex: 0 0 auto;
+    min-width: 0;     /* IMPORTANT: no forced wide buttons */
+    flex: 0 0 auto;   /* stay sized to content */
 }
 
 .tagAddBtn:hover,
@@ -488,7 +518,6 @@
     overflow: hidden;
     z-index: 60;
 
-    /* dropdown scroll (instead of sidebar scroll) */
     max-height: 240px;
     overflow-y: auto;
 }
