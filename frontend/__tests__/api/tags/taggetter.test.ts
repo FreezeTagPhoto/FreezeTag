@@ -62,7 +62,7 @@ describe("Tag Getter", () => {
             return Ok(["arches", "wedding", "banquet"]);
         };
 
-        const result = await testing_TagGetter(handler);
+        const result = await testing_TagGetter(handler, 4);
         expect(result).toStrictEqual(Ok(["arches", "wedding", "banquet"]));
     });
 
@@ -77,7 +77,7 @@ describe("Tag Getter", () => {
             });
         }) as jest.Mock;
 
-        const result = await TagGetter(0);
+        const result = await TagGetter();
         expect(result).toStrictEqual(Ok(["sus"]));
     });
 });

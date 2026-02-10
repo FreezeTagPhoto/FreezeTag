@@ -7,7 +7,7 @@ export type TagGetResult = Result<
     { status: number; message: string }
 >;
 
-type TagGetResponse = Record<string, number> | string[]; // The shape of the json object is {tag_1: 4; tag_2: 2}, which doesn't map nicely to a json generic. We parse this before returning
+type TagGetResponse = Record<string, number> | string[];
 
 /**
  *
@@ -48,7 +48,7 @@ async function get_tag_with_handler(
 
     const data = result.value;
 
-    if (image_id === undefined) {
+    if (image_id !== undefined) {
         return Ok(data as string[]);
     }
 
