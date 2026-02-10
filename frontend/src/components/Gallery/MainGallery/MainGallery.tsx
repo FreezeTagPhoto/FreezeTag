@@ -16,6 +16,9 @@ import TagGetter from "@/api/tags/taggetter";
 import TagAdder from "@/api/tags/tagadder";
 import TagRemover from "@/api/tags/tagremover";
 import Pill from "@/components/UI/Pill/Pill";
+import { useCachedById } from "@/common/gallery/cache";
+import { formatDate, formatLocation, formatCamera } from "@/common/gallery/format";
+import { normalizeTag, rankTag } from "@/common/gallery/tags";
 
 export type GalleryProps = {
     image_ids: number[];
@@ -24,62 +27,6 @@ export type GalleryProps = {
 
 // point (fx, fy) on image expressed as fraction of width/height (after zoom)
 type PendingPan = null | { fx: number; fy: number };
-
-// if int64 timestamp is huge, treat as ms, otherwise seconds
-function toDate(ts: number): Date {
-    return new Date(ts > 1e12 ? ts : ts * 1000);
-}
-
-function formatDate(ts: number | null): string {
-    if (ts === null) return "—";
-    const d = toDate(ts);
-    return new Intl.DateTimeFormat(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-    }).format(d);
-}
-
-function formatLocation(lat: number | null, lon: number | null): string {
-    if (lat === null || lon === null) return "—";
-    return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-}
-
-function formatCamera(make: string | null, model: string | null): string {
-    const parts = [make, model].filter(
-        (x) => x && x.trim().length > 0,
-    ) as string[];
-    return parts.length ? parts.join(" ") : "—";
-}
-
-function normalizeTag(s: string) {
-    return s.trim().replace(/\s+/g, " ");
-}
-
-function isSubsequence(needle: string, hay: string) {
-    let i = 0;
-    for (let j = 0; j < hay.length && i < needle.length; j++) {
-        if (hay[j] === needle[i]) i++;
-    }
-    return i === needle.length;
-}
-
-function rankTag(tag: string, needleRaw: string) {
-    const needle = needleRaw.toLowerCase();
-    const t = tag.toLowerCase();
-
-    if (t === needle) return 0;
-    if (t.startsWith(needle)) return 1;
-
-    const idx = t.indexOf(needle);
-    if (idx !== -1) return 2 + idx / 100;
-
-    if (isSubsequence(needle, t)) return 3;
-
-    return 999;
-}
 
 export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
     // Full Screen Preview Handling
@@ -96,94 +43,24 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
     // remember where to pan after zoom has been applied
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
 
-    // metadata state
-    const [metadataById, setMetadataById] = useState<
-        Record<number, ImageMetadata>
-    >({});
-    const [metadataLoading, setMetadataLoading] = useState(false);
-    const [metadataError, setMetadataError] = useState<string | null>(null);
+    // metadata + tags: cached per image id
+    const metadata = useCachedById<ImageMetadata>(selectedId, MetadataGetter);
+    const tags = useCachedById<string[]>(selectedId, TagGetter);
 
-    const currentMetadata: ImageMetadata | null =
-        selectedId !== null ? (metadataById[selectedId] ?? null) : null;
+    const metadataLoading = metadata.loading;
+    const metadataError = metadata.error.some ? metadata.error.value : null;
+    const currentMetadata: ImageMetadata | null = metadata.current.some
+        ? metadata.current.value
+        : null;
 
-    // fetch metadata whenever selectedId changes
-    useEffect(() => {
-        if (selectedId === null) return;
+    const tagsById = tags.byId;
+    const setTagsById = tags.setById;
+    const tagsLoading = tags.loading;
+    const tagsError = tags.error.some ? tags.error.value : null;
 
-        // already cached
-        if (metadataById[selectedId]) {
-            setMetadataError(null);
-            setMetadataLoading(false);
-            return;
-        }
-
-        let cancelled = false;
-
-        (async () => {
-            setMetadataLoading(true);
-            setMetadataError(null);
-
-            const res = await MetadataGetter(selectedId);
-
-            if (cancelled) return;
-
-            if (!res.ok) {
-                setMetadataError(res.error.message);
-                setMetadataLoading(false);
-                return;
-            }
-
-            setMetadataById((prev) => ({ ...prev, [selectedId]: res.value }));
-            setMetadataLoading(false);
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedId, metadataById]);
-
-    // tags state
-    const [tagsById, setTagsById] = useState<Record<number, string[]>>({});
-    const [tagsLoading, setTagsLoading] = useState(false);
-    const [tagsError, setTagsError] = useState<string | null>(null);
-
-    const currentTags: string[] | null =
-        selectedId !== null ? (tagsById[selectedId] ?? null) : null;
-
-    useEffect(() => {
-        if (selectedId === null) return;
-
-        // already cached
-        if (tagsById[selectedId]) {
-            setTagsError(null);
-            setTagsLoading(false);
-            return;
-        }
-
-        let cancelled = false;
-
-        (async () => {
-            setTagsLoading(true);
-            setTagsError(null);
-
-            const res = await TagGetter(selectedId);
-
-            if (cancelled) return;
-
-            if (!res.ok) {
-                setTagsError(res.error.message);
-                setTagsLoading(false);
-                return;
-            }
-
-            setTagsById((prev) => ({ ...prev, [selectedId]: res.value }));
-            setTagsLoading(false);
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [selectedId, tagsById]);
+    const currentTags: string[] | null = tags.current.some
+        ? tags.current.value
+        : null;
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -399,7 +276,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
             if (selectedId === null) return;
             setTagsById((prev) => ({ ...prev, [selectedId]: next }));
         },
-        [selectedId],
+        [selectedId, setTagsById],
     );
 
     const removeTagFromSelected = useCallback(
@@ -791,9 +668,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                     </div>
                                     <div className={styles.detailValue}>
                                         {tagsError ? (
-                                            <span
-                                                className={styles.inlineError}
-                                            >
+                                            <span className={styles.inlineError}>
                                                 {tagsError}
                                             </span>
                                         ) : tagsLoading &&
@@ -890,9 +765,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                             className={`${styles.tagPill} ${styles.tagAddPill}`}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setAddOpen(
-                                                                    true,
-                                                                );
+                                                                setAddOpen(true);
                                                                 setAddValue("");
                                                                 setTagSuggestIndex(
                                                                     0,
@@ -919,10 +792,19 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                 e.stopPropagation()
                                                             }
                                                         >
+                                                            {/* IMPORTANT A11Y CHANGE:
+                                                                aria-expanded moved off the input to avoid jsx-a11y warning */}
                                                             <div
                                                                 className={
                                                                     styles.tagAddInputWrap
                                                                 }
+                                                                role="combobox"
+                                                                aria-label="New tag"
+                                                                aria-haspopup="listbox"
+                                                                aria-expanded={
+                                                                    showTagDropdown
+                                                                }
+                                                                aria-controls="tag-suggest-dropdown"
                                                             >
                                                                 <input
                                                                     ref={
@@ -1104,13 +986,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                             );
                                                                         }
                                                                     }}
-                                                                    aria-label="New tag"
-                                                                    role="combobox"
                                                                     aria-autocomplete="list"
-                                                                    aria-expanded={
-                                                                        showTagDropdown
-                                                                    }
-                                                                    aria-controls="tag-suggest-dropdown"
                                                                 />
 
                                                                 <button
@@ -1204,9 +1080,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                                                 styles.tagSuggestLabel
                                                                                             }
                                                                                         >
-                                                                                            {
-                                                                                                t
-                                                                                            }
+                                                                                            {t}
                                                                                         </span>
                                                                                     </button>
                                                                                 ),
