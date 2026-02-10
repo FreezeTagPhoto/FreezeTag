@@ -50,7 +50,7 @@
     justify-content: center;
     align-items: center;
     background: #121219;
-    overflow: hidden; /* inner div handles scrolling */
+    overflow: hidden;
 
     user-select: none;
     -webkit-user-select: none;
@@ -66,10 +66,9 @@
     justify-content: flex-start;
     align-items: flex-start;
 
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
 }
 
-/* hide scrollbars but keep scrolling */
 .viewerImageScroll::-webkit-scrollbar {
     display: none;
 }
@@ -85,7 +84,6 @@
    Overlay controls – base
    =========================== */
 
-/* Common behavior: hidden until hover, same background & transitions */
 .navButton,
 .closeButton,
 .zoomButton {
@@ -104,7 +102,6 @@
         background-color 150ms ease-in-out;
 }
 
-/* Appear on hover over the image area */
 .viewerImageArea:hover .navButton,
 .viewerImageArea:hover .closeButton,
 .viewerImageArea:hover .zoomButton {
@@ -112,7 +109,6 @@
     pointer-events: auto;
 }
 
-/* Hover / focus states */
 .navButton:hover,
 .closeButton:hover,
 .zoomButton:hover {
@@ -139,7 +135,7 @@
     width: 40px;
     height: 40px;
     border-radius: 999px;
-    font-size: 0; /* hide the ‹ / › text itself; we draw with ::before */
+    font-size: 0;
 }
 
 .navButtonLeft {
@@ -150,7 +146,6 @@
     right: 10px;
 }
 
-/* smaller, centered chevron icons */
 .navButton::before {
     content: "";
     position: absolute;
@@ -159,18 +154,16 @@
     width: 10px;
     height: 10px;
     border-style: solid;
-    border-width: 0 2px 2px 0; /* stroke thickness */
+    border-width: 0 2px 2px 0;
     border-color: currentColor;
     transform-origin: center;
 }
 
-/* right arrow */
 .navButtonRight::before {
     left: 46.5%;
     transform: translate(-50%, -50%) rotate(-45deg);
 }
 
-/* left arrow */
 .navButtonLeft::before {
     left: 53.5%;
     transform: translate(-50%, -50%) rotate(135deg);
@@ -187,10 +180,9 @@
     width: 32px;
     height: 32px;
     border-radius: 999px;
-    font-size: 0; /* hide the ×; we draw with ::before/::after */
+    font-size: 0;
 }
 
-/* centered X icon */
 .closeButton::before,
 .closeButton::after {
     content: "";
@@ -223,7 +215,7 @@
     height: 32px;
     padding: 0 10px;
     border-radius: 999px;
-    font-size: 0.8rem; /* 1x / 2x text */
+    font-size: 0.8rem;
 }
 
 /* ===========================
@@ -235,7 +227,9 @@
     background: #1e2031;
     border-left: 1px solid #111827;
     padding: 20px 24px;
-    overflow-y: auto;
+
+    /* IMPORTANT: no sidebar scrollbar */
+    overflow: visible;
 }
 
 .sidebarTitle {
@@ -303,11 +297,24 @@
     word-break: break-word;
 }
 
+/* ===========================
+   Tags UI
+   =========================== */
+
 .tagWrap {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+
+    /* override detailValue word-break inside tag UI */
+    word-break: normal;
+    overflow-wrap: normal;
+}
+
+.tagPill {
+    height: 28px;
+    padding: 0 10px;
 }
 
 .tagTokenWrap {
@@ -316,7 +323,6 @@
     align-items: center;
 }
 
-/* same idea as SearchBar.tokenClose */
 .tagTokenClose {
     position: absolute;
     top: -8px;
@@ -352,17 +358,20 @@
     background: rgba(255, 90, 90, 0.24);
 }
 
+/* FIX: prevent "flash" when tagMutating disables all close buttons */
 .tagTokenClose:disabled {
-    opacity: 0.35;
     cursor: default;
 }
+.tagTokenWrap:hover .tagTokenClose:disabled,
+.tagTokenWrap:focus-within .tagTokenClose:disabled {
+    opacity: 0.35;
+    transform: scale(1);
+}
 
-/* "+" pill tweaks (optional) */
 .tagAddPill {
     opacity: 0.9;
 }
 
-/* small info banner (non-fatal) */
 .tagInfoBanner {
     margin-bottom: 10px;
     padding: 10px 12px;
@@ -374,7 +383,6 @@
     line-height: 1.2rem;
 }
 
-/* inline add editor */
 .tagAddEditor {
     display: inline-flex;
     align-items: center;
@@ -383,6 +391,17 @@
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.10);
     background: rgba(255, 255, 255, 0.04);
+
+    word-break: normal;
+    overflow-wrap: normal;
+}
+
+.tagAddInputWrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
 }
 
 .tagAddInput {
@@ -393,10 +412,32 @@
     background: transparent;
     color: #e5e7eb;
     font-size: 13px;
+
+    word-break: normal;
+    overflow-wrap: normal;
 }
 
 .tagAddInput::placeholder {
     color: #9aa0b5;
+}
+
+.tagSuggestToggle {
+    height: 28px;
+    width: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.04);
+    color: #dfe3f0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+
+    transition: background 120ms ease, border-color 120ms ease;
+}
+
+.tagSuggestToggle:hover {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .tagAddBtn,
@@ -409,6 +450,10 @@
     color: #dfe3f0;
     cursor: pointer;
     font-size: 12px;
+
+    white-space: nowrap;
+    min-width: 64px;
+    flex: 0 0 auto;
 }
 
 .tagAddBtn:hover,
@@ -422,9 +467,77 @@
     cursor: default;
 }
 
-.tagPill {
-    height: 28px;
-    padding: 0 10px;
+.tagSuggestDropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: auto;
+
+    min-width: 220px;
+    width: max-content;
+    max-width: 320px;
+
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(16, 18, 26, 0.98);
+
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(255, 255, 255, 0.04);
+
+    overflow: hidden;
+    z-index: 60;
+
+    /* dropdown scroll (instead of sidebar scroll) */
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.tagSuggestDropdown::-webkit-scrollbar {
+    width: 10px;
+}
+.tagSuggestDropdown::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+.tagSuggestItem {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px 12px;
+
+    background: transparent;
+    border: none;
+    color: #eef1ff;
+    cursor: pointer;
+    text-align: left;
+}
+
+.tagSuggestItem:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.tagSuggestActive {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.tagSuggestLabel {
+    font-size: 13px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+}
+
+.tagSuggestLoading {
+    padding: 10px 12px;
+    color: #aeb5cf;
+    font-size: 13px;
 }
 
 .inlineError {
