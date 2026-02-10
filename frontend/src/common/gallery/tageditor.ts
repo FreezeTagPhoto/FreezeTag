@@ -291,7 +291,7 @@ export function useTagEditor({
             setTagSuggestOpen(hasNeedle && !tagSuggestDisabled);
         }
     }, [addValue, tagSuggestDisabled, tagSuggestPinned, ensureAllTagsLoaded]);
-    
+
     const onAddValueChange = useCallback(
         (value: string) => {
             setAddValue(value);

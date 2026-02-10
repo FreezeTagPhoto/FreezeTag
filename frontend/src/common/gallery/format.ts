@@ -24,8 +24,8 @@ export function formatCamera(
     make: string | null,
     model: string | null,
 ): string {
-    const parts = [make, model].filter(
-        (x) => x && x.trim().length > 0,
-    ) as string[];
+    const parts = [make, model]
+        .map((x) => (x ?? "").trim())
+        .filter((x) => x.length > 0);
     return parts.length ? parts.join(" ") : "—";
 }
