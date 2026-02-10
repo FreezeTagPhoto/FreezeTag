@@ -7,14 +7,11 @@ import {
     MouseEvent as ReactMouseEvent,
     KeyboardEvent as ReactKeyboardEvent,
     useCallback,
-    useMemo,
 } from "react";
 import styles from "./MainGallery.module.css";
 import GalleryImage from "../GalleryImage/GalleryImage";
 import MetadataGetter, { ImageMetadata } from "@/api/metadata/metadatagetter";
 import TagGetter from "@/api/tags/taggetter";
-import TagAdder from "@/api/tags/tagadder";
-import TagRemover from "@/api/tags/tagremover";
 import Pill from "@/components/UI/Pill/Pill";
 import { useCachedById } from "@/common/gallery/cache";
 import {
@@ -22,7 +19,7 @@ import {
     formatLocation,
     formatCamera,
 } from "@/common/gallery/format";
-import { normalizeTag, rankTag } from "@/common/gallery/tags";
+import { useTagEditor } from "@/common/gallery/tageditor";
 
 export type GalleryProps = {
     image_ids: number[];
@@ -249,220 +246,42 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
         setPendingPan(null);
     }, [zoom, pendingPan]);
 
-    const [tagMutating, setTagMutating] = useState(false);
-    const [tagMutateError, setTagMutateError] = useState<string | null>(null);
-    const [tagMutateInfo, setTagMutateInfo] = useState<string | null>(null);
+    const {
+        tagMutating,
+        tagMutateError,
+        tagMutateInfo,
 
-    const [addOpen, setAddOpen] = useState(false);
-    const [addValue, setAddValue] = useState("");
-    const addInputRef = useRef<HTMLInputElement | null>(null);
-    const addEditorRef = useRef<HTMLDivElement | null>(null);
+        addOpen,
+        addValue,
+        addInputRef,
+        addEditorRef,
 
-    const [allTags, setAllTags] = useState<string[] | null>(null);
-    const [allTagsLoading, setAllTagsLoading] = useState(false);
+        allTagsLoading,
+        tagSuggestPinned,
+        tagSuggestIndex,
 
-    const [tagSuggestOpen, setTagSuggestOpen] = useState(false);
-    const [tagSuggestPinned, setTagSuggestPinned] = useState(false);
-    const [tagSuggestIndex, setTagSuggestIndex] = useState(0);
-    const [tagSuggestDisabled, setTagSuggestDisabled] = useState(false);
+        tagSuggestions,
+        showTagDropdown,
 
-    const ensureAllTagsLoaded = useCallback(async () => {
-        if (allTags !== null || allTagsLoading) return;
-        setAllTagsLoading(true);
-        const res = await TagGetter();
-        if (res.ok) setAllTags(res.value);
-        else setAllTags([]);
-        setAllTagsLoading(false);
-    }, [allTags, allTagsLoading]);
+        openAddEditor,
+        closeAddEditor,
 
-    const setCurrentTagsForSelected = useCallback(
-        (next: string[]) => {
-            if (selectedId === null) return;
-            setTagsById((prev) => ({ ...prev, [selectedId]: next }));
-        },
-        [selectedId, setTagsById],
-    );
+        removeTagFromSelected,
+        addTagToSelected,
 
-    const removeTagFromSelected = useCallback(
-        async (tag: string) => {
-            if (selectedId === null) return;
-            const current = tagsById[selectedId] ?? [];
-            const next = current.filter((t) => t !== tag);
+        toggleSuggestions,
 
-            setTagMutateError(null);
-            setTagMutateInfo(null);
-            setTagMutating(true);
+        onAddValueChange,
+        onAddInputFocusOrClick,
+        onAddInputKeyDown,
 
-            setCurrentTagsForSelected(next);
-
-            const res = await TagRemover([selectedId], [tag]);
-            setTagMutating(false);
-
-            if (!res.ok) {
-                setCurrentTagsForSelected(current);
-                setTagMutateError(res.error.message);
-                return;
-            }
-
-            if (res.value.length > 0) {
-                setTagMutateInfo(res.value.join(" • "));
-            }
-        },
-        [selectedId, tagsById, setCurrentTagsForSelected],
-    );
-
-    const addTagToSelected = useCallback(
-        async (tagOverride?: string) => {
-            if (selectedId === null) return;
-
-            const tag = normalizeTag(tagOverride ?? addValue);
-            if (!tag) return;
-
-            const current = tagsById[selectedId] ?? [];
-
-            if (current.includes(tag)) {
-                setTagMutateInfo(`Tag "${tag}" already exists.`);
-                setAddOpen(false);
-                setAddValue("");
-                setTagSuggestOpen(false);
-                setTagSuggestPinned(false);
-                return;
-            }
-
-            const next = [...current, tag];
-
-            setTagMutateError(null);
-            setTagMutateInfo(null);
-            setTagMutating(true);
-
-            setCurrentTagsForSelected(next);
-
-            const res = await TagAdder([selectedId], [tag]);
-            setTagMutating(false);
-
-            if (!res.ok) {
-                setCurrentTagsForSelected(current);
-                setTagMutateError(res.error.message);
-                return;
-            }
-
-            setAllTags((prev) => {
-                if (!prev) return prev;
-                return prev.includes(tag) ? prev : [...prev, tag];
-            });
-
-            if (res.value.length > 0) setTagMutateInfo(res.value.join(" • "));
-
-            setAddOpen(false);
-            setAddValue("");
-            setTagSuggestOpen(false);
-            setTagSuggestPinned(false);
-        },
-        [selectedId, addValue, tagsById, setCurrentTagsForSelected],
-    );
-
-    // reset tag editor UI when changing images
-    useEffect(() => {
-        setTagMutateError(null);
-        setTagMutateInfo(null);
-        setAddOpen(false);
-        setAddValue("");
-        setTagSuggestOpen(false);
-        setTagSuggestPinned(false);
-        setTagSuggestIndex(0);
-        setTagSuggestDisabled(false);
-    }, [selectedId]);
-
-    // focus input when opening editor
-    useEffect(() => {
-        if (!addOpen) return;
-        requestAnimationFrame(() => addInputRef.current?.focus());
-    }, [addOpen]);
-
-    const tagSuggestions = useMemo(() => {
-        if (!addOpen) return [];
-        if (!allTags || allTags.length === 0) return [];
-
-        const current = new Set((currentTags ?? []).map((t) => t));
-        const candidates = allTags.filter((t) => !current.has(t));
-
-        const needle = normalizeTag(addValue);
-        const allowEmpty = tagSuggestPinned;
-
-        if (!needle) {
-            if (!allowEmpty) return [];
-            return [...candidates]
-                .sort((a, b) => a.localeCompare(b))
-                .slice(0, 10);
-        }
-
-        return candidates
-            .map((t) => ({ tag: t, score: rankTag(t, needle) }))
-            .filter((x) => x.score < 999)
-            .sort((a, b) => a.score - b.score || a.tag.localeCompare(b.tag))
-            .slice(0, 10)
-            .map((x) => x.tag);
-    }, [addOpen, allTags, currentTags, addValue, tagSuggestPinned]);
-
-    const showTagDropdown =
-        tagSuggestOpen && (allTagsLoading || tagSuggestions.length > 0);
-
-    useEffect(() => {
-        if (!tagSuggestOpen) return;
-        setTagSuggestIndex((i) =>
-            Math.max(0, Math.min(i, Math.max(0, tagSuggestions.length - 1))),
-        );
-    }, [tagSuggestOpen, tagSuggestions.length]);
-
-    useEffect(() => {
-        if (!addOpen) return;
-
-        const onMouseDown = (e: MouseEvent) => {
-            const root = addEditorRef.current;
-            if (!root) return;
-            if (!root.contains(e.target as Node)) {
-                setTagSuggestOpen(false);
-                setTagSuggestPinned(false);
-            }
-        };
-
-        document.addEventListener("mousedown", onMouseDown);
-        return () => document.removeEventListener("mousedown", onMouseDown);
-    }, [addOpen]);
-
-    const toggleSuggestions = async () => {
-        const hasNeedle = normalizeTag(addValue).length > 0;
-
-        if (tagSuggestDisabled) {
-            setTagSuggestDisabled(false);
-
-            if (tagSuggestPinned || hasNeedle) {
-                await ensureAllTagsLoaded();
-                setTagSuggestIndex(0);
-                setTagSuggestOpen(true);
-            } else {
-                setTagSuggestOpen(false);
-            }
-            return;
-        }
-
-        if (hasNeedle && !tagSuggestPinned) {
-            setTagSuggestDisabled(true);
-            setTagSuggestOpen(false);
-            return;
-        }
-
-        const nextPinned = !tagSuggestPinned;
-        setTagSuggestPinned(nextPinned);
-
-        if (nextPinned) {
-            await ensureAllTagsLoaded();
-            setTagSuggestIndex(0);
-            setTagSuggestOpen(true);
-        } else {
-            setTagSuggestOpen(hasNeedle && !tagSuggestDisabled);
-        }
-    };
+        setTagSuggestIndex,
+    } = useTagEditor({
+        selectedId,
+        tagsById,
+        setTagsById,
+        currentTags,
+    });
 
     return (
         <>
@@ -670,6 +489,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                     <div className={styles.detailLabel}>
                                         Tags
                                     </div>
+
                                     <div className={styles.detailValue}>
                                         {tagsError ? (
                                             <span
@@ -753,7 +573,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                         e,
                                                                     ) => {
                                                                         e.stopPropagation();
-                                                                        removeTagFromSelected(
+                                                                        void removeTagFromSelected(
                                                                             t,
                                                                         );
                                                                     }}
@@ -771,23 +591,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                             className={`${styles.tagPill} ${styles.tagAddPill}`}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setAddOpen(
-                                                                    true,
-                                                                );
-                                                                setAddValue("");
-                                                                setTagSuggestIndex(
-                                                                    0,
-                                                                );
-                                                                setTagSuggestOpen(
-                                                                    false,
-                                                                );
-                                                                setTagSuggestPinned(
-                                                                    false,
-                                                                );
-                                                                setTagSuggestDisabled(
-                                                                    false,
-                                                                );
-                                                                ensureAllTagsLoaded();
+                                                                void openAddEditor();
                                                             }}
                                                         />
                                                     ) : (
@@ -800,8 +604,6 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                 e.stopPropagation()
                                                             }
                                                         >
-                                                            {/* IMPORTANT A11Y CHANGE:
-                                                                aria-expanded moved off the input to avoid jsx-a11y warning */}
                                                             <div
                                                                 className={
                                                                     styles.tagAddInputWrap
@@ -831,166 +633,33 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                     }
                                                                     onChange={(
                                                                         e,
-                                                                    ) => {
-                                                                        const v =
+                                                                    ) =>
+                                                                        onAddValueChange(
                                                                             e
                                                                                 .target
-                                                                                .value;
-                                                                        setAddValue(
-                                                                            v,
-                                                                        );
-                                                                        setTagSuggestIndex(
-                                                                            0,
-                                                                        );
-
-                                                                        const hasNeedle =
-                                                                            normalizeTag(
-                                                                                v,
-                                                                            )
-                                                                                .length >
-                                                                            0;
-
-                                                                        if (
-                                                                            tagSuggestDisabled
-                                                                        ) {
-                                                                            setTagSuggestOpen(
-                                                                                false,
-                                                                            );
-                                                                            return;
-                                                                        }
-
-                                                                        if (
-                                                                            hasNeedle
-                                                                        ) {
-                                                                            setTagSuggestOpen(
-                                                                                true,
-                                                                            );
-                                                                        } else {
-                                                                            setTagSuggestOpen(
-                                                                                tagSuggestPinned,
-                                                                            );
-                                                                        }
-                                                                    }}
-                                                                    onFocus={() => {
-                                                                        if (
-                                                                            tagSuggestDisabled
+                                                                                .value,
                                                                         )
-                                                                            return;
-
-                                                                        const hasNeedle =
-                                                                            normalizeTag(
-                                                                                addValue,
-                                                                            )
-                                                                                .length >
-                                                                            0;
-                                                                        if (
-                                                                            hasNeedle ||
-                                                                            tagSuggestPinned
-                                                                        )
-                                                                            setTagSuggestOpen(
-                                                                                true,
-                                                                            );
-                                                                    }}
-                                                                    onClick={() => {
-                                                                        if (
-                                                                            tagSuggestDisabled
-                                                                        )
-                                                                            return;
-
-                                                                        const hasNeedle =
-                                                                            normalizeTag(
-                                                                                addValue,
-                                                                            )
-                                                                                .length >
-                                                                            0;
-                                                                        if (
-                                                                            hasNeedle ||
-                                                                            tagSuggestPinned
-                                                                        )
-                                                                            setTagSuggestOpen(
-                                                                                true,
-                                                                            );
-                                                                    }}
+                                                                    }
+                                                                    onFocus={
+                                                                        onAddInputFocusOrClick
+                                                                    }
+                                                                    onClick={
+                                                                        onAddInputFocusOrClick
+                                                                    }
                                                                     onKeyDown={(
                                                                         e,
                                                                     ) => {
                                                                         if (
                                                                             e.key ===
-                                                                            "ArrowDown"
-                                                                        ) {
-                                                                            if (
-                                                                                tagSuggestions.length ===
-                                                                                0
-                                                                            )
-                                                                                return;
-                                                                            e.preventDefault();
-                                                                            setTagSuggestOpen(
-                                                                                true,
-                                                                            );
-                                                                            setTagSuggestIndex(
-                                                                                (
-                                                                                    i,
-                                                                                ) =>
-                                                                                    Math.min(
-                                                                                        i +
-                                                                                            1,
-                                                                                        tagSuggestions.length -
-                                                                                            1,
-                                                                                    ),
-                                                                            );
-                                                                            return;
-                                                                        }
-
-                                                                        if (
+                                                                                "ArrowDown" ||
                                                                             e.key ===
-                                                                            "ArrowUp"
-                                                                        ) {
-                                                                            if (
-                                                                                tagSuggestions.length ===
-                                                                                0
-                                                                            )
-                                                                                return;
-                                                                            e.preventDefault();
-                                                                            setTagSuggestOpen(
-                                                                                true,
-                                                                            );
-                                                                            setTagSuggestIndex(
-                                                                                (
-                                                                                    i,
-                                                                                ) =>
-                                                                                    Math.max(
-                                                                                        i -
-                                                                                            1,
-                                                                                        0,
-                                                                                    ),
-                                                                            );
-                                                                            return;
-                                                                        }
-
-                                                                        if (
+                                                                                "ArrowUp" ||
                                                                             e.key ===
-                                                                            "Enter"
+                                                                                "Enter"
                                                                         ) {
                                                                             e.preventDefault();
-                                                                            if (
-                                                                                tagSuggestOpen &&
-                                                                                tagSuggestions[
-                                                                                    tagSuggestIndex
-                                                                                ]
-                                                                            ) {
-                                                                                addTagToSelected(
-                                                                                    tagSuggestions[
-                                                                                        tagSuggestIndex
-                                                                                    ],
-                                                                                );
-                                                                            } else {
-                                                                                addTagToSelected();
-                                                                            }
-                                                                            setTagSuggestOpen(
-                                                                                false,
-                                                                            );
-                                                                            setTagSuggestPinned(
-                                                                                false,
+                                                                            void onAddInputKeyDown(
+                                                                                e.key,
                                                                             );
                                                                         }
                                                                     }}
@@ -1055,7 +724,9 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                                             t
                                                                                         }
                                                                                         type="button"
-                                                                                        className={`${styles.tagSuggestItem} ${
+                                                                                        className={`${
+                                                                                            styles.tagSuggestItem
+                                                                                        } ${
                                                                                             idx ===
                                                                                             tagSuggestIndex
                                                                                                 ? styles.tagSuggestActive
@@ -1072,14 +743,8 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                                             )
                                                                                         }
                                                                                         onClick={() => {
-                                                                                            addTagToSelected(
+                                                                                            void addTagToSelected(
                                                                                                 t,
-                                                                                            );
-                                                                                            setTagSuggestOpen(
-                                                                                                false,
-                                                                                            );
-                                                                                            setTagSuggestPinned(
-                                                                                                false,
                                                                                             );
                                                                                         }}
                                                                                     >
@@ -1111,19 +776,12 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                     e.preventDefault()
                                                                 }
                                                                 onClick={() => {
-                                                                    addTagToSelected();
-                                                                    setTagSuggestOpen(
-                                                                        false,
-                                                                    );
-                                                                    setTagSuggestPinned(
-                                                                        false,
-                                                                    );
+                                                                    void addTagToSelected();
                                                                 }}
                                                                 disabled={
                                                                     tagMutating ||
-                                                                    normalizeTag(
-                                                                        addValue,
-                                                                    ).length ===
+                                                                    addValue.trim()
+                                                                        .length ===
                                                                         0
                                                                 }
                                                                 title="Add"
@@ -1141,20 +799,9 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                                                                 ) =>
                                                                     e.preventDefault()
                                                                 }
-                                                                onClick={() => {
-                                                                    setAddOpen(
-                                                                        false,
-                                                                    );
-                                                                    setAddValue(
-                                                                        "",
-                                                                    );
-                                                                    setTagSuggestOpen(
-                                                                        false,
-                                                                    );
-                                                                    setTagSuggestPinned(
-                                                                        false,
-                                                                    );
-                                                                }}
+                                                                onClick={
+                                                                    closeAddEditor
+                                                                }
                                                                 disabled={
                                                                     tagMutating
                                                                 }
