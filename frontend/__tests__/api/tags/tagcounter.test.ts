@@ -4,33 +4,26 @@
 
 import { RequestError } from "@/api/common/apihandler";
 import {
-    testing_TagGetResponse,
-    testing_TagGetter,
-} from "@/api/tags/taggetter";
+    testing_TagCountResponse,
+    testing_TagCounter,
+} from "@/api/tags/tagcounter";
 
-import TagGetter from "@/api/tags/taggetter";
+import TagCounter from "@/api/tags/tagcounter";
 
 import { Result, Ok, Err } from "@/common/result";
 
-type HandlerReturnType = Promise<Result<testing_TagGetResponse, RequestError>>;
+type HandlerReturnType = Promise<
+    Result<testing_TagCountResponse, RequestError>
+>;
 
-describe("Tag Getter", () => {
-    it("should not include a leading slash without an image id", () => {
+describe("Tag Counter", () => {
+    it("should correctly form query string", () => {
         const handler = async (query: BodyInit): HandlerReturnType => {
-            expect(query).toBe("");
-            return Ok([]);
+            expect(query).toBe("id=1&id=10");
+            return Ok({});
         };
 
-        testing_TagGetter(handler);
-    });
-
-    it("should include a leading slash without an image id", () => {
-        const handler = async (query: BodyInit): HandlerReturnType => {
-            expect(query).toBe("/67");
-            return Ok([]);
-        };
-
-        testing_TagGetter(handler, 67);
+        testing_TagCounter(handler, [1, 10]);
     });
 
     it("should get message on 400", async () => {
@@ -42,7 +35,7 @@ describe("Tag Getter", () => {
             });
         };
 
-        const result = await testing_TagGetter(handler);
+        const result = await testing_TagCounter(handler, []);
         expect(result).toStrictEqual(Err({ status: 400, message: "true" }));
     });
 
@@ -51,19 +44,19 @@ describe("Tag Getter", () => {
             return Err({ status_code: 404, response: new Response() });
         };
 
-        const result = await testing_TagGetter(handler);
+        const result = await testing_TagCounter(handler, [1, 23]);
         expect(result).toStrictEqual(
             Err({ status: 404, message: await new Response().text() }),
         );
     });
 
-    it("should receive tags in order", async () => {
+    it("should receive tags", async () => {
         const handler = async (_: BodyInit): HandlerReturnType => {
-            return Ok(["arches", "wedding", "banquet"]);
+            return Ok({ arches: 1, wedding: 5, banquet: 3 });
         };
 
-        const result = await testing_TagGetter(handler, 4);
-        expect(result).toStrictEqual(Ok(["arches", "wedding", "banquet"]));
+        const result = await testing_TagCounter(handler, [1, 2, 3, 4, 5, 6]);
+        expect(result).toStrictEqual(Ok({ arches: 1, wedding: 5, banquet: 3 }));
     });
 
     it("should pass integration tests", async () => {
@@ -77,7 +70,7 @@ describe("Tag Getter", () => {
             });
         }) as jest.Mock;
 
-        const result = await TagGetter();
-        expect(result).toStrictEqual(Ok(["sus"]));
+        const result = await TagCounter([1, 2, 3, 4, 5]);
+        expect(result).toStrictEqual(Ok({ sus: 1 }));
     });
 });

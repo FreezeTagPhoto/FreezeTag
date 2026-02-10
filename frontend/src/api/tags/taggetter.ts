@@ -1,12 +1,13 @@
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
-import { Result, Err } from "@/common/result";
+import { Result, Err, Ok } from "@/common/result";
 
 export type TagGetResult = Result<
     string[],
     { status: number; message: string }
 >;
-type TagGetResponse = string[];
+
+type TagGetResponse = Record<string, number> | string[];
 
 /**
  *
@@ -45,7 +46,19 @@ async function get_tag_with_handler(
         }
     }
 
-    return result;
+    const data = result.value;
+
+    if (image_id !== undefined) {
+        return Ok(data as string[]);
+    }
+
+    const return_value: string[] = [];
+
+    Object.keys(data).forEach(function (key, _) {
+        return_value.push(key);
+    });
+
+    return Ok(return_value);
 }
 
 export const testing_TagGetter = get_tag_with_handler;
