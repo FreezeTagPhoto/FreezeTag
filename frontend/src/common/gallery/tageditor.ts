@@ -45,7 +45,7 @@ export type UseTagEditorReturn = {
 
     toggleSuggestions: () => Promise<void>;
 
-    // input event handlers (to keep MainGallery lean)
+    // input event handlers
     onAddValueChange: (value: string) => void;
     onAddInputFocusOrClick: () => void;
     onAddInputKeyDown: (key: string) => Promise<void>;
@@ -241,7 +241,7 @@ export function useTagEditor({
         );
     }, [tagSuggestOpen, tagSuggestions.length]);
 
-    // click outside closes suggestions (and unpins)
+    // click outside closes suggestions
     useEffect(() => {
         if (!addOpen) return;
 
@@ -291,8 +291,7 @@ export function useTagEditor({
             setTagSuggestOpen(hasNeedle && !tagSuggestDisabled);
         }
     }, [addValue, tagSuggestDisabled, tagSuggestPinned, ensureAllTagsLoaded]);
-
-    // small helpers so MainGallery JSX is thinner
+    
     const onAddValueChange = useCallback(
         (value: string) => {
             setAddValue(value);
