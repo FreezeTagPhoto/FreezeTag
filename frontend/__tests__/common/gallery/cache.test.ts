@@ -7,20 +7,14 @@ import { act, renderHook } from "@testing-library/react";
 
 import { useCachedById } from "@/common/gallery/cache";
 import type { Result } from "@/common/result";
+import { Ok, Err } from "@/common/result";
 import { None, Some } from "@/common/option";
 
 type Err = { message: string };
 
-function ok<T>(value: T): Result<T, Err> {
-    return { ok: true, value } as Result<T, Err>;
-}
-function bad<T>(message: string): Result<T, Err> {
-    return { ok: false, error: { message } } as Result<T, Err>;
-}
-
 describe("common/gallery/cache.useCachedById", () => {
     it("does nothing when selectedId is null", () => {
-        const fetcher = jest.fn(async (_id: number) => ok("x"));
+        const fetcher = jest.fn(async (_id: number) => Ok<string>("x"));
 
         const { result } = renderHook(() =>
             useCachedById<string, Err>(null, fetcher),
@@ -34,7 +28,7 @@ describe("common/gallery/cache.useCachedById", () => {
     });
 
     it("fetches when id not cached, then caches and sets current + clears error", async () => {
-        const fetcher = jest.fn(async (id: number) => ok(`v:${id}`));
+        const fetcher = jest.fn(async (id: number) => Ok(`v:${id}`));
 
         const { result, rerender } = renderHook(
             ({ selectedId }) => useCachedById<string, Err>(selectedId, fetcher),
@@ -68,7 +62,9 @@ describe("common/gallery/cache.useCachedById", () => {
     });
 
     it("sets error when fetch fails and does not cache", async () => {
-        const fetcher = jest.fn(async (_id: number) => bad<string>("nope"));
+        const fetcher = jest.fn(async (_id: number) =>
+            Err<Err>({ message: "nope" }),
+        );
 
         const { result } = renderHook(() =>
             useCachedById<string, Err>(7, fetcher),
@@ -102,7 +98,7 @@ describe("common/gallery/cache.useCachedById", () => {
 
         // resolving after unmount should not throw
         await act(async () => {
-            resolve(ok("late"));
+            resolve(Ok("late"));
         });
     });
 });
