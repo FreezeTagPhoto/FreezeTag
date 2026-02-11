@@ -7,7 +7,6 @@ import (
 	"freezetag/backend/pkg/repositories"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -101,7 +100,7 @@ func (s *DefaultAuthService) ValidateJWT(tokenString string) (jwt.MapClaims, err
 
 func createToken(userID database.UserID) (string, error) {
 	claims := jwt.NewWithClaims(JwtSigningMethod, jwt.MapClaims{
-		"sub": strconv.FormatInt(int64(userID), 10),
+		"sub": userID,
 		"exp": time.Now().Add(JwtExpirationHours).Unix(),
 	})
 	tokenString, err := claims.SignedString([]byte(JwtSecretKey))

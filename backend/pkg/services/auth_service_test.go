@@ -147,7 +147,7 @@ func TestCreateToken(t *testing.T) {
 	require.NoError(t, err)
 	claims, ok := token.Claims.(jwt.MapClaims)
 	require.True(t, ok)
-	require.Equal(t, fmt.Sprintf("%d", userID), claims["sub"])
+	require.Equal(t, float64(userID), claims["sub"])
 }
 
 func TestLoginCreatesValidJWT(t *testing.T) {
@@ -196,7 +196,7 @@ func TestValidateJWT(t *testing.T) {
 	require.NoError(t, err)
 	claims, err := auth.ValidateJWT(tokenString)
 	require.NoError(t, err)
-	require.Equal(t, fmt.Sprintf("%d", userID), claims["sub"])
+	require.Equal(t, float64(userID), claims["sub"])
 }
 
 func TestValidateJWTinvalidToken(t *testing.T) {
