@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 const (
@@ -92,14 +93,12 @@ func (repo *DefaultImageRepository) safeFilePath(path string) (string, error) {
 	return path, nil
 }
 
+// required so unique names from the database remain unique
+var namingMutex sync.Mutex
+
 // errors and results are given using the simple filename,
 // the full filepath (e.g /tmp/filename) is given to the database
 func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string) (database.ImageId, error) {
-	filepath, err := repo.safeFilePath(path.Join(repo.folderPath, filename))
-	if err != nil {
-		return 0, err
-	}
-
 	imagedata, err := repo.parser.ParseImage(filename, data)
 	if err != nil {
 		return 0, err
@@ -111,6 +110,13 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	}
 
 	thumbLarge, err := images.CreateThumbnail(imagedata, max_height_large, quality_large)
+	if err != nil {
+		return 0, err
+	}
+
+	namingMutex.Lock()
+	defer namingMutex.Unlock()
+	filepath, err := repo.safeFilePath(path.Join(repo.folderPath, filename))
 	if err != nil {
 		return 0, err
 	}

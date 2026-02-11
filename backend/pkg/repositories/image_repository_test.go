@@ -71,7 +71,6 @@ func TestStoreImageBytesSuccess(t *testing.T) {
 func TestStoreImageBytesFailParse(t *testing.T) {
 	tmpDir := t.TempDir()
 	mockdb := mockDatabase.NewMockImageDatabase(t) // we are expecting a fail on parse, no calls
-	mockdb.EXPECT().GetNonOverlappingSuffix(mock.Anything).Return(0, nil)
 	mockParser := mockParser.NewMockParser(t)
 	mockParser.EXPECT().ParseImage(mock.Anything, mock.Anything).
 		Return(imagedata.Data{}, fmt.Errorf("mock error"))
@@ -91,7 +90,6 @@ func TestStoreImageBytesFailThumbnailGen(t *testing.T) {
 	// to be 10x10px with 0 pixels
 	tmpDir := t.TempDir()
 	mockdb := mockDatabase.NewMockImageDatabase(t) // we are expecting a fail on thumbnail gen, no calls
-	mockdb.EXPECT().GetNonOverlappingSuffix(mock.Anything).Return(0, nil)
 	mockParser := mockParser.NewMockParser(t)
 	mockParser.EXPECT().ParseImage(mock.Anything, mock.Anything).
 		Return(imagedata.Data{PixelsRGBA: []byte{}, Height: 10, Width: 10}, nil)
