@@ -630,3 +630,16 @@ func TestGetImageNameCollisionGap2(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, suffix)
 }
+
+func TestGetImageNameExtension(t *testing.T) {
+	tmp := createTempDatabase(t)
+	_, err := tmp.AddImage("abc.png", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc1.png", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc2.jpg", imagedata.Data{})
+	require.NoError(t, err)
+	suffix, err := tmp.GetNonOverlappingSuffix("abc.png")
+	assert.NoError(t, err)
+	assert.Equal(t, 2, suffix)
+}

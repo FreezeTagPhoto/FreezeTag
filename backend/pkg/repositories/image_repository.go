@@ -7,6 +7,8 @@ import (
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/imagedata"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -77,25 +79,27 @@ func InitImageRepository(db database.ImageDatabase, paser images.Parser, folderP
 	}
 }
 
-// func safeFilePath(filepath, filename string) (string, error) {
-// 	tmpName := filename
-// 	for i := int64(1); ; i++ {
-// 		_, err := os.Stat(filepath + "/" + tmpName)
-// 		switch {
-// 		case err == nil:
-// 			tmpName = "copy " + strconv.FormatInt(i, 10) + " " + filename
-// 			continue
-// 		case errors.Is(err, os.ErrNotExist):
-// 			return tmpName, nil
-// 		default:
-// 			return "", fmt.Errorf("failed to check file existance via os.Stat %q: %w", filename, err)
-// 		}
-// 	}
-// }
+func (repo *DefaultImageRepository) safeFilePath(path string) (string, error) {
+	suffix, err := repo.db.GetNonOverlappingSuffix(path)
+	if err != nil {
+		return "", err
+	}
+	if suffix != 0 {
+		ext := filepath.Ext(path)
+		base := strings.TrimSuffix(path, ext)
+		return fmt.Sprintf("%s%d%s", base, suffix, ext), nil
+	}
+	return path, nil
+}
 
 // errors and results are given using the simple filename,
 // the full filepath (e.g /tmp/filename) is given to the database
 func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string) (database.ImageId, error) {
+	filepath, err := repo.safeFilePath(path.Join(repo.folderPath, filename))
+	if err != nil {
+		return 0, err
+	}
+
 	imagedata, err := repo.parser.ParseImage(filename, data)
 	if err != nil {
 		return 0, err
@@ -109,15 +113,6 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	thumbLarge, err := images.CreateThumbnail(imagedata, max_height_large, quality_large)
 	if err != nil {
 		return 0, err
-	}
-
-	filepath := repo.folderPath + filename
-	suffix, err := repo.db.GetNonOverlappingSuffix(filepath)
-	if err != nil {
-		return 0, err
-	}
-	if suffix != 0 {
-		filepath = fmt.Sprintf("%s%d", filepath, suffix)
 	}
 
 	id, err := repo.db.AddImage(filepath, imagedata)

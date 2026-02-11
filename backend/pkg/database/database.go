@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images/imagedata"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -148,8 +149,14 @@ func (db SqliteImageDatabase) GetImageFile(id ImageId) (*string, error) {
 }
 
 func (db SqliteImageDatabase) GetNonOverlappingSuffix(name string) (int, error) {
-	exp := fmt.Sprintf("%s[0-9]*", regexp.QuoteMeta(name))
-	rows, err := db.db.Query("SELECT CAST(SUBSTR(imageFile, ?) AS INTEGER) FROM Images WHERE imageFile REGEXP ? ORDER BY CAST(SUBSTR(imageFile, ?) AS INTEGER) ASC", len(name)+1, exp, len(name)+1)
+	var exp string
+	if ext := filepath.Ext(name); ext == "" {
+		exp = fmt.Sprintf("%s([0-9]*)", regexp.QuoteMeta(name))
+	} else {
+		base := strings.TrimSuffix(name, ext)
+		exp = fmt.Sprintf("%s([0-9]*)%s", regexp.QuoteMeta(base), regexp.QuoteMeta(ext))
+	}
+	rows, err := db.db.Query("SELECT CAST(rextract(?, imageFile) AS INTEGER) FROM Images WHERE imageFile REGEXP ? ORDER BY CAST(rextract(?, imageFile) AS INTEGER) ASC", exp, exp, exp)
 	if err != nil {
 		return 0, err
 	}

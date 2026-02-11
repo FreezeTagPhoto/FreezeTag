@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"regexp"
 	"slices"
 	"sync"
@@ -20,7 +21,7 @@ var regexCache = struct {
 	toDelete: make(chan string),
 }
 
-func regexMatch(pattern, text string) (bool, error) {
+func cachedRegex(pattern string) (*regexp.Regexp, error) {
 	regexCache.RLock()
 	re, exists := regexCache.cache[pattern]
 	regexCache.RUnlock()
@@ -29,7 +30,7 @@ func regexMatch(pattern, text string) (bool, error) {
 		var err error
 		re, err = regexp.Compile(pattern)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		regexCache.Lock()
 		regexCache.cache[pattern] = re
@@ -41,10 +42,30 @@ func regexMatch(pattern, text string) (bool, error) {
 		}()
 	}
 
+	return re, nil
+}
+
+func regexMatch(pattern, text string) (bool, error) {
+	re, err := cachedRegex(pattern)
+	if err != nil {
+		return false, err
+	}
 	if re.MatchString(text) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func regexCapture(pattern, text string) (string, error) {
+	re, err := cachedRegex(pattern)
+	if err != nil {
+		return "", err
+	}
+	match := re.FindStringSubmatch(text)
+	if len(match) != 2 {
+		return "", fmt.Errorf("no capture groups")
+	}
+	return match[1], nil
 }
 
 func cosineDistanceDegrees(latA float64, longA float64, latB float64, longB float64) float64 {
@@ -74,6 +95,9 @@ func registerExtendedSqlite(name string) {
 				return
 			}
 			if err = conn.RegisterFunc("gcirc", cosineDistanceDegrees, true); err != nil {
+				return
+			}
+			if err = conn.RegisterFunc("rextract", regexCapture, true); err != nil {
 				return
 			}
 			return
