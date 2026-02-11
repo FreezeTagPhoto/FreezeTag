@@ -23,6 +23,7 @@ var (
 
 type AuthService interface {
 	AddUser(username string, password string) (*database.PublicUser, error)
+	EnsureLogin() error
 	AuthenticateUser(username string, password string) (string, error)
 	ValidateJWT(tokenString string) (jwt.MapClaims, error)
 }
@@ -47,6 +48,21 @@ func InitDefaultAuthService(userRepo repositories.UserRepository) *DefaultAuthSe
 	return &DefaultAuthService{
 		userRepo: userRepo,
 	}
+}
+
+func (s *DefaultAuthService) EnsureLogin() error {
+	users, err := s.userRepo.ListAllUsers()
+	if err != nil {
+		return err
+	}
+	if len(users) == 0 {
+		log.Printf("[WARN] since there are no users, a user with username 'admin' and password 'admin' is being created. Change this ASAP.")
+		_, err = s.AddUser("admin", "admin")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *DefaultAuthService) AuthenticateUser(username string, password string) (string, error) {

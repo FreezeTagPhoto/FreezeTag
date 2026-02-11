@@ -100,6 +100,10 @@ func initializeDependencies() *dependencies {
 	}
 	jobService := services.InitDefaultJobService(jobRepo, imageRepo, pluginService)
 	authService := services.InitDefaultAuthService(userRepo)
+	err = authService.EnsureLogin()
+	if err != nil {
+		log.Fatalf("[ERR]  error ensuring that the user can log in: %v", err)
+	}
 
 	return &dependencies{
 		imageRepository: imageRepo,
