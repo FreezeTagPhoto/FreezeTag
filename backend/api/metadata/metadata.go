@@ -43,10 +43,20 @@ func (me MetadataEndpoint) HandleGetMetadata(c *gin.Context) {
 		id = database.ImageId(num)
 	}
 
-	result, err := me.imageRepository.GetImageMetadata(id)
+	meta, err := me.imageRepository.GetImageMetadata(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
 		return
+	}
+	width, height, err := me.imageRepository.GetImageResolution(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		return
+	}
+	result := api.MetadataResponse{
+		Metadata: meta,
+		Width:    width,
+		Height:   height,
 	}
 	c.JSON(http.StatusOK, result)
 }

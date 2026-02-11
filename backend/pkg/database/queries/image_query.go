@@ -96,6 +96,15 @@ func (q *ImageQuery) StatementWithArgs() (string, []any) {
 		args = append(args, q.uploadedBefore.Unix())
 		parts++
 	}
+	if q.NearLocation != nil {
+		near := *q.NearLocation
+		if parts != 0 {
+			builder.WriteString(" AND ")
+		}
+		builder.WriteString("(latitude IS NOT NULL AND longitude IS NOT NULL AND gcirc(latitude, longitude, ?, ?) <= ?)")
+		args = append(args, near[0], near[1], near[2])
+		parts++
+	}
 	if parts == 0 {
 		builder.WriteString("TRUE")
 	}

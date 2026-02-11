@@ -2,15 +2,14 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images/imagedata"
-	"math"
+	"regexp"
 	"strings"
 	"time"
 
 	_ "embed"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type ImageId int64
@@ -23,12 +22,16 @@ type ImageDatabase interface {
 	GetImagesOrder(queries.DatabaseQuery, queries.SortField, queries.SortOrder) ([]ImageId, error)
 	// Get the image filename pointed to by the image ID
 	GetImageFile(ImageId) (*string, error)
+	// Get the lowest suffix number that doesn't overlap with an existing image
+	GetNonOverlappingSuffix(string) (int, error)
 	// Get the thumbnail data at the given thumbnail level for the image with the given ID
 	GetImageThumbnail(ImageId, uint) ([]byte, error)
 	// Get the tags attached to an image
 	GetImageTags(ImageId) ([]string, error)
 	// Get the metadata for an image
 	GetImageMetadata(ImageId) (imagedata.Metadata, error)
+	// Get the resolution of an image
+	GetImageResolution(ImageId) (int, int, error)
 	// Get all tags matching the given names in the database
 	//
 	// Note: This function WILL fail silently if you ask for tags that haven't been added. Only use this if you don't care about the tags absolutely existing.
@@ -83,7 +86,8 @@ type SqliteImageDatabase struct {
 var schema string
 
 func InitSQLiteImageDatabase(datasource string) (SqliteImageDatabase, error) {
-	db, err := sql.Open("sqlite3", datasource)
+	registerExtendedSqlite("sqlite3_extrafunc")
+	db, err := sql.Open("sqlite3_extrafunc", datasource)
 	if err != nil {
 		return SqliteImageDatabase{}, err
 	}
@@ -92,11 +96,6 @@ func InitSQLiteImageDatabase(datasource string) (SqliteImageDatabase, error) {
 		return SqliteImageDatabase{}, err
 	}
 	return SqliteImageDatabase{db}, nil
-}
-
-func cosineDistanceDegrees(latA float64, latB float64, longA float64, longB float64) float64 {
-	var phi1, phi2, lambda1, lambda2 = latA * math.Pi / 180., latB * math.Pi / 180., longA * math.Pi / 180., longB * math.Pi / 180.
-	return (180. / math.Pi) * math.Acos(math.Sin(phi1)*math.Sin(phi2)+math.Cos(phi1)*math.Cos(phi2)*math.Cos(math.Abs(lambda1-lambda2)))
 }
 
 func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery) ([]ImageId, error) {
@@ -121,19 +120,8 @@ func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries
 			return []ImageId{}, err
 		}
 		var id int
-		var lat, long sql.NullFloat64
-		if err := rows.Scan(&id, &lat, &long); err != nil {
+		if err := rows.Scan(&id); err != nil {
 			return []ImageId{}, err
-		}
-		if dq, ok := q.(*queries.ImageQuery); ok && dq.NearLocation != nil {
-			// skip adding if there is no location
-			if !lat.Valid || !long.Valid {
-				continue
-			}
-			// skip adding if distance is too large
-			if cosineDistanceDegrees(lat.Float64, dq.NearLocation[0], long.Float64, dq.NearLocation[1]) > dq.NearLocation[2] {
-				continue
-			}
 		}
 		ids = append(ids, ImageId(id))
 	}
@@ -157,6 +145,30 @@ func (db SqliteImageDatabase) GetImageFile(id ImageId) (*string, error) {
 		return &name, nil
 	}
 	return nil, nil
+}
+
+func (db SqliteImageDatabase) GetNonOverlappingSuffix(name string) (int, error) {
+	exp := fmt.Sprintf("%s[0-9]*", regexp.QuoteMeta(name))
+	rows, err := db.db.Query("SELECT CAST(SUBSTR(imageFile, ?) AS INTEGER) FROM Images WHERE imageFile REGEXP ? ORDER BY CAST(SUBSTR(imageFile, ?) AS INTEGER) ASC", len(name)+1, exp, len(name)+1)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close() //nolint:errcheck
+	lowest := 0
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return 0, err
+		}
+		var suffix int
+		if err := rows.Scan(&suffix); err != nil {
+			return 0, err
+		}
+		if suffix != lowest {
+			break
+		}
+		lowest++
+	}
+	return lowest, nil
 }
 
 func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size uint) ([]byte, error) {
@@ -341,6 +353,26 @@ func (db SqliteImageDatabase) GetImageMetadata(id ImageId) (imagedata.Metadata, 
 	return imagedata.Metadata{}, nil
 }
 
+func (db SqliteImageDatabase) GetImageResolution(id ImageId) (w int, h int, err error) {
+	rows, err := db.db.Query("SELECT width, height FROM Images WHERE id = ?", id)
+	if err != nil {
+		return
+	}
+	defer rows.Close() //nolint:errcheck
+	if rows.Next() {
+		var width sql.NullInt32
+		var height sql.NullInt32
+		if err = rows.Scan(&width, &height); err != nil {
+			return
+		}
+		if !width.Valid || !height.Valid {
+			return 0, 0, fmt.Errorf("image has null resolution (this really shouldn't happen)")
+		}
+		return int(width.Int32), int(height.Int32), nil
+	}
+	return 0, 0, nil
+}
+
 func (db SqliteImageDatabase) GetImageThumbnailSizes(id ImageId) ([]int, error) {
 	rows, err := db.db.Query("SELECT thumbnailSize FROM Thumbnails WHERE imageId = ?", id)
 	if err != nil {
@@ -381,12 +413,12 @@ func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageI
 		longitude = &data.Geo.Lon
 	}
 
-	stmt, err := db.db.Prepare(`INSERT INTO Images (imageFile, dateTaken, dateUploaded, cameraMake, cameraModel, latitude, longitude) values (?, ?, ?, ?, ?, ?, ?)`)
+	stmt, err := db.db.Prepare(`INSERT INTO Images (imageFile, dateTaken, dateUploaded, cameraMake, cameraModel, latitude, longitude, width, height) values (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return 0, err
 	}
 	defer stmt.Close() //nolint:errcheck
-	res, err := stmt.Exec(file, datetaken, &dateuploaded, make, model, latitude, longitude)
+	res, err := stmt.Exec(file, datetaken, &dateuploaded, make, model, latitude, longitude, data.Width, data.Height)
 	if err != nil {
 		return 0, err
 	}

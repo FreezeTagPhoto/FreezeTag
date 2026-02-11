@@ -1,14 +1,12 @@
 package repositories
 
 import (
-	"errors"
 	"fmt"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/imagedata"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -61,6 +59,7 @@ type ImageRepository interface {
 	RemoveImageTags(id database.ImageId, tags []string) ImageTagResult
 	GetImageFilepath(id database.ImageId) (string, error)
 	GetImageMetadata(id database.ImageId) (imagedata.Metadata, error)
+	GetImageResolution(id database.ImageId) (int, int, error)
 	GetTagCounts(ids []string) (map[string]int64, error)
 }
 
@@ -78,33 +77,25 @@ func InitImageRepository(db database.ImageDatabase, paser images.Parser, folderP
 	}
 }
 
-func safeFilePath(filepath, filename string) (string, error) {
-	tmpName := filename
-	for i := int64(1); ; i++ {
-		_, err := os.Stat(filepath + "/" + tmpName)
-		switch {
-		case err == nil:
-			tmpName = "copy " + strconv.FormatInt(i, 10) + " " + filename
-			continue
-		case errors.Is(err, os.ErrNotExist):
-			return tmpName, nil
-		default:
-			return "", fmt.Errorf("failed to check file existance via os.Stat %q: %w", filename, err)
-		}
-	}
-}
+// func safeFilePath(filepath, filename string) (string, error) {
+// 	tmpName := filename
+// 	for i := int64(1); ; i++ {
+// 		_, err := os.Stat(filepath + "/" + tmpName)
+// 		switch {
+// 		case err == nil:
+// 			tmpName = "copy " + strconv.FormatInt(i, 10) + " " + filename
+// 			continue
+// 		case errors.Is(err, os.ErrNotExist):
+// 			return tmpName, nil
+// 		default:
+// 			return "", fmt.Errorf("failed to check file existance via os.Stat %q: %w", filename, err)
+// 		}
+// 	}
+// }
 
 // errors and results are given using the simple filename,
 // the full filepath (e.g /tmp/filename) is given to the database
-// takes in a context to know when to stop processing the image if the job batch is cancelled
 func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string) (database.ImageId, error) {
-
-	filename, err := safeFilePath(repo.folderPath, filename)
-	if err != nil {
-		return 0, err
-	}
-	filepath := repo.folderPath + filename
-
 	imagedata, err := repo.parser.ParseImage(filename, data)
 	if err != nil {
 		return 0, err
@@ -118,6 +109,15 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	thumbLarge, err := images.CreateThumbnail(imagedata, max_height_large, quality_large)
 	if err != nil {
 		return 0, err
+	}
+
+	filepath := repo.folderPath + filename
+	suffix, err := repo.db.GetNonOverlappingSuffix(filepath)
+	if err != nil {
+		return 0, err
+	}
+	if suffix != 0 {
+		filepath = fmt.Sprintf("%s%d", filepath, suffix)
 	}
 
 	id, err := repo.db.AddImage(filepath, imagedata)
@@ -230,6 +230,11 @@ func (repo *DefaultImageRepository) GetImageMetadata(id database.ImageId) (image
 		return imagedata.Metadata{}, err
 	}
 	return metadata, nil
+}
+
+func (repo *DefaultImageRepository) GetImageResolution(id database.ImageId) (w int, h int, err error) {
+	w, h, err = repo.db.GetImageResolution(id)
+	return
 }
 
 func (repo *DefaultImageRepository) GetTagCounts(ids []string) (map[string]int64, error) {

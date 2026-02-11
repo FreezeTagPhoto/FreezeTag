@@ -61,6 +61,10 @@ type StatusLoginUser struct {
 
 type TagCounts map[string]int64
 
-type MetadataResponse imagedata.Metadata
+type MetadataResponse struct {
+	imagedata.Metadata
+	Width  int `json:"width"`
+	Height int `json:"height"`
+}
 
 type JobBatch repositories.JobBatch
