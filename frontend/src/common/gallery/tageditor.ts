@@ -219,15 +219,15 @@ export function useTagEditor({
         if (!needle) {
             if (!allowEmpty) return [];
             return [...candidates]
-                .sort((a, b) => a.localeCompare(b))
-                .slice(0, 10);
+                .sort((a, b) => a.localeCompare(b));
+                // .slice(0, 10);
         }
 
         return candidates
             .map((t) => ({ tag: t, score: rankTag(t, needle) }))
             .filter((x) => x.score < 999)
             .sort((a, b) => a.score - b.score || a.tag.localeCompare(b.tag))
-            .slice(0, 10)
+            // .slice(0, 10)
             .map((x) => x.tag);
     }, [addOpen, allTags, currentTags, addValue, tagSuggestPinned]);
 
