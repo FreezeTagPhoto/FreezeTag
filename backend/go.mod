@@ -13,6 +13,7 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
+	github.com/umahmood/haversine v0.0.0-20151105152445-808ab04add26
 	golang.org/x/crypto v0.43.0
 	golang.org/x/sync v0.17.0
 	gopkg.in/gographics/imagick.v3 v3.7.2

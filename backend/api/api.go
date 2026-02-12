@@ -1,6 +1,7 @@
 package api
 
 import (
+	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/images/imagedata"
 	"freezetag/backend/pkg/repositories"
 
@@ -56,11 +57,15 @@ type LoginCredentials struct {
 }
 
 type StatusLoginUser struct {
-	UserID string `json:"user_id"`
+	UserID database.UserID `json:"user_id"`
 }
 
 type TagCounts map[string]int64
 
-type MetadataResponse imagedata.Metadata
+type MetadataResponse struct {
+	imagedata.Metadata
+	Width  int `json:"width"`
+	Height int `json:"height"`
+}
 
 type JobBatch repositories.JobBatch

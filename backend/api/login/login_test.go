@@ -117,7 +117,7 @@ func TestLoginExistingLoginCookie(t *testing.T) {
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 	NewMockAuthService.EXPECT().
 		ValidateJWT("existing_token").
-		Return(jwt.MapClaims{"sub": "testuser"}, nil).Once()
+		Return(jwt.MapClaims{"sub": 1.}, nil).Once()
 
 	router := gin.Default()
 
@@ -135,7 +135,7 @@ func TestLoginExistingLoginCookie(t *testing.T) {
 	var got api.StatusLoginUser
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.StatusLoginUser{UserID: "testuser"}
+	expected := api.StatusLoginUser{UserID: 1}
 	assert.Equal(t, expected, got)
 }
 

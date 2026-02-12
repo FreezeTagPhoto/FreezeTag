@@ -6,6 +6,7 @@ import (
 	mockParser "freezetag/backend/mocks/Parser"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/queries"
+	"path"
 
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/formats"
@@ -51,6 +52,7 @@ func TestStoreImageBytesSuccess(t *testing.T) {
 		EXPECT().
 		AddImageThumbnail(mock.Anything, mock.Anything, mock.Anything).
 		Return(true, nil).Times(2)
+	mockdb.EXPECT().GetNonOverlappingSuffix(mock.Anything).Return(0, nil)
 
 	parser := initParserCollection()
 	repo := InitImageRepository(mockdb, parser, tmpDir)
@@ -105,6 +107,10 @@ func TestStoreImageAddImageFails(t *testing.T) {
 	tmpDir := t.TempDir()
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().AddImage(mock.Anything, mock.Anything).Return(-1, fmt.Errorf("mock fail"))
+	mockdb.
+		EXPECT().
+		GetNonOverlappingSuffix(mock.Anything).
+		Return(0, nil)
 	parser := initParserCollection() // we need good data here
 	repo := InitImageRepository(mockdb, parser, tmpDir)
 
@@ -122,6 +128,10 @@ func TestStoreImageThumbnailFailsBool(t *testing.T) {
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().AddImage(mock.Anything, mock.Anything).Return(1, nil)
 	mockdb.EXPECT().AddImageThumbnail(mock.Anything, mock.Anything, mock.Anything).Return(false, nil)
+	mockdb.
+		EXPECT().
+		GetNonOverlappingSuffix(mock.Anything).
+		Return(0, nil)
 	parser := initParserCollection() // we need good data here
 	repo := InitImageRepository(mockdb, parser, tmpDir)
 
@@ -139,6 +149,10 @@ func TestStoreImageThumbnailFailsError(t *testing.T) {
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().AddImage(mock.Anything, mock.Anything).Return(1, nil)
 	mockdb.EXPECT().AddImageThumbnail(mock.Anything, mock.Anything, mock.Anything).Return(true, fmt.Errorf("mock error"))
+	mockdb.
+		EXPECT().
+		GetNonOverlappingSuffix(mock.Anything).
+		Return(0, nil)
 	parser := initParserCollection() // we need good data here
 	repo := InitImageRepository(mockdb, parser, tmpDir)
 
@@ -162,6 +176,10 @@ func TestStoreImageBytesNameCollision(t *testing.T) {
 		EXPECT().
 		AddImageThumbnail(mock.Anything, mock.Anything, mock.Anything).
 		Return(true, nil)
+	mockdb.
+		EXPECT().
+		GetNonOverlappingSuffix(path.Join(tmpDir, "gopher.png")).
+		Return(1, nil)
 
 	parser := initParserCollection() // we need good data here
 	repo := InitImageRepository(mockdb, parser, tmpDir)
@@ -169,13 +187,9 @@ func TestStoreImageBytesNameCollision(t *testing.T) {
 	data, err := os.ReadFile("./test_resources/gopher1.png")
 	require.NoError(t, err)
 
-	_, err = repo.StoreImageBytes(data, "gopher1.png")
+	_, err = repo.StoreImageBytes(data, "gopher.png")
 	assert.NoError(t, err, "no error in result")
-	assert.FileExists(t, tmpDir+"/"+"gopher1.png")
-
-	_, err = repo.StoreImageBytes(data, "gopher1.png")
-	assert.NoError(t, err, "expected error in result")
-	assert.FileExists(t, tmpDir+"/"+"copy 1 gopher1.png")
+	assert.FileExists(t, path.Join(tmpDir, "gopher1.png"))
 }
 
 func TestGetThumbnailSuccess(t *testing.T) {

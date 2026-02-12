@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS Images (
     cameraMake TEXT,
     cameraModel TEXT,
     latitude REAL,
-    longitude REAL
+    longitude REAL,
+    width INTEGER,
+    height INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS Tags (

@@ -13,6 +13,7 @@ import (
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
 	"freezetag/backend/api/upload"
+	"freezetag/backend/api/user"
 	"freezetag/backend/middleware"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/images"
@@ -100,6 +101,10 @@ func initializeDependencies() *dependencies {
 	}
 	jobService := services.InitDefaultJobService(jobRepo, imageRepo, pluginService)
 	authService := services.InitDefaultAuthService(userRepo)
+	err = authService.EnsureLogin()
+	if err != nil {
+		log.Fatalf("[ERR]  error ensuring that the user can log in: %v", err)
+	}
 
 	return &dependencies{
 		imageRepository: imageRepo,
@@ -147,6 +152,7 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 		jobquery.InitJobQueryEndpoint(deps.jobRepository).RegisterEndpoints(authGroup)
 		files.InitFileEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
 		logout.InitLogoutEndpoint(deps.authService).RegisterEndpoints(authGroup)
+		user.InitUserEndpoint(deps.userRepository).RegisterEndpoints(authGroup)
 	}
 
 	login.InitLoginEndpoint(deps.authService).RegisterEndpoints(router)
