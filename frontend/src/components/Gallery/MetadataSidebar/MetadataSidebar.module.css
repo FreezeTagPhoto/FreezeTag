@@ -116,7 +116,9 @@
     color: #e5e7eb;
 
     cursor: pointer;
-    transition: background 120ms ease, border-color 120ms ease,
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
         transform 80ms ease;
 }
 

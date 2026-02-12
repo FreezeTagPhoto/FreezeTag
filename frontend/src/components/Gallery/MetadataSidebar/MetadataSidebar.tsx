@@ -131,7 +131,9 @@ export default function MetadataSidebar({
         <aside className={styles.viewerSidebar}>
             <div className={styles.detailsHeaderRow}>
                 <h2 className={styles.sidebarTitle}>Image details</h2>
-                {metadataLoading && <span className={styles.pill}>Loading</span>}
+                {metadataLoading && (
+                    <span className={styles.pill}>Loading</span>
+                )}
             </div>
 
             {metadataError && (
@@ -277,7 +279,9 @@ export default function MetadataSidebar({
                                         <button
                                             type="button"
                                             className={`${styles.tagAddIconPill} ${styles.tagAddPill}`}
-                                            onMouseDown={(e) => e.preventDefault()}
+                                            onMouseDown={(e) =>
+                                                e.preventDefault()
+                                            }
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 void openAddEditor();
@@ -295,7 +299,9 @@ export default function MetadataSidebar({
                                         >
                                             <div
                                                 ref={comboRef}
-                                                className={styles.tagAddInputWrap}
+                                                className={
+                                                    styles.tagAddInputWrap
+                                                }
                                                 role="combobox"
                                                 aria-label="New tag"
                                                 aria-haspopup="listbox"
@@ -304,7 +310,9 @@ export default function MetadataSidebar({
                                             >
                                                 <input
                                                     ref={addInputRef}
-                                                    className={styles.tagAddInput}
+                                                    className={
+                                                        styles.tagAddInput
+                                                    }
                                                     placeholder={
                                                         allTagsLoading
                                                             ? "Loading tags..."
@@ -326,7 +334,8 @@ export default function MetadataSidebar({
                                                         if (
                                                             e.key ===
                                                                 "ArrowDown" ||
-                                                            e.key === "ArrowUp" ||
+                                                            e.key ===
+                                                                "ArrowUp" ||
                                                             e.key === "Enter"
                                                         ) {
                                                             e.preventDefault();
@@ -396,9 +405,14 @@ export default function MetadataSidebar({
                                                                 </div>
                                                             ) : (
                                                                 tagSuggestions.map(
-                                                                    (t, idx) => (
+                                                                    (
+                                                                        t,
+                                                                        idx,
+                                                                    ) => (
                                                                         <button
-                                                                            key={t}
+                                                                            key={
+                                                                                t
+                                                                            }
                                                                             type="button"
                                                                             className={`${
                                                                                 styles.tagSuggestItem
@@ -429,7 +443,9 @@ export default function MetadataSidebar({
                                                                                     styles.tagSuggestLabel
                                                                                 }
                                                                             >
-                                                                                {t}
+                                                                                {
+                                                                                    t
+                                                                                }
                                                                             </span>
                                                                         </button>
                                                                     ),
@@ -452,8 +468,7 @@ export default function MetadataSidebar({
                                                 }}
                                                 disabled={
                                                     tagMutating ||
-                                                    addValue.trim().length ===
-                                                        0
+                                                    addValue.trim().length === 0
                                                 }
                                                 aria-label="Add tag"
                                                 title="Add"
@@ -475,7 +490,9 @@ export default function MetadataSidebar({
                                                 aria-label="Cancel"
                                                 title="Cancel"
                                             >
-                                                <XCircle className={styles.icon} />
+                                                <XCircle
+                                                    className={styles.icon}
+                                                />
                                             </button>
                                         </div>
                                     )}

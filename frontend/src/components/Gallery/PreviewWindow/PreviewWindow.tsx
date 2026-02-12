@@ -86,8 +86,7 @@ export default function PreviewWindow({
         };
 
         window.addEventListener("keydown", handleKeyDown, true);
-        return () =>
-            window.removeEventListener("keydown", handleKeyDown, true);
+        return () => window.removeEventListener("keydown", handleKeyDown, true);
     }, [moveSelection, onClose]);
 
     const zoomOut = () => {
@@ -189,8 +188,11 @@ export default function PreviewWindow({
 
     const zoomed = zoom !== 1;
 
-    const cursor =
-        hoveringImage ? (zoomed ? "zoom-out" : "zoom-in") : "default";
+    const cursor = hoveringImage
+        ? zoomed
+            ? "zoom-out"
+            : "zoom-in"
+        : "default";
 
     // if baseSize isn't ready for some reason, fall back to the old percentage approach
     const zoomedStyle: React.CSSProperties | undefined = !zoomed
@@ -275,7 +277,8 @@ export default function PreviewWindow({
                         ref={scrollRef}
                         style={{
                             cursor,
-                            justifyContent: zoom === 1 ? "center" : "flex-start",
+                            justifyContent:
+                                zoom === 1 ? "center" : "flex-start",
                             alignItems: zoom === 1 ? "center" : "flex-start",
                         }}
                     >
