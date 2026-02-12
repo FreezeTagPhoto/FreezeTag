@@ -18,11 +18,11 @@ import {
     formatLocation,
 } from "@/common/gallery/format";
 import { useTagEditor } from "@/common/gallery/tageditor";
+import { MoreHorizontal, PlusCircle, X, XCircle } from "lucide-react";
 
 export type MetadataSidebarProps = {
     selectedId: number;
     onSearchTag?: (tag: string) => void;
-
     viewerRef: RefObject<HTMLDivElement | null>;
 };
 
@@ -103,8 +103,8 @@ export default function MetadataSidebar({
             const dropdownTop = comboRect.bottom + 8;
             const bottomPad = 12;
             const available = viewerRect.bottom - dropdownTop - bottomPad;
-            const clamped = Math.max(120, Math.min(240, Math.floor(available)));
 
+            const clamped = Math.max(120, Math.min(240, Math.floor(available)));
             setTagDropdownMaxHeight(clamped);
         };
 
@@ -236,7 +236,7 @@ export default function MetadataSidebar({
                                                     );
                                                 }}
                                             >
-                                                ✕
+                                                <X className={styles.iconSm} />
                                             </button>
                                         </span>
                                     ))}
@@ -327,7 +327,9 @@ export default function MetadataSidebar({
                                                             : "Show suggestions"
                                                     }
                                                 >
-                                                    ...
+                                                    <MoreHorizontal
+                                                        className={styles.icon}
+                                                    />
                                                 </button>
 
                                                 {showTagDropdown && (
@@ -402,9 +404,10 @@ export default function MetadataSidebar({
                                                 )}
                                             </div>
 
+                                            {/* icon-only add */}
                                             <button
                                                 type="button"
-                                                className={styles.tagAddBtn}
+                                                className={`${styles.tagActionBtn} ${styles.tagAddBtn}`}
                                                 onMouseDown={(e) =>
                                                     e.preventDefault()
                                                 }
@@ -416,22 +419,25 @@ export default function MetadataSidebar({
                                                     addValue.trim().length ===
                                                         0
                                                 }
+                                                aria-label="Add tag"
                                                 title="Add"
                                             >
-                                                Add
+                                                <PlusCircle className={styles.icon} />
                                             </button>
 
+                                            {/* icon-only cancel */}
                                             <button
                                                 type="button"
-                                                className={styles.tagCancelBtn}
+                                                className={`${styles.tagActionBtn} ${styles.tagCancelBtn}`}
                                                 onMouseDown={(e) =>
                                                     e.preventDefault()
                                                 }
                                                 onClick={closeAddEditor}
                                                 disabled={tagMutating}
+                                                aria-label="Cancel"
                                                 title="Cancel"
                                             >
-                                                Cancel
+                                                <XCircle className={styles.icon} />
                                             </button>
                                         </div>
                                     )}

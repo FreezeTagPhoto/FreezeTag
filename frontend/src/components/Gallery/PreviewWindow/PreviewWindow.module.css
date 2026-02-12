@@ -125,10 +125,13 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     border-radius: 999px;
-    font-size: 0;
+    padding: 0; 
+
+    display: grid;
+    place-items: center;
 }
 
 .navButtonLeft {
@@ -139,31 +142,8 @@
     right: 10px;
 }
 
-.navButton::before {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 10px;
-    height: 10px;
-    border-style: solid;
-    border-width: 0 2px 2px 0;
-    border-color: currentColor;
-    transform-origin: center;
-}
-
-.navButtonRight::before {
-    left: 46.5%;
-    transform: translate(-50%, -50%) rotate(-45deg);
-}
-
-.navButtonLeft::before {
-    left: 53.5%;
-    transform: translate(-50%, -50%) rotate(135deg);
-}
-
 /* ===========================
-   Close button (X)
+   Close button
    =========================== */
 
 .closeButton {
@@ -173,27 +153,7 @@
     width: 32px;
     height: 32px;
     border-radius: 999px;
-    font-size: 0;
-}
-
-.closeButton::before,
-.closeButton::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 2px;
-    height: 18px;
-    background: currentColor;
-    transform-origin: center;
-}
-
-.closeButton::before {
-    transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.closeButton::after {
-    transform: translate(-50%, -50%) rotate(-45deg);
+    padding: 0;
 }
 
 /* ===========================
@@ -204,9 +164,22 @@
     position: absolute;
     top: 16px;
     right: 16px;
-    min-width: 40px;
+    width: 32px;
     height: 32px;
-    padding: 0 10px;
     border-radius: 999px;
-    font-size: 0.8rem;
+    padding: 0;
+}
+
+/* ===========================
+   Icon sizing helpers
+   =========================== */
+
+.icon {
+    width: 16px;
+    height: 16px;
+}
+
+.iconLg {
+    width: 18px;
+    height: 18px;
 }

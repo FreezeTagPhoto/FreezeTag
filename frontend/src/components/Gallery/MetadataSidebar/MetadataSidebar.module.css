@@ -238,29 +238,34 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
-.tagAddBtn,
-.tagCancelBtn {
+.tagActionBtn {
     height: 28px;
-    padding: 0 8px;
+    width: 28px;
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.04);
     color: #dfe3f0;
     cursor: pointer;
-    font-size: 12px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    flex: 0 0 28px;
 
-    white-space: nowrap;
-    min-width: 0;
-    flex: 0 0 auto;
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        transform 80ms ease;
 }
 
-.tagAddBtn:hover,
-.tagCancelBtn:hover {
+.tagActionBtn:hover {
     background: rgba(255, 255, 255, 0.08);
 }
 
-.tagAddBtn:disabled,
-.tagCancelBtn:disabled {
+.tagActionBtn:active {
+    transform: scale(0.98);
+}
+
+.tagActionBtn:disabled {
     opacity: 0.5;
     cursor: default;
 }
@@ -285,7 +290,6 @@
     overflow: hidden;
     z-index: 60;
 }
-
 
 .tagSuggestScroll {
     max-height: 240px;
@@ -349,4 +353,20 @@
     color: #fca5a5;
     font-size: 0.85rem;
     line-height: 1.2rem;
+}
+
+/* ===========================
+   Icon helpers
+   =========================== */
+
+.icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+.iconSm {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
 }

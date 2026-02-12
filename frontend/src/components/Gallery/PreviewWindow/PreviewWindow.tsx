@@ -9,6 +9,7 @@ import {
 } from "react";
 import styles from "./PreviewWindow.module.css";
 import MetadataSidebar from "../MetadataSidebar/MetadataSidebar";
+import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
 
 type PendingPan = null | { fx: number; fy: number };
 
@@ -17,13 +18,7 @@ export type PreviewWindowProps = {
     selectedId: number;
     onClose: () => void;
 
-    /**
-     * Called when user navigates via arrows / buttons.
-     * Provide both ID + index so MainGallery can keep focusedIndex consistent.
-     */
     onNavigate: (nextId: number, nextIndex: number) => void;
-
-    /** Optional: clicking a tag triggers a search and closes viewer (MainGallery decides). */
     onSearchTag?: (tag: string) => void;
 };
 
@@ -34,15 +29,11 @@ export default function PreviewWindow({
     onNavigate,
     onSearchTag,
 }: PreviewWindowProps) {
-    // NEW: viewerRef used to clamp dropdown height to the viewer bottom (passed to sidebar)
     const viewerRef = useRef<HTMLDivElement | null>(null);
 
-    // zoom: 1 = fit, 2 = zoomed
     const [zoom, setZoom] = useState<number>(1);
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const [hoveringImage, setHoveringImage] = useState(false);
-
-    // remember where to pan after zoom has been applied
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
 
     const moveSelection = useCallback(
@@ -52,7 +43,6 @@ export default function PreviewWindow({
 
             const delta = direction === "next" ? 1 : -1;
             const nextIndex = currentIndex + delta;
-
             if (nextIndex < 0 || nextIndex >= imageIds.length) return;
 
             const nextId = imageIds[nextIndex];
@@ -61,7 +51,6 @@ export default function PreviewWindow({
         [selectedId, imageIds, onNavigate],
     );
 
-    // reset zoom + pan when opening / changing image
     useEffect(() => {
         setZoom(1);
         setPendingPan(null);
@@ -72,7 +61,6 @@ export default function PreviewWindow({
         }
     }, [selectedId]);
 
-    // keyboard: esc closes, arrows navigate
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
@@ -82,18 +70,13 @@ export default function PreviewWindow({
                 return;
             }
 
-            if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") {
-                return;
-            }
+            if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
 
             event.preventDefault();
             event.stopPropagation();
 
-            if (event.key === "ArrowRight") {
-                moveSelection("next");
-            } else if (event.key === "ArrowLeft") {
-                moveSelection("prev");
-            }
+            if (event.key === "ArrowRight") moveSelection("next");
+            else moveSelection("prev");
         };
 
         window.addEventListener("keydown", handleKeyDown, true);
@@ -112,7 +95,6 @@ export default function PreviewWindow({
         setPendingPan(null);
         const scroller = scrollRef.current;
         if (!scroller) return;
-
         scroller.scrollLeft = 0;
         scroller.scrollTop = 0;
     };
@@ -126,11 +108,8 @@ export default function PreviewWindow({
         event: ReactMouseEvent<HTMLButtonElement>,
     ) => {
         event.stopPropagation();
-        if (zoom === 1) {
-            zoomInCentered();
-        } else {
-            zoomOut();
-        }
+        if (zoom === 1) zoomInCentered();
+        else zoomOut();
     };
 
     const handleImageClick = (event: ReactMouseEvent<HTMLImageElement>) => {
@@ -168,11 +147,8 @@ export default function PreviewWindow({
         const rawLeft = pendingPan.fx * scrollWidth - clientWidth / 2;
         const rawTop = pendingPan.fy * scrollHeight - clientHeight / 2;
 
-        const targetLeft = Math.max(0, Math.min(rawLeft, maxLeft));
-        const targetTop = Math.max(0, Math.min(rawTop, maxTop));
-
-        scroller.scrollLeft = targetLeft;
-        scroller.scrollTop = targetTop;
+        scroller.scrollLeft = Math.max(0, Math.min(rawLeft, maxLeft));
+        scroller.scrollTop = Math.max(0, Math.min(rawTop, maxTop));
 
         setPendingPan(null);
     }, [zoom, pendingPan]);
@@ -193,7 +169,11 @@ export default function PreviewWindow({
                             moveSelection("prev");
                         }}
                         aria-label="Previous image"
-                    />
+                        title="Previous"
+                    >
+                        <ChevronLeft className={styles.iconLg} />
+                    </button>
+
                     <button
                         type="button"
                         className={`${styles.navButton} ${styles.navButtonRight}`}
@@ -202,7 +182,10 @@ export default function PreviewWindow({
                             moveSelection("next");
                         }}
                         aria-label="Next image"
-                    />
+                        title="Next"
+                    >
+                        <ChevronRight className={styles.iconLg} />
+                    </button>
 
                     <button
                         type="button"
@@ -212,15 +195,23 @@ export default function PreviewWindow({
                             onClose();
                         }}
                         aria-label="Close"
-                    />
+                        title="Close"
+                    >
+                        <X className={styles.iconLg} />
+                    </button>
 
                     <button
                         type="button"
                         className={styles.zoomButton}
                         onClick={handleZoomButtonClick}
                         aria-label={zoom === 1 ? "Zoom to 2x" : "Zoom to 1x"}
+                        title={zoom === 1 ? "Zoom in" : "Zoom out"}
                     >
-                        {zoom === 1 ? "1×" : "2×"}
+                        {zoom === 1 ? (
+                            <ZoomIn className={styles.icon} />
+                        ) : (
+                            <ZoomOut className={styles.icon} />
+                        )}
                     </button>
 
                     <div

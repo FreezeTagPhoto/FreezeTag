@@ -90,3 +90,11 @@
 .error:hover {
     background: rgba(255, 80, 80, 0.14);
 }
+
+/* icons */
+.label {
+    opacity: 0.98;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}

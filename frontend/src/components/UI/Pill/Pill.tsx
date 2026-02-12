@@ -12,7 +12,7 @@ export default function Pill({
     type = "button",
     invertCaret,
 }: {
-    label: string;
+    label: React.ReactNode;
     caret?: boolean;
     variant?: PillVariant;
     onClick?: React.MouseEventHandler<HTMLButtonElement>;
