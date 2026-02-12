@@ -459,7 +459,7 @@ export default function MetadataSidebar({
                                             {/* icon-only add */}
                                             <button
                                                 type="button"
-                                                className={`${styles.tagActionBtn} ${styles.tagAddBtn}`}
+                                                className={`${styles.tagActionBtn}`}
                                                 onMouseDown={(e) =>
                                                     e.preventDefault()
                                                 }
@@ -481,7 +481,7 @@ export default function MetadataSidebar({
                                             {/* icon-only cancel */}
                                             <button
                                                 type="button"
-                                                className={`${styles.tagActionBtn} ${styles.tagCancelBtn}`}
+                                                className={`${styles.tagActionBtn}`}
                                                 onMouseDown={(e) =>
                                                     e.preventDefault()
                                                 }
