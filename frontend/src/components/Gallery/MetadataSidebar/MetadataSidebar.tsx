@@ -18,7 +18,19 @@ import {
     formatLocation,
 } from "@/common/gallery/format";
 import { useTagEditor } from "@/common/gallery/tageditor";
-import { MoreHorizontal, PlusCircle, X, XCircle } from "lucide-react";
+import {
+    MoreHorizontal,
+    PlusCircle,
+    Plus,
+    X,
+    XCircle,
+    FileText,
+    Calendar,
+    Upload,
+    MapPin,
+    Camera,
+    Tags,
+} from "lucide-react";
 
 export type MetadataSidebarProps = {
     selectedId: number;
@@ -130,14 +142,20 @@ export default function MetadataSidebar({
 
             <div className={styles.detailGrid}>
                 <div className={styles.detailRow}>
-                    <div className={styles.detailLabel}>Filename</div>
+                    <div className={styles.detailLabelRow}>
+                        <FileText className={styles.detailLabelIcon} />
+                        <span className={styles.detailLabel}>Filename</span>
+                    </div>
                     <div className={styles.detailValue}>
                         {currentMetadata?.fileName ?? "—"}
                     </div>
                 </div>
 
                 <div className={styles.detailRow}>
-                    <div className={styles.detailLabel}>Date taken</div>
+                    <div className={styles.detailLabelRow}>
+                        <Calendar className={styles.detailLabelIcon} />
+                        <span className={styles.detailLabel}>Date taken</span>
+                    </div>
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatDate(currentMetadata.dateTaken)
@@ -146,7 +164,12 @@ export default function MetadataSidebar({
                 </div>
 
                 <div className={styles.detailRow}>
-                    <div className={styles.detailLabel}>Date uploaded</div>
+                    <div className={styles.detailLabelRow}>
+                        <Upload className={styles.detailLabelIcon} />
+                        <span className={styles.detailLabel}>
+                            Date uploaded
+                        </span>
+                    </div>
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatDate(currentMetadata.dateUploaded)
@@ -155,7 +178,10 @@ export default function MetadataSidebar({
                 </div>
 
                 <div className={styles.detailRow}>
-                    <div className={styles.detailLabel}>Location</div>
+                    <div className={styles.detailLabelRow}>
+                        <MapPin className={styles.detailLabelIcon} />
+                        <span className={styles.detailLabel}>Location</span>
+                    </div>
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLocation(
@@ -167,7 +193,10 @@ export default function MetadataSidebar({
                 </div>
 
                 <div className={styles.detailRow}>
-                    <div className={styles.detailLabel}>Camera</div>
+                    <div className={styles.detailLabelRow}>
+                        <Camera className={styles.detailLabelIcon} />
+                        <span className={styles.detailLabel}>Camera</span>
+                    </div>
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatCamera(
@@ -179,7 +208,10 @@ export default function MetadataSidebar({
                 </div>
 
                 <div className={styles.detailRow}>
-                    <div className={styles.detailLabel}>Tags</div>
+                    <div className={styles.detailLabelRow}>
+                        <Tags className={styles.detailLabelIcon} />
+                        <span className={styles.detailLabel}>Tags</span>
+                    </div>
 
                     <div className={styles.detailValue}>
                         {tagsError ? (
@@ -242,15 +274,19 @@ export default function MetadataSidebar({
                                     ))}
 
                                     {!addOpen ? (
-                                        <Pill
-                                            label="+"
-                                            variant="token"
-                                            className={`${styles.tagPill} ${styles.tagAddPill}`}
+                                        <button
+                                            type="button"
+                                            className={`${styles.tagAddIconPill} ${styles.tagAddPill}`}
+                                            onMouseDown={(e) => e.preventDefault()}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 void openAddEditor();
                                             }}
-                                        />
+                                            aria-label="Add tag"
+                                            title="Add tag"
+                                        >
+                                            <Plus className={styles.iconSm} />
+                                        </button>
                                     ) : (
                                         <div
                                             ref={addEditorRef}
@@ -422,7 +458,9 @@ export default function MetadataSidebar({
                                                 aria-label="Add tag"
                                                 title="Add"
                                             >
-                                                <PlusCircle className={styles.icon} />
+                                                <PlusCircle
+                                                    className={styles.icon}
+                                                />
                                             </button>
 
                                             {/* icon-only cancel */}

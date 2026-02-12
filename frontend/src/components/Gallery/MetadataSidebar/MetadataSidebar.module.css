@@ -61,13 +61,32 @@
     min-width: 0;
 }
 
+.detailLabelRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    min-width: 0;
+    line-height: 1;
+}
+
+.detailLabelIcon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    color: #9ca3af;
+    transform: translateY(-1px);
+}
+
 .detailLabel {
     font-size: 0.75rem;
     font-weight: 600;
     color: #9ca3af;
-    margin-bottom: 4px;
+    margin-bottom: 0;
+    line-height: 1;
     letter-spacing: 0.02em;
     text-transform: uppercase;
+    min-width: 0;
 }
 
 .detailValue {
@@ -81,6 +100,33 @@
 /* ===========================
    Tags UI
    =========================== */
+
+.tagAddIconPill {
+    height: 28px;
+    width: 28px;
+    padding: 0;
+    border-radius: 999px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #e5e7eb;
+
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease,
+        transform 80ms ease;
+}
+
+.tagAddIconPill:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tagAddIconPill:active {
+    transform: scale(0.98);
+}
 
 .tagWrap {
     display: flex;
