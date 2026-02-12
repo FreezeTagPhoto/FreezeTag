@@ -1,5 +1,12 @@
 "use client";
 
+import {
+    useLayoutEffect,
+    useRef,
+    useState,
+    RefObject,
+    MouseEvent as ReactMouseEvent,
+} from "react";
 import styles from "./MetadataSidebar.module.css";
 import MetadataGetter, { ImageMetadata } from "@/api/metadata/metadatagetter";
 import TagGetter from "@/api/tags/taggetter";
@@ -15,13 +22,19 @@ import { useTagEditor } from "@/common/gallery/tageditor";
 export type MetadataSidebarProps = {
     selectedId: number;
     onSearchTag?: (tag: string) => void;
+
+    viewerRef: RefObject<HTMLDivElement | null>;
 };
 
 export default function MetadataSidebar({
     selectedId,
     onSearchTag,
+    viewerRef,
 }: MetadataSidebarProps) {
-    // metadata + tags: cached per image id
+    const comboRef = useRef<HTMLDivElement | null>(null);
+    const [tagDropdownMaxHeight, setTagDropdownMaxHeight] =
+        useState<number>(240);
+
     const metadata = useCachedById<ImageMetadata>(selectedId, MetadataGetter);
     const tags = useCachedById<string[]>(selectedId, TagGetter);
 
@@ -76,6 +89,31 @@ export default function MetadataSidebar({
         setTagsById,
         currentTags,
     });
+
+    useLayoutEffect(() => {
+        if (!showTagDropdown) return;
+
+        const compute = () => {
+            const viewerEl = viewerRef.current;
+            const comboEl = comboRef.current;
+            if (!viewerEl || !comboEl) return;
+
+            const viewerRect = viewerEl.getBoundingClientRect();
+            const comboRect = comboEl.getBoundingClientRect();
+            const dropdownTop = comboRect.bottom + 8;
+            const bottomPad = 12;
+            const available = viewerRect.bottom - dropdownTop - bottomPad;
+            const clamped = Math.max(120, Math.min(240, Math.floor(available)));
+
+            setTagDropdownMaxHeight(clamped);
+        };
+
+        compute();
+        window.addEventListener("resize", compute);
+        return () => window.removeEventListener("resize", compute);
+    }, [showTagDropdown, viewerRef]);
+
+    const stopClick = (e: ReactMouseEvent<HTMLElement>) => e.stopPropagation();
 
     return (
         <aside className={styles.viewerSidebar}>
@@ -217,11 +255,10 @@ export default function MetadataSidebar({
                                         <div
                                             ref={addEditorRef}
                                             className={styles.tagAddEditor}
-                                            onClick={(e) =>
-                                                e.stopPropagation()
-                                            }
+                                            onClick={stopClick}
                                         >
                                             <div
+                                                ref={comboRef}
                                                 className={styles.tagAddInputWrap}
                                                 role="combobox"
                                                 aria-label="New tag"
@@ -302,55 +339,65 @@ export default function MetadataSidebar({
                                                         role="listbox"
                                                         aria-label="Tag suggestions"
                                                     >
-                                                        {allTagsLoading ? (
-                                                            <div
-                                                                className={
-                                                                    styles.tagSuggestLoading
-                                                                }
-                                                            >
-                                                                Loading…
-                                                            </div>
-                                                        ) : (
-                                                            tagSuggestions.map(
-                                                                (t, idx) => (
-                                                                    <button
-                                                                        key={t}
-                                                                        type="button"
-                                                                        className={`${
-                                                                            styles.tagSuggestItem
-                                                                        } ${
-                                                                            idx ===
-                                                                            tagSuggestIndex
-                                                                                ? styles.tagSuggestActive
-                                                                                : ""
-                                                                        }`}
-                                                                        onMouseDown={(
-                                                                            ev,
-                                                                        ) =>
-                                                                            ev.preventDefault()
-                                                                        }
-                                                                        onMouseEnter={() =>
-                                                                            setTagSuggestIndex(
-                                                                                idx,
-                                                                            )
-                                                                        }
-                                                                        onClick={() => {
-                                                                            void addTagToSelected(
-                                                                                t,
-                                                                            );
-                                                                        }}
-                                                                    >
-                                                                        <span
-                                                                            className={
-                                                                                styles.tagSuggestLabel
+                                                        <div
+                                                            className={
+                                                                styles.tagSuggestScroll
+                                                            }
+                                                            style={{
+                                                                maxHeight:
+                                                                    tagDropdownMaxHeight,
+                                                            }}
+                                                        >
+                                                            {allTagsLoading ? (
+                                                                <div
+                                                                    className={
+                                                                        styles.tagSuggestLoading
+                                                                    }
+                                                                >
+                                                                    Loading…
+                                                                </div>
+                                                            ) : (
+                                                                tagSuggestions.map(
+                                                                    (t, idx) => (
+                                                                        <button
+                                                                            key={t}
+                                                                            type="button"
+                                                                            className={`${
+                                                                                styles.tagSuggestItem
+                                                                            } ${
+                                                                                idx ===
+                                                                                tagSuggestIndex
+                                                                                    ? styles.tagSuggestActive
+                                                                                    : ""
+                                                                            }`}
+                                                                            onMouseDown={(
+                                                                                ev,
+                                                                            ) =>
+                                                                                ev.preventDefault()
                                                                             }
+                                                                            onMouseEnter={() =>
+                                                                                setTagSuggestIndex(
+                                                                                    idx,
+                                                                                )
+                                                                            }
+                                                                            onClick={() => {
+                                                                                void addTagToSelected(
+                                                                                    t,
+                                                                                );
+                                                                            }}
                                                                         >
-                                                                            {t}
-                                                                        </span>
-                                                                    </button>
-                                                                ),
-                                                            )
-                                                        )}
+                                                                            <span
+                                                                                className={
+                                                                                    styles.tagSuggestLabel
+                                                                                }
+                                                                            >
+                                                                                {t}
+                                                                            </span>
+                                                                        </button>
+                                                                    ),
+                                                                )
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>

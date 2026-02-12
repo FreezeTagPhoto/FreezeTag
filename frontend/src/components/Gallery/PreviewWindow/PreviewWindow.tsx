@@ -23,6 +23,7 @@ export type PreviewWindowProps = {
      */
     onNavigate: (nextId: number, nextIndex: number) => void;
 
+    /** Optional: clicking a tag triggers a search and closes viewer (MainGallery decides). */
     onSearchTag?: (tag: string) => void;
 };
 
@@ -33,6 +34,9 @@ export default function PreviewWindow({
     onNavigate,
     onSearchTag,
 }: PreviewWindowProps) {
+    // NEW: viewerRef used to clamp dropdown height to the viewer bottom (passed to sidebar)
+    const viewerRef = useRef<HTMLDivElement | null>(null);
+
     // zoom: 1 = fit, 2 = zoomed
     const [zoom, setZoom] = useState<number>(1);
     const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -113,7 +117,6 @@ export default function PreviewWindow({
         scroller.scrollTop = 0;
     };
 
-    // zoom to center of image: (fx, fy) = (0.5, 0.5)
     const zoomInCentered = () => {
         setZoom(2);
         setPendingPan({ fx: 0.5, fy: 0.5 });
@@ -130,8 +133,6 @@ export default function PreviewWindow({
         }
     };
 
-    // if click image at 1× -> zoom to 2× and pan so clicked spot is centered
-    // if click again at 2× -> zoom out
     const handleImageClick = (event: ReactMouseEvent<HTMLImageElement>) => {
         const scroller = scrollRef.current;
         if (!scroller) return;
@@ -150,7 +151,6 @@ export default function PreviewWindow({
         }
     };
 
-    // after zoom changes, pan so chosen point (fx, fy) is centered
     useEffect(() => {
         if (zoom === 1 || !pendingPan) return;
 
@@ -179,9 +179,12 @@ export default function PreviewWindow({
 
     return (
         <div className={styles.viewerBackdrop} onClick={handleBackdropClick}>
-            <div className={styles.viewer} onClick={stopPropagation}>
+            <div
+                ref={viewerRef}
+                className={styles.viewer}
+                onClick={stopPropagation}
+            >
                 <div className={styles.viewerImageArea}>
-                    {/* chevrons */}
                     <button
                         type="button"
                         className={`${styles.navButton} ${styles.navButtonLeft}`}
@@ -201,7 +204,6 @@ export default function PreviewWindow({
                         aria-label="Next image"
                     />
 
-                    {/* close */}
                     <button
                         type="button"
                         className={styles.closeButton}
@@ -212,7 +214,6 @@ export default function PreviewWindow({
                         aria-label="Close"
                     />
 
-                    {/* zoom toggle */}
                     <button
                         type="button"
                         className={styles.zoomButton}
@@ -222,7 +223,6 @@ export default function PreviewWindow({
                         {zoom === 1 ? "1×" : "2×"}
                     </button>
 
-                    {/* scrollable image area */}
                     <div
                         className={styles.viewerImageScroll}
                         ref={scrollRef}
@@ -261,6 +261,7 @@ export default function PreviewWindow({
                 <MetadataSidebar
                     selectedId={selectedId}
                     onSearchTag={onSearchTag}
+                    viewerRef={viewerRef}
                 />
             </div>
         </div>
