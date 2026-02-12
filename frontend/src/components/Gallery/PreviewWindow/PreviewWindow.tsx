@@ -3,6 +3,7 @@
 import {
     useCallback,
     useEffect,
+    useLayoutEffect,
     useRef,
     useState,
     MouseEvent as ReactMouseEvent,
@@ -12,6 +13,7 @@ import MetadataSidebar from "../MetadataSidebar/MetadataSidebar";
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
 
 type PendingPan = null | { fx: number; fy: number };
+type BaseSize = null | { w: number; h: number };
 
 export type PreviewWindowProps = {
     imageIds: number[];
@@ -30,11 +32,13 @@ export default function PreviewWindow({
     onSearchTag,
 }: PreviewWindowProps) {
     const viewerRef = useRef<HTMLDivElement | null>(null);
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const imgRef = useRef<HTMLImageElement | null>(null);
 
     const [zoom, setZoom] = useState<number>(1);
-    const scrollRef = useRef<HTMLDivElement | null>(null);
     const [hoveringImage, setHoveringImage] = useState(false);
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
+    const [baseSize, setBaseSize] = useState<BaseSize>(null);
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -54,6 +58,8 @@ export default function PreviewWindow({
     useEffect(() => {
         setZoom(1);
         setPendingPan(null);
+        setBaseSize(null);
+
         const scroller = scrollRef.current;
         if (scroller) {
             scroller.scrollLeft = 0;
@@ -84,15 +90,10 @@ export default function PreviewWindow({
             window.removeEventListener("keydown", handleKeyDown, true);
     }, [moveSelection, onClose]);
 
-    const handleBackdropClick = () => onClose();
-
-    const stopPropagation = (e: ReactMouseEvent<HTMLDivElement>) => {
-        e.stopPropagation();
-    };
-
     const zoomOut = () => {
         setZoom(1);
         setPendingPan(null);
+
         const scroller = scrollRef.current;
         if (!scroller) return;
         scroller.scrollLeft = 0;
@@ -112,6 +113,34 @@ export default function PreviewWindow({
         else zoomOut();
     };
 
+    const ensureBaseSize = useCallback(() => {
+        const img = imgRef.current;
+        if (!img) return;
+
+        const r = img.getBoundingClientRect();
+        if (r.width > 1 && r.height > 1) {
+            setBaseSize({ w: r.width, h: r.height });
+        }
+    }, []);
+
+    useLayoutEffect(() => {
+        const scroller = scrollRef.current;
+        if (!scroller) return;
+
+        const ro = new ResizeObserver(() => {
+            if (zoom === 1) {
+                requestAnimationFrame(() => ensureBaseSize());
+            }
+        });
+
+        ro.observe(scroller);
+        return () => ro.disconnect();
+    }, [zoom, ensureBaseSize]);
+
+    const handleImageLoad = () => {
+        requestAnimationFrame(() => ensureBaseSize());
+    };
+
     const handleImageClick = (event: ReactMouseEvent<HTMLImageElement>) => {
         const scroller = scrollRef.current;
         if (!scroller) return;
@@ -120,6 +149,11 @@ export default function PreviewWindow({
 
         if (zoom === 1) {
             const imgRect = event.currentTarget.getBoundingClientRect();
+
+            if (!baseSize && imgRect.width > 1 && imgRect.height > 1) {
+                setBaseSize({ w: imgRect.width, h: imgRect.height });
+            }
+
             const fx = (event.clientX - imgRect.left) / imgRect.width;
             const fy = (event.clientY - imgRect.top) / imgRect.height;
 
@@ -153,12 +187,34 @@ export default function PreviewWindow({
         setPendingPan(null);
     }, [zoom, pendingPan]);
 
+    const zoomed = zoom !== 1;
+
+    const cursor =
+        hoveringImage ? (zoomed ? "zoom-out" : "zoom-in") : "default";
+
+    // if baseSize isn't ready for some reason, fall back to the old percentage approach
+    const zoomedStyle: React.CSSProperties | undefined = !zoomed
+        ? undefined
+        : baseSize
+          ? {
+                width: `${baseSize.w * zoom}px`,
+                height: `${baseSize.h * zoom}px`,
+                maxWidth: "none",
+                maxHeight: "none",
+            }
+          : {
+                width: `${zoom * 100}%`,
+                height: `${zoom * 100}%`,
+                maxWidth: "none",
+                maxHeight: "none",
+            };
+
     return (
-        <div className={styles.viewerBackdrop} onClick={handleBackdropClick}>
+        <div className={styles.viewerBackdrop} onClick={() => onClose()}>
             <div
                 ref={viewerRef}
                 className={styles.viewer}
-                onClick={stopPropagation}
+                onClick={(e) => e.stopPropagation()}
             >
                 <div className={styles.viewerImageArea}>
                     <button
@@ -218,16 +274,13 @@ export default function PreviewWindow({
                         className={styles.viewerImageScroll}
                         ref={scrollRef}
                         style={{
-                            cursor: hoveringImage
-                                ? zoom === 1
-                                    ? "zoom-in"
-                                    : "zoom-out"
-                                : "default",
+                            cursor,
                             justifyContent: zoom === 1 ? "center" : "flex-start",
                             alignItems: zoom === 1 ? "center" : "flex-start",
                         }}
                     >
                         <img
+                            ref={imgRef}
                             src={`http://localhost:3824/thumbnails/${selectedId}?size=2`}
                             alt={`Preview of image ${selectedId}`}
                             className={styles.viewerImage}
@@ -235,16 +288,11 @@ export default function PreviewWindow({
                             onMouseEnter={() => setHoveringImage(true)}
                             onMouseLeave={() => setHoveringImage(false)}
                             onClick={handleImageClick}
-                            style={
-                                zoom === 1
-                                    ? {}
-                                    : {
-                                          width: `${zoom * 100}%`,
-                                          height: "auto",
-                                          maxWidth: "none",
-                                          maxHeight: "none",
-                                      }
-                            }
+                            onLoad={handleImageLoad}
+                            style={{
+                                cursor,
+                                ...(zoomedStyle ?? {}),
+                            }}
                         />
                     </div>
                 </div>
