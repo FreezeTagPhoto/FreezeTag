@@ -9,7 +9,7 @@
 
     padding: 10px 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: #191b24;
+    background: var(--foreground1);
 }
 
 .pills {
