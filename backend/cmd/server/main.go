@@ -163,6 +163,7 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 func initLoginEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	le := login.InitLoginEndpoint(deps.authService)
 	baseGroup.POST("/login", le.HandleLogin)
+	baseGroup.GET("/login", le.HandleLoginStatus)
 }
 
 func initLogoutEndpoints(baseGroup gin.IRouter, deps *dependencies) {
