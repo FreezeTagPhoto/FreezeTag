@@ -16,6 +16,7 @@ import {
     formatCamera,
     formatDate,
     formatLocation,
+    formatResultion,
 } from "@/common/gallery/format";
 import { useTagEditor } from "@/common/gallery/tageditor";
 import {
@@ -24,12 +25,13 @@ import {
     Plus,
     X,
     XCircle,
-    FileText,
+    // FileText,
     Calendar,
     Upload,
     MapPin,
     Camera,
     Tags,
+    FullscreenIcon,
 } from "lucide-react";
 
 export type MetadataSidebarProps = {
@@ -143,13 +145,28 @@ export default function MetadataSidebar({
             )}
 
             <div className={styles.detailGrid}>
-                <div className={styles.detailRow}>
+                {/* <div className={styles.detailRow}>
                     <div className={styles.detailLabelRow}>
                         <FileText className={styles.detailLabelIcon} />
                         <span className={styles.detailLabel}>Filename</span>
                     </div>
                     <div className={styles.detailValue}>
                         {currentMetadata?.fileName ?? "—"}
+                    </div>
+                </div> */}
+
+                <div className={styles.detailRow}>
+                    <div className={styles.detailLabelRow}>
+                        <FullscreenIcon className={styles.detailLabelIcon} />
+                        <span className={styles.detailLabel}>Resolution</span>
+                    </div>
+                    <div className={styles.detailValue}>
+                        {currentMetadata
+                            ? formatResultion(
+                                currentMetadata.width,
+                                currentMetadata.height,
+                              )
+                            : "—"}
                     </div>
                 </div>
 

@@ -29,3 +29,8 @@ export function formatCamera(
         .filter((x) => x.length > 0);
     return parts.length ? parts.join(" ") : "—";
 }
+
+export function formatResultion(width: number | null, height: number | null): string {
+    if (height === null || width === null) return "—";
+    return `${width} × ${height}`;
+}
