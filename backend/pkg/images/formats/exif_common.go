@@ -2,7 +2,6 @@ package formats
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -61,7 +60,7 @@ func extractGeoMetadata(mw *imagick.MagickWand) (*struct {
 		if lonRef == "W" {
 			lon = -lon
 		}
-		alt, _ := convertRational(altStr)    //nolint:errcheck
+		alt, _ := convertRational(altStr) //nolint:errcheck
 		return &struct {
 			Lat float64
 			Lon float64
@@ -100,7 +99,6 @@ func extractDateCreated(mw *imagick.MagickWand) *time.Time {
 	if dateString != "" {
 		layout := "2006:01:02 15:04:05"
 		parsed, _ := time.Parse(layout, dateString) //nolint:errcheck // dates always match this layout in EXIF
-		log.Printf("EXIF DATE NOTICE THIS: %s", parsed.String())
 		return &parsed
 	}
 	return nil

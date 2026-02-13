@@ -1,4 +1,7 @@
-export function formatDate(ts: number | null, opts?: { timeZone?: string }): string {
+export function formatDate(
+    ts: number | null,
+    opts?: { timeZone?: string },
+): string {
     if (ts === null) return "—";
     const d = new Date(ts > 1e12 ? ts : ts * 1000);
     return new Intl.DateTimeFormat(undefined, {

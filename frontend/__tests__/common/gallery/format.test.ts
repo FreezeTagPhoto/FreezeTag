@@ -7,18 +7,9 @@ import {
     formatCamera,
     formatDate,
     formatLocation,
-    toDate,
 } from "@/common/gallery/format";
 
 describe("common/format", () => {
-    it("toDate treats huge timestamps as ms, otherwise seconds", () => {
-        const d1 = toDate(1700000000);
-        expect(d1.getTime()).toBe(1700000000 * 1000);
-
-        const d2 = toDate(1700000000000);
-        expect(d2.getTime()).toBe(1700000000000);
-    });
-
     it('formatDate returns "—" for null', () => {
         expect(formatDate(null)).toBe("—");
     });
@@ -43,6 +34,7 @@ describe("common/format", () => {
 
         expect(args[0]).toBe(undefined);
         expect(args[1]).toStrictEqual({
+            timeZone: undefined,
             year: "numeric",
             month: "short",
             day: "numeric",
