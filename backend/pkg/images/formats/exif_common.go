@@ -2,6 +2,7 @@ package formats
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -47,11 +48,19 @@ func extractGeoMetadata(mw *imagick.MagickWand) (*struct {
 	if latStr := mw.GetImageProperty("exif:GPSLatitude"); latStr != "" {
 		lonStr := mw.GetImageProperty("exif:GPSLongitude")
 		altStr := mw.GetImageProperty("exif:GPSAltitude")
+		latRef := mw.GetImageProperty("exif:GPSLatitudeRef")
+		lonRef := mw.GetImageProperty("exif:GPSLongitudeRef")
 		if lonStr == "" || altStr == "" {
 			return nil, fmt.Errorf("incomplete GPS data")
 		}
 		lat, _ := convertGPSRational(latStr) //nolint:errcheck // GPS strings can never be invalid if they exist
+		if latRef == "S" {
+			lat = -lat
+		}
 		lon, _ := convertGPSRational(lonStr) //nolint:errcheck
+		if lonRef == "W" {
+			lon = -lon
+		}
 		alt, _ := convertRational(altStr)    //nolint:errcheck
 		return &struct {
 			Lat float64
@@ -91,6 +100,7 @@ func extractDateCreated(mw *imagick.MagickWand) *time.Time {
 	if dateString != "" {
 		layout := "2006:01:02 15:04:05"
 		parsed, _ := time.Parse(layout, dateString) //nolint:errcheck // dates always match this layout in EXIF
+		log.Printf("EXIF DATE NOTICE THIS: %s", parsed.String())
 		return &parsed
 	}
 	return nil

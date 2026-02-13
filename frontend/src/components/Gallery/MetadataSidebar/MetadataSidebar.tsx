@@ -178,7 +178,7 @@ export default function MetadataSidebar({
                     </div>
                     <div className={styles.detailValue}>
                         {currentMetadata
-                            ? formatDate(currentMetadata.dateTaken)
+                            ? formatDate(currentMetadata.dateTaken, {timeZone: "UTC"})
                             : "—"}
                     </div>
                 </div>
