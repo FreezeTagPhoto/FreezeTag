@@ -54,12 +54,23 @@
 
 .label {
     opacity: 0.98;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .caret {
     opacity: 0.75;
-    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transform: translateY(1px);
+}
+
+.caretIcon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
 }
 
 /* dropdown menu */
@@ -89,12 +100,4 @@
 
 .error:hover {
     background: rgba(255, 80, 80, 0.14);
-}
-
-/* icons */
-.label {
-    opacity: 0.98;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
 }
