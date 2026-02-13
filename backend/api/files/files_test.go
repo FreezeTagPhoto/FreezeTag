@@ -16,6 +16,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func (fe FileEndpoint) RegisterEndpoints(e gin.IRouter) {
+	e.GET("/file/:id", fe.HandleGet)
+}
+
 func TestServeFileSuccess(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().

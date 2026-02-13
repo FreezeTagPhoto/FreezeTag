@@ -36,8 +36,12 @@ func RequireAuth(auth services.AuthService) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, api.StatusBadRequestResponse{Error: "Invalid token: " + err.Error()})
 			return
 		}
-		c.Set("userID", claims["sub"])
-		c.Set("permissions", claims["permissions"])
+		if claims.Subject == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "Invalid token: missing user ID"})
+			return
+		}
+		c.Set("userID", claims.Subject)
+		c.Set("permissions", claims.Permissions)
 		c.Next()
 	}
 }

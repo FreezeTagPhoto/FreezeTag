@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/database/data"
 	"testing"
 	"time"
 
@@ -50,7 +51,8 @@ func TestAddUser(t *testing.T) {
 func TestEnsureLoginNoUsers(t *testing.T) {
 	mockRepo := mockUserRepository.NewMockUserRepository(t)
 	mockRepo.EXPECT().ListAllUsers().Return(nil, nil)
-	mockRepo.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(nil, nil)
+	mockRepo.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(&database.PublicUser{ID: 1}, nil)
+	mockRepo.EXPECT().GrantAdminPermissions(mock.Anything).Return(nil)
 	authService := InitDefaultAuthService(mockRepo)
 	err := authService.EnsureLogin()
 	assert.NoError(t, err)
@@ -94,6 +96,10 @@ func TestAuthenticateUser(t *testing.T) {
 			PasswordHash: string(hashedPassword),
 		}, nil).
 		Once()
+	mockRepo.EXPECT().
+		GetUserPermissions(database.UserID(7)).
+		Return(data.Permissions{}, nil).
+		Once()
 
 	authService := InitDefaultAuthService(mockRepo)
 	_, err = authService.AuthenticateUser("authuser", plaintextPassword)
@@ -136,7 +142,7 @@ func TestAuthenticateNonexistentUser(t *testing.T) {
 
 func TestCreateToken(t *testing.T) {
 	userID := database.UserID(123)
-	tokenString, err := createToken(userID)
+	tokenString, err := createTokenWithPermissions(userID, data.Permissions{data.ReadUser})
 	require.NoError(t, err)
 	require.NotEmpty(t, tokenString)
 
@@ -147,7 +153,7 @@ func TestCreateToken(t *testing.T) {
 	require.NoError(t, err)
 	claims, ok := token.Claims.(jwt.MapClaims)
 	require.True(t, ok)
-	require.Equal(t, float64(userID), claims["sub"])
+	require.Equal(t, "123", claims["sub"])
 }
 
 func TestLoginCreatesValidJWT(t *testing.T) {
@@ -165,45 +171,47 @@ func TestLoginCreatesValidJWT(t *testing.T) {
 			PasswordHash: string(hashedPassword),
 		}, nil).
 		Once()
+	mockRepo.EXPECT().
+		GetUserPermissions(uid).
+		Return(data.Permissions{data.ReadUser}, nil).
+		Once()
 
 	service := InitDefaultAuthService(mockRepo)
 	tokenString, err := service.AuthenticateUser("testuser", password)
 	require.NoError(t, err)
 	assert.NotEmpty(t, tokenString)
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+	claims := Claims{}
+	_, err = jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
 		return []byte(JwtSecretKey), nil
-	}, jwt.WithValidMethods([]string{"HS256"}))
+	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
 
-	if err != nil || !token.Valid {
-		t.Errorf("Token is invalid: %v", err)
-	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		t.Fatal("Could not parse claims")
-	}
-	sub := claims["sub"]
+	t.Logf("%s", claims)
+	sub := claims.Subject
 	if fmt.Sprintf("%v", sub) != fmt.Sprintf("%d", uid) {
 		t.Errorf("Expected sub claim %d, got %v", uid, sub)
 	}
+	JWTpermissions := claims.Permissions
+	assert.True(t, JWTpermissions.HasPermission(data.ReadUser))
+
 }
 
 func TestValidateJWT(t *testing.T) {
 	auth := InitDefaultAuthService(nil)
 	userID := database.UserID(456)
-	tokenString, err := createToken(userID)
+	tokenString, err := createTokenWithPermissions(userID, data.Permissions{})
 	require.NoError(t, err)
 	claims, err := auth.ValidateJWT(tokenString)
 	require.NoError(t, err)
-	require.Equal(t, float64(userID), claims["sub"])
+	require.Equal(t, "456", claims.Subject)
 }
 
 func TestValidateJWTinvalidToken(t *testing.T) {
 	auth := InitDefaultAuthService(nil)
 	claims, err := auth.ValidateJWT("invalid token")
 	require.Error(t, err)
-	require.Nil(t, claims)
+	require.Equal(t, Claims{}, claims)
 }
 
 func TestValidateJWTexpiredToken(t *testing.T) {
@@ -216,5 +224,5 @@ func TestValidateJWTexpiredToken(t *testing.T) {
 	require.NoError(t, err)
 	claims, err := auth.ValidateJWT(tokenString)
 	require.Error(t, err)
-	require.Nil(t, claims)
+	require.Equal(t, Claims{}, claims)
 }

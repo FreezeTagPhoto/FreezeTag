@@ -19,6 +19,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func (te TagEndpoint) RegisterEndpoints(e gin.IRoutes) {
+	e.DELETE("/tag/remove", te.HandleDelete)
+	e.POST("/tag/add", te.HandlePost)
+	e.GET("/tag/list", te.ListTags)
+	e.GET("/tag/list/:id", te.ImageTags)
+	e.GET("/tag/counts", te.ListCounts)
+}
+
 func TestGetAllTags(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().RetrieveAllTags().Return(map[string]int64{"1": 1, "2": 1, "3": 1}, nil)

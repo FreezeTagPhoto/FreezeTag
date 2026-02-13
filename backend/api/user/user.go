@@ -4,6 +4,7 @@ import (
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/repositories"
+	"freezetag/backend/pkg/services"
 	"net/http"
 	"strconv"
 
@@ -12,15 +13,11 @@ import (
 
 type UserEndpoint struct {
 	userRepo repositories.UserRepository
+	authService services.AuthService
 }
 
-func InitUserEndpoint(userRepo repositories.UserRepository) UserEndpoint {
-	return UserEndpoint{userRepo: userRepo}
-}
-
-func (ue UserEndpoint) RegisterEndpoints(router gin.IRoutes) {
-	router.GET("/user/:id", ue.GetUser)
-	router.GET("/users", ue.ListUsers)
+func InitUserEndpoint(userRepo repositories.UserRepository, authService services.AuthService) UserEndpoint {
+	return UserEndpoint{userRepo: userRepo, authService: authService}
 }
 
 // @Summary      Get a public user by ID
@@ -65,4 +62,22 @@ func (ue UserEndpoint) ListUsers(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, users)
+}
+
+func (ue UserEndpoint) DeleteUser(c *gin.Context) {
+	c.JSON(http.StatusNotImplemented, api.StatusBadRequestResponse{Error: "Delete user endpoint not implemented yet"})
+}
+
+func (ue UserEndpoint) CreateUser(c *gin.Context) {
+	var req api.LoginCredentials
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "invalid request: " + err.Error()})
+		return
+	}
+	user, err := ue.authService.AddUser(req.Username, req.Password)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "failed to create user: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, user)
 }

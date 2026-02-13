@@ -23,9 +23,7 @@ func InitSearchEndpoint(repository repositories.ImageRepository) SearchEndpoint 
 	}
 }
 
-func (se SearchEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.GET("/search", se.HandleGet)
-}
+
 
 func parseNearParam(near string) ([3]float64, error) {
 	parts := strings.Split(near, ",")
@@ -72,7 +70,7 @@ func parseNearParam(near string) ([3]float64, error) {
 // @success     200 {array}  database.ImageId
 // @failure     400 {object} api.StatusBadRequestResponse
 // @failure     500 {object} api.StatusServerErrorResponse
-func (se SearchEndpoint) HandleGet(c *gin.Context) {
+func (se SearchEndpoint) Search(c *gin.Context) {
 	query := queries.CreateImageQuery()
 	if make := c.Query("make"); make != "" {
 		query.WithMake(make)

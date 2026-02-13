@@ -16,9 +16,6 @@ func InitLogoutEndpoint(auth services.AuthService) LogoutEndpoint {
 	return LogoutEndpoint{auth}
 }
 
-func (lo LogoutEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.POST("/logout", lo.HandleLogout)
-}
 
 // @summary invalidate the current user's session token
 // @tags    auth, logout

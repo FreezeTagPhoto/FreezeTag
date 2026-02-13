@@ -13,8 +13,8 @@ import (
 type UserRepository interface {
 	GetUserByUsername(username string) (*database.PublicUser, error)
 	GetUserByID(id database.UserID) (*database.PublicUser, error)
-	GetApiPermissions(tokenHash [32]byte) (*data.Permissions, error)
-	GetUserPermissions(userID database.UserID) (*data.Permissions, error)
+	GetApiPermissions(tokenHash [32]byte) (data.Permissions, error)
+	GetUserPermissions(userID database.UserID) (data.Permissions, error)
 	AddUser(username string, passwordHash string) (*database.PublicUser, error)
 
 	GetUserPasswordHash(userID database.UserID) (string, error)
@@ -24,8 +24,8 @@ type UserRepository interface {
 
 	GrantAdminPermissions(userID database.UserID) error
 	RevokeAllPermissions(userID database.UserID) error
-	RevokePermissions(userID database.UserID, permissions *data.Permissions) error
-	GrantPermissions(userID database.UserID, permissions *data.Permissions) error
+	RevokePermissions(userID database.UserID, permissions data.Permissions) error
+	GrantPermissions(userID database.UserID, permissions data.Permissions) error
 }
 
 var (
@@ -116,18 +116,18 @@ func (r *DefaultUserRepository) ListAllUsers() ([]*database.PublicUser, error) {
 	return r.ListUsers()
 }
 
-func (r *DefaultUserRepository) GetApiPermissions(tokenHash [32]byte) (*data.Permissions, error) {
+func (r *DefaultUserRepository) GetApiPermissions(tokenHash [32]byte) (data.Permissions, error) {
 	permissions, err := r.UserDatabase.GetApiPermissions(tokenHash)
 	if err != nil {
 		return nil, fmt.Errorf("invalid API token: %w", err)
 	}
-	if len(*permissions) == 0 {
+	if len(permissions) == 0 {
 		return nil, fmt.Errorf("invalid API token: no permissions found")
 	}
 	return permissions, nil
 }
 
-func (r *DefaultUserRepository) GetUserPermissions(userID database.UserID) (*data.Permissions, error) {
+func (r *DefaultUserRepository) GetUserPermissions(userID database.UserID) (data.Permissions, error) {
 	permissions, err := r.UserDatabase.GetUserPermissions(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user permissions: %w", err)
@@ -137,7 +137,7 @@ func (r *DefaultUserRepository) GetUserPermissions(userID database.UserID) (*dat
 
 func (r *DefaultUserRepository) GrantAdminPermissions(userID database.UserID) error {
 	allPerms := data.All()
-	err := r.UserDatabase.GrantUserPermissions(userID, &allPerms)
+	err := r.UserDatabase.GrantUserPermissions(userID, allPerms)
 	if err != nil {
 		return fmt.Errorf("failed to grant admin permissions: %w", err)
 	}
@@ -146,14 +146,14 @@ func (r *DefaultUserRepository) GrantAdminPermissions(userID database.UserID) er
 
 func (r *DefaultUserRepository) RevokeAllPermissions(userID database.UserID) error {
 	allPerms := data.All()
-	err := r.UserDatabase.RevokeUserPermissions(userID, &allPerms)
+	err := r.UserDatabase.RevokeUserPermissions(userID, allPerms)
 	if err != nil {
 		return fmt.Errorf("failed to revoke all permissions: %w", err)
 	}
 	return nil
 }
 
-func (r *DefaultUserRepository) RevokePermissions(userID database.UserID, permissions *data.Permissions) error {
+func (r *DefaultUserRepository) RevokePermissions(userID database.UserID, permissions data.Permissions) error {
 	err := r.UserDatabase.RevokeUserPermissions(userID, permissions)
 	if err != nil {
 		return fmt.Errorf("failed to revoke permissions: %w", err)
@@ -161,7 +161,7 @@ func (r *DefaultUserRepository) RevokePermissions(userID database.UserID, permis
 	return nil
 }
 
-func (r *DefaultUserRepository) GrantPermissions(userID database.UserID, permissions *data.Permissions) error {
+func (r *DefaultUserRepository) GrantPermissions(userID database.UserID, permissions data.Permissions) error {
 	err := r.UserDatabase.GrantUserPermissions(userID, permissions)
 	if err != nil {
 		return fmt.Errorf("failed to grant permissions: %w", err)

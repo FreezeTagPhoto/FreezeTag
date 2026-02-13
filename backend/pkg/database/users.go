@@ -34,13 +34,13 @@ type UserDatabase interface {
 	// List all users in the database
 	ListUsers() ([]*PublicUser, error)
 	// Get API permissions for a user by token hash, return error if not found
-	GetApiPermissions(tokenHash [32]byte) (*data.Permissions, error)
+	GetApiPermissions(tokenHash [32]byte) (data.Permissions, error)
 	// Get User permissions by user ID, return error if not found
-	GetUserPermissions(userID UserID) (*data.Permissions, error)
+	GetUserPermissions(userID UserID) (data.Permissions, error)
 	// revoke permissions for a user by user ID
-	RevokeUserPermissions(userID UserID, permissions *data.Permissions) error
+	RevokeUserPermissions(userID UserID, permissions data.Permissions) error
 	// grant permissions for a user by user ID
-	GrantUserPermissions(userID UserID, permissions *data.Permissions) error
+	GrantUserPermissions(userID UserID, permissions data.Permissions) error
 }
 
 type SqliteUserDatabase struct {
@@ -197,7 +197,7 @@ func (s SqliteUserDatabase) ListUsers() ([]*PublicUser, error) {
 	return users, nil
 }
 
-func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (*data.Permissions, error) {
+func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (data.Permissions, error) {
 	query := `
 		SELECT p.permission 
 		FROM API_Token t
@@ -224,10 +224,10 @@ func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (*data.Permiss
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return &permissions, nil
+	return permissions, nil
 }
 
-func (s SqliteUserDatabase) GetUserPermissions(userID UserID) (*data.Permissions, error) {
+func (s SqliteUserDatabase) GetUserPermissions(userID UserID) (data.Permissions, error) {
 	query := `
 		SELECT p.permission 
 		FROM User_Permissions up
@@ -251,10 +251,10 @@ func (s SqliteUserDatabase) GetUserPermissions(userID UserID) (*data.Permissions
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return &permissions, nil
+	return permissions, nil
 }
 
-func (s SqliteUserDatabase) RevokeUserPermissions(userID UserID, permissions *data.Permissions) error {
+func (s SqliteUserDatabase) RevokeUserPermissions(userID UserID, permissions data.Permissions) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -267,7 +267,7 @@ func (s SqliteUserDatabase) RevokeUserPermissions(userID UserID, permissions *da
 	}
 	defer stmt.Close()
 
-	for _, p := range *permissions {
+	for _, p := range permissions {
 		if _, err := stmt.Exec(userID, string(p)); err != nil {
 			return err
 		}
@@ -275,7 +275,7 @@ func (s SqliteUserDatabase) RevokeUserPermissions(userID UserID, permissions *da
 	return tx.Commit()
 }
 
-func (s SqliteUserDatabase) GrantUserPermissions(userID UserID, permissions *data.Permissions) error {
+func (s SqliteUserDatabase) GrantUserPermissions(userID UserID, permissions data.Permissions) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -288,7 +288,7 @@ func (s SqliteUserDatabase) GrantUserPermissions(userID UserID, permissions *dat
 	}
 	defer stmt.Close()
 
-	for _, p := range *permissions {
+	for _, p := range permissions {
 		if _, err := stmt.Exec(userID, string(p)); err != nil {
 			return err
 		}

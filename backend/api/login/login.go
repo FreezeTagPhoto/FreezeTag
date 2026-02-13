@@ -5,6 +5,7 @@ import (
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/services"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,10 +20,7 @@ func InitLoginEndpoint(authService services.AuthService) LoginEndpoint {
 	}
 }
 
-func (le LoginEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.POST("/login", le.HandleLogin)
-	e.GET("/login", le.HandleLoginStatus)
-}
+
 
 // @summary Authenticate user and return a token
 // @description Authenticates a user using form parameters "username" and "password". On success returns a JSON payload containing an authentication token.
@@ -72,11 +70,20 @@ func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
 		return
 	}
-	userID, ok := claims["sub"]
-	if !ok {
-		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "no sub user id in token"})
+
+
+	if claims.Subject == "" {
+		// Handle the case where "sub" isn't a valid number
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid user ID in token"})
 		return
 	}
-	id := int64(userID.(float64))
-	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: database.UserID(id)})
+
+	uid, err := strconv.ParseInt(claims.Subject, 10, 64)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid user ID in token"})
+		return
+	}
+
+	id := database.UserID(uid)
+	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: id})
 }

@@ -26,9 +26,7 @@ func InitUploadEndpoint(jobService services.JobService) UploadEndpoint {
 }
 
 // Registers the upload endpoints to the given Gin engine.
-func (ue UploadEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.POST("/upload", ue.HandlePost)
-}
+
 
 // @summary     Upload files
 // @description Upload a set of image files to the server
@@ -39,7 +37,7 @@ func (ue UploadEndpoint) RegisterEndpoints(e gin.IRoutes) {
 // @success     202 {object} string "the UUID of the created job batch for the upload"
 // @failure     400 {object} api.StatusBadRequestResponse
 // @failure     500 {object} api.StatusServerErrorResponse
-func (ue UploadEndpoint) HandlePost(c *gin.Context) {
+func (ue UploadEndpoint) Upload(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "failed to parse multipart form: " + err.Error()})

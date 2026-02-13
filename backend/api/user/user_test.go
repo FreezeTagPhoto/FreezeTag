@@ -5,6 +5,8 @@ import (
 	"errors"
 	"freezetag/backend/api"
 	mocks "freezetag/backend/mocks/UserRepository"
+	mockService "freezetag/backend/mocks/AuthService"
+
 	"freezetag/backend/pkg/database"
 	"net/http"
 	"net/http/httptest"
@@ -14,11 +16,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func (ue UserEndpoint) RegisterEndpoints(router gin.IRoutes) {
+	router.GET("/user/:id", ue.GetUser)
+	router.GET("/users", ue.ListUsers)
+	router.POST("/createuser", ue.CreateUser)
+}
+
 func TestGetUserOK(t *testing.T) {
 	mockRepo := mocks.NewMockUserRepository(t)
+	mockService := mockService.NewMockAuthService(t)
 
 	router := gin.Default()
-	InitUserEndpoint(mockRepo).RegisterEndpoints(router)
+	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 	testUser := &database.PublicUser{
 		ID:        1,
 		Username:  "testuser",
@@ -38,10 +47,12 @@ func TestGetUserOK(t *testing.T) {
 
 func TestGetUserUserIDServerError(t *testing.T) {
 	mockRepo := mocks.NewMockUserRepository(t)
+	mockService := mockService.NewMockAuthService(t)
+
 	mockRepo.EXPECT().GetUserByID(database.UserID(1)).Return(&database.PublicUser{}, errors.New("not found"))
 
 	router := gin.Default()
-	InitUserEndpoint(mockRepo).RegisterEndpoints(router)
+	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/user/1", nil)
 	router.ServeHTTP(w, req)
@@ -54,9 +65,11 @@ func TestGetUserUserIDServerError(t *testing.T) {
 
 func TestGetUserUserIDBadIDParse(t *testing.T) {
 	mockRepo := mocks.NewMockUserRepository(t)
+	mockService := mockService.NewMockAuthService(t)
+
 
 	router := gin.Default()
-	InitUserEndpoint(mockRepo).RegisterEndpoints(router)
+	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/user/one", nil)
 	router.ServeHTTP(w, req)
@@ -69,9 +82,11 @@ func TestGetUserUserIDBadIDParse(t *testing.T) {
 
 func TestListAllUsers(t *testing.T) {
 	mockRepo := mocks.NewMockUserRepository(t)
+	mockService := mockService.NewMockAuthService(t)
+	
 
 	router := gin.Default()
-	InitUserEndpoint(mockRepo).RegisterEndpoints(router)
+	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 	testUsers := []*database.PublicUser{
 		{ID: 1, Username: "testuser1", CreatedAt: 0},
 		{ID: 2, Username: "testuser2", CreatedAt: 0},
@@ -90,9 +105,10 @@ func TestListAllUsers(t *testing.T) {
 
 func TestListAllUsersNoUsers(t *testing.T) {
 	mockRepo := mocks.NewMockUserRepository(t)
+	mockService := mockService.NewMockAuthService(t)
 
 	router := gin.Default()
-	InitUserEndpoint(mockRepo).RegisterEndpoints(router)
+	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 	testUsers := []*database.PublicUser{} // Empty list of users
 	mockRepo.EXPECT().ListAllUsers().Return(testUsers, nil)
 
@@ -104,10 +120,12 @@ func TestListAllUsersNoUsers(t *testing.T) {
 
 func TestListAllUsersInternalError(t *testing.T) {
 	mockRepo := mocks.NewMockUserRepository(t)
+	mockService := mockService.NewMockAuthService(t)
+
 	mockRepo.EXPECT().ListAllUsers().Return(nil, errors.New("database error"))
 
 	router := gin.Default()
-	InitUserEndpoint(mockRepo).RegisterEndpoints(router)
+	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 	testUsers := []*database.PublicUser{} // Empty list of users
 	mockRepo.EXPECT().ListAllUsers().Return(testUsers, nil)
 

@@ -9,6 +9,7 @@ import (
 	"freezetag/backend/pkg/repositories"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -22,12 +23,17 @@ var (
 	JwtExpirationHours = time.Duration(24) * time.Hour
 )
 
+type Claims struct {
+	Permissions data.Permissions `json:"permissions"`
+	jwt.RegisteredClaims
+}
+
 type AuthService interface {
 	AddUser(username string, password string) (*database.PublicUser, error)
 	EnsureLogin() error
 	AuthenticateUser(username string, password string) (string, error)
-	ValidateJWT(tokenString string) (jwt.MapClaims, error)
-	ValidateAPIToken(token string) (*data.Permissions, error)
+	ValidateJWT(tokenString string) (Claims, error)
+	ValidateAPIToken(token string) (data.Permissions, error)
 }
 
 type DefaultAuthService struct {
@@ -74,7 +80,6 @@ func (s *DefaultAuthService) EnsureLogin() error {
 func (s *DefaultAuthService) AuthenticateUser(username string, password string) (string, error) {
 
 	user, err := s.userRepo.GetUserByUsername(username)
-	permissions, err := s.userRepo.GetUserPermissions(user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -83,6 +88,11 @@ func (s *DefaultAuthService) AuthenticateUser(username string, password string) 
 	if err != nil {
 		return "", err
 	}
+	permissions, err := s.userRepo.GetUserPermissions(user.ID)
+	if err != nil {
+		return "", err
+	}
+
 	return createTokenWithPermissions(user.ID, permissions)
 }
 
@@ -94,19 +104,19 @@ func (s *DefaultAuthService) AddUser(username string, password string) (*databas
 	return s.userRepo.AddUser(username, string(hash))
 }
 
-func (s *DefaultAuthService) ValidateJWT(tokenString string) (jwt.MapClaims, error) {
-	claims := jwt.MapClaims{}
+func (s *DefaultAuthService) ValidateJWT(tokenString string) (Claims, error) {
+	claims := Claims{}
 	_, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
 		return []byte(JwtSecretKey), nil
 	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
 
 	if err != nil {
-		return nil, err
+		return Claims{}, err
 	}
 	return claims, nil
 }
 
-func (s *DefaultAuthService) ValidateAPIToken(token string) (*data.Permissions, error) {
+func (s *DefaultAuthService) ValidateAPIToken(token string) (data.Permissions, error) {
 	tokenHash := hashToken(token)
 	permissions, err := s.userRepo.GetApiPermissions(tokenHash)
 	if err != nil {
@@ -115,17 +125,19 @@ func (s *DefaultAuthService) ValidateAPIToken(token string) (*data.Permissions, 
 	return permissions, nil
 }
 
-func createTokenWithPermissions(userID database.UserID, permissions *data.Permissions) (string, error) {
-	claims := jwt.NewWithClaims(JwtSigningMethod, jwt.MapClaims{
-		"sub": userID,
-		"exp": time.Now().Add(JwtExpirationHours).Unix(),
-		"permissions": *permissions,
-	})
-	tokenString, err := claims.SignedString([]byte(JwtSecretKey))
-	if err != nil {
-		return "", err
-	}
-	return tokenString, nil
+func createTokenWithPermissions(userID database.UserID, permissions data.Permissions) (string, error) {
+	claims := Claims{
+        Permissions: permissions,
+        RegisteredClaims: jwt.RegisteredClaims{
+            Subject:   strconv.FormatInt(int64(userID), 10),
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(JwtExpirationHours)),
+            IssuedAt:  jwt.NewNumericDate(time.Now()),
+        },
+    }
+
+    // Pass the struct here instead of MapClaims
+    token := jwt.NewWithClaims(JwtSigningMethod, claims)
+    return token.SignedString([]byte(JwtSecretKey))
 }
 
 func createAPIToken() (string, [32]byte, error) {
