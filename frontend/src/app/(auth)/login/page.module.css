@@ -1,7 +1,7 @@
 .screen {
     min-height: 100svh;
-    background: #12131a;
-    color: var(--foreground);
+    background: var(--crust);
+    color: var(--text);
     display: grid;
     grid-template-rows: auto 1fr;
 }

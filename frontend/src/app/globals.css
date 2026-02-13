@@ -3,6 +3,10 @@
 
 html,
 body {
+    --accent1: #579dd7;
+    --accent2: #aedbf0;
+    --accent3: #ffffff;
+    --border-radius: 12px;
     max-width: 100vw;
     overflow-x: hidden;
 }

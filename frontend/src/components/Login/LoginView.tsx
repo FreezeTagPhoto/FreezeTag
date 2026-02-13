@@ -340,7 +340,7 @@ export default function LoginView({ mode }: { mode: Mode }) {
                             aria-pressed={showPassword}
                             disabled={busy}
                         >
-                            👁️
+                            <div>👁️</div>
                         </button>
                     </div>
                 </div>
@@ -387,7 +387,7 @@ export default function LoginView({ mode }: { mode: Mode }) {
                                 aria-pressed={showConfirmPassword}
                                 disabled={busy}
                             >
-                                👁️
+                                <div>👁️</div>
                             </button>
                         </div>
                     </div>
