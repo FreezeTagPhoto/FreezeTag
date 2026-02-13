@@ -153,7 +153,8 @@ export default function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata?.fileName ?? "—"}
                     </div>
-                </div> */}
+                </div> 
+                */}
 
                 <div className={styles.detailRow}>
                     <div className={styles.detailLabelRow}>
