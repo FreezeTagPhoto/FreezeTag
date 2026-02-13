@@ -1,33 +1,5 @@
 @import "reset.css";
-@media (prefers-color-scheme: dark) {
-    html {
-        --background: #181825;
-        --text: #e0e0ee;
-        --foreground1: #1e1e2e;
-        --foreground2: #313244;
-        --accent1: #579dd7;
-        --accent2: #aedbf0;
-        --accent3: #ffffff;
-        --red: #f38ba8;
-        --green: #a6e3a1;
-        --yellow: #f9e2af;
-    }
-}
-
-@media (prefers-color-scheme: light) {
-    html {
-        --background: #e6e9ef;
-        --text: #0c0c0d;
-        --foreground1: #eff1f5;
-        --foreground2: #ccd0da;
-        --accent1: #579dd7;
-        --accent2: #aedbf0;
-        --accent3: #ffffff;
-        --red: #d20f39;
-        --green: #40a02b;
-        --yellow: #df8e1d;
-    }
-}
+@import "../themes/themes.css";
 
 html,
 body {
@@ -37,7 +9,7 @@ body {
 
 body {
     color: var(--text);
-    background: var(--background);
+    background: var(--crust);
     font-family: Arial, Helvetica, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

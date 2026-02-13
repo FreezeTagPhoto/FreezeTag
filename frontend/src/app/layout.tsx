@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import favicon from "@/icons/favicon.ico";
+import InnerLayout from "./inner_layout";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -29,10 +30,9 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en">
-            <body className={`${geistSans.variable} ${geistMono.variable}`}>
-                {children}
-            </body>
-        </html>
+        <InnerLayout
+            children={children}
+            className={`${geistSans.variable} ${geistMono.variable}`}
+        ></InnerLayout>
     );
 }
