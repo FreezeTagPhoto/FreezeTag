@@ -2,13 +2,13 @@
     display: grid;
     grid-template-columns: 240px 1fr;
     height: 100svh;
-    color: var(--foreground);
-    background: #12131a;
+    color: var(--text);
+    background: var(--background);
 }
 
 .nav {
     border-right: 1px solid rgba(255, 255, 255, 0.06);
-    background: #1e2030;
+    background: var(--foreground2);
 }
 
 .content {
