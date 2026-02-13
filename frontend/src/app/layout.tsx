@@ -30,9 +30,8 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <InnerLayout
-            children={children}
-            className={`${geistSans.variable} ${geistMono.variable}`}
-        ></InnerLayout>
+        <InnerLayout className={`${geistSans.variable} ${geistMono.variable}`}>
+            {children}
+        </InnerLayout>
     );
 }

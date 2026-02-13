@@ -15,8 +15,8 @@
 /* modify size - width */
 .card {
     width: min(380px, calc(100vw - 32px));
-    border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    border: var(--border-info);
     background: var(--mantle);
     box-shadow:
         0 10px 26px rgba(0, 0, 0, 0.34),
@@ -31,14 +31,14 @@
 
 .h1 {
     font-family: var(--font-geist-sans);
-    font-size: 30px;
+    font-size: 1.65rem;
     font-weight: 800;
     letter-spacing: 0.01em;
 }
 
 .subtle {
     margin-top: 6px;
-    font-size: 15px;
+    font-size: 0.85rem;
     opacity: 0.72;
     line-height: 1.35;
 }
@@ -72,13 +72,13 @@
 /* modify size - height, font-size */
 .input {
     width: 100%;
-    height: 42px;
+    height: 2.5rem;
     padding: 0 14px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--border-radius);
+    border: var(--border-info);
     background: var(--base);
     color: var(--subtext1);
-    font-size: 14px;
+    font-size: 0.75rem;
     letter-spacing: 0.01em;
     outline: none;
     transition:
@@ -102,17 +102,17 @@
 
 /* modify size - height, width */
 .iconBtn {
-    height: 42px;
-    width: 42px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: var(--border-radius);
+    border: var(--border-info);
     background: var(--base);
     color: var(--subtext0);
     display: grid;
     place-items: center;
     cursor: pointer;
     user-select: none;
-    font-size: 18px;
+    font-size: 1rem;
     line-height: 1;
     transition:
         background 120ms ease,
@@ -121,7 +121,7 @@
 }
 
 .iconBtn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--selected-overlay);
 }
 
 .iconBtn:disabled {
@@ -139,14 +139,14 @@
 }
 
 .callout {
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    border: var(--border-info);
     padding: 10px 12px;
     line-height: 1.35;
 }
 
 .calloutTitle {
-    font-size: 13px;
+    font-size: 0.7rem;
     font-weight: 800;
     margin-bottom: 6px;
 }
@@ -170,13 +170,13 @@
 
 /* modify size - height, font-size */
 .primary {
-    height: 46px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    height: 2.5rem;
+    border-radius: var(--border-radius);
+    border: var(--border-info);
     margin-top: 10px;
     background: var(--base);
     color: var(--text);
-    font-size: 18px;
+    font-size: 1rem;
     font-weight: 800;
     letter-spacing: 0.01em;
     cursor: pointer;
@@ -188,7 +188,7 @@
 }
 
 .primary:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--selected-overlay);
 }
 
 .primary:active {
@@ -209,12 +209,12 @@
 }
 
 .footerText {
-    font-size: 15px;
+    font-size: 0.85rem;
     color: var(--subtext1);
 }
 
 .link {
-    font-size: 15px;
+    font-size: 0.85rem;
     color: var(--accent1);
     text-decoration: none;
     border-bottom: 1px solid rgba(0, 0, 0, 0);

@@ -1,6 +1,6 @@
 "use client";
 
-import { ThemeGetter } from "@/themes/ThemeManager";
+import { ThemeGetter, ThemeTypeGetter } from "@/themes/ThemeManager";
 import { useEffect, useState } from "react";
 
 export default function InnerLayout({
@@ -11,11 +11,13 @@ export default function InnerLayout({
     className?: string;
 }) {
     const [theme, setTheme] = useState("");
+    const [themeType, setThemeType] = useState("");
     useEffect(() => {
         setTheme(ThemeGetter());
+        setThemeType(ThemeTypeGetter());
     }, []);
     return (
-        <html lang="en" data-theme={theme}>
+        <html lang="en" data-theme={theme} data-theme-type={themeType}>
             <body className={className}>{children}</body>
         </html>
     );
