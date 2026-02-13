@@ -18,7 +18,7 @@ type PluginService interface {
 	HooksWithType(plugin string, ty plugins.HookType) map[string]plugins.HookSignature
 	HooksWithSignature(plugin string, sig plugins.HookSignature) map[string]plugins.HookType
 	Hooks(plugin string, ty plugins.HookType, sig plugins.HookSignature) []string
-	RunPostUpload(plugin string, ctx context.Context, uploadJob []*repositories.ImageUploadSuccess) (<-chan error, error)
+	RunPostUpload(plugin string, ctx context.Context, uploadJob []repositories.ImageUploadSuccess) (<-chan error, error)
 }
 
 type defaultPluginService struct {
@@ -120,7 +120,7 @@ func (ps defaultPluginService) Hooks(plugin string, ty plugins.HookType, sig plu
 	return hooks
 }
 
-func (ps defaultPluginService) RunPostUpload(plugin string, ctx context.Context, uploadJob []*repositories.ImageUploadSuccess) (<-chan error, error) {
+func (ps defaultPluginService) RunPostUpload(plugin string, ctx context.Context, uploadJob []repositories.ImageUploadSuccess) (<-chan error, error) {
 	// only process-image handlers for now, more eventually
 	manifest, exists := ps.plugins[plugin]
 	if !exists {
@@ -144,6 +144,8 @@ func (ps defaultPluginService) RunPostUpload(plugin string, ctx context.Context,
 						// unrecoverable error, don't bother continuing
 						break jobLoop
 					}
+				} else {
+					results <- nil // indicate a fine run
 				}
 			}
 		}

@@ -2,20 +2,39 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"sync"
 
 	"freezetag/backend/pkg/repositories"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/google/uuid"
 )
 
-const (
-	ThreadLimit = 10
-)
+// only one plugin can run at a time
+// (TODO: change this eventually to be plugin-specific)
+var pluginLock sync.Mutex
+
+type FileJob struct {
+	Name  string `json:"name"`
+	Bytes []byte `json:"-"`
+}
+
+// required to make FileJobs satisfy the JobInput interface
+// without requiring someone else to assign them IDs
+type innerFileJob struct {
+	FileJob
+	id int `json:"-"`
+}
+
+func (j innerFileJob) ID() int {
+	return j.id
+}
 
 type JobService interface {
-	RunUploadJobs(batch *repositories.JobBatch) error
-	CreateJobBatch(jobs []*repositories.FileJob) (*repositories.JobBatch, error)
+	GetBatch(uuid.UUID) *repositories.JobBatch[repositories.JobInput, any]
+	RunUploadJob(files []FileJob) uuid.UUID
+	SchedulePostUploads(upload uuid.UUID)
 }
 
 type defaultJobService struct {
@@ -32,98 +51,76 @@ func InitDefaultJobService(jobRepository repositories.JobRepository, imageReposi
 	}
 }
 
-func (s *defaultJobService) RunUploadJobs(batch *repositories.JobBatch) error {
-	// if the batch context gets canceled, the rest of the jobs will stop processing
-	g, ctx := errgroup.WithContext(batch.Ctx)
-	g.SetLimit(ThreadLimit)
-	if batch.Finished == nil {
-		batch.Finished = make(chan struct{}, 1)
-	}
-
-	jobs := make([]*repositories.FileJob, len(batch.InProgress))
-	copy(jobs, batch.InProgress)
-	if len(jobs) == 0 {
-		batch.MarkFinished()
-	}
-
-	batch.WG.Add(1)
-	go func() {
-		defer batch.WG.Done()
-		for _, file := range jobs {
-			f := file
-			if ctx.Err() != nil {
-				log.Printf("[INFO] Job batch %v canceled, stopping remaining jobs", batch.UUID)
-				break
-			}
-			g.Go(func() error {
-				if ctx.Err() != nil {
-					log.Printf("[INFO] Job batch %v canceled, skipping job for file %s", batch.UUID, file.Name)
-					return ctx.Err()
-				}
-
-				// if a single job fails, it doesnt necessarily mean
-				// all the other jobs should be canceled, so we log the error but return nil to let other jobs keep running
-				id, err := s.imageRepository.StoreImageBytes(f.Bytes, f.Name)
-				if err != nil {
-					log.Printf("[ERR] Failed to store image bytes for file %s in batch %v: %v", f.Name, batch.UUID, err)
-					if err := s.jobRepository.FailFileJob(batch.UUID, f.Name, err); err != nil {
-						return err
-					}
-				} else {
-					if err := s.jobRepository.CompleteFileJob(batch.UUID, f.Name, id); err != nil {
-						return err
-					}
-				}
-				return nil
-
-			})
-		}
-		if err := g.Wait(); err != nil {
-			log.Printf("[ERR]  Error running upload jobs: %v", err)
-		}
-
-		// wait for the last group of jobs to be done before releasing the batch waitgroup
-		_ = g.Wait()
-	}()
-	// set up PostUpload hooks to run
-	go func() {
-		uploads := <-s.jobRepository.WaitFinished(batch.UUID)
-		if uploads == nil {
-			return // cancelled job
-		}
-		// TODO: change this to something reportable job-style so that plugin jobs can be cancelled
-		ctx := context.Background()
-		log.Printf("[INFO] running plugins on files from batch %v", batch.UUID)
-		for _, plugin := range s.plugins.AllPlugins() {
-			results, err := s.plugins.RunPostUpload(plugin, ctx, uploads)
-			if err != nil {
-				log.Printf("[ERR]  %s: %s", plugin, err.Error())
-				continue
-			}
-			for {
-				err, ok := <-results
-				if !ok {
-					break // finished this plugin, move to the next
-				}
-				if err != nil {
-					log.Printf("[ERR]  %s: %s", plugin, err.Error())
-				}
-			}
-		}
-		log.Printf("[INFO] finished running plugins on files from batch %v", batch.UUID)
-	}()
-	return nil
+func (s *defaultJobService) GetBatch(id uuid.UUID) *repositories.JobBatch[repositories.JobInput, any] {
+	return s.jobRepository.Get(id)
 }
 
-func (s *defaultJobService) CreateJobBatch(jobs []*repositories.FileJob) (*repositories.JobBatch, error) {
-	UUID := repositories.NewJobBatchID()
-	jobBatch := repositories.JobBatch{
-		UUID:       UUID,
-		InProgress: jobs,
-	}
-	err := s.jobRepository.Create(&jobBatch)
+func (s *defaultJobService) uploadOneFile(f innerFileJob) (repositories.ImageUploadSuccess, error) {
+	id, err := s.imageRepository.StoreImageBytes(f.Bytes, f.Name)
 	if err != nil {
-		return nil, err
+		return repositories.ImageUploadSuccess{}, err
 	}
-	return &jobBatch, nil
+	return repositories.ImageUploadSuccess{Id: id, Filename: f.Name}, nil
+}
+
+func (s *defaultJobService) RunUploadJob(batch []FileJob) uuid.UUID {
+	jobs := make([]repositories.JobInput, len(batch))
+	for i, job := range batch {
+		jobs[i] = innerFileJob{job, i}
+	}
+	id := s.jobRepository.Create(context.Background(), jobs, repositories.AtomicJob(s.uploadOneFile))
+	s.SchedulePostUploads(id)
+	return id
+}
+
+type pluginRun struct {
+	Name string `json:"name"`
+	Hook string `json:"hook"`
+	id   int    `json:"-"`
+}
+type pluginResult map[string]any
+
+func (p pluginRun) ID() int {
+	return p.id
+}
+
+func (s *defaultJobService) SchedulePostUploads(upload uuid.UUID) {
+	batch := s.GetBatch(upload)
+	var jobs []repositories.JobInput
+	// create a giant list of plugin hooks to run synchronously in order
+	for i, plugin := range s.plugins.AllPlugins() {
+		jobs = append(jobs, pluginRun{plugin, "PostUpload", i})
+	}
+	s.jobRepository.Create(batch.Context, jobs, repositories.Job(func(p pluginRun, c context.Context) (pluginResult, error) {
+		<-batch.WaitFinished()
+		result := make(map[string]any)
+		if batch.Cancelled {
+			return result, fmt.Errorf("cancelled")
+		}
+		uploads := make([]repositories.ImageUploadSuccess, len(batch.Completed))
+		for i, succ := range batch.Completed {
+			uploads[i] = succ.(repositories.ImageUploadSuccess)
+		}
+		// only one plugin can run at once
+		pluginLock.Lock()
+		defer pluginLock.Unlock()
+		log.Printf("[INFO] running plugin '%s' on upload batch %v", p.Name, upload)
+		results, err := s.plugins.RunPostUpload(p.Name, c, uploads)
+		if err != nil {
+			return result, err
+		}
+		for {
+			err, ok := <-results
+			if !ok {
+				break
+			}
+			if err != nil {
+				log.Printf("[ERR]  %s: %s", p.Name, err.Error())
+			}
+		}
+		result["name"] = p.Name
+		result["status"] = "success"
+		log.Printf("[INFO] finished plugin '%s' on upload batch %v", p.Name, upload)
+		return result, nil
+	}))
 }

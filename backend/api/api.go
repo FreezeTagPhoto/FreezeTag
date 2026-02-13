@@ -4,6 +4,7 @@ import (
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/images/imagedata"
 	"freezetag/backend/pkg/repositories"
+	"freezetag/backend/pkg/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -68,4 +69,13 @@ type MetadataResponse struct {
 	Height int `json:"height"`
 }
 
-type JobBatch repositories.JobBatch
+type innerFileJob struct {
+	services.FileJob
+	id int `json:"-"`
+}
+
+func (j innerFileJob) ID() int {
+	return j.id
+}
+
+type FileJobBatch repositories.JobBatch[innerFileJob, repositories.ImageUploadSuccess]

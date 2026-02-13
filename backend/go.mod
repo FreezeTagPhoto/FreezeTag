@@ -1,6 +1,6 @@
 module freezetag/backend
 
-go 1.24.9
+go 1.25
 
 require (
 	github.com/gin-gonic/gin v1.11.0
@@ -15,7 +15,6 @@ require (
 	github.com/swaggo/swag v1.16.6
 	github.com/umahmood/haversine v0.0.0-20151105152445-808ab04add26
 	golang.org/x/crypto v0.43.0
-	golang.org/x/sync v0.17.0
 	gopkg.in/gographics/imagick.v3 v3.7.2
 )
 
@@ -89,6 +88,7 @@ require (
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/mod v0.29.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/term v0.36.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
