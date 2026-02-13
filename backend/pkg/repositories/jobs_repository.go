@@ -77,6 +77,7 @@ type JobBatch[I JobInput, C any] struct {
 	InProgress  []I                `json:"in_progress"`
 	Cancelled   bool               `json:"cancelled"`
 	Context     context.Context    `json:"-"`
+	finished    bool               `json:"-"`
 	operation   JobFunction[I, C]  `json:"-"`
 	cancel      context.CancelFunc `json:"-"`
 	timer       *time.Timer        `json:"-"`
@@ -177,6 +178,7 @@ func (jb *JobBatch[I, C]) Cancel() {
 
 // this should only be called once, by the job that finishes the batch
 func (jb *JobBatch[I, C]) finish() {
+	jb.finished = true
 	jb.notifySubscribers()
 	jb.adjustKeepTime(RetentionTime)
 }
@@ -184,7 +186,13 @@ func (jb *JobBatch[I, C]) finish() {
 // return a channel that completes when the job batch finishes
 func (jb *JobBatch[I, C]) WaitFinished() <-chan struct{} {
 	sub := make(chan struct{}, 1)
-	jb.subscribers = append(jb.subscribers, sub)
+	if jb.finished {
+		// if it's already finished, it's obviously finished
+		sub <- struct{}{}
+		close(sub)
+	} else {
+		jb.subscribers = append(jb.subscribers, sub)
+	}
 	return sub
 }
 
