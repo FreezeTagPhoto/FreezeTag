@@ -14,6 +14,12 @@
     min-width: 0;
 }
 
+.btnIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+}
+
 .searchIconBtn {
     position: absolute;
     left: 14px;
@@ -46,7 +52,6 @@
 
 .iconDisabled {
     opacity: 0.45;
-    cursor: default;
 }
 
 .search {
@@ -107,6 +112,7 @@
     background: rgba(255, 255, 255, 0.03);
     color: rgba(198, 201, 214, 0.55);
     cursor: default;
+    pointer-events: none;
 }
 
 .clear:disabled:hover {

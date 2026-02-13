@@ -5,6 +5,7 @@ import styles from "./SearchBar.module.css";
 import Pill from "@/components/UI/Pill/Pill";
 import { parseUserQuery } from "@/common/search/parse";
 import { FIELD_KEYS, isSearchValueKey } from "@/common/search/keys";
+import { Search, X } from "lucide-react";
 
 type Props = {
     value: string;
@@ -196,7 +197,7 @@ export default function SearchBar({
                             : "Suggestions off"
                     }
                 >
-                    🔍
+                    <Search className={styles.btnIcon} aria-hidden="true" />
                 </button>
 
                 <input
@@ -234,7 +235,7 @@ export default function SearchBar({
                     disabled={value.length === 0}
                     title={value.length === 0 ? "Nothing to clear" : "Clear"}
                 >
-                    ✕
+                    <X className={styles.btnIcon} aria-hidden="true" />
                 </button>
 
                 {dropdownOpen && suggestions.length > 0 && (
