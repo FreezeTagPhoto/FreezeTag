@@ -2,8 +2,10 @@ package services
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/repositories"
 	"log"
 	"os"
@@ -25,6 +27,7 @@ type AuthService interface {
 	EnsureLogin() error
 	AuthenticateUser(username string, password string) (string, error)
 	ValidateJWT(tokenString string) (jwt.MapClaims, error)
+	ValidateAPIToken(token string) (*data.Permissions, error)
 }
 
 type DefaultAuthService struct {
@@ -56,7 +59,11 @@ func (s *DefaultAuthService) EnsureLogin() error {
 	}
 	if len(users) == 0 {
 		log.Printf("[WARN] since there are no users, a user with username 'admin' and password 'admin' is being created. Change this ASAP.")
-		_, err = s.AddUser("admin", "admin")
+		user, err := s.AddUser("admin", "admin")
+		if err != nil {
+			return err
+		}
+		err = s.userRepo.GrantAdminPermissions(user.ID)
 		if err != nil {
 			return err
 		}
@@ -67,6 +74,7 @@ func (s *DefaultAuthService) EnsureLogin() error {
 func (s *DefaultAuthService) AuthenticateUser(username string, password string) (string, error) {
 
 	user, err := s.userRepo.GetUserByUsername(username)
+	permissions, err := s.userRepo.GetUserPermissions(user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +83,7 @@ func (s *DefaultAuthService) AuthenticateUser(username string, password string) 
 	if err != nil {
 		return "", err
 	}
-	return createToken(user.ID)
+	return createTokenWithPermissions(user.ID, permissions)
 }
 
 func (s *DefaultAuthService) AddUser(username string, password string) (*database.PublicUser, error) {
@@ -98,14 +106,39 @@ func (s *DefaultAuthService) ValidateJWT(tokenString string) (jwt.MapClaims, err
 	return claims, nil
 }
 
-func createToken(userID database.UserID) (string, error) {
+func (s *DefaultAuthService) ValidateAPIToken(token string) (*data.Permissions, error) {
+	tokenHash := hashToken(token)
+	permissions, err := s.userRepo.GetApiPermissions(tokenHash)
+	if err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+func createTokenWithPermissions(userID database.UserID, permissions *data.Permissions) (string, error) {
 	claims := jwt.NewWithClaims(JwtSigningMethod, jwt.MapClaims{
 		"sub": userID,
 		"exp": time.Now().Add(JwtExpirationHours).Unix(),
+		"permissions": *permissions,
 	})
 	tokenString, err := claims.SignedString([]byte(JwtSecretKey))
 	if err != nil {
 		return "", err
 	}
 	return tokenString, nil
+}
+
+func createAPIToken() (string, [32]byte, error) {
+	randomBytes := make([]byte, 32)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", [32]byte{}, err
+	}
+	token := base64.StdEncoding.EncodeToString(randomBytes)
+	tokenHash := hashToken(token)
+	return token, tokenHash, nil
+}
+
+func hashToken(token string) [32]byte {
+	return sha256.Sum256([]byte(token))
 }

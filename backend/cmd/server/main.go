@@ -16,6 +16,7 @@ import (
 	"freezetag/backend/api/user"
 	"freezetag/backend/middleware"
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/formats"
 	"freezetag/backend/pkg/repositories"
@@ -143,17 +144,16 @@ func initDefaultImageRepository(dataDir string) repositories.ImageRepository {
 func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	authGroup := router.Group("/")
 	authGroup.Use(middleware.RequireAuth(deps.authService))
-	{
-		upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(authGroup)
-		thumbnails.InitThumbnailEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		search.InitSearchEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		tags.InitTagEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		metadata.InitMetadataEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		jobquery.InitJobQueryEndpoint(deps.jobRepository).RegisterEndpoints(authGroup)
-		files.InitFileEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		logout.InitLogoutEndpoint(deps.authService).RegisterEndpoints(authGroup)
-		user.InitUserEndpoint(deps.userRepository).RegisterEndpoints(authGroup)
-	}
+
+	upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(authGroup)
+	thumbnails.InitThumbnailEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+	search.InitSearchEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+	tags.InitTagEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+	metadata.InitMetadataEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+	jobquery.InitJobQueryEndpoint(deps.jobRepository).RegisterEndpoints(authGroup)
+	files.InitFileEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
+	logout.InitLogoutEndpoint(deps.authService).RegisterEndpoints(authGroup)
+	user.InitUserEndpoint(deps.userRepository).RegisterEndpoints(authGroup)
 
 	login.InitLoginEndpoint(deps.authService).RegisterEndpoints(router)
 	createuser.InitCreateUserEndpoint(deps.authService).RegisterEndpoints(router)
