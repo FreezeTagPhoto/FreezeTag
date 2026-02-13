@@ -1,0 +1,420 @@
+.viewerSidebar {
+    width: 100%;
+    min-width: 0;
+
+    background: #1e2031;
+    border-left: 1px solid #111827;
+    padding: 20px 24px;
+
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+.sidebarTitle {
+    margin: 0 0 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e5e7eb;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.detailsHeaderRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.pill {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: #e5e7eb;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.errorBanner {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #fee2e2;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    font-size: 0.85rem;
+    line-height: 1.2rem;
+}
+
+.detailGrid {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+.detailRow {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    min-width: 0;
+}
+
+.detailLabelRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    min-width: 0;
+    line-height: 1;
+}
+
+.detailLabelIcon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    color: #9ca3af;
+    transform: translateY(-1px);
+}
+
+.detailLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #9ca3af;
+    margin-bottom: 0;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    min-width: 0;
+}
+
+.detailValue {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #e5e7eb;
+    word-break: break-word;
+    min-width: 0;
+}
+
+/* ===========================
+   Tags UI
+   =========================== */
+
+.tagAddIconPill {
+    height: 28px;
+    width: 28px;
+    padding: 0;
+    border-radius: 999px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: #e5e7eb;
+
+    cursor: pointer;
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        transform 80ms ease;
+}
+
+.tagAddIconPill:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tagAddIconPill:active {
+    transform: scale(0.98);
+}
+
+.tagWrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+
+    word-break: normal;
+    overflow-wrap: normal;
+
+    min-width: 0;
+    max-width: 100%;
+}
+
+.tagPill {
+    height: 28px;
+    padding: 0 10px;
+}
+
+.tagTokenWrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.tagTokenClose {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+
+    height: 20px;
+    width: 20px;
+    border-radius: 999px;
+
+    border: 1px solid rgba(255, 90, 90, 0.35);
+    background: rgba(255, 90, 90, 0.16);
+    color: #ffd7d7;
+
+    display: grid;
+    place-items: center;
+
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.92);
+    transition:
+        opacity 120ms ease,
+        transform 120ms ease,
+        background 120ms ease;
+}
+
+.tagTokenWrap:hover .tagTokenClose,
+.tagTokenWrap:focus-within .tagTokenClose {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.tagTokenClose:hover {
+    background: rgba(255, 90, 90, 0.24);
+}
+
+.tagTokenClose:disabled {
+    cursor: default;
+}
+.tagTokenWrap:hover .tagTokenClose:disabled,
+.tagTokenWrap:focus-within .tagTokenClose:disabled {
+    opacity: 0.35;
+    transform: scale(1);
+}
+
+.tagAddPill {
+    opacity: 0.9;
+}
+
+.tagInfoBanner {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #e5e7eb;
+    background: rgba(120, 140, 255, 0.1);
+    border: 1px solid rgba(120, 140, 255, 0.2);
+    font-size: 0.85rem;
+    line-height: 1.2rem;
+}
+
+/* ===========================
+   Tag add editor
+   =========================== */
+
+.tagAddEditor {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 6px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+
+    flex-wrap: nowrap;
+    max-width: 100%;
+    min-width: 0;
+
+    overflow: visible;
+
+    position: relative;
+    z-index: 1;
+}
+
+.tagAddInputWrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    min-width: 0;
+    flex: 1 1 0;
+}
+
+.tagAddInput {
+    width: 100%;
+    min-width: 0;
+    height: 28px;
+
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #e5e7eb;
+    font-size: 13px;
+
+    padding-left: 8px;
+}
+
+.tagAddInput::placeholder {
+    color: #9aa0b5;
+}
+
+.tagSuggestToggle {
+    height: 28px;
+    width: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #dfe3f0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    flex: 0 0 28px;
+
+    transition:
+        background 120ms ease,
+        border-color 120ms ease;
+}
+
+.tagSuggestToggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tagActionBtn {
+    height: 28px;
+    width: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #dfe3f0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    flex: 0 0 28px;
+
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        transform 80ms ease;
+}
+
+.tagActionBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tagActionBtn:active {
+    transform: scale(0.98);
+}
+
+.tagActionBtn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.tagSuggestDropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+
+    min-width: 220px;
+    width: max-content;
+    max-width: 320px;
+
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(16, 18, 26, 0.98);
+
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(255, 255, 255, 0.04);
+
+    overflow: hidden;
+    z-index: 60;
+}
+
+.tagSuggestScroll {
+    max-height: 240px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    scrollbar-gutter: stable;
+
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.tagSuggestScroll::-webkit-scrollbar {
+    width: 10px;
+}
+.tagSuggestScroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+
+.tagSuggestItem {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px 12px;
+
+    background: transparent;
+    border: none;
+    color: #eef1ff;
+    cursor: pointer;
+    text-align: left;
+}
+
+.tagSuggestItem:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.tagSuggestActive {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.tagSuggestLabel {
+    font-size: 13px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+}
+
+.tagSuggestLoading {
+    padding: 10px 12px;
+    color: #aeb5cf;
+    font-size: 13px;
+}
+
+.inlineError {
+    color: #fca5a5;
+    font-size: 0.85rem;
+    line-height: 1.2rem;
+}
+
+/* ===========================
+   Icon helpers
+   =========================== */
+
+.icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+.iconSm {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+}

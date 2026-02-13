@@ -27,6 +27,8 @@ describe("Metadata Getter", () => {
                 cameraModel: null,
                 latitude: null,
                 longitude: null,
+                width: null,
+                height: null,
             });
         };
 
@@ -74,6 +76,8 @@ describe("Metadata Getter", () => {
                 cameraModel: "R6",
                 latitude: 40,
                 longitude: -111,
+                width: 4000,
+                height: 3000,
             });
         };
 
@@ -87,6 +91,8 @@ describe("Metadata Getter", () => {
                 cameraModel: "R6",
                 latitude: 40,
                 longitude: -111,
+                width: 4000,
+                height: 3000,
             }),
         );
     });

@@ -112,12 +112,16 @@
     place-items: center;
     cursor: pointer;
     user-select: none;
-    font-size: 18px;
-    line-height: 1;
     transition:
         background 120ms ease,
         opacity 120ms ease,
         border-color 120ms ease;
+}
+
+.iconBtnIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
 }
 
 .iconBtn:hover {
@@ -129,14 +133,9 @@
     cursor: default;
 }
 
-.iconBtnOff {
-    opacity: 0.55;
-}
-
-.iconBtnOn {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.22);
+.iconBtnActive {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .callout {
@@ -199,6 +198,20 @@
 .primary:disabled {
     opacity: 0.6;
     cursor: default;
+}
+
+.primaryInner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.primaryIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    opacity: 0.95;
 }
 
 .footerRow {

@@ -7,13 +7,30 @@ import logoUrl from "@/icons/freezetag+text.svg";
 import styles from "./Sidebar.module.css";
 import LogoutHandler from "@/api/auth/logouthandler";
 
-const navItems = [
-    { label: "Gallery", href: "/" },
-    { label: "Upload", href: "/upload" },
-    { label: "Manage", href: "/manage" },
-    { label: "Settings", href: "/settings" },
-    { label: "Plugins", href: "/plugins" },
-    { label: "Accounts", href: "/accounts" },
+import type { LucideIcon } from "lucide-react";
+import {
+    Images,
+    Upload,
+    Tags,
+    Settings,
+    Puzzle,
+    Users,
+    LogOut,
+} from "lucide-react";
+
+type NavItem = {
+    label: string;
+    href: string;
+    icon: LucideIcon;
+};
+
+const navItems: NavItem[] = [
+    { label: "Gallery", href: "/", icon: Images },
+    { label: "Upload", href: "/upload", icon: Upload },
+    { label: "Tags", href: "/manage", icon: Tags },
+    { label: "Settings", href: "/settings", icon: Settings },
+    { label: "Plugins", href: "/plugins", icon: Puzzle },
+    { label: "Accounts", href: "/accounts", icon: Users },
 ];
 
 export default function Sidebar() {
@@ -49,14 +66,26 @@ export default function Sidebar() {
                             : pathname === item.href ||
                               pathname.startsWith(item.href + "/");
 
+                    const Icon = item.icon;
+
                     return (
                         <Link
                             key={item.label}
                             href={item.href}
-                            className={`${styles.item} ${isActive ? styles.itemActive : ""}`}
+                            className={`${styles.item} ${
+                                isActive ? styles.itemActive : ""
+                            }`}
                             aria-current={isActive ? "page" : undefined}
                         >
-                            <span>{item.label}</span>
+                            <span className={styles.itemInner}>
+                                <Icon
+                                    className={styles.itemIcon}
+                                    aria-hidden="true"
+                                />
+                                <span className={styles.itemLabel}>
+                                    {item.label}
+                                </span>
+                            </span>
                         </Link>
                     );
                 })}
@@ -70,7 +99,13 @@ export default function Sidebar() {
                     className={`${styles.item} ${styles.logoutItem}`}
                     onClick={onLogout}
                 >
-                    <span>Log out</span>
+                    <span className={styles.itemInner}>
+                        <LogOut
+                            className={styles.itemIcon}
+                            aria-hidden="true"
+                        />
+                        <span className={styles.itemLabel}>Log out</span>
+                    </span>
                 </button>
             </nav>
         </div>
