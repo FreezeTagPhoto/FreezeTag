@@ -27,10 +27,10 @@ import {
     XCircle,
     // FileText,
     Calendar,
-    Upload,
+    CloudUpload,
     MapPin,
     Camera,
-    Tags,
+    Tag,
     FullscreenIcon,
 } from "lucide-react";
 
@@ -184,7 +184,7 @@ export default function MetadataSidebar({
 
                 <div className={styles.detailRow}>
                     <div className={styles.detailLabelRow}>
-                        <Upload className={styles.detailLabelIcon} />
+                        <CloudUpload className={styles.detailLabelIcon} />
                         <span className={styles.detailLabel}>
                             Date uploaded
                         </span>
@@ -228,7 +228,7 @@ export default function MetadataSidebar({
 
                 <div className={styles.detailRow}>
                     <div className={styles.detailLabelRow}>
-                        <Tags className={styles.detailLabelIcon} />
+                        <Tag className={styles.detailLabelIcon} />
                         <span className={styles.detailLabel}>Tags</span>
                     </div>
 

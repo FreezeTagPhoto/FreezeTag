@@ -40,7 +40,7 @@
 .item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 12px 14px;
     min-height: 44px;
     border-radius: 10px;
@@ -50,6 +50,7 @@
     cursor: pointer;
     text-decoration: none;
     font: inherit;
+    text-align: left;
 }
 
 .item:hover {
@@ -60,6 +61,27 @@
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.22);
     color: #ffffff;
+}
+
+.itemInner {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.itemIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    opacity: 0.9;
+}
+
+.itemLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .sectionBreak {
