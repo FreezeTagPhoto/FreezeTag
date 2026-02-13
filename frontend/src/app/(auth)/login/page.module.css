@@ -16,13 +16,6 @@
 .cardRow {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     padding: 18px 16px 42px 16px;
-}
-
-@media (min-height: 820px) {
-    .cardRow {
-        align-items: center;
-        padding-bottom: 64px;
-    }
 }
