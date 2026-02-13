@@ -47,6 +47,23 @@ func TestAddUser(t *testing.T) {
 	require.NoError(t, err, "Password hash does not match the original password")
 }
 
+func TestEnsureLoginNoUsers(t *testing.T) {
+	mockRepo := mockUserRepository.NewMockUserRepository(t)
+	mockRepo.EXPECT().ListAllUsers().Return(nil, nil)
+	mockRepo.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(nil, nil)
+	authService := InitDefaultAuthService(mockRepo)
+	err := authService.EnsureLogin()
+	assert.NoError(t, err)
+}
+
+func TestEnsureLoginAlreadyUser(t *testing.T) {
+	mockRepo := mockUserRepository.NewMockUserRepository(t)
+	mockRepo.EXPECT().ListAllUsers().Return([]*database.PublicUser{{ID: 1}}, nil)
+	authService := InitDefaultAuthService(mockRepo)
+	err := authService.EnsureLogin()
+	assert.NoError(t, err)
+}
+
 func TestAddUserFails(t *testing.T) {
 	plaintextPassword := "securepassword"
 
@@ -130,7 +147,7 @@ func TestCreateToken(t *testing.T) {
 	require.NoError(t, err)
 	claims, ok := token.Claims.(jwt.MapClaims)
 	require.True(t, ok)
-	require.Equal(t, fmt.Sprintf("%d", userID), claims["sub"])
+	require.Equal(t, float64(userID), claims["sub"])
 }
 
 func TestLoginCreatesValidJWT(t *testing.T) {
@@ -179,7 +196,7 @@ func TestValidateJWT(t *testing.T) {
 	require.NoError(t, err)
 	claims, err := auth.ValidateJWT(tokenString)
 	require.NoError(t, err)
-	require.Equal(t, fmt.Sprintf("%d", userID), claims["sub"])
+	require.Equal(t, float64(userID), claims["sub"])
 }
 
 func TestValidateJWTinvalidToken(t *testing.T) {

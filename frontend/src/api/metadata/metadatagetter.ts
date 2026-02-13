@@ -10,6 +10,8 @@ export type ImageMetadata = {
     cameraModel: string | null;
     latitude: number | null;
     longitude: number | null;
+    width: number | null;
+    height: number | null;
 };
 
 export type MetadataGetResult = Result<

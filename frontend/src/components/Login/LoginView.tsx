@@ -10,6 +10,7 @@ import LoginHandler from "@/api/auth/loginhandler";
 import UserCreator from "@/api/auth/usercreator";
 
 import styles from "./LoginView.module.css";
+import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
 
 type OptionSome<T> = { kind: "some"; value: T };
 type OptionNone = { kind: "none" };
@@ -171,6 +172,7 @@ export default function LoginView({ mode }: { mode: Mode }) {
             ? "Use your FreezeTag credentials to continue."
             : "Create a new FreezeTag user.";
     const primaryLabel = mode === "login" ? "Sign in" : "Create user";
+    const PrimaryIcon = mode === "login" ? LogIn : UserPlus;
 
     const footer = useMemo(() => {
         if (mode === "login") {
@@ -326,9 +328,7 @@ export default function LoginView({ mode }: { mode: Mode }) {
                         <button
                             type="button"
                             className={`${styles.iconBtn} ${
-                                showPassword
-                                    ? styles.iconBtnOn
-                                    : styles.iconBtnOff
+                                showPassword ? styles.iconBtnActive : ""
                             }`}
                             onClick={() => setShowPassword((v) => !v)}
                             aria-label={
@@ -340,7 +340,17 @@ export default function LoginView({ mode }: { mode: Mode }) {
                             aria-pressed={showPassword}
                             disabled={busy}
                         >
-                            <div>👁️</div>
+                            {showPassword ? (
+                                <EyeOff
+                                    className={styles.iconBtnIcon}
+                                    aria-hidden="true"
+                                />
+                            ) : (
+                                <Eye
+                                    className={styles.iconBtnIcon}
+                                    aria-hidden="true"
+                                />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -372,8 +382,8 @@ export default function LoginView({ mode }: { mode: Mode }) {
                                 type="button"
                                 className={`${styles.iconBtn} ${
                                     showConfirmPassword
-                                        ? styles.iconBtnOn
-                                        : styles.iconBtnOff
+                                        ? styles.iconBtnActive
+                                        : ""
                                 }`}
                                 onClick={() =>
                                     setShowConfirmPassword((v) => !v)
@@ -383,11 +393,25 @@ export default function LoginView({ mode }: { mode: Mode }) {
                                         ? "Hide confirm password"
                                         : "Show confirm password"
                                 }
-                                title={showConfirmPassword ? "Hide" : "Show"}
+                                title={
+                                    showConfirmPassword
+                                        ? "Hide confirm password"
+                                        : "Show confirm password"
+                                }
                                 aria-pressed={showConfirmPassword}
                                 disabled={busy}
                             >
-                                <div>👁️</div>
+                                {showConfirmPassword ? (
+                                    <EyeOff
+                                        className={styles.iconBtnIcon}
+                                        aria-hidden="true"
+                                    />
+                                ) : (
+                                    <Eye
+                                        className={styles.iconBtnIcon}
+                                        aria-hidden="true"
+                                    />
+                                )}
                             </button>
                         </div>
                     </div>
@@ -414,7 +438,13 @@ export default function LoginView({ mode }: { mode: Mode }) {
                     type="submit"
                     disabled={busy}
                 >
-                    {busy ? "Working…" : primaryLabel}
+                    <span className={styles.primaryInner}>
+                        <PrimaryIcon
+                            className={styles.primaryIcon}
+                            aria-hidden="true"
+                        />
+                        <span>{busy ? "Working…" : primaryLabel}</span>
+                    </span>
                 </button>
 
                 <div className={styles.footerRow}>

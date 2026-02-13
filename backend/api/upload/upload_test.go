@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"freezetag/backend/api"
 	mockJobService "freezetag/backend/mocks/JobService"
-	"freezetag/backend/pkg/repositories"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -21,8 +20,7 @@ import (
 func initTest(t *testing.T) *gin.Engine {
 	t.Helper()
 	j := mockJobService.NewMockJobService(t)
-	j.EXPECT().CreateJobBatch(mock.Anything).Return(&repositories.JobBatch{UUID: uuid.New()}, nil).Maybe()
-	j.EXPECT().RunUploadJobs(mock.Anything).Return(nil).Maybe()
+	j.EXPECT().RunUploadJob(mock.Anything).Return(uuid.New()).Maybe()
 
 	router := gin.Default()
 	InitUploadEndpoint(j).RegisterEndpoints(router)
@@ -161,59 +159,6 @@ func TestPostWithNoFileField(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
 	expected := api.StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
-	var got api.StatusBadRequestResponse
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-
-	assert.Equal(t, expected, got)
-}
-
-func TestHandlePostCreateJobBatchError(t *testing.T) {
-	m := mockJobService.NewMockJobService(t)
-	m.EXPECT().CreateJobBatch(mock.Anything).Return(nil, assert.AnError).Once()
-
-	router := gin.Default()
-	InitUploadEndpoint(m).RegisterEndpoints(router)
-
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	require.NoError(t, writeTestFile(writer, "file", "testfile.png", []byte("hello world image")))
-	require.NoError(t, writer.Close())
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/upload", body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
-
-	expected := api.StatusBadRequestResponse{Error: "failed to create job batch: " + assert.AnError.Error()}
-	var got api.StatusBadRequestResponse
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-
-	assert.Equal(t, expected, got)
-}
-
-func TestHandlePostRunUploadJobsError(t *testing.T) {
-	m := mockJobService.NewMockJobService(t)
-	m.EXPECT().CreateJobBatch(mock.Anything).Return(nil, nil).Once()
-	m.EXPECT().RunUploadJobs(mock.Anything).Return(assert.AnError).Once()
-
-	router := gin.Default()
-	InitUploadEndpoint(m).RegisterEndpoints(router)
-
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	require.NoError(t, writeTestFile(writer, "file", "testfile.png", []byte("hello world image")))
-	require.NoError(t, writer.Close())
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/upload", body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusInternalServerError, w.Code)
-
-	expected := api.StatusBadRequestResponse{Error: "failed to run upload jobs: " + assert.AnError.Error()}
 	var got api.StatusBadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 

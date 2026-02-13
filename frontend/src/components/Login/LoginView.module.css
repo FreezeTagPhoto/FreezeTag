@@ -120,6 +120,12 @@
         border-color 120ms ease;
 }
 
+.iconBtnIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+}
+
 .iconBtn:hover {
     background: var(--selected-overlay);
 }
@@ -198,6 +204,20 @@
 .primary:disabled {
     opacity: 0.6;
     cursor: default;
+}
+
+.primaryInner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.primaryIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    opacity: 0.95;
 }
 
 .footerRow {

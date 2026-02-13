@@ -9,7 +9,7 @@ import (
 func TestFullImageIdQuery(t *testing.T) {
 	q := CreateImageQuery()
 	s, as := ImageIdPreparable(q, DateAdded, Descending)
-	assert.Equal(t, "SELECT id, latitude, longitude FROM Images WHERE (TRUE) ORDER BY dateUploaded DESC", s)
+	assert.Equal(t, "SELECT id FROM Images WHERE (TRUE) ORDER BY dateUploaded DESC", s)
 	assert.Equal(t, []any{}, as)
 }
 

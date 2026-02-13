@@ -2,6 +2,7 @@ package login
 
 import (
 	"freezetag/backend/api"
+	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/services"
 	"net/http"
 
@@ -71,10 +72,11 @@ func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
 		return
 	}
-	userID, ok := claims["sub"].(string)
-	if !ok || userID == "" {
+	userID, ok := claims["sub"]
+	if !ok {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "no sub user id in token"})
 		return
 	}
-	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: userID})
+	id := int64(userID.(float64))
+	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: database.UserID(id)})
 }

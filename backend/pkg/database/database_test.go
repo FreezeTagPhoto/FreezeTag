@@ -477,6 +477,27 @@ func TestGetMetadataPopulated(t *testing.T) {
 	assert.Equal(t, &lon, data.Longitude)
 }
 
+func TestGetResolution(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA, err := tmp.AddImage("foo.png", imagedata.Data{
+		Width:  800,
+		Height: 600,
+	})
+	require.NoError(t, err)
+	w, h, err := tmp.GetImageResolution(idA)
+	assert.NoError(t, err)
+	assert.Equal(t, 800, w)
+	assert.Equal(t, 600, h)
+}
+
+func TestGetResolutionNoImage(t *testing.T) {
+	tmp := createTempDatabase(t)
+	w, h, err := tmp.GetImageResolution(1)
+	assert.NoError(t, err)
+	assert.Zero(t, w)
+	assert.Zero(t, h)
+}
+
 func TestGetTagCounts(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
@@ -543,4 +564,82 @@ func TestMoreDuplicates(t *testing.T) {
 		"C": 3,
 		"D": 1,
 	}, counts)
+}
+
+func TestGetImageFile(t *testing.T) {
+	tmp := createTempDatabase(t)
+	idA, err := tmp.AddImage("abc", imagedata.Data{})
+	require.NoError(t, err)
+	name, err := tmp.GetImageFile(idA)
+	assert.NoError(t, err)
+	require.NotNil(t, name)
+	assert.Equal(t, "abc", *name)
+}
+
+func TestGetImageNameCollisionNoImages(t *testing.T) {
+	tmp := createTempDatabase(t)
+	suffix, err := tmp.GetNonOverlappingSuffix("abc")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, suffix)
+}
+
+func TestGetImageNameCollisionOnce(t *testing.T) {
+	tmp := createTempDatabase(t)
+	_, err := tmp.AddImage("abc", imagedata.Data{})
+	require.NoError(t, err)
+	suffix, err := tmp.GetNonOverlappingSuffix("abc")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, suffix)
+}
+
+func TestGetImageNameCollisionSeveral(t *testing.T) {
+	tmp := createTempDatabase(t)
+	_, err := tmp.AddImage("abc", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc1", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc2", imagedata.Data{})
+	require.NoError(t, err)
+	suffix, err := tmp.GetNonOverlappingSuffix("abc")
+	assert.NoError(t, err)
+	assert.Equal(t, 3, suffix)
+}
+
+func TestGetImageNameCollisionGap(t *testing.T) {
+	tmp := createTempDatabase(t)
+	_, err := tmp.AddImage("abc", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc1", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc3", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc4", imagedata.Data{})
+	require.NoError(t, err)
+	suffix, err := tmp.GetNonOverlappingSuffix("abc")
+	assert.NoError(t, err)
+	assert.Equal(t, 2, suffix)
+}
+
+func TestGetImageNameCollisionGap2(t *testing.T) {
+	tmp := createTempDatabase(t)
+	_, err := tmp.AddImage("abc1", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc3", imagedata.Data{})
+	require.NoError(t, err)
+	suffix, err := tmp.GetNonOverlappingSuffix("abc")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, suffix)
+}
+
+func TestGetImageNameExtension(t *testing.T) {
+	tmp := createTempDatabase(t)
+	_, err := tmp.AddImage("abc.png", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc1.png", imagedata.Data{})
+	require.NoError(t, err)
+	_, err = tmp.AddImage("abc2.jpg", imagedata.Data{})
+	require.NoError(t, err)
+	suffix, err := tmp.GetNonOverlappingSuffix("abc.png")
+	assert.NoError(t, err)
+	assert.Equal(t, 2, suffix)
 }

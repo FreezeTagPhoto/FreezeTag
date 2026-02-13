@@ -1,5 +1,6 @@
 import styles from "./Pill.module.css";
 import type React from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 type PillVariant = "menu" | "token" | "error";
 
@@ -12,7 +13,7 @@ export default function Pill({
     type = "button",
     invertCaret,
 }: {
-    label: string;
+    label: React.ReactNode;
     caret?: boolean;
     variant?: PillVariant;
     onClick?: React.MouseEventHandler<HTMLButtonElement>;
@@ -27,15 +28,23 @@ export default function Pill({
               ? styles.token
               : styles.error;
 
+    const CaretIcon = invertCaret ? ChevronUp : ChevronDown;
+
     return (
         <button
             type={type}
-            className={`${styles.pill} ${variantClass} ${className} ${invertCaret ? styles.open : ""}`}
+            className={`${styles.pill} ${variantClass} ${className} ${
+                invertCaret ? styles.open : ""
+            }`}
             onClick={onClick}
         >
             <span className={styles.label}>{label}</span>
-            {caret && !invertCaret && <span className={styles.caret}>▾</span>}
-            {caret && invertCaret && <span className={styles.caret}>▴</span>}
+
+            {caret && (
+                <span className={styles.caret} aria-hidden="true">
+                    <CaretIcon className={styles.caretIcon} />
+                </span>
+            )}
         </button>
     );
 }

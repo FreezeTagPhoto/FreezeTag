@@ -58,7 +58,7 @@ func TestPhonyPostUploadJob(t *testing.T) {
 	imgRepo.EXPECT().AddImageTags(database.ImageId(2), []string{"2"}).Return(repositories.ImageTagResult{})
 	serv, err := InitDefaultPluginService("./test_resources", imgRepo)
 	assert.NoError(t, err)
-	fakeUploadJob := []*repositories.ImageUploadSuccess{
+	fakeUploadJob := []repositories.ImageUploadSuccess{
 		{Id: database.ImageId(1), Filename: "foo.png"},
 		{Id: database.ImageId(2), Filename: "bar.jpg"},
 	}
@@ -87,7 +87,7 @@ func TestPhonyPostUploadJobMultiHooks(t *testing.T) {
 	imgRepo.EXPECT().AddImageTags(database.ImageId(2), []string{"6"}).Return(repositories.ImageTagResult{})
 	serv, err := InitDefaultPluginService("./test_resources", imgRepo)
 	assert.NoError(t, err)
-	fakeUploadJob := []*repositories.ImageUploadSuccess{
+	fakeUploadJob := []repositories.ImageUploadSuccess{
 		{Id: database.ImageId(1), Filename: "foo.png"},
 		{Id: database.ImageId(2), Filename: "bar.jpg"},
 	}
@@ -113,7 +113,7 @@ func TestNonexistentPluginJob(t *testing.T) {
 	repo := mocks.NewMockImageRepository(t)
 	serv, err := InitDefaultPluginService("./test_resources", repo)
 	assert.NoError(t, err)
-	fakeUploadJob := []*repositories.ImageUploadSuccess{
+	fakeUploadJob := []repositories.ImageUploadSuccess{
 		{Id: database.ImageId(1), Filename: "foo.png"},
 		{Id: database.ImageId(2), Filename: "bar.jpg"},
 	}

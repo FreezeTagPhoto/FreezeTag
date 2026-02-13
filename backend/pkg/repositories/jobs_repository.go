@@ -3,215 +3,274 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"freezetag/backend/pkg/database"
+	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-type JobBatch struct {
-	UUID      uuid.UUID             `json:"uuid"`
-	Completed []*ImageUploadSuccess `json:"completed"`
-	Failed    []*ImageUploadFailure `json:"failed"`
-
-	InProgress []*FileJob `json:"in_progress"`
-
-	Finished chan struct{} `json:"-"`
-
-	mutex sync.Mutex  `json:"-"`
-	timer *time.Timer `json:"-"`
-
-	Ctx    context.Context    `json:"-"` // Given to the service
-	Cancel context.CancelFunc `json:"-"` // Called by the repository when the job is killed due to idleness or when the batch is deleted
-	WG     sync.WaitGroup     `json:"-"` // Used by the service to wait for a job to finish
-}
-
-func (b *JobBatch) MarkFinished() {
-	b.Finished <- struct{}{} // notify finished
-	close(b.Finished)
-}
-
-type FileJob struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-	Bytes  []byte `json:"-"`
-}
-
-type JobBatchID uuid.UUID
-
 const (
 	MaxIdleTime   = 1 * time.Hour    // if a job batch is idle for 1 hour, assume something has happened to the job and kill it
 	RetentionTime = 15 * time.Minute // keep completed job batches for 15 minutes after completion
+	MaxJobThreads = 10
 )
 
-type JobRepository interface {
-	Create(*JobBatch) error
-	Get(uuid.UUID) (*JobBatch, error)
-	Delete(uuid.UUID) error
-	WaitFinished(uuid.UUID) <-chan []*ImageUploadSuccess
+// global job counter for keeping thread counts to a reasonable level
+var jobCounter = struct {
+	lock       sync.Mutex
+	activeJobs uint
+	waiting    []chan<- func()
+}{}
 
-	AddInProgressFileJob(batchID uuid.UUID, file FileJob) error
-	UpdateJobStatus(batchID uuid.UUID, fileName string, status string) error
-	CompleteFileJob(batchID uuid.UUID, fileName string, id database.ImageId) error
-	FailFileJob(batchID uuid.UUID, fileName string, reason error) error
+func decreaseJobCounter() {
+	jobCounter.lock.Lock()
+	defer jobCounter.lock.Unlock()
+	if jobCounter.activeJobs < MaxJobThreads && len(jobCounter.waiting) > 0 {
+		sub := jobCounter.waiting[0]
+		sub <- decreaseJobCounter
+		jobCounter.waiting = jobCounter.waiting[1:]
+	} else {
+		jobCounter.activeJobs -= 1
+	}
+}
+
+func waitForJob() <-chan func() {
+	jobCounter.lock.Lock()
+	defer jobCounter.lock.Unlock()
+	sub := make(chan func(), 1)
+	if jobCounter.activeJobs < MaxJobThreads {
+		sub <- decreaseJobCounter
+		jobCounter.activeJobs += 1
+	} else {
+		jobCounter.waiting = append(jobCounter.waiting, sub)
+	}
+	return sub
+}
+
+type JobInput interface {
+	ID() int // ID should be unique between JobInputs in a batch
+}
+
+type JobFunction[I JobInput, O any] func(I, context.Context) (O, error)
+
+func Job[I JobInput, O any](f func(I, context.Context) (O, error)) func(JobInput, context.Context) (any, error) {
+	return func(i JobInput, c context.Context) (any, error) {
+		return f(i.(I), c)
+	}
+}
+
+func AtomicJob[I JobInput, O any](f func(I) (O, error)) func(JobInput, context.Context) (any, error) {
+	return func(i JobInput, c context.Context) (any, error) {
+		if c.Err() != nil {
+			return *new(O), fmt.Errorf("job cancelled")
+		}
+		return f(i.(I))
+	}
+}
+
+type JobBatch[I JobInput, C any] struct {
+	UUID        uuid.UUID          `json:"uuid"`
+	Completed   []C                `json:"completed"`
+	Failed      []jobFailure[I]    `json:"failed"`
+	InProgress  []I                `json:"in_progress"`
+	Cancelled   bool               `json:"cancelled"`
+	Context     context.Context    `json:"-"`
+	operation   JobFunction[I, C]  `json:"-"`
+	cancel      context.CancelFunc `json:"-"`
+	timer       *time.Timer        `json:"-"`
+	subscribers []chan<- struct{}  `json:"-"`
+	workers     sync.WaitGroup     `json:"-"`
+	lock        sync.Mutex         `json:"-"`
+	synchronous bool               `json:"-"` // whether or not the job should be run in order
+}
+
+func (jb *JobBatch[I, C]) removeById(id int) {
+	jb.lock.Lock()
+	defer jb.lock.Unlock()
+	jb.InProgress = slices.DeleteFunc(jb.InProgress, func(i I) bool {
+		return i.ID() == id
+	})
+}
+
+type jobFailure[I any] struct {
+	Input  I      `json:"input"`
+	Reason string `json:"reason"`
+}
+
+func (jb *JobBatch[I, C]) addResults(i I, c C, f error) {
+	jb.lock.Lock()
+	defer jb.lock.Unlock()
+	if f != nil {
+		jb.Failed = append(jb.Failed, jobFailure[I]{Input: i, Reason: f.Error()})
+	} else {
+		jb.Completed = append(jb.Completed, c)
+	}
+}
+
+// run a job batch.
+// this function does not block. use WaitFinished after run if you want to block.
+func (jb *JobBatch[I, C]) run() {
+	if len(jb.InProgress) == 0 {
+		// empty job special case
+		jb.finish()
+		return
+	}
+	var count atomic.Int64
+	count.Store(int64(len(jb.InProgress)))
+	waitPrev := make(chan struct{}, 1)
+	waitPrev <- struct{}{}
+	close(waitPrev)
+	jb.lock.Lock()
+	for _, input := range jb.InProgress {
+		wait := make(chan struct{}, 1)
+		workerWait := waitPrev
+		jb.workers.Go(func() {
+			// wait for previous
+			<-workerWait
+			// if async is allowed, notify now
+			if !jb.synchronous {
+				wait <- struct{}{}
+				close(wait)
+			}
+			finished := <-waitForJob()
+			thing, err := jb.operation(input, jb.Context)
+			jb.removeById(input.ID())
+			jb.addResults(input, thing, err)
+			finished()
+			// decrement the count and maybe notify complete job
+			if count.Add(-1) == 0 {
+				jb.finish()
+			}
+			// if async is not allowed, notify now
+			if jb.synchronous {
+				wait <- struct{}{}
+				close(wait)
+			}
+		})
+		waitPrev = wait
+	}
+	jb.lock.Unlock()
+}
+
+func (jb *JobBatch[I, C]) notifySubscribers() {
+	for _, sub := range jb.subscribers {
+		sub <- struct{}{}
+		close(sub)
+	}
+}
+
+func (jb *JobBatch[I, C]) adjustKeepTime(d time.Duration) {
+	if !jb.timer.Reset(d) {
+		// stop the timer if the delete job already ran (how did we get here)
+		jb.timer.Stop()
+	}
+}
+
+// cancel a job batch. This function is non-blocking
+func (jb *JobBatch[I, C]) Cancel() {
+	jb.Cancelled = true
+	jb.cancel()
+	// finish will get called eventually and notify subscribers
+}
+
+// this should only be called once, by the job that finishes the batch
+func (jb *JobBatch[I, C]) finish() {
+	jb.notifySubscribers()
+	jb.adjustKeepTime(RetentionTime)
+}
+
+// return a channel that completes when the job batch finishes
+func (jb *JobBatch[I, C]) WaitFinished() <-chan struct{} {
+	sub := make(chan struct{}, 1)
+	jb.subscribers = append(jb.subscribers, sub)
+	return sub
+}
+
+type UploadJob struct {
+	Name  string `json:"name"`
+	Bytes []byte `json:"-"`
+}
+
+type JobRepository interface {
+	// create and start a job batch that uses the operator on the passed data
+	Create(context.Context, []JobInput, func(JobInput, context.Context) (any, error)) uuid.UUID
+	// create and start a synchronous job batch
+	CreateSync(context.Context, []JobInput, func(JobInput, context.Context) (any, error)) uuid.UUID
+	// get a job by UUID
+	Get(uuid.UUID) *JobBatch[JobInput, any]
+	// cancel and delete a job by UUID
+	Delete(uuid.UUID) error
 }
 
 type DefaultJobRepository struct {
-	jobs sync.Map // map[uuid.UUID]*JobBatch
+	jobs map[uuid.UUID]*JobBatch[JobInput, any]
+	lock sync.RWMutex
 }
 
 func NewDefaultJobRepository() JobRepository {
-	return &DefaultJobRepository{}
+	return &DefaultJobRepository{jobs: make(map[uuid.UUID]*JobBatch[JobInput, any])}
 }
 
-func (r *DefaultJobRepository) Create(batch *JobBatch) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	batch.Ctx = ctx
-	batch.Cancel = cancel
-	batch.Finished = make(chan struct{}, 1)
-
-	r.jobs.Store(batch.UUID, batch)
-	batch.timer = time.AfterFunc(MaxIdleTime, func() {
-		_ = r.Delete(batch.UUID)
-	})
-	return nil
-}
-
-func (r *DefaultJobRepository) Get(id uuid.UUID) (*JobBatch, error) {
-	value, ok := r.jobs.Load(id)
-	if !ok {
-		return nil, fmt.Errorf("job batch not found")
+func (r *DefaultJobRepository) Create(ctx context.Context, data []JobInput, operator func(JobInput, context.Context) (any, error)) uuid.UUID {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	id := uuid.New()
+	ctx, cancel := context.WithCancel(ctx)
+	r.jobs[id] = &JobBatch[JobInput, any]{
+		UUID:        id,
+		Completed:   []any{},
+		Failed:      []jobFailure[JobInput]{},
+		InProgress:  data,
+		Context:     ctx,
+		operation:   operator,
+		cancel:      cancel,
+		synchronous: false,
+		timer: time.AfterFunc(MaxIdleTime, func() {
+			r.Delete(id) //nolint:errcheck
+		}),
 	}
-	return value.(*JobBatch), nil
+	r.jobs[id].run()
+	return id
+}
+
+func (r *DefaultJobRepository) CreateSync(ctx context.Context, data []JobInput, operator func(JobInput, context.Context) (any, error)) uuid.UUID {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	id := uuid.New()
+	ctx, cancel := context.WithCancel(ctx)
+	r.jobs[id] = &JobBatch[JobInput, any]{
+		UUID:        id,
+		Completed:   []any{},
+		Failed:      []jobFailure[JobInput]{},
+		InProgress:  data,
+		Context:     ctx,
+		operation:   operator,
+		cancel:      cancel,
+		synchronous: true,
+		timer: time.AfterFunc(MaxIdleTime, func() {
+			r.Delete(id) //nolint:errcheck
+		}),
+	}
+	r.jobs[id].run()
+	return id
+}
+
+func (r *DefaultJobRepository) Get(id uuid.UUID) *JobBatch[JobInput, any] {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	return r.jobs[id]
 }
 
 func (r *DefaultJobRepository) Delete(id uuid.UUID) error {
-	value, err := r.Get(id)
-	if err != nil {
-		return err
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	job, ok := r.jobs[id]
+	if !ok {
+		return nil
 	}
-
-	batch := value
-	batch.Cancel()
-	r.jobs.Delete(id)
+	job.Cancel()
+	delete(r.jobs, id)
 	return nil
-}
-
-func (r *DefaultJobRepository) WaitFinished(id uuid.UUID) <-chan []*ImageUploadSuccess {
-	finished := make(chan []*ImageUploadSuccess, 1)
-	batch, err := r.Get(id)
-	if err != nil {
-		finished <- nil
-		return finished
-	}
-	go func() {
-		<-batch.Finished
-		if batch.Ctx.Err() != nil {
-			finished <- nil
-		} else {
-			finished <- batch.Completed
-		}
-		close(finished)
-	}()
-	return finished
-}
-
-func (r *DefaultJobRepository) AddInProgressFileJob(batchID uuid.UUID, fileJob FileJob) error {
-	batch, err := r.Get(batchID)
-	if err != nil {
-		return err
-	}
-	batch.mutex.Lock()
-	defer batch.mutex.Unlock()
-	batch.InProgress = append(batch.InProgress, &fileJob)
-	return nil
-}
-
-func (r *DefaultJobRepository) UpdateJobStatus(batchID uuid.UUID, fileName string, status string) error {
-	batch, err := r.Get(batchID)
-	if err != nil {
-		return err
-	}
-	batch.mutex.Lock()
-	defer batch.mutex.Unlock()
-	batch.updateIdleStatus(MaxIdleTime)
-
-	for _, job := range batch.InProgress {
-		if job.Name == fileName {
-			job.Status = status
-			return nil
-		}
-	}
-	return fmt.Errorf("file name not found")
-}
-
-func NewJobBatchID() uuid.UUID {
-	return uuid.New()
-}
-
-func (batch *JobBatch) updateIdleStatus(reset time.Duration) {
-	if batch.timer != nil {
-		batch.timer.Stop()
-		batch.timer.Reset(reset)
-	}
-}
-
-func (r *DefaultJobRepository) CompleteFileJob(batchID uuid.UUID, fileName string, id database.ImageId) error {
-	batch, err := r.Get(batchID)
-	if err != nil {
-		return err
-	}
-	batch.mutex.Lock()
-	defer batch.mutex.Unlock()
-	batch.updateIdleStatus(MaxIdleTime)
-
-	for i, job := range batch.InProgress {
-		if job.Name == fileName {
-			batch.Completed = append(batch.Completed, &ImageUploadSuccess{
-				Filename: fileName,
-				Id:       id,
-			})
-			batch.InProgress = append(batch.InProgress[:i], batch.InProgress[i+1:]...)
-
-			if len(batch.InProgress) == 0 {
-				if batch.timer != nil {
-					batch.timer.Stop()
-					batch.timer.Reset(RetentionTime)
-				}
-				batch.MarkFinished()
-			}
-			return nil
-		}
-	}
-	return fmt.Errorf("file name not found")
-}
-
-func (r *DefaultJobRepository) FailFileJob(batchID uuid.UUID, fileName string, reason error) error {
-	batch, err := r.Get(batchID)
-	if err != nil {
-		return err
-	}
-	batch.mutex.Lock()
-	defer batch.mutex.Unlock()
-	batch.updateIdleStatus(MaxIdleTime)
-
-	for i, job := range batch.InProgress {
-		if job.Name == fileName {
-			batch.Failed = append(batch.Failed, &ImageUploadFailure{
-				Filename: job.Name,
-				Reason:   reason.Error(),
-			})
-			batch.InProgress = append(batch.InProgress[:i], batch.InProgress[i+1:]...)
-
-			if len(batch.InProgress) == 0 {
-				if batch.timer != nil {
-					batch.timer.Stop()
-					batch.timer.Reset(RetentionTime)
-				}
-			}
-			return nil
-		}
-	}
-	return fmt.Errorf("file name not found")
 }

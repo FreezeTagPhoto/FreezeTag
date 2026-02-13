@@ -44,5 +44,5 @@ func ImageIdPreparable(dq DatabaseQuery, sf SortField, so SortOrder) (string, []
 	stmt, args := dq.StatementWithArgs()
 	field := sf.String()
 	order := so.String()
-	return fmt.Sprintf(`SELECT id, latitude, longitude FROM Images WHERE %s ORDER BY %s %s`, stmt, field, order), args
+	return fmt.Sprintf(`SELECT id FROM Images WHERE %s ORDER BY %s %s`, stmt, field, order), args
 }
