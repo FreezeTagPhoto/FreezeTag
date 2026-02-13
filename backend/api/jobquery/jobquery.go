@@ -3,6 +3,7 @@ package jobquery
 import (
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/repositories"
+	"freezetag/backend/pkg/services"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,13 +26,24 @@ func (je JobQueryEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.GET("/jobquery/:id", je.HandleGet)
 }
 
+type exampleResponse struct { //nolint:unused
+	UUID      uuid.UUID                         `json:"uuid"`
+	Completed []repositories.ImageUploadSuccess `json:"completed"`
+	Failed    []struct {
+		Input  services.FileJob `json:"input"`
+		Reason string           `json:"reason"`
+	} `json:"failed"`
+	InProgress []services.FileJob `json:"in_progress"`
+	Cancelled  bool               `json:"cancelled"`
+}
+
 // @summary     Query job batch status
 // @description Retrieves the current status of a job batch, including pending files and completed results.
 // @produce     application/json
 // @router      /jobquery/{id} [get]
 // @tags        jobs
 // @param       id   path      string  true  "Job Batch UUID" format(uuid)
-// @success     200  {object}  repositories.JobBatch
+// @success     200  {object}  exampleResponse
 // @failure     400  {object}  api.StatusBadRequestResponse
 // @failure     404  {object}  api.StatusNotFoundResponse
 func (je JobQueryEndpoint) HandleGet(c *gin.Context) {
@@ -43,8 +55,8 @@ func (je JobQueryEndpoint) HandleGet(c *gin.Context) {
 		return
 	}
 
-	jobBatch, err := je.jobRepository.Get(id)
-	if err != nil {
+	jobBatch := je.jobRepository.Get(id)
+	if jobBatch == nil {
 		c.JSON(http.StatusNotFound, api.StatusNotFoundResponse{Error: "job batch not found"})
 		return
 	}

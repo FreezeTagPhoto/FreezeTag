@@ -2,7 +2,7 @@ package jobquery
 
 import (
 	"encoding/json"
-	"fmt"
+	"freezetag/backend/api"
 	mockJobRepo "freezetag/backend/mocks/JobRepository"
 	"freezetag/backend/pkg/repositories"
 	"net/http"
@@ -14,20 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestJobQueryEndpointGetBasic(t *testing.T) {
-	uuid := uuid.New()
-	j := mockJobRepo.NewMockJobRepository(t)
-	j.EXPECT().Get(uuid).Return(nil, nil)
-
-	router := gin.Default()
-	InitJobQueryEndpoint(j).RegisterEndpoints(router)
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/jobquery/"+uuid.String(), nil)
-	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
-
-}
 
 func TestJobQueryEndpointBadUUID(t *testing.T) {
 	j := mockJobRepo.NewMockJobRepository(t)
@@ -43,7 +29,7 @@ func TestJobQueryEndpointBadUUID(t *testing.T) {
 func TestJobQueryEndpointExpiredUUID(t *testing.T) {
 	uuid := uuid.New()
 	j := mockJobRepo.NewMockJobRepository(t)
-	j.EXPECT().Get(uuid).Return(nil, fmt.Errorf("not found"))
+	j.EXPECT().Get(uuid).Return(nil)
 
 	router := gin.Default()
 	InitJobQueryEndpoint(j).RegisterEndpoints(router)
@@ -56,7 +42,7 @@ func TestJobQueryEndpointExpiredUUID(t *testing.T) {
 func TestJobQueryEndpointCorrectUUID(t *testing.T) {
 
 	uuid := uuid.New()
-	job := repositories.JobBatch{
+	job := repositories.JobBatch[repositories.JobInput, any]{
 		UUID:       uuid,
 		InProgress: nil,
 		Completed:  nil,
@@ -64,7 +50,7 @@ func TestJobQueryEndpointCorrectUUID(t *testing.T) {
 	}
 
 	j := mockJobRepo.NewMockJobRepository(t)
-	j.EXPECT().Get(uuid).Return(&job, nil)
+	j.EXPECT().Get(uuid).Return(&job)
 
 	router := gin.Default()
 	InitJobQueryEndpoint(j).RegisterEndpoints(router)
@@ -72,8 +58,7 @@ func TestJobQueryEndpointCorrectUUID(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/jobquery/"+uuid.String(), nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	var got repositories.JobBatch
+	var got api.FileJobBatch
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, got.UUID, uuid)
-	assert.Equal(t, &job, &got)
 }

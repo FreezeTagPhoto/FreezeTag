@@ -3,7 +3,6 @@ package upload
 import (
 	"bytes"
 	"freezetag/backend/api"
-	"freezetag/backend/pkg/repositories"
 	"freezetag/backend/pkg/services"
 	"io"
 	"mime/multipart"
@@ -53,7 +52,7 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 		return
 	}
 
-	jobs := []*repositories.FileJob{}
+	jobs := []services.FileJob{}
 	for _, file := range files {
 		bytes, err := readFileBytes(file)
 
@@ -61,20 +60,10 @@ func (ue UploadEndpoint) HandlePost(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
 			return
 		}
-		jobs = append(jobs, &repositories.FileJob{Name: file.Filename, Bytes: bytes})
+		jobs = append(jobs, services.FileJob{Name: file.Filename, Bytes: bytes})
 	}
-
-	batch, err := ue.jobService.CreateJobBatch(jobs)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to create job batch: " + err.Error()})
-		return
-	}
-	err = ue.jobService.RunUploadJobs(batch)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to run upload jobs: " + err.Error()})
-		return
-	}
-	c.JSON(http.StatusAccepted, &batch.UUID)
+	id := ue.jobService.RunUploadJob(jobs)
+	c.JSON(http.StatusAccepted, id)
 }
 
 // Reads the bytes from a multipart.FileHeader
