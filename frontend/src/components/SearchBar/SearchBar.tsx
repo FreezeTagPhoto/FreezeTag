@@ -319,7 +319,7 @@ export default function SearchBar({
                                     }}
                                     title="Remove"
                                 >
-                                    ✕
+                                    <X className={styles.tokenCloseIcon} aria-hidden="true" />
                                 </button>
                             </span>
                         );

@@ -20,6 +20,12 @@
     flex: 0 0 auto;
 }
 
+.tokenCloseIcon {
+    width: 12px;
+    height: 12px;
+    flex: 0 0 auto;
+}
+
 .searchIconBtn {
     position: absolute;
     left: 14px;
