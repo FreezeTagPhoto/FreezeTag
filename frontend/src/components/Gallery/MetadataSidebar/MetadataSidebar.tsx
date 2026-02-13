@@ -163,8 +163,8 @@ export default function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatResultion(
-                                currentMetadata.width,
-                                currentMetadata.height,
+                                  currentMetadata.width,
+                                  currentMetadata.height,
                               )
                             : "—"}
                     </div>
