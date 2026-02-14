@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"freezetag/backend/api"
 	mockUserService "freezetag/backend/mocks/AuthService"
+	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/services"
 	"net/http"
 	"net/http/httptest"
@@ -223,3 +224,33 @@ func TestLoginNoExistingLoginCookie(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
+func TestLoginInfoBadId(t *testing.T) {
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	NewMockAuthService.EXPECT().
+		ValidateJWT("existing_token").
+		Return(services.Claims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				Subject: "1",
+			},
+			Permissions: data.Permissions{"permission"},
+		}, nil).Once()
+
+	router := gin.Default()
+
+	req, err := http.NewRequest("GET", "/login", nil)
+	assert.NoError(t, err)
+	req.AddCookie(&http.Cookie{
+		Name:  "token",
+		Value: "existing_token",
+	})
+	InitLoginEndpoint(NewMockAuthService).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	var got api.StatusLoginUser
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expected := api.StatusLoginUser{UserID: 1, Permissions: data.Permissions{"permission"}}
+	assert.Equal(t, expected, got)
+}

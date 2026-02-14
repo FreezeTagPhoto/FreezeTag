@@ -15,7 +15,12 @@ func RequirePermission(required ...data.Permission) gin.HandlerFunc {
 			return
 		}
 		for _, r := range required {
-			if !JWTpermissions.(data.Permissions).HasPermission(r) {
+			perms, ok := JWTpermissions.(data.Permissions)
+			if !ok {
+				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Invalid permissions type in context"})
+				return
+			}
+			if !perms.HasPermission(r) {
 				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
 				return
 			}

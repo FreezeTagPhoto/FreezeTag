@@ -175,16 +175,16 @@ func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	userGroup := baseGroup.Group("")
 	{
 		ue := user.InitUserEndpoint(deps.userRepository, deps.authService)
-		userGroup.GET("/user/:id", middleware.RequirePermission(data.ReadUser), ue.GetUser)
-		userGroup.GET("/user", middleware.RequirePermission(data.ReadUser), ue.ListUsers)
+		userGroup.GET("/users/:id", middleware.RequirePermission(data.ReadUser), ue.GetUser)
+		userGroup.GET("/users/all", middleware.RequirePermission(data.ReadUser), ue.ListUsers)
 
 		// eventually createuser needs to be just /user and then the userGroup can use "/user" as the base path, 
 		// but for now this wont cause merge conflicts
 		userGroup.POST("/createuser", middleware.RequirePermission(data.CreateUser), ue.CreateUser)
-		userGroup.POST("/user/permissions/:id", middleware.RequirePermission(data.ReadUser), ue.AddPermissions)
-
-		userGroup.DELETE("/user/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)
-		userGroup.DELETE("/user/:id", middleware.RequirePermission(data.DeleteUser), ue.DeleteUser)
+		userGroup.POST("/users/permissions/:id", middleware.RequirePermission(data.ReadUser), ue.AddPermissions)
+		
+		userGroup.DELETE("/users/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)
+		userGroup.DELETE("/users/:id", middleware.RequirePermission(data.DeleteUser), ue.DeleteUser)
 
 	}
 }
