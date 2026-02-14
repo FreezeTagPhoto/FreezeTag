@@ -20,10 +20,6 @@ func InitMetadataEndpoint(repo repositories.ImageRepository) MetadataEndpoint {
 	}
 }
 
-func (me MetadataEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.GET("/metadata/:id", me.HandleGetMetadata)
-}
-
 // @summary     Get metadata
 // @description Retrieve metadata for an image
 // @produce     application/json
@@ -33,7 +29,7 @@ func (me MetadataEndpoint) RegisterEndpoints(e gin.IRoutes) {
 // @success     200 {object} api.MetadataResponse
 // @failure     400 {object} api.StatusBadRequestResponse
 // @failure     500 {object} api.StatusServerErrorResponse
-func (me MetadataEndpoint) HandleGetMetadata(c *gin.Context) {
+func (me MetadataEndpoint) Metadata(c *gin.Context) {
 	idParam := c.Param("id")
 	var id database.ImageId
 	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {

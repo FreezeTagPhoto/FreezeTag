@@ -5,24 +5,17 @@ import (
 	"freezetag/backend/pkg/services"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func RequireAuth(auth services.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		JWT, err := c.Cookie("token")
-
-		// Fallback to Authorization header if cookie is not present
 		if err != nil || JWT == "" {
-			JWT = strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
-			if JWT == "" {
-				log.Println("No JWT token provided with request to protected endpoint")
-				c.AbortWithStatusJSON(http.StatusUnauthorized, api.StatusBadRequestResponse{Error: "Missing Authorization Token"})
-				return
-			}
+			log.Println("No JWT token provided with request to protected endpoint")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, api.StatusBadRequestResponse{Error: "Missing Authorization Token"})
+			return
 		}
 
 		claims, err := auth.ValidateJWT(JWT)
@@ -30,7 +23,12 @@ func RequireAuth(auth services.AuthService) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, api.StatusBadRequestResponse{Error: "Invalid token: " + err.Error()})
 			return
 		}
-		c.Set("userID", claims["sub"])
+		if claims.Subject == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "Invalid token: missing user ID"})
+			return
+		}
+		c.Set("userID", claims.Subject)
+		c.Set("permissions", claims.Permissions)
 		c.Next()
 	}
 }

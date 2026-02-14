@@ -18,6 +18,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func (se SearchEndpoint) RegisterEndpoints(e gin.IRoutes) {
+	e.GET("/search", se.Search)
+}
+
 func TestSearchSuccessNoQueries(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().

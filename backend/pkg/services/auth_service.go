@@ -2,11 +2,14 @@ package services
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/repositories"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -20,11 +23,17 @@ var (
 	JwtExpirationHours = time.Duration(24) * time.Hour
 )
 
+type Claims struct {
+	Permissions data.Permissions `json:"permissions"`
+	jwt.RegisteredClaims
+}
+
 type AuthService interface {
 	AddUser(username string, password string) (*database.PublicUser, error)
 	EnsureLogin() error
 	AuthenticateUser(username string, password string) (string, error)
-	ValidateJWT(tokenString string) (jwt.MapClaims, error)
+	ValidateJWT(tokenString string) (Claims, error)
+	ValidateAPIToken(token string) (data.Permissions, error)
 }
 
 type DefaultAuthService struct {
@@ -56,7 +65,11 @@ func (s *DefaultAuthService) EnsureLogin() error {
 	}
 	if len(users) == 0 {
 		log.Printf("[WARN] since there are no users, a user with username 'admin' and password 'admin' is being created. Change this ASAP.")
-		_, err = s.AddUser("admin", "admin")
+		user, err := s.AddUser("admin", "admin")
+		if err != nil {
+			return err
+		}
+		err = s.userRepo.GrantAdminPermissions(user.ID)
 		if err != nil {
 			return err
 		}
@@ -75,7 +88,12 @@ func (s *DefaultAuthService) AuthenticateUser(username string, password string) 
 	if err != nil {
 		return "", err
 	}
-	return createToken(user.ID)
+	permissions, err := s.userRepo.GetUserPermissions(user.ID)
+	if err != nil {
+		return "", err
+	}
+
+	return createTokenWithPermissions(user.ID, permissions)
 }
 
 func (s *DefaultAuthService) AddUser(username string, password string) (*database.PublicUser, error) {
@@ -86,26 +104,40 @@ func (s *DefaultAuthService) AddUser(username string, password string) (*databas
 	return s.userRepo.AddUser(username, string(hash))
 }
 
-func (s *DefaultAuthService) ValidateJWT(tokenString string) (jwt.MapClaims, error) {
-	claims := jwt.MapClaims{}
+func (s *DefaultAuthService) ValidateJWT(tokenString string) (Claims, error) {
+	claims := Claims{}
 	_, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
 		return []byte(JwtSecretKey), nil
 	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
 
 	if err != nil {
-		return nil, err
+		return Claims{}, err
 	}
 	return claims, nil
 }
 
-func createToken(userID database.UserID) (string, error) {
-	claims := jwt.NewWithClaims(JwtSigningMethod, jwt.MapClaims{
-		"sub": userID,
-		"exp": time.Now().Add(JwtExpirationHours).Unix(),
-	})
-	tokenString, err := claims.SignedString([]byte(JwtSecretKey))
+func (s *DefaultAuthService) ValidateAPIToken(token string) (data.Permissions, error) {
+	tokenHash := hashToken(token)
+	permissions, err := s.userRepo.GetApiPermissions(tokenHash)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return tokenString, nil
+	return permissions, nil
+}
+
+func createTokenWithPermissions(userID database.UserID, permissions data.Permissions) (string, error) {
+	JWTClaims := Claims{
+		Permissions: permissions,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   strconv.FormatInt(int64(userID), 10),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(JwtExpirationHours)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	token := jwt.NewWithClaims(JwtSigningMethod, JWTClaims)
+	return token.SignedString([]byte(JwtSecretKey))
+}
+
+func hashToken(token string) [32]byte {
+	return sha256.Sum256([]byte(token))
 }

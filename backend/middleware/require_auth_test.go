@@ -7,10 +7,12 @@ import (
 	"testing"
 
 	mockUserService "freezetag/backend/mocks/AuthService"
+	"freezetag/backend/pkg/database/data"
+	"freezetag/backend/pkg/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAuthMiddleware(t *testing.T) {
@@ -22,10 +24,15 @@ func TestAuthMiddleware(t *testing.T) {
 	ctx.Request = req
 
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
-
+	claims := services.Claims{
+		Permissions: nil,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "expectedUserID", // Correctly nesting the embedded field
+		},
+	}
 	NewMockAuthService.EXPECT().
 		ValidateJWT("TOKENSTRING").
-		Return(jwt.MapClaims{"sub": "expectedUserID"}, nil).Once()
+		Return(claims, nil).Once()
 
 	RequireAuth(NewMockAuthService)(ctx)
 	if ctx.IsAborted() {
@@ -33,8 +40,8 @@ func TestAuthMiddleware(t *testing.T) {
 	}
 
 	userID, exists := ctx.Get("userID")
-	require.True(t, exists)
-	require.Equal(t, "expectedUserID", userID)
+	assert.True(t, exists)
+	assert.Equal(t, "expectedUserID", userID)
 }
 
 func TestAuthMiddlewareJWTparseFail(t *testing.T) {
@@ -49,7 +56,7 @@ func TestAuthMiddlewareJWTparseFail(t *testing.T) {
 
 	NewMockAuthService.EXPECT().
 		ValidateJWT("TOKENSTRING").
-		Return(jwt.MapClaims{}, errors.New("an error")).Once()
+		Return(services.Claims{}, errors.New("an error")).Once()
 
 	RequireAuth(NewMockAuthService)(ctx)
 	if !ctx.IsAborted() {
@@ -57,31 +64,8 @@ func TestAuthMiddlewareJWTparseFail(t *testing.T) {
 	}
 
 	userID, exists := ctx.Get("userID")
-	require.False(t, exists)
-	require.Equal(t, nil, userID)
-}
-
-func TestAuthMiddlewareFallback(t *testing.T) {
-	w := httptest.NewRecorder()
-	ctx, _ := gin.CreateTestContext(w)
-	req, _ := http.NewRequest("GET", "/", nil)
-	req.Header.Set("Authorization", "Bearer TOKENSTRING")
-	ctx.Request = req
-
-	NewMockAuthService := mockUserService.NewMockAuthService(t)
-
-	NewMockAuthService.EXPECT().
-		ValidateJWT("TOKENSTRING").
-		Return(jwt.MapClaims{"sub": "expectedUserID"}, nil).Once()
-
-	RequireAuth(NewMockAuthService)(ctx)
-	if ctx.IsAborted() {
-		t.Errorf("Expected request to pass through middleware, but it was aborted")
-	}
-
-	userID, exists := ctx.Get("userID")
-	require.True(t, exists)
-	require.Equal(t, "expectedUserID", userID)
+	assert.False(t, exists)
+	assert.Equal(t, nil, userID)
 }
 
 func TestAuthMiddlewareNoToken(t *testing.T) {
@@ -98,6 +82,89 @@ func TestAuthMiddlewareNoToken(t *testing.T) {
 	}
 
 	userID, exists := ctx.Get("userID")
-	require.False(t, exists)
-	require.Equal(t, nil, userID)
+	assert.False(t, exists)
+	assert.Equal(t, nil, userID)
+}
+
+func TestAuthMiddlewareNoSub(t *testing.T) {
+	w := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(w)
+	req, _ := http.NewRequest("GET", "/", nil)
+	req.AddCookie(&http.Cookie{Name: "token", Value: "TOKENSTRING"})
+	ctx.Request = req
+
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	claims := services.Claims{
+		Permissions: nil,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "", // No subject
+		},
+	}
+	NewMockAuthService.EXPECT().
+		ValidateJWT("TOKENSTRING").
+		Return(claims, nil).Once()
+
+	RequireAuth(NewMockAuthService)(ctx)
+	if !ctx.IsAborted() {
+		t.Errorf("Expected request to abort middleware, but it was not")
+	}
+
+	userID, exists := ctx.Get("userID")
+	assert.False(t, exists)
+	assert.Equal(t, nil, userID)
+}
+
+
+func TestAuthMiddlewareHasPermissions(t *testing.T) {
+	w := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(w)
+	req, _ := http.NewRequest("GET", "/", nil)
+	req.AddCookie(&http.Cookie{Name: "token", Value: "TOKENSTRING"})
+	ctx.Request = req
+
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	claims := services.Claims{
+		Permissions: data.Permissions{"1", "2"},
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "expectedUserID",
+		},
+	}
+	NewMockAuthService.EXPECT().
+		ValidateJWT("TOKENSTRING").
+		Return(claims, nil).Once()
+
+	RequireAuth(NewMockAuthService)(ctx)
+	if ctx.IsAborted() {
+		t.Errorf("Expected request to pass through middleware, but it was aborted")
+	}
+	permissions, exists := ctx.Get("permissions")
+	assert.True(t, exists)
+	assert.ElementsMatch(t, data.Permissions{"1", "2"}, permissions)
+}
+
+func TestAuthMiddlewareHasNoPermissions(t *testing.T) {
+	w := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(w)
+	req, _ := http.NewRequest("GET", "/", nil)
+	req.AddCookie(&http.Cookie{Name: "token", Value: "TOKENSTRING"})
+	ctx.Request = req
+
+	NewMockAuthService := mockUserService.NewMockAuthService(t)
+	claims := services.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "expectedUserID",
+		},
+	}
+	NewMockAuthService.EXPECT().
+		ValidateJWT("TOKENSTRING").
+		Return(claims, nil).Once()
+
+	RequireAuth(NewMockAuthService)(ctx)
+	if ctx.IsAborted() {
+		t.Errorf("Expected request to pass through middleware, but it was aborted")
+	}
+	permissions, exists := ctx.Get("permissions")
+	assert.True(t, exists)
+	// we dont want permissions to be nil otherwise its a pain
+	assert.ElementsMatch(t, data.Permissions{}, permissions)
 }

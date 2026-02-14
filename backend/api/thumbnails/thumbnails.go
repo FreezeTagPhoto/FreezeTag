@@ -20,10 +20,6 @@ func InitThumbnailEndpoint(repository repositories.ImageRepository) ThumbnailEnd
 	}
 }
 
-func (te ThumbnailEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.GET("/thumbnails/:id", te.HandleGet)
-}
-
 // @summary     Get thumbnail
 // @description Get a WEBP format image thumbnail for an image
 // @produce     image/webp

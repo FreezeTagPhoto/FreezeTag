@@ -22,9 +22,6 @@ func InitJobQueryEndpoint(jobRepository repositories.JobRepository) JobQueryEndp
 }
 
 // Registers the job query endpoints to the given Gin engine.
-func (je JobQueryEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.GET("/jobquery/:id", je.HandleGet)
-}
 
 type exampleResponse struct { //nolint:unused
 	UUID      uuid.UUID                         `json:"uuid"`
@@ -46,7 +43,7 @@ type exampleResponse struct { //nolint:unused
 // @success     200  {object}  exampleResponse
 // @failure     400  {object}  api.StatusBadRequestResponse
 // @failure     404  {object}  api.StatusNotFoundResponse
-func (je JobQueryEndpoint) HandleGet(c *gin.Context) {
+func (je JobQueryEndpoint) Jobs(c *gin.Context) {
 	idParam := c.Param("id")
 	var id uuid.UUID
 	id, err := uuid.Parse(idParam)

@@ -17,6 +17,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func (ue UploadEndpoint) RegisterEndpoints(e gin.IRoutes) {
+	e.POST("/upload", ue.Upload)
+}
+
 func initTest(t *testing.T) *gin.Engine {
 	t.Helper()
 	j := mockJobService.NewMockJobService(t)

@@ -20,6 +20,9 @@ func ptrString(s string) *string {
 	return &s
 }
 
+func (me MetadataEndpoint) RegisterEndpoints(e gin.IRoutes) {
+	e.GET("/metadata/:id", me.Metadata)
+}
 func TestGetMetadataSuccessNils(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().

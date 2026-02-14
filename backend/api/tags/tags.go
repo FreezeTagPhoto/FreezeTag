@@ -21,14 +21,6 @@ func InitTagEndpoint(repo repositories.ImageRepository) TagEndpoint {
 	}
 }
 
-func (te TagEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.DELETE("/tag/remove", te.HandleDelete)
-	e.POST("/tag/add", te.HandlePost)
-	e.GET("/tag/list", te.HandleGetAllTags)
-	e.GET("/tag/list/:id", te.HandleGetImageTags)
-	e.GET("/tag/counts", te.HandleGetTagCounts)
-}
-
 // @summary     Delete tags
 // @description Delete tags from images
 // @tags        tags
@@ -152,7 +144,7 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 // @router      /tag/list [get]
 // @success     200 {object} api.TagCounts
 // @failure     500 {object} api.StatusServerErrorResponse
-func (te TagEndpoint) HandleGetAllTags(c *gin.Context) {
+func (te TagEndpoint) ListTags(c *gin.Context) {
 	result, err := te.imageRepository.RetrieveAllTags()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
@@ -170,7 +162,7 @@ func (te TagEndpoint) HandleGetAllTags(c *gin.Context) {
 // @success     200 {array} string
 // @failure     400 {object} api.StatusBadRequestResponse
 // @failure     500 {object} api.StatusServerErrorResponse
-func (te TagEndpoint) HandleGetImageTags(c *gin.Context) {
+func (te TagEndpoint) ImageTags(c *gin.Context) {
 	idParam := c.Param("id")
 	var id database.ImageId
 	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
@@ -196,7 +188,7 @@ func (te TagEndpoint) HandleGetImageTags(c *gin.Context) {
 // @failure     400 {object} api.StatusBadRequestResponse
 // @failure     500 {object} api.StatusServerErrorResponse
 // @produce     application/json
-func (te TagEndpoint) HandleGetTagCounts(c *gin.Context) {
+func (te TagEndpoint) ListCounts(c *gin.Context) {
 	ids := c.QueryArray("id")
 	if len(ids) == 0 {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no ids specified"})

@@ -3,7 +3,6 @@
 package main
 
 import (
-	createuser "freezetag/backend/api/create_user"
 	"freezetag/backend/api/files"
 	"freezetag/backend/api/jobquery"
 	"freezetag/backend/api/login"
@@ -16,6 +15,7 @@ import (
 	"freezetag/backend/api/user"
 	"freezetag/backend/middleware"
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/formats"
 	"freezetag/backend/pkg/repositories"
@@ -140,21 +140,111 @@ func initDefaultImageRepository(dataDir string) repositories.ImageRepository {
 	return repositories.InitImageRepository(db, parserCollection, path.Join(dataDir, "images"))
 }
 
+// In order to make permission changes easy and keep unit tests modular, all middleware should
+// be registered in here, and not other files.
 func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
+
 	authGroup := router.Group("/")
 	authGroup.Use(middleware.RequireAuth(deps.authService))
-	{
-		upload.InitUploadEndpoint(deps.jobService).RegisterEndpoints(authGroup)
-		thumbnails.InitThumbnailEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		search.InitSearchEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		tags.InitTagEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		metadata.InitMetadataEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		jobquery.InitJobQueryEndpoint(deps.jobRepository).RegisterEndpoints(authGroup)
-		files.InitFileEndpoint(deps.imageRepository).RegisterEndpoints(authGroup)
-		logout.InitLogoutEndpoint(deps.authService).RegisterEndpoints(authGroup)
-		user.InitUserEndpoint(deps.userRepository).RegisterEndpoints(authGroup)
-	}
 
-	login.InitLoginEndpoint(deps.authService).RegisterEndpoints(router)
-	createuser.InitCreateUserEndpoint(deps.authService).RegisterEndpoints(router)
+	initLoginEndpoints(router, deps)
+	initLogoutEndpoints(authGroup, deps)
+	initTagEndpoints(authGroup, deps)
+	initUploadEndpoints(authGroup, deps)
+	initThumbnailEndpoints(authGroup, deps)
+	initSearchEndpoints(authGroup, deps)
+	initMetadataEndpoints(authGroup, deps)
+	initJobsEndpoints(authGroup, deps)
+	initFileEndpoints(authGroup, deps)
+	initUserEndpoints(authGroup, deps)
+}
+
+func initLoginEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	le := login.InitLoginEndpoint(deps.authService)
+	baseGroup.POST("/login", le.Login)
+	baseGroup.GET("/login", le.LoginInfo)
+}
+
+func initLogoutEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	lo := logout.InitLogoutEndpoint(deps.authService)
+	baseGroup.POST("/logout", lo.HandleLogout)
+}
+
+func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	userGroup := baseGroup.Group("/users")
+	{
+		ue := user.InitUserEndpoint(deps.userRepository, deps.authService)
+		userGroup.GET("/:id", middleware.RequirePermission(data.ReadUser), ue.GetUser)
+		userGroup.GET("/all", middleware.RequirePermission(data.ReadUser), ue.ListUsers)
+
+		// eventually createuser needs to be just /user and then the userGroup can use "/user" as the base path,
+		// but for now this wont cause merge conflicts
+		userGroup.POST("/create", middleware.RequirePermission(data.CreateUser), ue.CreateUser)
+		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
+
+		userGroup.DELETE("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)
+		userGroup.DELETE("/:id", middleware.RequirePermission(data.DeleteUser), ue.DeleteUser)
+
+	}
+}
+
+func initFileEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	fileGroup := baseGroup.Group("/file")
+	{
+		fe := files.InitFileEndpoint(deps.imageRepository)
+		fileGroup.GET("/:id", middleware.RequirePermission(data.ReadFiles), fe.HandleGet)
+	}
+}
+
+func initJobsEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	jobGroup := baseGroup.Group("/jobquery")
+	{
+		je := jobquery.InitJobQueryEndpoint(deps.jobRepository)
+		jobGroup.GET("/:id", je.Jobs)
+	}
+}
+
+func initMetadataEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	metadataGroup := baseGroup.Group("/metadata")
+	{
+		me := metadata.InitMetadataEndpoint(deps.imageRepository)
+		metadataGroup.GET("/:id", middleware.RequirePermission(data.ReadFiles), me.Metadata)
+	}
+}
+
+func initSearchEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	searchGroup := baseGroup.Group("/search")
+	{
+		se := search.InitSearchEndpoint(deps.imageRepository)
+		searchGroup.GET("", middleware.RequirePermission(data.ReadFiles), se.Search)
+	}
+}
+
+func initThumbnailEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	thumbnailGroup := baseGroup.Group("/thumbnails")
+	{
+		te := thumbnails.InitThumbnailEndpoint(deps.imageRepository)
+		thumbnailGroup.GET("/:id", middleware.RequirePermission(data.ReadFiles), te.HandleGet)
+	}
+}
+
+func initUploadEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	uploadGroup := baseGroup.Group("/upload")
+	{
+		ue := upload.InitUploadEndpoint(deps.jobService)
+		uploadGroup.POST("", middleware.RequirePermission(data.WriteFiles), ue.Upload)
+	}
+}
+
+func initTagEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	tagGroup := baseGroup.Group("/tag")
+	{
+		te := tags.InitTagEndpoint(deps.imageRepository)
+		tagGroup.DELETE("/remove", middleware.RequirePermission(data.WriteTags), te.HandleDelete)
+		tagGroup.POST("/add", middleware.RequirePermission(data.WriteTags), te.HandlePost)
+
+		tagGroup.GET("/list", middleware.RequirePermission(data.ReadTags), te.ListTags)
+		tagGroup.GET("/list/:id", middleware.RequirePermission(data.ReadTags), te.ImageTags)
+		tagGroup.GET("/counts", middleware.RequirePermission(data.ReadTags), te.ListCounts)
+	}
 }

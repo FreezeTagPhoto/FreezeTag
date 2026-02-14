@@ -15,6 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func (je JobQueryEndpoint) RegisterEndpoints(e gin.IRoutes) {
+	e.GET("/jobquery/:id", je.Jobs)
+}
+
 func TestJobQueryEndpointBadUUID(t *testing.T) {
 	j := mockJobRepo.NewMockJobRepository(t)
 

@@ -5,6 +5,7 @@ import (
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/services"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,11 +20,6 @@ func InitLoginEndpoint(authService services.AuthService) LoginEndpoint {
 	}
 }
 
-func (le LoginEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.POST("/login", le.HandleLogin)
-	e.GET("/login", le.HandleLoginStatus)
-}
-
 // @summary Authenticate user and return a token
 // @description Authenticates a user using form parameters "username" and "password". On success returns a JSON payload containing an authentication token.
 // @tags auth, login
@@ -33,7 +29,7 @@ func (le LoginEndpoint) RegisterEndpoints(e gin.IRoutes) {
 // @success 200 {object} api.StatusLoginSuccess "Authentication successful"
 // @failure 401 {object} api.StatusLoginFail "Authentication failed"
 // @router /login [post]
-func (le LoginEndpoint) HandleLogin(c *gin.Context) {
+func (le LoginEndpoint) Login(c *gin.Context) {
 	var req api.LoginCredentials
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "invalid request: " + err.Error()})
@@ -61,7 +57,7 @@ func (le LoginEndpoint) HandleLogin(c *gin.Context) {
 // @success 200 {object} api.StatusLoginUser "user is authenticated"
 // @failure 401 {object} api.StatusLoginFail "User is not authenticated"
 // @router /login [get]
-func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
+func (le LoginEndpoint) LoginInfo(c *gin.Context) {
 	authenticated, err := c.Cookie("token")
 	if err != nil || authenticated == "" {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
@@ -72,11 +68,12 @@ func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
 		return
 	}
-	userID, ok := claims["sub"]
-	if !ok {
-		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "no sub user id in token"})
+	uid, err := strconv.ParseInt(claims.Subject, 10, 64)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid user ID in token"})
 		return
 	}
-	id := int64(userID.(float64))
-	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: database.UserID(id)})
+
+	id := database.UserID(uid)
+	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: id, Permissions: claims.Permissions})
 }

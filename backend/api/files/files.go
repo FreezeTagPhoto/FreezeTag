@@ -20,10 +20,6 @@ func InitFileEndpoint(repo repositories.ImageRepository) FileEndpoint {
 	}
 }
 
-func (fe FileEndpoint) RegisterEndpoints(e gin.IRouter) {
-	e.GET("/file/:id", fe.HandleGet)
-}
-
 // @summary     Get file
 // @description Get an image file given an ID
 // @produce     application/octet-stream

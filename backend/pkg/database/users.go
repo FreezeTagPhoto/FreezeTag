@@ -2,6 +2,8 @@ package database
 
 import (
 	"database/sql"
+	"freezetag/backend/pkg/database/data"
+
 	_ "embed"
 	"time"
 
@@ -31,6 +33,16 @@ type UserDatabase interface {
 	GetPasswordHash(userID UserID) (string, error)
 	// List all users in the database
 	ListUsers() ([]*PublicUser, error)
+	// Get API permissions for a user by token hash, return error if not found
+	GetApiPermissions(tokenHash [32]byte) (data.Permissions, error)
+	// Get User permissions by user ID, return error if not found
+	GetUserPermissions(userID UserID) (data.Permissions, error)
+	// revoke permissions for a user by user ID
+	RevokeUserPermissions(userID UserID, permissions data.Permissions) error
+	// grant permissions for a user by user ID
+	GrantUserPermissions(userID UserID, permissions data.Permissions) error
+	// delete a user by ID
+	DeleteUser(userID UserID) error
 }
 
 type SqliteUserDatabase struct {
@@ -49,7 +61,34 @@ func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
 	if err != nil {
 		return SqliteUserDatabase{}, err
 	}
-	return SqliteUserDatabase{db}, nil
+	defaultDB := SqliteUserDatabase{db}
+	if err := defaultDB.seedPermissions(); err != nil {
+		return SqliteUserDatabase{}, err
+	}
+	return defaultDB, nil
+}
+
+// Seed the App_Permissions table with all defined permissions
+func (s SqliteUserDatabase) seedPermissions() error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	// calling rollback after Commit is a no-op
+	defer tx.Rollback() //nolint:errcheck
+
+	stmt, err := tx.Prepare("INSERT OR IGNORE INTO App_Permissions (permission) VALUES (?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close() //nolint:errcheck
+
+	for _, p := range data.All() {
+		if _, err := stmt.Exec(string(p)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (s SqliteUserDatabase) AddUser(username string, passwordHash string) (*PublicUser, error) {
@@ -159,4 +198,112 @@ func (s SqliteUserDatabase) ListUsers() ([]*PublicUser, error) {
 		users = append(users, &user)
 	}
 	return users, nil
+}
+
+func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (data.Permissions, error) {
+	query := `
+		SELECT p.permission 
+		FROM API_Token t
+		JOIN User_Permissions up ON t.userId = up.userId
+		JOIN App_Permissions p  ON up.permissionId = p.id
+		WHERE t.tokenHash = ? 
+		AND t.revoked = 0 
+		AND t.expiresAt > strftime('%s', 'now')
+	`
+	rows, err := s.db.Query(query, tokenHash[:])
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() //nolint:errcheck
+	var permissions data.Permissions
+	for rows.Next() {
+		var permission string
+		if err := rows.Scan(&permission); err != nil {
+			return nil, err
+		}
+		permissions = append(permissions, data.Permission(permission))
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+func (s SqliteUserDatabase) GetUserPermissions(userID UserID) (data.Permissions, error) {
+	query := `
+		SELECT p.permission 
+		FROM User_Permissions up
+		JOIN App_Permissions p ON up.permissionId = p.id
+		WHERE up.userId = ?
+	`
+	rows, err := s.db.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() //nolint:errcheck
+	var permissions data.Permissions
+	for rows.Next() {
+		var permission string
+		if err := rows.Scan(&permission); err != nil {
+			return nil, err
+		}
+		permissions = append(permissions, data.Permission(permission))
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+func (s SqliteUserDatabase) RevokeUserPermissions(userID UserID, permissions data.Permissions) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	stmt, err := tx.Prepare("DELETE FROM User_Permissions WHERE userId = ? AND permissionId = (SELECT id FROM App_Permissions WHERE permission = ?)")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close() //nolint:errcheck
+
+	for _, p := range permissions {
+		if _, err := stmt.Exec(userID, string(p)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s SqliteUserDatabase) GrantUserPermissions(userID UserID, permissions data.Permissions) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback() //nolint:errcheck
+	query := `
+		INSERT INTO User_Permissions (userId, permissionId) 
+		VALUES (?, (SELECT id FROM App_Permissions WHERE permission = ?))
+		ON CONFLICT (userId, permissionId) DO NOTHING`
+
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close() //nolint:errcheck
+
+	for _, p := range permissions {
+		if _, err := stmt.Exec(userID, string(p)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s SqliteUserDatabase) DeleteUser(userID UserID) error {
+	_, err := s.db.Exec("DELETE FROM Users WHERE id = ?", userID)
+	return err
 }

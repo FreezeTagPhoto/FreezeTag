@@ -13,6 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func (lo LogoutEndpoint) RegisterEndpoints(e gin.IRoutes) {
+	e.POST("/logout", lo.HandleLogout)
+}
+
 func TestLogout(t *testing.T) {
 
 	router := gin.Default()
