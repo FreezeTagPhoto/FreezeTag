@@ -41,6 +41,8 @@ type UserDatabase interface {
 	RevokeUserPermissions(userID UserID, permissions data.Permissions) error
 	// grant permissions for a user by user ID
 	GrantUserPermissions(userID UserID, permissions data.Permissions) error
+	// delete a user by ID
+	DeleteUser(userID UserID) error
 }
 
 type SqliteUserDatabase struct {
@@ -72,13 +74,14 @@ func (s SqliteUserDatabase) seedPermissions() error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	// calling rollback after Commit is a no-op
+	defer tx.Rollback() //nolint:errcheck 
 
 	stmt, err := tx.Prepare("INSERT OR IGNORE INTO App_Permissions (permission) VALUES (?)")
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
+	defer stmt.Close() //nolint:errcheck
 
 	for _, p := range data.All() {
 		if _, err := stmt.Exec(string(p)); err != nil {
@@ -211,7 +214,7 @@ func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (data.Permissi
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 	var permissions data.Permissions
 	for rows.Next() {
 		var permission string
@@ -238,7 +241,7 @@ func (s SqliteUserDatabase) GetUserPermissions(userID UserID) (data.Permissions,
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 	var permissions data.Permissions
 	for rows.Next() {
 		var permission string
@@ -259,13 +262,13 @@ func (s SqliteUserDatabase) RevokeUserPermissions(userID UserID, permissions dat
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	stmt, err := tx.Prepare("DELETE FROM User_Permissions WHERE userId = ? AND permissionId = (SELECT id FROM App_Permissions WHERE permission = ?)")
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
+	defer stmt.Close() //nolint:errcheck
 
 	for _, p := range permissions {
 		if _, err := stmt.Exec(userID, string(p)); err != nil {
@@ -280,13 +283,13 @@ func (s SqliteUserDatabase) GrantUserPermissions(userID UserID, permissions data
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	stmt, err := tx.Prepare("INSERT INTO User_Permissions (userId, permissionId) VALUES (?, (SELECT id FROM App_Permissions WHERE permission = ?))")
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
+	defer stmt.Close() //nolint:errcheck
 
 	for _, p := range permissions {
 		if _, err := stmt.Exec(userID, string(p)); err != nil {
@@ -294,4 +297,9 @@ func (s SqliteUserDatabase) GrantUserPermissions(userID UserID, permissions data
 		}
 	}
 	return tx.Commit()
+}
+
+func (s SqliteUserDatabase) DeleteUser(userID UserID) error {
+	_, err := s.db.Exec("DELETE FROM Users WHERE id = ?", userID)
+	return err
 }

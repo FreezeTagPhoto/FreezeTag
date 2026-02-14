@@ -2,6 +2,7 @@ package api
 
 import (
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/images/imagedata"
 	"freezetag/backend/pkg/repositories"
 	"freezetag/backend/pkg/services"
@@ -59,9 +60,14 @@ type LoginCredentials struct {
 
 type StatusLoginUser struct {
 	UserID database.UserID `json:"user_id"`
+	Permissions data.Permissions `json:"permissions"`
 }
 
 type TagCounts map[string]int64
+
+type UserUpdateResponse struct {
+	Message string `json:"message"`
+}
 
 type MetadataResponse struct {
 	imagedata.Metadata

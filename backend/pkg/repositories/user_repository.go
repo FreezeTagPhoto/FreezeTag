@@ -16,6 +16,7 @@ type UserRepository interface {
 	GetApiPermissions(tokenHash [32]byte) (data.Permissions, error)
 	GetUserPermissions(userID database.UserID) (data.Permissions, error)
 	AddUser(username string, passwordHash string) (*database.PublicUser, error)
+	DeleteUser(userID database.UserID) error
 
 	GetUserPasswordHash(userID database.UserID) (string, error)
 	ChangePassword(userID database.UserID, newPasswordHash string) error
@@ -137,7 +138,7 @@ func (r *DefaultUserRepository) GetUserPermissions(userID database.UserID) (data
 
 func (r *DefaultUserRepository) GrantAdminPermissions(userID database.UserID) error {
 	allPerms := data.All()
-	err := r.UserDatabase.GrantUserPermissions(userID, allPerms)
+	err := r.GrantUserPermissions(userID, allPerms)
 	if err != nil {
 		return fmt.Errorf("failed to grant admin permissions: %w", err)
 	}
@@ -146,7 +147,7 @@ func (r *DefaultUserRepository) GrantAdminPermissions(userID database.UserID) er
 
 func (r *DefaultUserRepository) RevokeAllPermissions(userID database.UserID) error {
 	allPerms := data.All()
-	err := r.UserDatabase.RevokeUserPermissions(userID, allPerms)
+	err := r.RevokeUserPermissions(userID, allPerms)
 	if err != nil {
 		return fmt.Errorf("failed to revoke all permissions: %w", err)
 	}
@@ -154,7 +155,7 @@ func (r *DefaultUserRepository) RevokeAllPermissions(userID database.UserID) err
 }
 
 func (r *DefaultUserRepository) RevokePermissions(userID database.UserID, permissions data.Permissions) error {
-	err := r.UserDatabase.RevokeUserPermissions(userID, permissions)
+	err := r.RevokeUserPermissions(userID, permissions)
 	if err != nil {
 		return fmt.Errorf("failed to revoke permissions: %w", err)
 	}
@@ -162,9 +163,18 @@ func (r *DefaultUserRepository) RevokePermissions(userID database.UserID, permis
 }
 
 func (r *DefaultUserRepository) GrantPermissions(userID database.UserID, permissions data.Permissions) error {
-	err := r.UserDatabase.GrantUserPermissions(userID, permissions)
+	err := r.GrantUserPermissions(userID, permissions)
 	if err != nil {
 		return fmt.Errorf("failed to grant permissions: %w", err)
+	}
+	return nil
+
+}
+
+func (r *DefaultUserRepository) DeleteUser(userID database.UserID) error {
+	err := r.UserDatabase.DeleteUser(userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
 	}
 	return nil
 }

@@ -23,8 +23,8 @@ type badLoginCredentials struct {
 }
 
 func (le LoginEndpoint) RegisterEndpoints(e gin.IRoutes) {
-	e.POST("/login", le.HandleLogin)
-	e.GET("/login", le.HandleLoginStatus)
+	e.POST("/login", le.Login)
+	e.GET("/login", le.LoginInfo)
 }
 
 func TestLogin(t *testing.T) {
@@ -222,3 +222,4 @@ func TestLoginNoExistingLoginCookie(t *testing.T) {
 	expected := api.StatusLoginFail{Error: "not authenticated"}
 	assert.Equal(t, expected, got)
 }
+

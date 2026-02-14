@@ -1,8 +1,10 @@
 package user
 
 import (
+	"fmt"
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/database"
+	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/repositories"
 	"freezetag/backend/pkg/services"
 	"net/http"
@@ -12,7 +14,7 @@ import (
 )
 
 type UserEndpoint struct {
-	userRepo repositories.UserRepository
+	userRepo    repositories.UserRepository
 	authService services.AuthService
 }
 
@@ -64,10 +66,43 @@ func (ue UserEndpoint) ListUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
+
+// @Summary      Delete a user by ID
+// @Description  Deletes a user from the system by their ID.
+// @Tags         users
+// @Accept       application/json
+// @Produce      application/json
+// @Param        id   path      int  true  "User ID"
+// @Success      200  {object}  api.UserUpdateResponse
+// @Failure      400  {object}  api.StatusBadRequestResponse
+// @Failure      500  {object}  api.StatusBadRequestResponse
+// @Router       /user/{id} [delete]
 func (ue UserEndpoint) DeleteUser(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, api.StatusBadRequestResponse{Error: "Delete user endpoint not implemented yet"})
+	userIDString := c.Param("id")
+	id, err := getUserIDFromString(userIDString)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: err.Error()})
+		return
+	}
+
+	err = ue.userRepo.DeleteUser(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "Failed to delete user"})
+		return
+	}
+	c.JSON(http.StatusOK, api.UserUpdateResponse{Message: fmt.Sprintf("user %s deleted", userIDString)})
 }
 
+// @Summary      Create a new user
+// @Description  Creates a new user with the provided username and password, granted they have permission to create users.
+// @Tags         users
+// @Accept       application/json
+// @Produce      application/json
+// @param 		 request body      api.LoginCredentials true "User Login Details"
+// @Success      200     {object}  database.PublicUser
+// @Failure      400     {object}  api.StatusBadRequestResponse
+// @Failure      500     {object}  api.StatusBadRequestResponse
+// @Router       /user   [post]
 func (ue UserEndpoint) CreateUser(c *gin.Context) {
 	var req api.LoginCredentials
 	if err := c.ShouldBind(&req); err != nil {
@@ -80,4 +115,90 @@ func (ue UserEndpoint) CreateUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, user)
+}
+
+// @Summary      Grant permissions for a user
+// @Description  Grants specified permissions for a user by their ID.
+// @Tags         users
+// @Accept       application/json
+// @Produce      application/json
+// @Param        id   path      int  true  "User ID"
+// @Param        permission query []string true "Permissions to grant"
+// @Success      200  {object}  api.UserUpdateResponse
+// @Failure      400  {object}  api.StatusBadRequestResponse
+// @Failure      500  {object}  api.StatusBadRequestResponse
+// @Router       /user/permissions/{id} [post]
+func (ue UserEndpoint) AddPermissions(c *gin.Context) {
+	userIDString := c.Param("id")
+	id, err := getUserIDFromString(userIDString)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: err.Error()})
+		return
+	}
+
+	permissions, err := queryPermissionsFromRequest(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: err.Error()})
+		return
+	}
+	err = ue.userRepo.GrantPermissions(id, permissions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to grant permissions: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, api.UserUpdateResponse{Message: "permissions granted"})
+}
+
+// @Summary      Revoke permissions for a user
+// @Description  Revokes specified permissions for a user by their ID.
+// @Tags         users
+// @Accept       application/json
+// @Produce      application/json
+// @Param        id   path      int  true  "User ID"
+// @Param        permission query []string true "Permissions to revoke"
+// @Success      200  {object}  api.UserUpdateResponse
+// @Failure      400  {object}  api.StatusBadRequestResponse
+// @Failure      500  {object}  api.StatusBadRequestResponse
+// @Router       /user/permissions/{id} [delete]
+func (ue UserEndpoint) RevokePermissions(c *gin.Context) {
+	userIDString := c.Param("id")
+	id, err := getUserIDFromString(userIDString)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: err.Error()})
+		return
+	}
+	permissions, err := queryPermissionsFromRequest(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: err.Error()})
+		return
+	}
+	err = ue.userRepo.RevokePermissions(id, permissions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.StatusBadRequestResponse{Error: "failed to revoke permissions: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, api.UserUpdateResponse{Message: "permissions revoked"})
+}
+
+
+func getUserIDFromString(userIDString string) (database.UserID, error) {
+	var id database.UserID
+	if num, err := strconv.ParseInt(userIDString, 10, 64); err != nil {
+		return id, fmt.Errorf("invalid user ID parameter: %s", userIDString)
+	} else {
+		id = database.UserID(num)
+	}
+	return id, nil
+}
+
+func queryPermissionsFromRequest(c *gin.Context) (data.Permissions, error) {
+	permissions := c.QueryArray("permission")
+	if len(permissions) == 0 {
+		return nil, fmt.Errorf("no permissions provided")
+	}
+	var perms data.Permissions
+	for _, perm := range permissions {
+		perms = append(perms, data.Permission(perm))
+	}
+	return perms, nil
 }

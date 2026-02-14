@@ -126,29 +126,16 @@ func (s *DefaultAuthService) ValidateAPIToken(token string) (data.Permissions, e
 }
 
 func createTokenWithPermissions(userID database.UserID, permissions data.Permissions) (string, error) {
-	claims := Claims{
-        Permissions: permissions,
-        RegisteredClaims: jwt.RegisteredClaims{
-            Subject:   strconv.FormatInt(int64(userID), 10),
-            ExpiresAt: jwt.NewNumericDate(time.Now().Add(JwtExpirationHours)),
-            IssuedAt:  jwt.NewNumericDate(time.Now()),
-        },
-    }
-
-    // Pass the struct here instead of MapClaims
-    token := jwt.NewWithClaims(JwtSigningMethod, claims)
-    return token.SignedString([]byte(JwtSecretKey))
-}
-
-func createAPIToken() (string, [32]byte, error) {
-	randomBytes := make([]byte, 32)
-	_, err := rand.Read(randomBytes)
-	if err != nil {
-		return "", [32]byte{}, err
+	JWTClaims := Claims{
+		Permissions: permissions,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   strconv.FormatInt(int64(userID), 10),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(JwtExpirationHours)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
 	}
-	token := base64.StdEncoding.EncodeToString(randomBytes)
-	tokenHash := hashToken(token)
-	return token, tokenHash, nil
+	token := jwt.NewWithClaims(JwtSigningMethod, JWTClaims)
+	return token.SignedString([]byte(JwtSecretKey))
 }
 
 func hashToken(token string) [32]byte {

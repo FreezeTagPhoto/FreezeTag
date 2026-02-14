@@ -20,8 +20,6 @@ func InitLoginEndpoint(authService services.AuthService) LoginEndpoint {
 	}
 }
 
-
-
 // @summary Authenticate user and return a token
 // @description Authenticates a user using form parameters "username" and "password". On success returns a JSON payload containing an authentication token.
 // @tags auth, login
@@ -31,7 +29,7 @@ func InitLoginEndpoint(authService services.AuthService) LoginEndpoint {
 // @success 200 {object} api.StatusLoginSuccess "Authentication successful"
 // @failure 401 {object} api.StatusLoginFail "Authentication failed"
 // @router /login [post]
-func (le LoginEndpoint) HandleLogin(c *gin.Context) {
+func (le LoginEndpoint) Login(c *gin.Context) {
 	var req api.LoginCredentials
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "invalid request: " + err.Error()})
@@ -59,7 +57,7 @@ func (le LoginEndpoint) HandleLogin(c *gin.Context) {
 // @success 200 {object} api.StatusLoginUser "user is authenticated"
 // @failure 401 {object} api.StatusLoginFail "User is not authenticated"
 // @router /login [get]
-func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
+func (le LoginEndpoint) LoginInfo(c *gin.Context) {
 	authenticated, err := c.Cookie("token")
 	if err != nil || authenticated == "" {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
@@ -70,7 +68,6 @@ func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
 		return
 	}
-
 
 	if claims.Subject == "" {
 		// Handle the case where "sub" isn't a valid number
@@ -85,5 +82,5 @@ func (le LoginEndpoint) HandleLoginStatus(c *gin.Context) {
 	}
 
 	id := database.UserID(uid)
-	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: id})
+	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: id, Permissions: claims.Permissions})
 }
