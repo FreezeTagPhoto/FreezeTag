@@ -27,7 +27,6 @@ func InitUploadEndpoint(jobService services.JobService) UploadEndpoint {
 
 // Registers the upload endpoints to the given Gin engine.
 
-
 // @summary     Upload files
 // @description Upload a set of image files to the server
 // @produce     application/json

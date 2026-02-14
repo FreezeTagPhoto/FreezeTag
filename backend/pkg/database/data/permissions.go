@@ -13,7 +13,7 @@ var (
 	WriteFiles Permission = registerPermission("write:files")
 
 	WritePermissions Permission = registerPermission("write:permissions")
-	ReadTags          Permission = registerPermission("read:tags")
+	ReadTags         Permission = registerPermission("read:tags")
 	WriteTags        Permission = registerPermission("write:tags")
 	CreateUser       Permission = registerPermission("create:user")
 )

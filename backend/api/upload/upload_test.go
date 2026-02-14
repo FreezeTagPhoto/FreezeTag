@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
+
 func (ue UploadEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.POST("/upload", ue.Upload)
 }
@@ -167,4 +168,3 @@ func TestPostWithNoFileField(t *testing.T) {
 
 	assert.Equal(t, expected, got)
 }
-

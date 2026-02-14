@@ -23,8 +23,6 @@ func InitSearchEndpoint(repository repositories.ImageRepository) SearchEndpoint 
 	}
 }
 
-
-
 func parseNearParam(near string) ([3]float64, error) {
 	parts := strings.Split(near, ",")
 	if len(parts) != 3 {

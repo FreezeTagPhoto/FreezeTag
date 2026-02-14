@@ -20,8 +20,6 @@ func InitFileEndpoint(repo repositories.ImageRepository) FileEndpoint {
 	}
 }
 
-
-
 // @summary     Get file
 // @description Get an image file given an ID
 // @produce     application/octet-stream

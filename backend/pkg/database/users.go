@@ -75,7 +75,7 @@ func (s SqliteUserDatabase) seedPermissions() error {
 		return err
 	}
 	// calling rollback after Commit is a no-op
-	defer tx.Rollback() //nolint:errcheck 
+	defer tx.Rollback() //nolint:errcheck
 
 	stmt, err := tx.Prepare("INSERT OR IGNORE INTO App_Permissions (permission) VALUES (?)")
 	if err != nil {

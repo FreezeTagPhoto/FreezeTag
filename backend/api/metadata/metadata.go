@@ -20,8 +20,6 @@ func InitMetadataEndpoint(repo repositories.ImageRepository) MetadataEndpoint {
 	}
 }
 
-
-
 // @summary     Get metadata
 // @description Retrieve metadata for an image
 // @produce     application/json

@@ -16,7 +16,6 @@ func InitLogoutEndpoint(auth services.AuthService) LogoutEndpoint {
 	return LogoutEndpoint{auth}
 }
 
-
 // @summary invalidate the current user's session token
 // @tags    auth, logout
 // @success 200 {object} api.StatusLogoutSuccess

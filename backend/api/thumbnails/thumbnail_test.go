@@ -19,11 +19,9 @@ import (
 //go:embed test_resources/gopher.webp
 var gopherBytes []byte //embed thes
 
-
 func (te ThumbnailEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.GET("/thumbnails/:id", te.HandleGet)
 }
-
 
 func TestGetThumbnailSuccess(t *testing.T) {
 

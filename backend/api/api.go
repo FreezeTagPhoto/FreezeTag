@@ -59,7 +59,7 @@ type LoginCredentials struct {
 }
 
 type StatusLoginUser struct {
-	UserID database.UserID `json:"user_id"`
+	UserID      database.UserID  `json:"user_id"`
 	Permissions data.Permissions `json:"permissions"`
 }
 

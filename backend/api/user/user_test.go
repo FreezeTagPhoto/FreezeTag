@@ -215,8 +215,8 @@ func TestCreateUserSuccess(t *testing.T) {
 		Password: "password",
 	}
 	testUser := &database.PublicUser{
-		ID:		1,
-		Username: "testuser",
+		ID:        1,
+		Username:  "testuser",
 		CreatedAt: 0,
 	}
 	mockService.EXPECT().AddUser("testuser", "password").Return(testUser, nil)
@@ -282,7 +282,6 @@ func TestCreateUserAddUserFails(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, got.Error, "failed to create user")
 }
-
 
 // Adding Permissions
 func TestAddPermissionsSuccess(t *testing.T) {

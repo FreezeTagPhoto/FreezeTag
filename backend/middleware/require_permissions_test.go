@@ -22,7 +22,6 @@ func TestPermissionsMiddleware(t *testing.T) {
 	}
 }
 
-
 func TestPermissionsMiddlewareInvalidPermissions(t *testing.T) {
 
 	w := httptest.NewRecorder()

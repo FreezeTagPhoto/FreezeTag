@@ -23,7 +23,6 @@ func InitJobQueryEndpoint(jobRepository repositories.JobRepository) JobQueryEndp
 
 // Registers the job query endpoints to the given Gin engine.
 
-
 type exampleResponse struct { //nolint:unused
 	UUID      uuid.UUID                         `json:"uuid"`
 	Completed []repositories.ImageUploadSuccess `json:"completed"`

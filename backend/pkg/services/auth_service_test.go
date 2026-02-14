@@ -187,7 +187,6 @@ func TestLoginCreatesValidJWT(t *testing.T) {
 	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
 	require.NoError(t, err)
 
-
 	t.Logf("%s", claims)
 	sub := claims.Subject
 	if fmt.Sprintf("%v", sub) != fmt.Sprintf("%d", uid) {
@@ -283,7 +282,7 @@ func TestValidateAPIToken(t *testing.T) {
 		Return(data.Permissions{data.ReadUser}, nil).
 		Once()
 	authService := InitDefaultAuthService(mockRepo)
-	
+
 	permissions, err := authService.ValidateAPIToken("token")
 	require.NoError(t, err)
 	assert.ElementsMatch(t, data.Permissions{data.ReadUser}, permissions)
@@ -296,7 +295,7 @@ func TestValidateAPITokenInvalid(t *testing.T) {
 		Return(nil, assert.AnError).
 		Once()
 	authService := InitDefaultAuthService(mockRepo)
-	
+
 	permissions, err := authService.ValidateAPIToken("invalid_token")
 	require.Error(t, err)
 	assert.Nil(t, permissions)

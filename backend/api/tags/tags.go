@@ -21,7 +21,6 @@ func InitTagEndpoint(repo repositories.ImageRepository) TagEndpoint {
 	}
 }
 
-
 // @summary     Delete tags
 // @description Delete tags from images
 // @tags        tags

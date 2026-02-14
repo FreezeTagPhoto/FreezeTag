@@ -66,7 +66,6 @@ func (ue UserEndpoint) ListUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-
 // @Summary      Delete a user by ID
 // @Description  Deletes a user from the system by their ID.
 // @Tags         users
@@ -179,7 +178,6 @@ func (ue UserEndpoint) RevokePermissions(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, api.UserUpdateResponse{Message: "permissions revoked"})
 }
-
 
 func getUserIDFromString(userIDString string) (database.UserID, error) {
 	var id database.UserID
