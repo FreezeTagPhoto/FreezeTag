@@ -68,13 +68,6 @@ func (le LoginEndpoint) LoginInfo(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
 		return
 	}
-
-	if claims.Subject == "" {
-		// Handle the case where "sub" isn't a valid number
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid user ID in token"})
-		return
-	}
-
 	uid, err := strconv.ParseInt(claims.Subject, 10, 64)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid user ID in token"})

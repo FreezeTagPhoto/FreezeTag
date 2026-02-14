@@ -1,6 +1,7 @@
 package database
 
 import (
+	"freezetag/backend/pkg/database/data"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -198,4 +199,80 @@ func TestSetUserPasswordDoesNotAffectOthers(t *testing.T) {
 	hashB, err := db.GetPasswordHash(userB.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "hashedPassB", hashB)
+}
+
+func TestGetUserPermissions(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("permtest", "hash")
+	require.NoError(t, err)
+
+	db.GrantUserPermissions(user.ID, data.All())
+	permissions, err := db.GetUserPermissions(user.ID)
+
+	require.NoError(t, err)
+	assert.ElementsMatch(t, data.All(), permissions)
+}
+
+func TestGetUserPermissionsStress(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("permtest", "hash")
+	require.NoError(t, err)
+
+	db.GrantUserPermissions(user.ID, data.All())
+	permissions, err := db.GetUserPermissions(user.ID)
+	
+	require.NoError(t, err)
+	assert.ElementsMatch(t, data.All(), permissions)
+
+	db.RevokeUserPermissions(user.ID, data.Permissions{data.ReadUser})
+	permissions, err = db.GetUserPermissions(user.ID)
+	require.NoError(t, err)
+	assert.NotContains(t, permissions, data.ReadUser)
+	db.RevokeUserPermissions(user.ID, data.All())
+	permissions, err = db.GetUserPermissions(user.ID)
+	require.NoError(t, err)
+	assert.Empty(t, permissions)
+	db.GrantUserPermissions(user.ID, data.Permissions{data.ReadTags})
+	permissions, err = db.GetUserPermissions(user.ID)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, data.Permissions{data.ReadTags}, permissions)
+	db.GrantUserPermissions(user.ID, data.All())
+	permissions, err = db.GetUserPermissions(user.ID)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, data.All(), permissions)
+}
+
+func TestAddPermissionNonSeededPermission(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("permtest", "hash")
+	require.NoError(t, err)
+
+	err = db.GrantUserPermissions(user.ID, data.Permissions{"nonexistent:permission"})
+	require.Error(t, err)
+}
+
+func TestDeletePermissionUserDoesNotHave(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("permtest", "hash")
+	require.NoError(t, err)
+
+	err = db.RevokeUserPermissions(user.ID, data.Permissions{data.ReadUser})
+	require.NoError(t, err) // should not error even if user does not have the permission
+}
+
+func TestDeleteUser(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("usertodelete", "hash")
+	require.NoError(t, err)
+
+	err = db.DeleteUser(user.ID)
+	require.NoError(t, err)
+
+	_, err = db.GetUserById(user.ID)
+	require.Error(t, err)
 }

@@ -180,7 +180,7 @@ func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		// eventually createuser needs to be just /user and then the userGroup can use "/user" as the base path,
 		// but for now this wont cause merge conflicts
 		userGroup.POST("/create", middleware.RequirePermission(data.CreateUser), ue.CreateUser)
-		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.ReadUser), ue.AddPermissions)
+		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
 
 		userGroup.DELETE("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)
 		userGroup.DELETE("/:id", middleware.RequirePermission(data.DeleteUser), ue.DeleteUser)
