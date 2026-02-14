@@ -284,8 +284,12 @@ func (s SqliteUserDatabase) GrantUserPermissions(userID UserID, permissions data
 		return err
 	}
 	defer tx.Rollback() //nolint:errcheck
+	query := `
+		INSERT INTO User_Permissions (userId, permissionId) 
+		VALUES (?, (SELECT id FROM App_Permissions WHERE permission = ?))
+		ON CONFLICT (userId, permissionId) DO NOTHING`
 
-	stmt, err := tx.Prepare("INSERT INTO User_Permissions (userId, permissionId) VALUES (?, (SELECT id FROM App_Permissions WHERE permission = ?))")
+	stmt, err := tx.Prepare(query)
 	if err != nil {
 		return err
 	}
