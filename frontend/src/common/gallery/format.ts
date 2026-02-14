@@ -1,12 +1,11 @@
-// if int64 timestamp is huge, treat as ms, otherwise seconds
-export function toDate(ts: number): Date {
-    return new Date(ts > 1e12 ? ts : ts * 1000);
-}
-
-export function formatDate(ts: number | null): string {
+export function formatDate(
+    ts: number | null,
+    opts?: { timeZone?: string },
+): string {
     if (ts === null) return "—";
-    const d = toDate(ts);
+    const d = new Date(ts > 1e12 ? ts : ts * 1000);
     return new Intl.DateTimeFormat(undefined, {
+        timeZone: opts?.timeZone,
         year: "numeric",
         month: "short",
         day: "numeric",

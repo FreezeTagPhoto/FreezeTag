@@ -47,12 +47,20 @@ func extractGeoMetadata(mw *imagick.MagickWand) (*struct {
 	if latStr := mw.GetImageProperty("exif:GPSLatitude"); latStr != "" {
 		lonStr := mw.GetImageProperty("exif:GPSLongitude")
 		altStr := mw.GetImageProperty("exif:GPSAltitude")
+		latRef := mw.GetImageProperty("exif:GPSLatitudeRef")
+		lonRef := mw.GetImageProperty("exif:GPSLongitudeRef")
 		if lonStr == "" || altStr == "" {
 			return nil, fmt.Errorf("incomplete GPS data")
 		}
 		lat, _ := convertGPSRational(latStr) //nolint:errcheck // GPS strings can never be invalid if they exist
+		if latRef == "S" {
+			lat = -lat
+		}
 		lon, _ := convertGPSRational(lonStr) //nolint:errcheck
-		alt, _ := convertRational(altStr)    //nolint:errcheck
+		if lonRef == "W" {
+			lon = -lon
+		}
+		alt, _ := convertRational(altStr) //nolint:errcheck
 		return &struct {
 			Lat float64
 			Lon float64

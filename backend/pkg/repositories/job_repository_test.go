@@ -62,6 +62,29 @@ func TestJobBatchMixture(t *testing.T) {
 	assert.Equal(t, testJobInput(2), got.Failed[0].Input)
 }
 
+func TestJobBatchFinishBeforeWait(t *testing.T) {
+	repo := NewDefaultJobRepository()
+	finish := make(chan struct{}, 1)
+	id := repo.Create(t.Context(), []JobInput{testJobInput(1)}, AtomicJob(func(i testJobInput) (int, error) {
+		defer func() {
+			finish <- struct{}{}
+			close(finish)
+		}()
+		return int(i), nil
+	}))
+	got := repo.Get(id)
+	<-finish
+	// for sure enough time for job to mark finished
+	// if it takes longer that in itself is a bug
+	time.Sleep(250 * time.Millisecond)
+	select {
+	case <-got.WaitFinished():
+		// success case
+	default:
+		t.Fatalf("Waiting on a finished job batch didn't immediately end")
+	}
+}
+
 func TestJobPreemptiveCancel(t *testing.T) {
 	repo := NewDefaultJobRepository()
 	cancelled, cancel := context.WithCancel(t.Context())
