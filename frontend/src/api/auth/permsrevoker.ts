@@ -8,7 +8,7 @@ export type PermsRevokeResult = Result<
 >;
 type PermsRevokeResponse = { message: string };
 
-export default async function PermsRevoke(
+export default async function PermsRevoker(
     user_id: number,
     permissions: string[],
 ): Promise<PermsRevokeResult> {
@@ -29,7 +29,7 @@ async function revoke_perms_with_handler(
     user_id: number,
     permissions: string[],
 ): Promise<PermsRevokeResult> {
-    const query = `${user_id}?permissions=${permissions.join()}`;
+    const query = `${user_id}?permission=${permissions.join()}`;
     const request_result = await handler(query);
 
     if (!request_result.ok) {

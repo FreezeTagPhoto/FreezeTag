@@ -29,7 +29,7 @@ async function add_perms_with_handler(
     user_id: number,
     permissions: string[],
 ): Promise<PermsAddResult> {
-    const query = `${user_id}?permissions=${permissions.join()}`;
+    const query = `${user_id}?permission=${permissions.join()}`;
     const request_result = await handler(query);
 
     if (!request_result.ok) {
