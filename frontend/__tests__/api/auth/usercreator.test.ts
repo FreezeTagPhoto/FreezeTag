@@ -5,9 +5,9 @@
 import {
     testing_UserCreator,
     testing_UserCreateResponse,
-} from "@/api/auth/usercreator";
+} from "@/api/users/usercreator";
 
-import UserCreator from "@/api/auth/usercreator";
+import UserCreator from "@/api/users/usercreator";
 
 import { RequestError } from "@/api/common/apihandler";
 
