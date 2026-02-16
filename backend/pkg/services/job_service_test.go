@@ -25,7 +25,7 @@ func TestRunUploadJobsAsyncExecution(t *testing.T) {
 	fileName := "test.png"
 	fileData := []byte("test data")
 	m.EXPECT().
-		Create(mock.Anything, mock.Anything, mock.Anything).
+		Create(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(id).
 		Times(2)
 	m.EXPECT().

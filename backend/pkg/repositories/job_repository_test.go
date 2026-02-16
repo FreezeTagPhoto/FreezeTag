@@ -18,7 +18,7 @@ func (t testJobInput) ID() int {
 
 func TestJobBatchBasic(t *testing.T) {
 	repo := NewDefaultJobRepository()
-	id := repo.Create(t.Context(), []JobInput{testJobInput(1)}, AtomicJob(func(i testJobInput) (int, error) {
+	id := repo.Create("test", t.Context(), []JobInput{testJobInput(1)}, SimpleJob(func(i testJobInput) (int, error) {
 		return int(i), nil
 	}))
 	got := repo.Get(id)
@@ -31,7 +31,7 @@ func TestJobBatchBasic(t *testing.T) {
 
 func TestJobBatchError(t *testing.T) {
 	repo := NewDefaultJobRepository()
-	id := repo.Create(t.Context(), []JobInput{testJobInput(1)}, AtomicJob(func(i testJobInput) (int, error) {
+	id := repo.Create("test", t.Context(), []JobInput{testJobInput(1)}, SimpleJob(func(i testJobInput) (int, error) {
 		return 0, fmt.Errorf("expected error")
 	}))
 	got := repo.Get(id)
@@ -45,7 +45,7 @@ func TestJobBatchError(t *testing.T) {
 
 func TestJobBatchMixture(t *testing.T) {
 	repo := NewDefaultJobRepository()
-	id := repo.Create(t.Context(), []JobInput{testJobInput(1), testJobInput(2)}, AtomicJob(func(i testJobInput) (int, error) {
+	id := repo.Create("test", t.Context(), []JobInput{testJobInput(1), testJobInput(2)}, SimpleJob(func(i testJobInput) (int, error) {
 		if i == testJobInput(1) {
 			return 3, nil
 		} else {
@@ -65,7 +65,7 @@ func TestJobBatchMixture(t *testing.T) {
 func TestJobBatchFinishBeforeWait(t *testing.T) {
 	repo := NewDefaultJobRepository()
 	finish := make(chan struct{}, 1)
-	id := repo.Create(t.Context(), []JobInput{testJobInput(1)}, AtomicJob(func(i testJobInput) (int, error) {
+	id := repo.Create("test", t.Context(), []JobInput{testJobInput(1)}, SimpleJob(func(i testJobInput) (int, error) {
 		defer func() {
 			finish <- struct{}{}
 			close(finish)
@@ -89,7 +89,7 @@ func TestJobPreemptiveCancel(t *testing.T) {
 	repo := NewDefaultJobRepository()
 	cancelled, cancel := context.WithCancel(t.Context())
 	cancel()
-	id := repo.Create(cancelled, []JobInput{testJobInput(1)}, AtomicJob(func(i testJobInput) (int, error) {
+	id := repo.Create("test", cancelled, []JobInput{testJobInput(1)}, SimpleJob(func(i testJobInput) (int, error) {
 		return 1, nil
 	}))
 	got := repo.Get(id)
@@ -103,7 +103,7 @@ func TestJobPreemptiveCancel(t *testing.T) {
 func TestJobMiddleCancelOuterContext(t *testing.T) {
 	repo := NewDefaultJobRepository()
 	cancellable, cancel := context.WithCancel(t.Context())
-	id := repo.Create(cancellable, []JobInput{testJobInput(1)}, Job(func(i testJobInput, c context.Context) (int, error) {
+	id := repo.Create("test", cancellable, []JobInput{testJobInput(1)}, Job(func(i testJobInput, c context.Context, s func(string)) (int, error) {
 		time.Sleep(time.Millisecond * 500)
 		if c.Err() != nil {
 			return 0, fmt.Errorf("mid-job cancel")
@@ -122,7 +122,7 @@ func TestJobMiddleCancelOuterContext(t *testing.T) {
 
 func TestJobMiddleCancelInnerContext(t *testing.T) {
 	repo := NewDefaultJobRepository()
-	id := repo.Create(t.Context(), []JobInput{testJobInput(1)}, Job(func(i testJobInput, c context.Context) (int, error) {
+	id := repo.Create("test", t.Context(), []JobInput{testJobInput(1)}, Job(func(i testJobInput, c context.Context, s func(string)) (int, error) {
 		time.Sleep(time.Millisecond * 500)
 		if c.Err() != nil {
 			return 0, fmt.Errorf("mid-job cancel")
@@ -145,7 +145,7 @@ func TestManyJobs(t *testing.T) {
 	for i := range 20 {
 		inputs = append(inputs, testJobInput(i))
 	}
-	id := repo.Create(t.Context(), inputs, AtomicJob(func(i testJobInput) (int, error) {
+	id := repo.Create("test", t.Context(), inputs, SimpleJob(func(i testJobInput) (int, error) {
 		return int(i), nil
 	}))
 	got := repo.Get(id)
@@ -164,7 +164,7 @@ func TestManyBigJobs(t *testing.T) {
 	for i := range 20 {
 		inputs = append(inputs, testJobInput(i))
 	}
-	id := repo.Create(t.Context(), inputs, AtomicJob(func(i testJobInput) (int, error) {
+	id := repo.Create("test", t.Context(), inputs, SimpleJob(func(i testJobInput) (int, error) {
 		// pretend to be a big job (require using the queue)
 		time.Sleep(100 * time.Millisecond)
 		return int(i), nil
@@ -191,7 +191,7 @@ func TestSynchronousJobs(t *testing.T) {
 		assert.Equal(t, index, i)
 		index++
 	}
-	id := repo.CreateSync(t.Context(), inputs, AtomicJob(func(i testJobInput) (int, error) {
+	id := repo.CreateSync("test", t.Context(), inputs, SimpleJob(func(i testJobInput) (int, error) {
 		// waking from sleep would jumble them up if these weren't synchronous
 		time.Sleep(5 * time.Millisecond)
 		ensureSync(int(i))
@@ -204,7 +204,7 @@ func TestSynchronousJobs(t *testing.T) {
 
 func TestDeleteJob(t *testing.T) {
 	repo := NewDefaultJobRepository()
-	id := repo.Create(t.Context(), []JobInput{testJobInput(1)}, AtomicJob(func(i testJobInput) (int, error) {
+	id := repo.Create("test", t.Context(), []JobInput{testJobInput(1)}, SimpleJob(func(i testJobInput) (int, error) {
 		return int(i), nil
 	}))
 	got := repo.Get(id)
