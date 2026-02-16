@@ -4,7 +4,7 @@ package main
 
 import (
 	"freezetag/backend/api/files"
-	"freezetag/backend/api/jobquery"
+	"freezetag/backend/api/jobs"
 	"freezetag/backend/api/login"
 	"freezetag/backend/api/logout"
 	"freezetag/backend/api/metadata"
@@ -197,10 +197,13 @@ func initFileEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 }
 
 func initJobsEndpoints(baseGroup gin.IRouter, deps *dependencies) {
-	jobGroup := baseGroup.Group("/jobquery")
+	jobGroup := baseGroup.Group("/jobs")
 	{
-		je := jobquery.InitJobQueryEndpoint(deps.jobRepository)
-		jobGroup.GET("/:id", je.Jobs)
+		je := jobs.InitJobsEndpoint(deps.jobService)
+		jobGroup.GET("/details/:id", je.Details)
+		jobGroup.GET("/summary/:id", je.Summary)
+		jobGroup.GET("/list", je.List)
+		jobGroup.POST("/cancel/:id", je.Cancel)
 	}
 }
 

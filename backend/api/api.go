@@ -75,6 +75,10 @@ type MetadataResponse struct {
 	Height int `json:"height"`
 }
 
+type StatusCancelledJob struct {
+	UUID string `json:"uuid"`
+}
+
 type innerFileJob struct {
 	services.FileJob
 	id int `json:"-"`
