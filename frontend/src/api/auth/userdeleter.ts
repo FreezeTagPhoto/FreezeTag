@@ -2,34 +2,31 @@ import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
 
-export type PermsRevokeResult = Result<
+export type UserDeleteResult = Result<
     { message: string },
     { status: number; message: string }
 >;
-type PermsRevokeResponse = { message: string };
+type UserDeleteResponse = { message: string };
 
-export default async function PermsRevoke(
+export default async function UserDeleter(
     user_id: number,
-    permissions: string[],
-): Promise<PermsRevokeResult> {
-    return revoke_perms_with_handler(
-        ApiHandler<PermsRevokeResponse>(
-            SERVER_ADDRESS + "user/permissions/",
+): Promise<UserDeleteResult> {
+    return delete_user_with_handler(
+        ApiHandler<UserDeleteResponse>(
+            SERVER_ADDRESS + "user/",
             false,
         )(Method.DELETE),
         user_id,
-        permissions,
     );
 }
 
-async function revoke_perms_with_handler(
+async function delete_user_with_handler(
     handler: (
         data: BodyInit,
-    ) => Promise<Result<PermsRevokeResponse, RequestError>>,
+    ) => Promise<Result<UserDeleteResponse, RequestError>>,
     user_id: number,
-    permissions: string[],
-): Promise<PermsRevokeResult> {
-    const query = `${user_id}?permissions=${permissions.join()}`;
+): Promise<UserDeleteResult> {
+    const query = `${user_id}`;
     const request_result = await handler(query);
 
     if (!request_result.ok) {
