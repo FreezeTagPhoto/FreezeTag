@@ -13,9 +13,7 @@ export default async function UserCreator(
     event: FormData,
 ): Promise<UserCreateResult> {
     return create_user_with_handler(
-        ApiHandler<UserCreateResponse>(SERVER_ADDRESS + "users/create")(
-            Method.POST,
-        ),
+        ApiHandler<UserCreateResponse>(SERVER_ADDRESS + "user")(Method.POST),
         event,
     );
 }

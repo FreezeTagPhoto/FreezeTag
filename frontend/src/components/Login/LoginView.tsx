@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import logo from "@/icons/freezetag+text.svg";
 
 import LoginHandler from "@/api/auth/loginhandler";
-import UserCreator from "@/api/auth/usercreator";
+import UserCreator from "@/api/users/usercreator";
 
 import styles from "./LoginView.module.css";
 import { Eye, EyeOff, LogIn, UserPlus } from "lucide-react";
