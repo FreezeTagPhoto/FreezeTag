@@ -102,6 +102,7 @@ func (je JobsEndpoint) List(c *gin.Context) {
 // @produce     application/json
 // @router      /jobs/cancel/{id} [post]
 // @tags        jobs
+// @param       id   path      string  true  "Job Batch UUID" format(uuid)
 // @success     200 {object} api.StatusCancelledJob
 // @failure     404 {object} api.StatusNotFoundResponse
 func (je JobsEndpoint) Cancel(c *gin.Context) {
