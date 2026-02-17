@@ -64,7 +64,7 @@ type MetadataResponse struct {
 	Height int `json:"height"`
 }
 
-type StatusCancelledJob struct {
+type CancelledJobResponse struct {
 	UUID uuid.UUID `json:"uuid"`
 }
 

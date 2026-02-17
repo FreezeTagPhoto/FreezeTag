@@ -15,6 +15,7 @@ endif
 # ldflags to stop MacOS from complaining about a warning that doesn't matter constantly
 export CGO_LDFLAGS
 export CGO_ENABLED=1
+export CGO_CFLAGS=-w
 
 tidy:
 	go mod tidy
