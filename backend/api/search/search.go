@@ -91,7 +91,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 	if nearParam := c.Query("near"); nearParam != "" {
 		near, err := parseNearParam(nearParam)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: err.Error()})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 			return
 		}
 		query.WithLocation(near[0], near[1], near[2])
@@ -99,7 +99,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 	if tbParam := c.Query("takenBefore"); tbParam != "" {
 		tb, err := strconv.ParseInt(tbParam, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad takenBefore parameter"})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad takenBefore parameter"})
 			return
 		}
 		query.TakenBefore(time.Unix(tb, 0))
@@ -107,7 +107,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 	if taParam := c.Query("takenAfter"); taParam != "" {
 		ta, err := strconv.ParseInt(taParam, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad takenAfter parameter"})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad takenAfter parameter"})
 			return
 		}
 		query.TakenAfter(time.Unix(ta, 0))
@@ -115,7 +115,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 	if ubParam := c.Query("uploadedBefore"); ubParam != "" {
 		ub, err := strconv.ParseInt(ubParam, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad uploadedBefore parameter"})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad uploadedBefore parameter"})
 			return
 		}
 		query.UploadedBefore(time.Unix(ub, 0))
@@ -123,7 +123,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 	if uaParam := c.Query("uploadedAfter"); uaParam != "" {
 		ua, err := strconv.ParseInt(uaParam, 10, 64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad uploadedAfter parameter"})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad uploadedAfter parameter"})
 			return
 		}
 		query.UploadedAfter(time.Unix(ua, 0))
@@ -137,7 +137,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 		case "DateCreated":
 			field = queries.DateCreated
 		default:
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad sortBy parameter"})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad sortBy parameter"})
 			return
 		}
 	}
@@ -148,13 +148,13 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 		case "DESC":
 			order = queries.Descending
 		default:
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad sortOrder parameter"})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad sortOrder parameter"})
 			return
 		}
 	}
 	images, err := se.imageRepository.SearchImageOrdered(query, field, order)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, images)

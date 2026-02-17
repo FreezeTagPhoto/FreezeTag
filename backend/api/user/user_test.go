@@ -67,10 +67,10 @@ func TestGetUserUserIDServerError(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/users/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	assert.Equal(t, api.StatusBadRequestResponse{Error: "User not found"}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: "User not found"}, got)
 }
 
 func TestGetUserUserIDBadIDParse(t *testing.T) {
@@ -83,10 +83,10 @@ func TestGetUserUserIDBadIDParse(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/users/one", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	assert.Equal(t, api.StatusBadRequestResponse{Error: "Invalid user ID parameter: one"}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: "Invalid user ID parameter: one"}, got)
 }
 
 func TestListAllUsers(t *testing.T) {
@@ -141,10 +141,10 @@ func TestListAllUsersInternalError(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/users/all", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	assert.Equal(t, api.StatusBadRequestResponse{Error: "Failed to list users"}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: "Failed to list users"}, got)
 }
 
 func TestDeleteUserSuccess(t *testing.T) {
@@ -159,11 +159,11 @@ func TestDeleteUserSuccess(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", "/users/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	var got api.UserUpdateResponse
+	var got api.MessageResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedMessage := "user 1 deleted"
-	assert.Equal(t, api.UserUpdateResponse{Message: expectedMessage}, got)
+	assert.Equal(t, api.MessageResponse{Message: expectedMessage}, got)
 }
 
 func TestDeleteUserBadIDParse(t *testing.T) {
@@ -177,11 +177,11 @@ func TestDeleteUserBadIDParse(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", "/users/one", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedError := "invalid user ID parameter: one"
-	assert.Equal(t, api.StatusBadRequestResponse{Error: expectedError}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: expectedError}, got)
 }
 
 func TestDeleteUserInternalError(t *testing.T) {
@@ -196,11 +196,11 @@ func TestDeleteUserInternalError(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", "/users/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedError := "Failed to delete user"
-	assert.Equal(t, api.StatusBadRequestResponse{Error: expectedError}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: expectedError}, got)
 }
 
 func TestCreateUserSuccess(t *testing.T) {
@@ -251,7 +251,7 @@ func TestCreateUserInvalidCredentialBinds(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	assert.Contains(t, got.Error, "invalid request")
@@ -278,7 +278,7 @@ func TestCreateUserAddUserFails(t *testing.T) {
 	mockService.EXPECT().AddUser("testuser", "password").Return(nil, errors.New("database error"))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	assert.Contains(t, got.Error, "failed to create user")
@@ -303,11 +303,11 @@ func TestAddPermissionsSuccess(t *testing.T) {
 	mockRepo.EXPECT().GrantPermissions(database.UserID(1), mock.Anything).Return(nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	var got api.UserUpdateResponse
+	var got api.MessageResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedMessage := "permissions granted"
-	assert.Equal(t, api.UserUpdateResponse{Message: expectedMessage}, got)
+	assert.Equal(t, api.MessageResponse{Message: expectedMessage}, got)
 }
 
 func TestAddPermissionsFailId(t *testing.T) {
@@ -322,11 +322,11 @@ func TestAddPermissionsFailId(t *testing.T) {
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedError := "invalid user ID parameter: one"
-	assert.Equal(t, api.StatusBadRequestResponse{Error: expectedError}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: expectedError}, got)
 }
 
 func TestAddPermissionsFailGrant(t *testing.T) {
@@ -344,11 +344,11 @@ func TestAddPermissionsFailGrant(t *testing.T) {
 	mockRepo.EXPECT().GrantPermissions(database.UserID(1), data.Permissions{data.CreateUser}).Return(errors.New("database error"))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedError := "failed to grant permissions: database error"
-	assert.Equal(t, api.StatusBadRequestResponse{Error: expectedError}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: expectedError}, got)
 }
 
 func TestAddPermissionsNoPermissions(t *testing.T) {
@@ -363,11 +363,11 @@ func TestAddPermissionsNoPermissions(t *testing.T) {
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedError := "no permissions provided"
-	assert.Equal(t, api.StatusBadRequestResponse{Error: expectedError}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: expectedError}, got)
 }
 
 // Deleting Permissions
@@ -390,11 +390,11 @@ func TestRevokePermissionsSuccess(t *testing.T) {
 	mockRepo.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.CreateUser, data.ReadFiles, data.WriteFiles, data.DeleteUser}).Return(nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	var got api.UserUpdateResponse
+	var got api.MessageResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedMessage := "permissions revoked"
-	assert.Equal(t, api.UserUpdateResponse{Message: expectedMessage}, got)
+	assert.Equal(t, api.MessageResponse{Message: expectedMessage}, got)
 }
 
 func TestRevokePermissionsFailId(t *testing.T) {
@@ -409,11 +409,11 @@ func TestRevokePermissionsFailId(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedError := "invalid user ID parameter: one"
-	assert.Equal(t, api.StatusBadRequestResponse{Error: expectedError}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: expectedError}, got)
 }
 
 func TestRevokePermissionsFailGrant(t *testing.T) {
@@ -431,11 +431,11 @@ func TestRevokePermissionsFailGrant(t *testing.T) {
 	mockRepo.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.CreateUser}).Return(errors.New("database error"))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedError := "failed to revoke permissions: database error"
-	assert.Equal(t, api.StatusBadRequestResponse{Error: expectedError}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: expectedError}, got)
 }
 
 func TestRevokePermissionsNoPermissions(t *testing.T) {
@@ -450,9 +450,9 @@ func TestRevokePermissionsNoPermissions(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	expectedError := "no permissions provided"
-	assert.Equal(t, api.StatusBadRequestResponse{Error: expectedError}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: expectedError}, got)
 }

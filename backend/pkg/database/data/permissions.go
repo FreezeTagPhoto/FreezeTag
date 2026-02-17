@@ -34,24 +34,24 @@ func (p Permissions) HasPermission(permission Permission) bool {
 	return slices.Contains(p, permission)
 }
 
-func (p Permissions) HasPermissionString(permission string) bool {
+func (p Permissions) HasPermissionSlug(slug string) bool {
 	for _, perm := range p {
-		if perm.Slug == permission {
+		if perm.Slug == slug {
 			return true
 		}
 	}
 	return false
 }
 
-func GetPermissionFromSlug(permission string) (Permission, bool) {
+func GetPermissionFromSlug(slug string) (Permission, bool) {
 	for _, perm := range allPermissions {
-		if perm.Slug == permission {
+		if perm.Slug == slug {
 			return perm, true
 		}
 	}
 	return Permission{}, false
 }
 
-func All() Permissions {
+func AllPermissions() Permissions {
 	return allPermissions
 }

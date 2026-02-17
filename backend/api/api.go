@@ -7,66 +7,54 @@ import (
 	"freezetag/backend/pkg/repositories"
 	"freezetag/backend/pkg/services"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-type StatusOkUploadResponse struct {
+type UploadResponse struct {
 	Uploaded []repositories.ImageUploadSuccess `json:"uploaded"`
 	Errors   []repositories.ImageUploadFailure `json:"errors"`
 }
 
-type StatusOkTagDeleteResponse struct {
+type TagDeleteResponse struct {
 	Deleted []repositories.ImageTagSuccess `json:"deleted"`
 	Errors  []repositories.ImageTagFail    `json:"errors"`
 }
 
-type StatusOkTagAddResponse struct {
+type TagAddResponse struct {
 	Added  []repositories.ImageTagSuccess `json:"added"`
 	Errors []repositories.ImageTagFail    `json:"errors"`
 }
 
-type StatusBadRequestResponse struct {
-	Error string `json:"error"`
-}
-
-type StatusServerErrorResponse struct {
-	Error string `json:"error"`
-}
-
-type StatusNotFoundResponse struct {
-	Error string `json:"error"`
-}
-
-type ApiEndpoint interface {
-	RegisterEndpoints(e *gin.Engine)
-}
-
-type StatusLoginFail struct {
-	Error string `json:"error"`
-}
-
-type StatusLoginSuccess struct {
-	Token string `json:"token"`
-}
-
-type StatusLogoutSuccess struct {
-	Status string `json:"status"`
-}
-
-type LoginCredentials struct {
-	Username string `form:"username" json:"username" binding:"required"`
-	Password string `form:"password" json:"password" binding:"required"`
-}
-
-type StatusLoginUser struct {
+type LoginUserResponse struct {
 	UserID      database.UserID  `json:"user_id"`
 	Permissions data.Permissions `json:"permissions"`
 }
 
-type TagCounts map[string]int64
+type BadRequestResponse struct {
+	Error string `json:"error"`
+}
 
-type UserUpdateResponse struct {
+type ServerErrorResponse struct {
+	Error string `json:"error"`
+}
+
+type NotFoundResponse struct {
+	Error string `json:"error"`
+}
+
+type LoginFailResponse struct {
+	Error string `json:"error"`
+}
+
+type LoginSuccessResponse struct {
+	Token string `json:"token"`
+}
+
+type LogoutSuccessResponse struct {
+	Status string `json:"status"`
+}
+
+type MessageResponse struct {
 	Message string `json:"message"`
 }
 
@@ -80,8 +68,17 @@ type StatusCancelledJob struct {
 	UUID uuid.UUID `json:"uuid"`
 }
 
+type LoginCredentials struct {
+	Username string `form:"username" json:"username" binding:"required"`
+	Password string `form:"password" json:"password" binding:"required"`
+}
+
+type TagCounts map[string]int64
+
 type PasswordChangeRequest struct {
-	NewPassword string `form:"new_password" json:"new_password" binding:"required"`
+	Username        string `form:"username" json:"username" binding:"required"`
+	CurrentPassword string `form:"current_password" json:"current_password" binding:"required"`
+	NewPassword     string `form:"new_password" json:"new_password" binding:"required"`
 }
 
 type innerFileJob struct {

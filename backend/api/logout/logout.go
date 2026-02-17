@@ -28,5 +28,5 @@ func (lo LogoutEndpoint) HandleLogout(c *gin.Context) {
 		MaxAge:   -1,
 		HttpOnly: true,
 	})
-	c.JSON(http.StatusOK, api.StatusLogoutSuccess{Status: "ok"})
+	c.JSON(http.StatusOK, api.LogoutSuccessResponse{Status: "ok"})
 }

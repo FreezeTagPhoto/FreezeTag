@@ -39,13 +39,13 @@ func InitUploadEndpoint(jobService services.JobService) UploadEndpoint {
 func (ue UploadEndpoint) Upload(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "failed to parse multipart form: " + err.Error()})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to parse multipart form: " + err.Error()})
 		return
 	}
 
 	files, ok := form.File["file"]
 	if !ok || len(files) == 0 {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "multipart form has no file field or no files were uploaded"})
 		return
 	}
 
@@ -54,7 +54,7 @@ func (ue UploadEndpoint) Upload(c *gin.Context) {
 		bytes, err := readFileBytes(file)
 
 		if err != nil {
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
 			return
 		}
 		jobs = append(jobs, services.FileJob{Name: file.Filename, Bytes: bytes})

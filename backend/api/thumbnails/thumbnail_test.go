@@ -49,8 +49,8 @@ func TestGetThumbnailBadId(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := api.StatusBadRequestResponse{Error: "Invalid image ID parameter"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "Invalid image ID parameter"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -80,8 +80,8 @@ func TestGetThumbnailDatabaseFail(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	expected := api.StatusServerErrorResponse{Error: "mock error"}
-	var got api.StatusServerErrorResponse
+	expected := api.ServerErrorResponse{Error: "mock error"}
+	var got api.ServerErrorResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -98,8 +98,8 @@ func TestGetThumbnailDatabaseNilReturn(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
-	expected := api.StatusNotFoundResponse{Error: "thumbnail not found"}
-	var got api.StatusNotFoundResponse
+	expected := api.NotFoundResponse{Error: "thumbnail not found"}
+	var got api.NotFoundResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)

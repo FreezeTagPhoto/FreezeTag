@@ -207,12 +207,12 @@ func TestGetUserPermissions(t *testing.T) {
 	user, err := db.AddUser("permtest", "hash")
 	require.NoError(t, err)
 
-	err = db.GrantUserPermissions(user.ID, data.All())
+	err = db.GrantUserPermissions(user.ID, data.AllPermissions())
 	require.NoError(t, err)
 	permissions, err := db.GetUserPermissions(user.ID)
 
 	require.NoError(t, err)
-	assert.ElementsMatch(t, data.All(), permissions)
+	assert.ElementsMatch(t, data.AllPermissions(), permissions)
 }
 
 func TestGetUserPermissionsStress(t *testing.T) {
@@ -221,19 +221,19 @@ func TestGetUserPermissionsStress(t *testing.T) {
 	user, err := db.AddUser("permtest", "hash")
 	require.NoError(t, err)
 
-	err = db.GrantUserPermissions(user.ID, data.All())
+	err = db.GrantUserPermissions(user.ID, data.AllPermissions())
 	require.NoError(t, err)
 	permissions, err := db.GetUserPermissions(user.ID)
 
 	require.NoError(t, err)
-	assert.ElementsMatch(t, data.All(), permissions)
+	assert.ElementsMatch(t, data.AllPermissions(), permissions)
 
 	err = db.RevokeUserPermissions(user.ID, data.Permissions{data.ReadUser})
 	require.NoError(t, err)
 	permissions, err = db.GetUserPermissions(user.ID)
 	require.NoError(t, err)
 	assert.NotContains(t, permissions, data.ReadUser)
-	err = db.RevokeUserPermissions(user.ID, data.All())
+	err = db.RevokeUserPermissions(user.ID, data.AllPermissions())
 	require.NoError(t, err)
 	permissions, err = db.GetUserPermissions(user.ID)
 	require.NoError(t, err)
@@ -243,11 +243,11 @@ func TestGetUserPermissionsStress(t *testing.T) {
 	permissions, err = db.GetUserPermissions(user.ID)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, data.Permissions{data.ReadTags}, permissions)
-	err = db.GrantUserPermissions(user.ID, data.All())
+	err = db.GrantUserPermissions(user.ID, data.AllPermissions())
 	require.NoError(t, err)
 	permissions, err = db.GetUserPermissions(user.ID)
 	require.NoError(t, err)
-	assert.ElementsMatch(t, data.All(), permissions)
+	assert.ElementsMatch(t, data.AllPermissions(), permissions)
 }
 
 func TestAddPermissionNonSeededPermission(t *testing.T) {

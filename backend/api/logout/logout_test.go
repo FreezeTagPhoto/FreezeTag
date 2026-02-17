@@ -33,9 +33,9 @@ func TestLogout(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, -1, w.Result().Cookies()[0].MaxAge)
 	assert.Equal(t, "", w.Result().Cookies()[0].Value)
-	var got api.StatusLogoutSuccess
+	var got api.LogoutSuccessResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.StatusLogoutSuccess{Status: "ok"}
+	expected := api.LogoutSuccessResponse{Status: "ok"}
 	assert.Equal(t, expected, got)
 }

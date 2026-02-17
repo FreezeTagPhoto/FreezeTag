@@ -74,8 +74,8 @@ func TestPostWithNoFiles(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := api.StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -95,8 +95,8 @@ func TestPostWithMalformedMultipartForm(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := api.StatusBadRequestResponse{Error: "failed to parse multipart form: no multipart boundary param in Content-Type"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "failed to parse multipart form: no multipart boundary param in Content-Type"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -116,8 +116,8 @@ func TestPostTextNoMultipartForm(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := api.StatusBadRequestResponse{Error: "failed to parse multipart form: request Content-Type isn't multipart/form-data"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "failed to parse multipart form: request Content-Type isn't multipart/form-data"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)
@@ -162,8 +162,8 @@ func TestPostWithNoFileField(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := api.StatusBadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "multipart form has no file field or no files were uploaded"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 
 	assert.Equal(t, expected, got)

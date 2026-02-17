@@ -91,8 +91,8 @@ func TestGetMetadataError(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/metadata/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	expected := api.StatusServerErrorResponse{Error: "mock error"}
-	var got api.StatusServerErrorResponse
+	expected := api.ServerErrorResponse{Error: "mock error"}
+	var got api.ServerErrorResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -113,8 +113,8 @@ func TestGetMetadataError2(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/metadata/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	expected := api.StatusServerErrorResponse{Error: "mock error"}
-	var got api.StatusServerErrorResponse
+	expected := api.ServerErrorResponse{Error: "mock error"}
+	var got api.ServerErrorResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -129,8 +129,8 @@ func TestGetMetadataBadId(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/metadata/abc", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "Invalid image ID parameter"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "Invalid image ID parameter"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }

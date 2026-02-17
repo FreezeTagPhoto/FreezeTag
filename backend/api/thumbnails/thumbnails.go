@@ -33,7 +33,7 @@ func (te ThumbnailEndpoint) HandleGet(c *gin.Context) {
 	idParam := c.Param("id")
 	var id database.ImageId
 	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "Invalid image ID parameter"})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid image ID parameter"})
 		return
 	} else {
 		id = database.ImageId(num)
@@ -47,11 +47,11 @@ func (te ThumbnailEndpoint) HandleGet(c *gin.Context) {
 	}
 	data, err := te.imageRepository.RetrieveThumbnail(id, size)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
 	if data == nil {
-		c.JSON(http.StatusNotFound, api.StatusNotFoundResponse{Error: "thumbnail not found"})
+		c.JSON(http.StatusNotFound, api.NotFoundResponse{Error: "thumbnail not found"})
 		return
 	}
 	c.Data(http.StatusOK, "image/webp", data)

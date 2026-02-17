@@ -11,6 +11,7 @@ import (
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
+	"freezetag/backend/api/password"
 	"freezetag/backend/api/upload"
 	"freezetag/backend/api/user"
 	"freezetag/backend/middleware"
@@ -148,7 +149,9 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	authGroup.Use(middleware.RequireAuth(deps.authService))
 
 	initLoginEndpoints(router, deps)
+	
 	initLogoutEndpoints(authGroup, deps)
+	initPasswordEndpoints(authGroup, deps)
 	initTagEndpoints(authGroup, deps)
 	initUploadEndpoints(authGroup, deps)
 	initThumbnailEndpoints(authGroup, deps)
@@ -157,6 +160,14 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	initJobsEndpoints(authGroup, deps)
 	initFileEndpoints(authGroup, deps)
 	initUserEndpoints(authGroup, deps)
+}
+
+func initPasswordEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	passwordGroup := baseGroup.Group("/password")
+	{
+		pe := password.InitPasswordEndpoint(deps.authService)
+		passwordGroup.POST("/change", pe.ChangePassword)
+	}
 }
 
 func initLoginEndpoints(baseGroup gin.IRouter, deps *dependencies) {

@@ -21,6 +21,7 @@ var (
 	JwtSigningMethod   = jwt.SigningMethodHS256
 	JwtSecretKey       = ""
 	JwtExpirationHours = time.Duration(24) * time.Hour
+	bcryptCost         = bcrypt.DefaultCost
 )
 
 type Claims struct {
@@ -31,6 +32,8 @@ type Claims struct {
 type AuthService interface {
 	AddUser(username string, password string) (*database.PublicUser, error)
 	EnsureLogin() error
+	ChangePassword(userID database.UserID, currentPassword string, newPassword string) error
+	ForceChangePassword(userID database.UserID, newPassword string) error
 	AuthenticateUser(username string, password string) (string, error)
 	ValidateJWT(tokenString string) (Claims, error)
 	ValidateAPIToken(token string) (data.Permissions, error)
@@ -97,7 +100,7 @@ func (s *DefaultAuthService) AuthenticateUser(username string, password string) 
 }
 
 func (s *DefaultAuthService) AddUser(username string, password string) (*database.PublicUser, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
 	if err != nil {
 		return nil, err
 	}
@@ -123,6 +126,30 @@ func (s *DefaultAuthService) ValidateAPIToken(token string) (data.Permissions, e
 		return nil, err
 	}
 	return permissions, nil
+}
+
+func (s *DefaultAuthService) ChangePassword(userID database.UserID, currentPassword string, newPassword string) error {
+	hash, err := s.userRepo.GetUserPasswordHash(userID)
+	if err != nil {
+		return err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(currentPassword))
+	if err != nil {
+		return err
+	}
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcryptCost)
+	if err != nil {
+		return err
+	}
+	return s.userRepo.ChangePassword(userID, string(newHash))
+}
+
+func (s *DefaultAuthService) ForceChangePassword(userID database.UserID, newPassword string) error {
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcryptCost)
+	if err != nil {
+		return err
+	}
+	return s.userRepo.ChangePassword(userID, string(newHash))
 }
 
 func createTokenWithPermissions(userID database.UserID, permissions data.Permissions) (string, error) {

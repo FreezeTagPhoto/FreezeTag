@@ -32,13 +32,13 @@ func InitLoginEndpoint(authService services.AuthService) LoginEndpoint {
 func (le LoginEndpoint) Login(c *gin.Context) {
 	var req api.LoginCredentials
 	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "invalid request: " + err.Error()})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request: " + err.Error()})
 		return
 	}
 
 	token, err := le.authService.AuthenticateUser(req.Username, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "authentication failed: " + err.Error()})
+		c.JSON(http.StatusUnauthorized, api.LoginFailResponse{Error: "authentication failed: " + err.Error()})
 		return
 	}
 	c.SetCookieData(&http.Cookie{
@@ -47,7 +47,7 @@ func (le LoginEndpoint) Login(c *gin.Context) {
 		Secure:   false,
 		HttpOnly: true,
 	})
-	c.JSON(http.StatusOK, api.StatusLoginSuccess{Token: token})
+	c.JSON(http.StatusOK, api.LoginSuccessResponse{Token: token})
 }
 
 // @summary Check login status
@@ -60,12 +60,12 @@ func (le LoginEndpoint) Login(c *gin.Context) {
 func (le LoginEndpoint) LoginInfo(c *gin.Context) {
 	authenticated, err := c.Cookie("token")
 	if err != nil || authenticated == "" {
-		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
+		c.JSON(http.StatusUnauthorized, api.LoginFailResponse{Error: "not authenticated"})
 		return
 	}
 	claims, err := le.authService.ValidateJWT(authenticated)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, api.StatusLoginFail{Error: "not authenticated"})
+		c.JSON(http.StatusUnauthorized, api.LoginFailResponse{Error: "not authenticated"})
 		return
 	}
 	uid, err := strconv.ParseInt(claims.Subject, 10, 64)
@@ -75,5 +75,5 @@ func (le LoginEndpoint) LoginInfo(c *gin.Context) {
 	}
 
 	id := database.UserID(uid)
-	c.JSON(http.StatusOK, api.StatusLoginUser{UserID: id, Permissions: claims.Permissions})
+	c.JSON(http.StatusOK, api.LoginUserResponse{UserID: id, Permissions: claims.Permissions})
 }

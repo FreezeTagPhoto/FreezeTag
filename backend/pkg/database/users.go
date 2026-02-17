@@ -83,7 +83,7 @@ func (s SqliteUserDatabase) seedPermissions() error {
 	}
 	defer stmt.Close() //nolint:errcheck
 
-	for _, p := range data.All() {
+	for _, p := range data.AllPermissions() {
 		if _, err := stmt.Exec(p.Slug, p.Name, p.Description); err != nil {
 			return err
 		}
