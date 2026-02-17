@@ -66,8 +66,8 @@ func parseNearParam(near string) ([3]float64, error) {
 // @param       sortBy         query string   false "sort by"                               Enums(DateAdded,DateCreated) default(DateAdded)
 // @param       sortOrder      query string   false "sort order"                            Enums(ASC,DESC) default(DESC)
 // @success     200 {array}  database.ImageId
-// @failure     400 {object} api.StatusBadRequestResponse
-// @failure     500 {object} api.StatusServerErrorResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
 func (se SearchEndpoint) Search(c *gin.Context) {
 	query := queries.CreateImageQuery()
 	if make := c.Query("make"); make != "" {

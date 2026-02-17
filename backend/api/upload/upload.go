@@ -11,12 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-/* Types */
 type UploadEndpoint struct {
 	jobService services.JobService
 }
-
-/* Functions */
 
 // Creates a new UploadEndpoint with the given image repository.
 func InitUploadEndpoint(jobService services.JobService) UploadEndpoint {
@@ -34,8 +31,8 @@ func InitUploadEndpoint(jobService services.JobService) UploadEndpoint {
 // @tags        upload
 // @param       file formData []file true "image file to upload" collectionFormat(multi)
 // @success     202 {object} string "the UUID of the created job batch for the upload"
-// @failure     400 {object} api.StatusBadRequestResponse
-// @failure     500 {object} api.StatusServerErrorResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
 func (ue UploadEndpoint) Upload(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {

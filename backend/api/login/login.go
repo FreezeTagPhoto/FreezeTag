@@ -26,8 +26,8 @@ func InitLoginEndpoint(authService services.AuthService) LoginEndpoint {
 // @accept application/json
 // @produce application/json
 // @param request body api.LoginCredentials true "User Login Details"
-// @success 200 {object} api.StatusLoginSuccess "Authentication successful"
-// @failure 401 {object} api.StatusLoginFail "Authentication failed"
+// @success 200 {object} api.LoginSuccessResponse "Authentication successful"
+// @failure 401 {object} api.LoginFailResponse“ "Authentication failed"
 // @router /login [post]
 func (le LoginEndpoint) Login(c *gin.Context) {
 	var req api.LoginCredentials
@@ -54,8 +54,8 @@ func (le LoginEndpoint) Login(c *gin.Context) {
 // @description Checks if the user is currently authenticated.
 // @tags auth, login
 // @produce application/json
-// @success 200 {object} api.StatusLoginUser "user is authenticated"
-// @failure 401 {object} api.StatusLoginFail "User is not authenticated"
+// @success 200 {object} api.LoginUserResponse "user is authenticated"
+// @failure 401 {object} api.LoginFailResponse "User is not authenticated"
 // @router /login [get]
 func (le LoginEndpoint) LoginInfo(c *gin.Context) {
 	authenticated, err := c.Cookie("token")

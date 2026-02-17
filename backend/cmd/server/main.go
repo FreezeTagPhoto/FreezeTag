@@ -8,10 +8,10 @@ import (
 	"freezetag/backend/api/login"
 	"freezetag/backend/api/logout"
 	"freezetag/backend/api/metadata"
+	"freezetag/backend/api/password"
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
-	"freezetag/backend/api/password"
 	"freezetag/backend/api/upload"
 	"freezetag/backend/api/user"
 	"freezetag/backend/middleware"
@@ -149,7 +149,7 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	authGroup.Use(middleware.RequireAuth(deps.authService))
 
 	initLoginEndpoints(router, deps)
-	
+
 	initLogoutEndpoints(authGroup, deps)
 	initPasswordEndpoints(authGroup, deps)
 	initTagEndpoints(authGroup, deps)

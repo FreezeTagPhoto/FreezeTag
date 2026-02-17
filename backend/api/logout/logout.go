@@ -18,8 +18,8 @@ func InitLogoutEndpoint(auth services.AuthService) LogoutEndpoint {
 
 // @summary invalidate the current user's session token
 // @tags    auth, logout
-// @success 200 {object} api.StatusLogoutSuccess
-// @failure 401 {object} api.StatusBadRequestResponse
+// @success 200 {object} api.LogoutSuccessResponse
+// @failure 401 {object} api.LoginFailResponse
 // @router /logout [post]
 func (lo LogoutEndpoint) HandleLogout(c *gin.Context) {
 	c.SetCookieData(&http.Cookie{

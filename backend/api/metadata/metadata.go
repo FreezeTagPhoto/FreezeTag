@@ -27,8 +27,8 @@ func InitMetadataEndpoint(repo repositories.ImageRepository) MetadataEndpoint {
 // @router      /metadata/{id} [get]
 // @param       id path int true "Image ID"
 // @success     200 {object} api.MetadataResponse
-// @failure     400 {object} api.StatusBadRequestResponse
-// @failure     500 {object} api.StatusServerErrorResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
 func (me MetadataEndpoint) Metadata(c *gin.Context) {
 	idParam := c.Param("id")
 	var id database.ImageId

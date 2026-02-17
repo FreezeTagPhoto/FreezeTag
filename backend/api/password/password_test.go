@@ -21,38 +21,38 @@ func (pe PasswordEndpoint) RegisterEndpoints(e gin.IRoutes) {
 }
 
 func TestChangePassword(t *testing.T) {
-    w := httptest.NewRecorder()
-    mockAuthService := mockUserService.NewMockAuthService(t)
+	w := httptest.NewRecorder()
+	mockAuthService := mockUserService.NewMockAuthService(t)
 	mockAuthService.EXPECT().ChangePassword(database.UserID(1), "oldpassword", "newpassword").Return(nil).Once()
-    router := gin.New() 
+	router := gin.New()
 
 	// simulate middleware here so that userID gets set correctly
-	// could also just call the handler function directly with a proper context, but this is closer to 
+	// could also just call the handler function directly with a proper context, but this is closer to
 	// a real request
-    router.Use(func(c *gin.Context) {
-        c.Set("userID", "1")
-        c.Next()
-    })
-    InitPasswordEndpoint(mockAuthService).RegisterEndpoints(router)
-    reqBody := api.PasswordChangeRequest{
-        Username:        "testuser",
-        CurrentPassword: "oldpassword",
-        NewPassword:     "newpassword",
-    }
-    reqBodyBytes, err := json.Marshal(reqBody)
-    require.NoError(t, err)
-    req, err := http.NewRequest("POST", "/password/change", bytes.NewBuffer(reqBodyBytes))
-    require.NoError(t, err)
-    req.Header.Set("Content-Type", "application/json")
-    router.ServeHTTP(w, req)
-    assert.Equal(t, http.StatusOK, w.Code)
-    
-    var got api.MessageResponse
-    err = json.Unmarshal(w.Body.Bytes(), &got)
-    assert.NoError(t, err)
-    
-    expected := api.MessageResponse{Message: "password changed successfully"}
-    assert.Equal(t, expected, got)
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
+	InitPasswordEndpoint(mockAuthService).RegisterEndpoints(router)
+	reqBody := api.PasswordChangeRequest{
+		Username:        "testuser",
+		CurrentPassword: "oldpassword",
+		NewPassword:     "newpassword",
+	}
+	reqBodyBytes, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+	req, err := http.NewRequest("POST", "/password/change", bytes.NewBuffer(reqBodyBytes))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var got api.MessageResponse
+	err = json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+
+	expected := api.MessageResponse{Message: "password changed successfully"}
+	assert.Equal(t, expected, got)
 }
 
 func TestChangePasswordInvalidRequest(t *testing.T) {

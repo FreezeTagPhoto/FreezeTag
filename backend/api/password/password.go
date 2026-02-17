@@ -18,16 +18,6 @@ func InitPasswordEndpoint(authService services.AuthService) PasswordEndpoint {
 	}
 }
 
-// @summary     Get metadata
-// @description Retrieve metadata for an image
-// @produce     application/json
-// @tags        metadata, images, search
-// @router      /metadata/{id} [get]
-// @param       id path int true "Image ID"
-// @success     200 {object} api.MetadataResponse
-// @failure     400 {object} api.StatusBadRequestResponse
-// @failure     500 {object} api.StatusServerErrorResponse
-
 // @summary Change user password
 // @description Allows an authenticated user to change their password by providing their current password and a new password.
 // @tags auth, password
@@ -35,9 +25,9 @@ func InitPasswordEndpoint(authService services.AuthService) PasswordEndpoint {
 // @produce application/json
 // @param request body api.PasswordChangeRequest true "Password Change Request"
 // @success 200 {object} api.MessageResponse "Password changed successfully"
-// @failure 400 {object} api.StatusBadRequestResponse "Invalid request"
-// @failure 401 {object} api.StatusBadRequestResponse "User not authenticated"
-// @failure 500 {object} api.StatusBadRequestResponse "Failed to change password"
+// @failure 400 {object} api.BadRequestResponse "Invalid request"
+// @failure 401 {object} api.BadRequestResponse "User not authenticated"
+// @failure 500 {object} api.BadRequestResponse "Failed to change password"
 // @router /password/change [post]
 func (pe PasswordEndpoint) ChangePassword(c *gin.Context) {
 	var req api.PasswordChangeRequest
