@@ -7,7 +7,7 @@ import TagChangeButton from "@/components/UI/TagChangeButton/TagChangeButton";
 import JobsHandler from "@/api/jobs/jobshandler";
 import ProgressBar from "@/components/UI/ProgressBar/ProgressBar";
 
-const POLLING_DELAY = 200; // 0.2 seconds, in milliseconds
+const POLLING_DELAY = 500; // 0.5 seconds, in milliseconds
 
 export default function Home() {
     const [ids, setIds] = useState<number[]>([]);

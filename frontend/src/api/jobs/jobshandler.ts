@@ -27,7 +27,7 @@ type JobResponse = {
 
 export default async function JobsHandler(event: string): Promise<JobsResult> {
     return job_query_with_handler(
-        ApiHandler<JobResponse>(SERVER_ADDRESS + "jobquery/")(Method.GET),
+        ApiHandler<JobResponse>(SERVER_ADDRESS + "jobs/details/")(Method.GET),
         event,
     );
 }
