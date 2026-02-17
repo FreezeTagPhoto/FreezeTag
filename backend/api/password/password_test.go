@@ -35,7 +35,6 @@ func TestChangePassword(t *testing.T) {
 	})
 	InitPasswordEndpoint(mockAuthService).RegisterEndpoints(router)
 	reqBody := api.PasswordChangeRequest{
-		Username:        "testuser",
 		CurrentPassword: "oldpassword",
 		NewPassword:     "newpassword",
 	}
@@ -79,7 +78,6 @@ func TestChangePasswordNoIdInJWT(t *testing.T) {
 	router := gin.New()
 	InitPasswordEndpoint(mockAuthService).RegisterEndpoints(router)
 	reqBody := api.PasswordChangeRequest{
-		Username:        "testuser",
 		CurrentPassword: "oldpassword",
 		NewPassword:     "newpassword",
 	}
@@ -111,7 +109,6 @@ func TestJWTSubjectIsNotStringType(t *testing.T) {
 	})
 	InitPasswordEndpoint(mockAuthService).RegisterEndpoints(router)
 	reqBody := api.PasswordChangeRequest{
-		Username:        "testuser",
 		CurrentPassword: "oldpassword",
 		NewPassword:     "newpassword",
 	}
@@ -140,7 +137,6 @@ func TestChangePasswordJWTSubInvalidNumber(t *testing.T) {
 	})
 	InitPasswordEndpoint(mockAuthService).RegisterEndpoints(router)
 	reqBody := api.PasswordChangeRequest{
-		Username:        "testuser",
 		CurrentPassword: "oldpassword",
 		NewPassword:     "newpassword",
 	}
@@ -170,7 +166,6 @@ func TestChangePasswordServiceError(t *testing.T) {
 	})
 	InitPasswordEndpoint(mockAuthService).RegisterEndpoints(router)
 	reqBody := api.PasswordChangeRequest{
-		Username:        "testuser",
 		CurrentPassword: "oldpassword",
 		NewPassword:     "newpassword",
 	}

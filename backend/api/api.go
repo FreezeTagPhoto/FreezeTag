@@ -76,7 +76,6 @@ type LoginCredentials struct {
 type TagCounts map[string]int64
 
 type PasswordChangeRequest struct {
-	Username        string `form:"username" json:"username" binding:"required"`
 	CurrentPassword string `form:"current_password" json:"current_password" binding:"required"`
 	NewPassword     string `form:"new_password" json:"new_password" binding:"required"`
 }
