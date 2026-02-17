@@ -277,8 +277,8 @@ func TestCreateUserAddUserFails(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	mockService.EXPECT().AddUser("testuser", "password").Return(nil, errors.New("database error"))
 	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.BadRequestResponse
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	var got api.ServerErrorResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	assert.Contains(t, got.Error, "failed to create user")

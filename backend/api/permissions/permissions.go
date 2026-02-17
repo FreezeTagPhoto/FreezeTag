@@ -9,12 +9,8 @@ import (
 
 type PermissionEndpoint struct{}
 
-func initPermissionEndpoint() *PermissionEndpoint {
+func InitPermissionEndpoint() *PermissionEndpoint {
 	return &PermissionEndpoint{}
-}
-
-func (p *PermissionEndpoint) RegisterEndpoints(r gin.IRoutes) {
-	r.GET("/permissions", p.ListPermissions)
 }
 
 // @summary List all permissions

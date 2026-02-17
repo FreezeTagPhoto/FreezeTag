@@ -114,7 +114,6 @@ func TestAuthMiddlewareNoSub(t *testing.T) {
 	assert.Equal(t, nil, userID)
 }
 
-
 func TestAuthMiddlewareHasPermissions(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)

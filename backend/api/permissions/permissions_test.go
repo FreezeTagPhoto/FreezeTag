@@ -15,7 +15,7 @@ import (
 func TestListPermissions(t *testing.T) {
 	w := httptest.NewRecorder()
 	router := gin.Default()
-	pe := initPermissionEndpoint()
+	pe := InitPermissionEndpoint()
 	router.GET("/permissions/list", pe.ListPermissions)
 
 	req, _ := http.NewRequest("GET", "/permissions/list", nil)
