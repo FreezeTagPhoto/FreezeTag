@@ -21,8 +21,10 @@ CREATE TABLE IF NOT EXISTS API_Token (
 
 
 CREATE TABLE IF NOT EXISTS App_Permissions (
-    id INTEGER PRIMARY KEY NOT NULL,
-    permission TEXT NOT NULL UNIQUE
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL UNIQUE,          
+    name TEXT NOT NULL UNIQUE,                
+    description TEXT                  
 );
 
 CREATE TABLE IF NOT EXISTS User_Permissions (
@@ -32,7 +34,6 @@ CREATE TABLE IF NOT EXISTS User_Permissions (
     FOREIGN KEY (permissionId) REFERENCES App_Permissions(id) ON DELETE CASCADE,
     PRIMARY KEY (userId, permissionId)
 );
-
 -- admin users might not necessarily want to give all permissions to a token
 CREATE TABLE IF NOT EXISTS Token_Permissions (
     tokenId INTEGER NOT NULL,

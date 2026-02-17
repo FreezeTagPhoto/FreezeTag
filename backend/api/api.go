@@ -80,6 +80,10 @@ type StatusCancelledJob struct {
 	UUID uuid.UUID `json:"uuid"`
 }
 
+type PasswordChangeRequest struct {
+	NewPassword string `form:"new_password" json:"new_password" binding:"required"`
+}
+
 type innerFileJob struct {
 	services.FileJob
 	id int `json:"-"`

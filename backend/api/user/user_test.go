@@ -17,6 +17,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -292,14 +293,14 @@ func TestAddPermissionsSuccess(t *testing.T) {
 	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 
 	params := url.Values{}
-	params.Add("permission", "1")
-	params.Add("permission", "a")
-	params.Add("permission", "3")
-	params.Add("permission", "1213")
+	params.Add("permission", data.CreateUser.Slug)
+	params.Add("permission", data.ReadFiles.Slug)
+	params.Add("permission", data.WriteFiles.Slug)
+	params.Add("permission", data.DeleteUser.Slug)
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", reqURL, nil)
-	mockRepo.EXPECT().GrantPermissions(database.UserID(1), data.Permissions{"1", "a", "3", "1213"}).Return(nil)
+	mockRepo.EXPECT().GrantPermissions(database.UserID(1), mock.Anything).Return(nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	var got api.UserUpdateResponse
@@ -336,11 +337,11 @@ func TestAddPermissionsFailGrant(t *testing.T) {
 	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 
 	params := url.Values{}
-	params.Add("permission", "1")
+	params.Add("permission", "create:user")
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", reqURL, nil)
-	mockRepo.EXPECT().GrantPermissions(database.UserID(1), data.Permissions{"1"}).Return(errors.New("database error"))
+	mockRepo.EXPECT().GrantPermissions(database.UserID(1), data.Permissions{data.CreateUser}).Return(errors.New("database error"))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	var got api.StatusBadRequestResponse
@@ -379,14 +380,14 @@ func TestRevokePermissionsSuccess(t *testing.T) {
 	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 
 	params := url.Values{}
-	params.Add("permission", "1")
-	params.Add("permission", "a")
-	params.Add("permission", "3")
-	params.Add("permission", "1213")
+	params.Add("permission", "create:user")
+	params.Add("permission", "read:files")
+	params.Add("permission", "write:files")
+	params.Add("permission", "delete:user")
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
-	mockRepo.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{"1", "a", "3", "1213"}).Return(nil)
+	mockRepo.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.CreateUser, data.ReadFiles, data.WriteFiles, data.DeleteUser}).Return(nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	var got api.UserUpdateResponse
@@ -423,11 +424,11 @@ func TestRevokePermissionsFailGrant(t *testing.T) {
 	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
 
 	params := url.Values{}
-	params.Add("permission", "1")
+	params.Add("permission", "create:user")
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
-	mockRepo.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{"1"}).Return(errors.New("database error"))
+	mockRepo.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.CreateUser}).Return(errors.New("database error"))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	var got api.StatusBadRequestResponse

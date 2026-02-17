@@ -256,7 +256,7 @@ func TestAddPermissionNonSeededPermission(t *testing.T) {
 	user, err := db.AddUser("permtest", "hash")
 	require.NoError(t, err)
 
-	err = db.GrantUserPermissions(user.ID, data.Permissions{"nonexistent:permission"})
+	err = db.GrantUserPermissions(user.ID, data.Permissions{data.Permission{Slug: "nonexistent:permission"}})
 	require.Error(t, err)
 }
 
@@ -266,7 +266,7 @@ func TestDeletePermissionUserDoesNotHave(t *testing.T) {
 	user, err := db.AddUser("permtest", "hash")
 	require.NoError(t, err)
 
-	err = db.RevokeUserPermissions(user.ID, data.Permissions{data.ReadUser})
+	err = db.RevokeUserPermissions(user.ID, data.Permissions{data.Permission{Slug: "nonexistent:permission"}})
 	require.NoError(t, err) // should not error even if user does not have the permission
 }
 
