@@ -248,7 +248,7 @@ func NewDefaultJobRepository() JobRepository {
 func (r *DefaultJobRepository) AllJobs() []*JobBatch[JobInput, any] {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
-	jobs := make([]*JobBatch[JobInput, any], len(r.jobs))
+	jobs := make([]*JobBatch[JobInput, any], 0, len(r.jobs))
 	for _, value := range r.jobs {
 		jobs = append(jobs, value)
 	}

@@ -119,5 +119,5 @@ func (je JobsEndpoint) Cancel(c *gin.Context) {
 		return
 	}
 	batch.Cancel()
-	c.JSON(http.StatusOK, api.StatusCancelledJob{UUID: batch.UUID.String()})
+	c.JSON(http.StatusOK, api.StatusCancelledJob{UUID: batch.UUID})
 }

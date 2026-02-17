@@ -85,7 +85,7 @@ func (s *defaultJobService) GetSummary(id uuid.UUID) *JobSummary {
 
 func (s *defaultJobService) AllJobs() []JobSummary {
 	jobs := s.jobRepository.AllJobs()
-	summaries := make([]JobSummary, len(jobs))
+	summaries := make([]JobSummary, 0, len(jobs))
 	for _, job := range jobs {
 		job.Lock.Lock()
 		summaries = append(summaries, JobSummary{

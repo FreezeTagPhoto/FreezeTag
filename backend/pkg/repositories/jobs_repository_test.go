@@ -215,3 +215,51 @@ func TestDeleteJob(t *testing.T) {
 	got = repo.Get(id)
 	assert.Nil(t, got)
 }
+
+func TestListJobs(t *testing.T) {
+	repo := NewDefaultJobRepository()
+	idA := repo.Create("testA", t.Context(), []JobInput{}, SimpleJob(func(_ JobInput) (int, error) {
+		return 0, nil
+	}))
+	idB := repo.Create("testB", t.Context(), []JobInput{}, SimpleJob(func(_ JobInput) (int, error) {
+		return 1, nil
+	}))
+	jobs := repo.AllJobs()
+	require.Len(t, jobs, 2)
+	for i := range 2 {
+		job := jobs[i]
+		switch job.UUID {
+		case idA:
+			assert.Equal(t, "testA", job.Title)
+		case idB:
+			assert.Equal(t, "testB", job.Title)
+		default:
+			t.Errorf("job ended up with a weird UUID")
+		}
+	}
+}
+
+func TestJobStatusChange(t *testing.T) {
+	repo := NewDefaultJobRepository()
+	going := make(chan struct{})
+	gone := make(chan struct{})
+	id := repo.Create("test", t.Context(), []JobInput{testJobInput(1)}, AtomicJob(func(i testJobInput, status func(string)) (int, error) {
+		going <- struct{}{}
+		<-gone
+		status("test")
+		going <- struct{}{}
+		close(going)
+		<-gone
+		return int(i), nil
+	}))
+	job := repo.Get(id)
+	require.NotNil(t, job)
+	<-going
+	assert.Equal(t, "Running", job.Status)
+	gone <- struct{}{}
+	<-going
+	assert.Equal(t, "test", job.Status)
+	gone <- struct{}{}
+	close(gone)
+	<-job.WaitFinished()
+}

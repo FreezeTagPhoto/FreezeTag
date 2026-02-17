@@ -131,3 +131,30 @@ func TestJobListEndpoint(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.ElementsMatch(t, list, got)
 }
+
+// NOTE: we can't test JobCancelFound because it actually calls the CancelFunc
+// on the job batch, and that's a private field to the repository package (for good reason)
+
+func TestJobCancelEndpointBadId(t *testing.T) {
+	j := mockJobService.NewMockJobService(t)
+
+	router := gin.Default()
+	InitJobsEndpoint(j).RegisterEndpoints(router)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/jobs/cancel/badid", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestJobCancelEndpointNotFound(t *testing.T) {
+	uuid := uuid.New()
+	j := mockJobService.NewMockJobService(t)
+	j.EXPECT().GetBatch(uuid).Return(nil)
+
+	router := gin.Default()
+	InitJobsEndpoint(j).RegisterEndpoints(router)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/jobs/cancel/"+uuid.String(), nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
