@@ -6,5 +6,6 @@ ffmpeg
 pkgconf
 libraw
 libheif
+libde265
 libtiff
 wget
