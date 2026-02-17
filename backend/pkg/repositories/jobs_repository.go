@@ -53,16 +53,25 @@ type JobInput interface {
 	ID() int // ID should be unique between JobInputs in a batch
 }
 
-type JobFunction[I JobInput, O any] func(I, context.Context) (O, error)
+type JobFunction[I JobInput, O any] func(I, context.Context, func(string)) (O, error)
 
-func Job[I JobInput, O any](f func(I, context.Context) (O, error)) func(JobInput, context.Context) (any, error) {
-	return func(i JobInput, c context.Context) (any, error) {
-		return f(i.(I), c)
+func Job[I JobInput, O any](f func(I, context.Context, func(string)) (O, error)) func(JobInput, context.Context, func(string)) (any, error) {
+	return func(i JobInput, c context.Context, s func(string)) (any, error) {
+		return f(i.(I), c, s)
 	}
 }
 
-func AtomicJob[I JobInput, O any](f func(I) (O, error)) func(JobInput, context.Context) (any, error) {
-	return func(i JobInput, c context.Context) (any, error) {
+func AtomicJob[I JobInput, O any](f func(I, func(string)) (O, error)) func(JobInput, context.Context, func(string)) (any, error) {
+	return func(i JobInput, c context.Context, s func(string)) (any, error) {
+		if c.Err() != nil {
+			return *new(O), fmt.Errorf("job cancelled")
+		}
+		return f(i.(I), s)
+	}
+}
+
+func SimpleJob[I JobInput, O any](f func(I) (O, error)) func(JobInput, context.Context, func(string)) (any, error) {
+	return func(i JobInput, c context.Context, s func(string)) (any, error) {
 		if c.Err() != nil {
 			return *new(O), fmt.Errorf("job cancelled")
 		}
@@ -72,24 +81,26 @@ func AtomicJob[I JobInput, O any](f func(I) (O, error)) func(JobInput, context.C
 
 type JobBatch[I JobInput, C any] struct {
 	UUID        uuid.UUID          `json:"uuid"`
+	Title       string             `json:"title"`
+	Status      string             `json:"status"`
 	Completed   []C                `json:"completed"`
 	Failed      []jobFailure[I]    `json:"failed"`
 	InProgress  []I                `json:"in_progress"`
 	Cancelled   bool               `json:"cancelled"`
 	Context     context.Context    `json:"-"`
+	Lock        sync.Mutex         `json:"-"`
 	finished    bool               `json:"-"`
 	operation   JobFunction[I, C]  `json:"-"`
 	cancel      context.CancelFunc `json:"-"`
 	timer       *time.Timer        `json:"-"`
 	subscribers []chan<- struct{}  `json:"-"`
 	workers     sync.WaitGroup     `json:"-"`
-	lock        sync.Mutex         `json:"-"`
 	synchronous bool               `json:"-"` // whether or not the job should be run in order
 }
 
 func (jb *JobBatch[I, C]) removeById(id int) {
-	jb.lock.Lock()
-	defer jb.lock.Unlock()
+	jb.Lock.Lock()
+	defer jb.Lock.Unlock()
 	jb.InProgress = slices.DeleteFunc(jb.InProgress, func(i I) bool {
 		return i.ID() == id
 	})
@@ -101,8 +112,8 @@ type jobFailure[I any] struct {
 }
 
 func (jb *JobBatch[I, C]) addResults(i I, c C, f error) {
-	jb.lock.Lock()
-	defer jb.lock.Unlock()
+	jb.Lock.Lock()
+	defer jb.Lock.Unlock()
 	if f != nil {
 		jb.Failed = append(jb.Failed, jobFailure[I]{Input: i, Reason: f.Error()})
 	} else {
@@ -123,7 +134,13 @@ func (jb *JobBatch[I, C]) run() {
 	waitPrev := make(chan struct{}, 1)
 	waitPrev <- struct{}{}
 	close(waitPrev)
-	jb.lock.Lock()
+	jb.Lock.Lock()
+	jb.Status = "Running"
+	changeStatus := func(s string) {
+		jb.Lock.Lock()
+		defer jb.Lock.Unlock()
+		jb.Status = s
+	}
 	for _, input := range jb.InProgress {
 		wait := make(chan struct{}, 1)
 		workerWait := waitPrev
@@ -136,7 +153,7 @@ func (jb *JobBatch[I, C]) run() {
 				close(wait)
 			}
 			finished := <-waitForJob()
-			thing, err := jb.operation(input, jb.Context)
+			thing, err := jb.operation(input, jb.Context, changeStatus)
 			jb.removeById(input.ID())
 			jb.addResults(input, thing, err)
 			finished()
@@ -152,7 +169,7 @@ func (jb *JobBatch[I, C]) run() {
 		})
 		waitPrev = wait
 	}
-	jb.lock.Unlock()
+	jb.Lock.Unlock()
 }
 
 func (jb *JobBatch[I, C]) notifySubscribers() {
@@ -179,6 +196,11 @@ func (jb *JobBatch[I, C]) Cancel() {
 // this should only be called once, by the job that finishes the batch
 func (jb *JobBatch[I, C]) finish() {
 	jb.finished = true
+	if jb.Cancelled {
+		jb.Status = "Cancelled"
+	} else {
+		jb.Status = "Finished"
+	}
 	jb.notifySubscribers()
 	jb.adjustKeepTime(RetentionTime)
 }
@@ -203,9 +225,11 @@ type UploadJob struct {
 
 type JobRepository interface {
 	// create and start a job batch that uses the operator on the passed data
-	Create(context.Context, []JobInput, func(JobInput, context.Context) (any, error)) uuid.UUID
+	Create(string, context.Context, []JobInput, func(JobInput, context.Context, func(string)) (any, error)) uuid.UUID
 	// create and start a synchronous job batch
-	CreateSync(context.Context, []JobInput, func(JobInput, context.Context) (any, error)) uuid.UUID
+	CreateSync(string, context.Context, []JobInput, func(JobInput, context.Context, func(string)) (any, error)) uuid.UUID
+	// list all jobs in the repository
+	AllJobs() []*JobBatch[JobInput, any]
 	// get a job by UUID
 	Get(uuid.UUID) *JobBatch[JobInput, any]
 	// cancel and delete a job by UUID
@@ -221,13 +245,25 @@ func NewDefaultJobRepository() JobRepository {
 	return &DefaultJobRepository{jobs: make(map[uuid.UUID]*JobBatch[JobInput, any])}
 }
 
-func (r *DefaultJobRepository) Create(ctx context.Context, data []JobInput, operator func(JobInput, context.Context) (any, error)) uuid.UUID {
+func (r *DefaultJobRepository) AllJobs() []*JobBatch[JobInput, any] {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	jobs := make([]*JobBatch[JobInput, any], 0, len(r.jobs))
+	for _, value := range r.jobs {
+		jobs = append(jobs, value)
+	}
+	return jobs
+}
+
+func (r *DefaultJobRepository) Create(title string, ctx context.Context, data []JobInput, operator func(JobInput, context.Context, func(string)) (any, error)) uuid.UUID {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	id := uuid.New()
 	ctx, cancel := context.WithCancel(ctx)
 	r.jobs[id] = &JobBatch[JobInput, any]{
 		UUID:        id,
+		Title:       title,
+		Status:      "Created",
 		Completed:   []any{},
 		Failed:      []jobFailure[JobInput]{},
 		InProgress:  data,
@@ -243,13 +279,15 @@ func (r *DefaultJobRepository) Create(ctx context.Context, data []JobInput, oper
 	return id
 }
 
-func (r *DefaultJobRepository) CreateSync(ctx context.Context, data []JobInput, operator func(JobInput, context.Context) (any, error)) uuid.UUID {
+func (r *DefaultJobRepository) CreateSync(title string, ctx context.Context, data []JobInput, operator func(JobInput, context.Context, func(string)) (any, error)) uuid.UUID {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	id := uuid.New()
 	ctx, cancel := context.WithCancel(ctx)
 	r.jobs[id] = &JobBatch[JobInput, any]{
 		UUID:        id,
+		Title:       title,
+		Status:      "Created",
 		Completed:   []any{},
 		Failed:      []jobFailure[JobInput]{},
 		InProgress:  data,

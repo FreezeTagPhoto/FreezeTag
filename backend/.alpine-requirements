@@ -1,11 +1,11 @@
-base-devel
 go
 uv
 imagemagick
+imagemagick-dev
 ffmpeg
+ffmpeg-dev
 pkgconf
+alpine-sdk
 libraw
 libheif
-libde265
-libtiff
-wget
+tiff

@@ -8,6 +8,7 @@ import (
 	"freezetag/backend/pkg/services"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type StatusOkUploadResponse struct {
@@ -73,6 +74,10 @@ type MetadataResponse struct {
 	imagedata.Metadata
 	Width  int `json:"width"`
 	Height int `json:"height"`
+}
+
+type StatusCancelledJob struct {
+	UUID uuid.UUID `json:"uuid"`
 }
 
 type innerFileJob struct {
