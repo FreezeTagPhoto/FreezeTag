@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"freezetag/backend/pkg/images/imagedata"
 	"log"
+	"runtime"
 	"strings"
 
 	"github.com/gobwas/glob"
@@ -12,6 +13,12 @@ import (
 
 func init() {
 	log.Println("[INFO] initializing ImageMagick...")
+	version, _ := imagick.GetVersion()
+	log.Printf("[INFO] %s", version)
+	log.Printf("[INFO] Copyright %s", imagick.GetCopyright())
+	imagick.SetResourceLimit(imagick.RESOURCE_THREAD, uint64(runtime.NumCPU()))
+	imagick.GetCopyright()
+	log.Println("[INFO] ImageMagick set to use all threads")
 	imagick.Initialize()
 	log.Println("[INFO] ImageMagick finished initializing.")
 }
@@ -63,9 +70,9 @@ func (pc *ParserCollection) RegisterParserFunc(match string, parser func(string,
 }
 
 func (pc ParserCollection) ParseImage(name string, data []byte) (imagedata.Data, error) {
-	for _, entry := range pc.parsers {
-		if entry.matcher.Match(strings.ToLower(name)) {
-			return entry.parser.ParseImage(name, data)
+	for i := len(pc.parsers) - 1; i >= 0; i-- {
+		if pc.parsers[i].matcher.Match(strings.ToLower(name)) {
+			return pc.parsers[i].parser.ParseImage(name, data)
 		}
 	}
 	return imagedata.Data{}, fmt.Errorf("no parser for file")

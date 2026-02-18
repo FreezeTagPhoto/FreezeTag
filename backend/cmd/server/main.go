@@ -76,12 +76,10 @@ func main() {
 
 func initParserCollection() images.Parser {
 	parserCollection := images.InitParserCollection()
-	if err := parserCollection.RegisterParserFunc("*.{cr3,nef,dng,hei{c,f}}", formats.ParseRaw); err != nil {
-		log.Fatalf("[ERROR] failed to register RAW parser: %v", err)
+	if err := parserCollection.RegisterParserFunc("*", formats.ParseBasic); err != nil {
+		log.Fatalf("[ERR]  failed to register default parser: %v", err)
 	}
-	if err := parserCollection.RegisterParserFunc("*.{png,jpg,jpeg,webp}", formats.ParseBasic); err != nil {
-		log.Fatalf("[ERROR] failed to register basic parser: %v", err)
-	}
+	// more specific parsers can be registered here
 	return parserCollection
 }
 

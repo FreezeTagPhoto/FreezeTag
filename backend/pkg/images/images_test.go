@@ -72,7 +72,7 @@ type imageParserTestCase struct {
 
 func TestParserCollectionFormatIntegration(t *testing.T) {
 	parser := InitParserCollection()
-	err := parser.RegisterParserFunc("*.{cr3,CR3}", formats.ParseRaw)
+	err := parser.RegisterParserFunc("*.{cr3,CR3}", formats.ParseBasic)
 	require.NoError(t, err)
 	err = parser.RegisterParserFunc("*.{png,jpg,jpeg}", formats.ParseBasic)
 	require.NoError(t, err)

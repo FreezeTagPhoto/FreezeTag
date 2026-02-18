@@ -43,7 +43,7 @@ func TestShouldNotCreateThumbnailGivenInvalidRGBA(t *testing.T) {
 func TestShrinkingThumbnail(t *testing.T) {
 	data, err := os.ReadFile("formats/test_resources/tree.CR3")
 	require.NoError(t, err)
-	imageData, err := formats.ParseRaw("tree.CR3", data)
+	imageData, err := formats.ParseBasic("tree.CR3", data)
 	require.NoError(t, err)
 	thumbnail, err := CreateThumbnail(imageData, 512, 0)
 	assert.NoError(t, err)
@@ -53,7 +53,7 @@ func TestShrinkingThumbnail(t *testing.T) {
 func TestNonShrinkingThumbnail(t *testing.T) {
 	data, err := os.ReadFile("formats/test_resources/tree.CR3")
 	require.NoError(t, err)
-	imageData, err := formats.ParseRaw("tree.CR3", data)
+	imageData, err := formats.ParseBasic("tree.CR3", data)
 	require.NoError(t, err)
 	thumbnail, err := CreateThumbnail(imageData, 0, 1)
 	assert.NoError(t, err)

@@ -51,7 +51,7 @@ func (fe FileEndpoint) HandleGet(c *gin.Context) {
 // @description Delete an image file given an ID
 // @produce     application/json
 // @tags        files, images
-// @router      /file/delete/:id [delete]
+// @router      /file/delete/{id} [delete]
 // @param       id path int true "Image ID"
 // @success     200 {object} api.ImageDeleteResponse
 // @failure     400 {object} api.BadRequestResponse

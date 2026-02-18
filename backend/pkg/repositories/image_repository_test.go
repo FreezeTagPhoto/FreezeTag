@@ -22,7 +22,7 @@ import (
 // for good data
 func initParserCollection() images.Parser {
 	parserCollection := images.InitParserCollection()
-	err := parserCollection.RegisterParserFunc("*.{cr3,CR3,nef,NEF,dng,DNG}", formats.ParseRaw)
+	err := parserCollection.RegisterParserFunc("*.{cr3,CR3,nef,NEF,dng,DNG}", formats.ParseBasic)
 	require.NoError(nil, err, "registering RAW parser should not fail")
 
 	err = parserCollection.RegisterParserFunc("*.{png,jpg,jpeg}", formats.ParseBasic)
@@ -178,7 +178,7 @@ func TestStoreImageBytesNameCollision(t *testing.T) {
 		Return(true, nil)
 	mockdb.
 		EXPECT().
-		GetNonOverlappingSuffix(path.Join(tmpDir, "gopher.png")).
+		GetNonOverlappingSuffix("gopher.png").
 		Return(1, nil)
 
 	parser := initParserCollection() // we need good data here
@@ -583,7 +583,7 @@ func TestRemoveTags(t *testing.T) {
 
 func TestDeleteImageFailDelete(t *testing.T) {
 	id := database.ImageId(4)
-	filePath := "nonexistent/file"
+	filePath := "/tmp/nonexistent/file"
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().
 		GetImageFile(id).
@@ -595,21 +595,6 @@ func TestDeleteImageFailDelete(t *testing.T) {
 	repo := InitImageRepository(mockdb, parser, "/tmp")
 	_, err := repo.DeleteImage(id)
 	assert.Error(t, err)
-}
-
-func TestDeleteImageNilFile(t *testing.T) {
-	id := database.ImageId(4)
-	mockdb := mockDatabase.NewMockImageDatabase(t)
-	mockdb.EXPECT().
-		GetImageFile(id).
-		Return(nil, nil)
-	mockdb.EXPECT().
-		RemoveImage(id).
-		Return(true, nil)
-	parser := mockParser.NewMockParser(t)
-	repo := InitImageRepository(mockdb, parser, "/tmp")
-	_, err := repo.DeleteImage(id)
-	assert.NoError(t, err)
 }
 
 func TestDeleteImageDatabaseErrors(t *testing.T) {

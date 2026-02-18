@@ -102,7 +102,7 @@ func (repo *DefaultImageRepository) safeFilePath(path string) (string, error) {
 var namingMutex sync.Mutex
 
 // errors and results are given using the simple filename,
-// the full filepath (e.g /tmp/filename) is given to the database
+// the full filepath after the repo base folder is given to the database (this allows things to be moved around)
 func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string) (database.ImageId, error) {
 	imagedata, err := repo.parser.ParseImage(filename, data)
 	if err != nil {
@@ -121,7 +121,7 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 
 	namingMutex.Lock()
 	defer namingMutex.Unlock()
-	filepath, err := repo.safeFilePath(path.Join(repo.folderPath, filename))
+	filepath, err := repo.safeFilePath(filename)
 	if err != nil {
 		return 0, err
 	}
@@ -152,7 +152,7 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	if err := os.MkdirAll(repo.folderPath, 0755); err != nil {
 		return 0, err
 	}
-	if err := os.WriteFile(filepath, data, 0644); err != nil {
+	if err := os.WriteFile(path.Join(repo.folderPath, filepath), data, 0644); err != nil {
 		return 0, err
 	}
 	return id, nil
@@ -239,32 +239,21 @@ func (repo *DefaultImageRepository) GetImageFilepath(id database.ImageId) (strin
 }
 
 func (repo *DefaultImageRepository) DeleteImage(id database.ImageId) (string, error) {
-	fileName, err := repo.db.GetImageFile(id)
+	fileName, err := repo.GetImageFilepath(id)
 	if err != nil {
 		return "", err
-	}
-	deleteFile := true
-	if fileName == nil || *fileName == "" {
-		deleteFile = false
-		log.Printf("[WARN] the file for image %d was nil or empty during deletion", id)
-	}
-	var filePath = ""
-	if deleteFile {
-		filePath = path.Join(repo.folderPath, *fileName)
 	}
 	_, err = repo.db.RemoveImage(id)
 	if err != nil {
 		return "", err
 	}
-	if deleteFile {
-		err = os.Remove(filePath)
-		if err != nil {
-			log.Printf("[ERR]  after deleting image id %d the file could not be deleted: %v", id, err)
-			log.Printf("[ERR]  file possibly remaining after deletion: %v", path.Join(repo.folderPath, *fileName))
-			return "", err
-		}
+	err = os.Remove(fileName)
+	if err != nil {
+		log.Printf("[ERR]  after deleting image id %d the file could not be deleted: %v", id, err)
+		log.Printf("[ERR]  file possibly remaining after deletion: %v", fileName)
+		return "", err
 	}
-	return filePath, nil
+	return fileName, nil
 }
 
 func (repo *DefaultImageRepository) GetImageMetadata(id database.ImageId) (imagedata.Metadata, error) {

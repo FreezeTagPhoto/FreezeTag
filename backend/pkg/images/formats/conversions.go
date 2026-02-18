@@ -5,8 +5,6 @@ package formats
 // that have nothing to do with our stuff and should realistically not fail
 
 import (
-	"path"
-
 	"gopkg.in/gographics/imagick.v3/imagick"
 )
 
@@ -25,21 +23,4 @@ func imageToRGBA(mw *imagick.MagickWand) ([]byte, error) {
 	}
 	rgba.ResetIterator()
 	return rgba.GetImageBlob()
-}
-
-// This function works to load into memory
-// most camera raw formats (HEIF, DNG, CR2-3, NEF, ARW, etc)
-//
-// BE CAREFUL: many camera raw formats will have crazy resolutions,
-// this will eat all of RAM if used too frequently
-func loadRawImage(name string, data []byte, mw *imagick.MagickWand) error {
-	err := mw.SetFormat(path.Ext(name))
-	if err != nil {
-		return err
-	}
-	err = mw.ReadImageBlob(data)
-	if err != nil {
-		return err
-	}
-	return nil
 }
