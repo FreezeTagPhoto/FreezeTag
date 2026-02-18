@@ -6,7 +6,7 @@ import JobsLister from "@/api/jobs/jobslister";
 
 import { Ok, Err } from "@/common/result";
 
-describe("Jobs Handler", () => {
+describe("Jobs Lister", () => {
     it("should handle summary list well", async () => {
         global.fetch = jest.fn(() => {
             return Promise.resolve({
