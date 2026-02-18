@@ -16,18 +16,27 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    color: var(--accent_one);
-    background-color: var(--foreground);
-    border-radius: 10px;
-    border: 1px solid var(--foreground);
+    color: var(--accent1);
+    background-color: var(--mantle);
+    border: var(--border-info);
+    border-radius: var(--border-radius);
 }
 
 .progressBar::-moz-progress-bar {
-    background: var(--accent_one);
+    background: var(--accent1);
+    border-radius: var(--border-radius);
+    /* The following property isn't actually supported. It's included in case Mozilla eventually comes to Jesus. */
+    transition: value 1s ease-in-out;
+}
+
+.progressBar::-webkit-progress-bar {
+    border-radius: var(--border-radius);
 }
 
 .progressBar::-webkit-progress-value {
-    background: var(--accent_one);
+    background: var(--accent1);
+    border-radius: var(--border-radius);
+    transition: width 1s ease-in-out;
 }
 
 .hidden {
