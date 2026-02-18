@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS API_Token (
 
 
 CREATE TABLE IF NOT EXISTS App_Permissions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY NOT NULL,
     slug TEXT NOT NULL UNIQUE,          
     name TEXT NOT NULL UNIQUE,                
     description TEXT                  

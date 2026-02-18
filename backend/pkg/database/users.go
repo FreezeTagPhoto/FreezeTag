@@ -10,7 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type UserID int64
+type UserID uint64
 
 type PublicUser struct {
 	ID        UserID `json:"id"`

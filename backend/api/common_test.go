@@ -21,6 +21,6 @@ func TestGetUserIdFromStringInvalid(t *testing.T) {
 
 func TestGetUserIdFromStringNegative(t *testing.T) {
 	id, err := GetUserIDFromString("-5")
-	assert.NoError(t, err)
-	assert.Equal(t, database.UserID(-5), id)
+	assert.Error(t, err)
+	assert.Equal(t, database.UserID(0), id)
 }
