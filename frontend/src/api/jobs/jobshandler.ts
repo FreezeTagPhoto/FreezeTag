@@ -9,6 +9,15 @@ export type JobsResult = Result<
     Result<Map<string, Result<number, string>>, number>,
     { status: number; message: string }
 >;
+
+type JobSummaryResponse = {
+    in_progress: number;
+    complete: number;
+    errors: number;
+    uuid: string;
+    status: string;
+    title: string;
+};
 type JobResponse = {
     in_progress?: {
         name: string;
@@ -23,21 +32,60 @@ type JobResponse = {
         reason: string;
     }[];
     uuid: string;
+    cancelled: boolean;
 };
 
 export default async function JobsHandler(event: string): Promise<JobsResult> {
     return job_query_with_handler(
         ApiHandler<JobResponse>(SERVER_ADDRESS + "jobs/details/")(Method.GET),
+        ApiHandler<JobSummaryResponse>(SERVER_ADDRESS + "jobs/summary/")(
+            Method.GET,
+        ),
         event,
     );
 }
 
 async function job_query_with_handler(
     handler: (data: BodyInit) => Promise<Result<JobResponse, RequestError>>,
+    summary_handler: (
+        data: BodyInit,
+    ) => Promise<Result<JobSummaryResponse, RequestError>>,
     job_code: string,
 ): Promise<JobsResult> {
-    const request_result = await handler(job_code);
+    const summary_request_result = await summary_handler(job_code);
 
+    if (!summary_request_result.ok) {
+        const status = summary_request_result.error.status_code;
+        if (status == 400)
+            return Err({
+                status,
+                message: (
+                    (await summary_request_result.error.response.json()) as {
+                        error: string;
+                    }
+                ).error,
+            });
+        else
+            return Err({
+                status,
+                message: await summary_request_result.error.response.text(),
+            });
+    }
+
+    const summary_job_response = summary_request_result.value;
+
+    if (summary_job_response.in_progress != 0) {
+        return Ok(
+            Err(
+                (summary_job_response.complete + summary_job_response.errors) /
+                    (summary_job_response.complete +
+                        summary_job_response.errors +
+                        summary_job_response.in_progress),
+            ),
+        );
+    }
+
+    const request_result = await handler(job_code);
     if (!request_result.ok) {
         const status = request_result.error.status_code;
         if (status == 400)
@@ -57,16 +105,6 @@ async function job_query_with_handler(
     }
 
     const job_response = request_result.value;
-    const count_in_progress = job_response.in_progress
-        ? job_response.in_progress.length
-        : 0;
-    const count_done =
-        (job_response.completed ? job_response.completed.length : 0) +
-        (job_response.failed ? job_response.failed.length : 0);
-
-    if (count_in_progress != 0) {
-        return Ok(Err(count_done / (count_done + count_in_progress)));
-    }
 
     const completed = job_response.completed ?? [];
     const failed = job_response.failed ?? [];
@@ -82,6 +120,3 @@ async function job_query_with_handler(
 
     return Ok(Ok(image_map));
 }
-
-export const testing_JobsHandler = job_query_with_handler;
-export type testing_JobResponse = JobResponse;
