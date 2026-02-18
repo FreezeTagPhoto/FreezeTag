@@ -54,6 +54,7 @@ type ImageTagResult struct {
 type ImageRepository interface {
 	SearchImage(query queries.DatabaseQuery) ([]database.ImageId, error)
 	SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder) ([]database.ImageId, error)
+	SearchImageOrderedPaged(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, pageSize uint, page uint) ([]database.ImageId, error)
 	StoreImageBytes(data []byte, filename string) (database.ImageId, error)
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
 	RetrieveAllTags() (map[string]int64, error)
@@ -163,6 +164,10 @@ func (repo *DefaultImageRepository) SearchImage(query queries.DatabaseQuery) ([]
 
 func (repo *DefaultImageRepository) SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder) ([]database.ImageId, error) {
 	return repo.db.GetImagesOrder(query, field, order)
+}
+
+func (repo *DefaultImageRepository) SearchImageOrderedPaged(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, pageSize uint, pageNo uint) ([]database.ImageId, error) {
+	return repo.db.GetImagesOrderPaged(query, field, order, pageSize, pageNo)
 }
 
 func (repo *DefaultImageRepository) RetrieveAllTags() (map[string]int64, error) {

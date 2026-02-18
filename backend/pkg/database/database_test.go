@@ -7,6 +7,7 @@ import (
 	"freezetag/backend/pkg/images/imagedata"
 	"io"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -642,4 +643,23 @@ func TestGetImageNameExtension(t *testing.T) {
 	suffix, err := tmp.GetNonOverlappingSuffix("abc.png")
 	assert.NoError(t, err)
 	assert.Equal(t, 2, suffix)
+}
+
+func TestGetImagePaged(t *testing.T) {
+	tmp := createTempDatabase(t)
+	for i := range 10 {
+		_, err := tmp.AddImage(strconv.Itoa(i), imagedata.Data{})
+		require.NoError(t, err)
+	}
+	time.Sleep(100 * time.Millisecond)
+	for i := range 10 {
+		_, err := tmp.AddImage(strconv.Itoa(i+10), imagedata.Data{})
+		require.NoError(t, err)
+	}
+	page, err := tmp.GetImagesOrderPaged(queries.CreateImageQuery(), queries.DateAdded, queries.Ascending, 10, 0)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, page, []ImageId{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+	page, err = tmp.GetImagesOrderPaged(queries.CreateImageQuery(), queries.DateAdded, queries.Ascending, 10, 1)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, page, []ImageId{11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
 }

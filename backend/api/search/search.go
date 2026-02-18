@@ -65,6 +65,8 @@ func parseNearParam(near string) ([3]float64, error) {
 // @param       tagLike        query []string false "picture tag fuzzy"                     collectionFormat(multi)
 // @param       sortBy         query string   false "sort by"                               Enums(DateAdded,DateCreated) default(DateAdded)
 // @param       sortOrder      query string   false "sort order"                            Enums(ASC,DESC) default(DESC)
+// @param       pageSize       query uint     false "page size"
+// @param       pageNo         query uint     false "page number (zero indexed)"
 // @success     200 {array}  database.ImageId
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
@@ -128,6 +130,24 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 		}
 		query.UploadedAfter(time.Unix(ua, 0))
 	}
+	var pageSize uint = 0
+	if psParam := c.Query("pageSize"); psParam != "" {
+		ps, err := strconv.ParseUint(psParam, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad pageSize parameter"})
+			return
+		}
+		pageSize = uint(ps)
+	}
+	var pageNo uint = 0
+	if pcParam := c.Query("pageNo"); pcParam != "" {
+		pn, err := strconv.ParseUint(pcParam, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad pageNo parameter"})
+			return
+		}
+		pageNo = uint(pn)
+	}
 	var field queries.SortField
 	var order queries.SortOrder
 	if sfParam := c.Query("sortBy"); sfParam != "" {
@@ -152,7 +172,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 			return
 		}
 	}
-	images, err := se.imageRepository.SearchImageOrdered(query, field, order)
+	images, err := se.imageRepository.SearchImageOrderedPaged(query, field, order, pageSize, pageNo)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return

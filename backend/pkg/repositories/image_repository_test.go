@@ -269,6 +269,18 @@ func TestSearchImageOrderedSomeReturnedIDs(t *testing.T) {
 	assert.Equal(t, result, ids)
 }
 
+func TestSearchImageOrderedPagedSomeReturnedIDs(t *testing.T) {
+	ids := []database.ImageId{1, 3, 2, 4, 5}
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().GetImagesOrderPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(ids, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result, err := repo.SearchImageOrderedPaged(queries.CreateImageQuery(), queries.DateCreated, queries.Ascending, 4, 20)
+	assert.NoError(t, err)
+	assert.Equal(t, result, ids)
+}
+
 func TestRetrieveAllTagsSuccess(t *testing.T) {
 	expected := map[string]int64{"tag1": 1, "tag2": 1}
 	mockdb := mockDatabase.NewMockImageDatabase(t)

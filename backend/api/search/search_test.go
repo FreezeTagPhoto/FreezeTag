@@ -25,7 +25,7 @@ func (se SearchEndpoint) RegisterEndpoints(e gin.IRoutes) {
 func TestSearchSuccessNoQueries(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrdered(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything).
+		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return([]database.ImageId{1, 2, 3}, nil)
 
 	router := gin.Default()
@@ -45,7 +45,7 @@ func TestSearchSuccessNoQueries(t *testing.T) {
 func TestSearchSuccessBasicQueries(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrdered(mock.AnythingOfType("*queries.ImageQuery"), queries.DateCreated, queries.Ascending).
+		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), queries.DateCreated, queries.Ascending, mock.Anything, mock.Anything).
 		Return([]database.ImageId{1}, nil)
 
 	router := gin.Default()
@@ -80,7 +80,7 @@ func TestSearchSuccessBasicQueries(t *testing.T) {
 func TestSearchSuccessBasicQueries2(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrdered(mock.AnythingOfType("*queries.ImageQuery"), queries.DateAdded, queries.Descending).
+		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), queries.DateAdded, queries.Descending, mock.Anything, mock.Anything).
 		Return([]database.ImageId{1}, nil)
 
 	router := gin.Default()
@@ -128,9 +128,9 @@ func TestSearchSuccessTags(t *testing.T) {
 
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrdered(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything).
+		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(
-			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder) ([]database.ImageId, error) {
+			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint) ([]database.ImageId, error) {
 				assert.Equal(t, expectedQuery, actualQuery)
 				return []database.ImageId{1, 2, 3, 4}, nil
 			})
@@ -200,9 +200,9 @@ func TestSearchNearSuccess(t *testing.T) {
 
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrdered(mock.Anything, mock.Anything, mock.Anything).
+		SearchImageOrderedPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(
-			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder) ([]database.ImageId, error) {
+			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint) ([]database.ImageId, error) {
 				assert.Equal(t, expectedQuery, actualQuery)
 				return []database.ImageId{1}, nil
 			})
@@ -264,7 +264,7 @@ func TestBadUploadedAfter(t *testing.T) {
 func TestSearchImageFail(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrdered(mock.Anything, mock.Anything, mock.Anything).
+		SearchImageOrderedPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil, fmt.Errorf("mock error"))
 
 	router := gin.Default()
@@ -310,4 +310,9 @@ func runBadSortTest(t *testing.T, param string, value string, expected string) {
 func TestSearchImageBadSort(t *testing.T) {
 	runBadSortTest(t, "sortBy", "foo", "bad sortBy parameter")
 	runBadSortTest(t, "sortOrder", "bar", "bad sortOrder parameter")
+}
+
+func TestSearchImageBadPage(t *testing.T) {
+	runBadSortTest(t, "pageSize", "foo", "bad pageSize parameter")
+	runBadSortTest(t, "pageNo", "-2", "bad pageNo parameter")
 }

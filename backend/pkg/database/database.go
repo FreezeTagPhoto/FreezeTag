@@ -21,6 +21,8 @@ type ImageDatabase interface {
 	GetImages(queries.DatabaseQuery) ([]ImageId, error)
 	// Get a list of image IDs corresponding to the provided query and order
 	GetImagesOrder(queries.DatabaseQuery, queries.SortField, queries.SortOrder) ([]ImageId, error)
+	// Get a list of image IDs corresponding to the provided query, order, page size, and page number
+	GetImagesOrderPaged(queries.DatabaseQuery, queries.SortField, queries.SortOrder, uint, uint) ([]ImageId, error)
 	// Get the image filename pointed to by the image ID
 	GetImageFile(ImageId) (*string, error)
 	// Get the lowest suffix number that doesn't overlap with an existing image
@@ -104,7 +106,11 @@ func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery) ([]ImageId, err
 }
 
 func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder) ([]ImageId, error) {
-	s, as := queries.ImageIdPreparable(q, sf, so)
+	return db.GetImagesOrderPaged(q, sf, so, 0, 0)
+}
+
+func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, pageSize uint, pageNum uint) ([]ImageId, error) {
+	s, as := queries.ImageIdPreparable(q, sf, so, pageSize, pageNum)
 	stmt, err := db.db.Prepare(s)
 	if err != nil {
 		return []ImageId{}, err
