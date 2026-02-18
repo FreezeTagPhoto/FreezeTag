@@ -1,3 +1,4 @@
+import SERVER_ADDRESS from "@/api/common/serveraddress";
 import styles from "./GalleryImage.module.css";
 
 export type GalleryImageProps = {
@@ -28,8 +29,10 @@ export default function GalleryImage({
             onFocus={onFocus}
         >
             <img
-                src={`http://localhost:3824/thumbnails/${id}?size=1`}
+                src={`${SERVER_ADDRESS}/thumbnails/${id}?size=1`}
                 loading="lazy"
+                height={128}
+                width={128}
                 alt={`A thumbnail of image ${id}`}
                 decoding="async"
                 className={styles.image}
