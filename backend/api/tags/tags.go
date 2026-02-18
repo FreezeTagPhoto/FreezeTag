@@ -28,15 +28,15 @@ func InitTagEndpoint(repo repositories.ImageRepository) TagEndpoint {
 // @router      /tag/remove [delete]
 // @param       tag query []string true "tags to remove"           collectionFormat(multi)
 // @param       id  query []int    true "image IDs to remove from" collectionFormat(multi)
-// @success     200 {object} api.StatusOkTagDeleteResponse
-// @failure     400 {object} api.StatusBadRequestResponse
+// @success     200 {object} api.TagDeleteResponse
+// @failure     400 {object} api.BadRequestResponse
 func (te TagEndpoint) HandleDelete(c *gin.Context) {
 	if len(c.QueryArray("tag")) == 0 {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no tags to remove"})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no tags to remove"})
 		return
 	}
 	if len(c.QueryArray("id")) == 0 {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no ids to remove tags from"})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no ids to remove tags from"})
 		return
 	}
 
@@ -72,7 +72,7 @@ func (te TagEndpoint) HandleDelete(c *gin.Context) {
 		}
 	}
 
-	response := api.StatusOkTagDeleteResponse{
+	response := api.TagDeleteResponse{
 		Deleted: deleted,
 		Errors:  errors,
 	}
@@ -86,15 +86,15 @@ func (te TagEndpoint) HandleDelete(c *gin.Context) {
 // @router      /tag/add [post]
 // @param       tag query []string true "tags to add"         collectionFormat(multi)
 // @param       id  query []int    true "image IDs to add to" collectionFormat(multi)
-// @success     200 {object} api.StatusOkTagAddResponse
-// @failure     400 {object} api.StatusBadRequestResponse
+// @success     200 {object} api.TagAddResponse
+// @failure     400 {object} api.BadRequestResponse
 func (te TagEndpoint) HandlePost(c *gin.Context) {
 	if len(c.QueryArray("tag")) == 0 {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no tags to add"})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no tags to add"})
 		return
 	}
 	if len(c.QueryArray("id")) == 0 {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no ids to add tags to"})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no ids to add tags to"})
 		return
 	}
 
@@ -130,7 +130,7 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 		}
 	}
 
-	response := api.StatusOkTagAddResponse{
+	response := api.TagAddResponse{
 		Added:  deleted,
 		Errors: errors,
 	}
@@ -143,11 +143,11 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 // @tags        tags
 // @router      /tag/list [get]
 // @success     200 {object} api.TagCounts
-// @failure     500 {object} api.StatusServerErrorResponse
+// @failure     500 {object} api.ServerErrorResponse
 func (te TagEndpoint) ListTags(c *gin.Context) {
 	result, err := te.imageRepository.RetrieveAllTags()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, api.TagCounts(result))
@@ -160,20 +160,20 @@ func (te TagEndpoint) ListTags(c *gin.Context) {
 // @router      /tag/list/{id} [get]
 // @param       id path int true "image ID to get the tags of"
 // @success     200 {array} string
-// @failure     400 {object} api.StatusBadRequestResponse
-// @failure     500 {object} api.StatusServerErrorResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
 func (te TagEndpoint) ImageTags(c *gin.Context) {
 	idParam := c.Param("id")
 	var id database.ImageId
 	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "Invalid image ID parameter"})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid image ID parameter"})
 		return
 	} else {
 		id = database.ImageId(num)
 	}
 	result, err := te.imageRepository.RetrieveImageTags(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -185,19 +185,19 @@ func (te TagEndpoint) ImageTags(c *gin.Context) {
 // @router      /tag/counts [get]
 // @param       id query []string true "image IDs to get tag counts for" collectionFormat(multi)
 // @success     200 {object} api.TagCounts
-// @failure     400 {object} api.StatusBadRequestResponse
-// @failure     500 {object} api.StatusServerErrorResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
 func (te TagEndpoint) ListCounts(c *gin.Context) {
 	ids := c.QueryArray("id")
 	if len(ids) == 0 {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "no ids specified"})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no ids specified"})
 		return
 	}
 
 	result, err := te.imageRepository.GetTagCounts(ids)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, api.TagCounts(result))

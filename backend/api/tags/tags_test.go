@@ -53,8 +53,8 @@ func TestGetAllTagsError(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/tag/list", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	expected := api.StatusServerErrorResponse{Error: "mock error"}
-	var got api.StatusServerErrorResponse
+	expected := api.ServerErrorResponse{Error: "mock error"}
+	var got api.ServerErrorResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -86,8 +86,8 @@ func TestHandleGetImageTagsBadId(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/tag/list/a", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "Invalid image ID parameter"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "Invalid image ID parameter"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -104,8 +104,8 @@ func TestHandleGetImageTagsBadDatabaseRequest(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/tag/list/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	expected := api.StatusServerErrorResponse{Error: "mock error"}
-	var got api.StatusServerErrorResponse
+	expected := api.ServerErrorResponse{Error: "mock error"}
+	var got api.ServerErrorResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -120,8 +120,8 @@ func TestHandleGetImageTagsIntOverflow(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/tag/list/9223372036854775808", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "Invalid image ID parameter"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "Invalid image ID parameter"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -150,11 +150,11 @@ func TestHandlePostSimple(t *testing.T) {
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := api.StatusOkTagAddResponse{
+	expected := api.TagAddResponse{
 		Added:  []repositories.ImageTagSuccess{*result.Success},
 		Errors: []repositories.ImageTagFail{},
 	}
-	var got api.StatusOkTagAddResponse
+	var got api.TagAddResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -191,11 +191,11 @@ func TestHandlePostComplex(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	expected := api.StatusOkTagAddResponse{
+	expected := api.TagAddResponse{
 		Added:  []repositories.ImageTagSuccess{{Id: 1, Count: 3}, {Id: 2, Count: 3}, {Id: 3, Count: 3}},
 		Errors: []repositories.ImageTagFail{{Reason: "unknown id c", Id: -1}},
 	}
-	var got api.StatusOkTagAddResponse
+	var got api.TagAddResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	t.Log(w.Body.String())
 	assert.ElementsMatch(t, expected.Added, got.Added)
@@ -215,8 +215,8 @@ func TestHandlePostNoIds(t *testing.T) {
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "no ids to add tags to"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "no ids to add tags to"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -234,8 +234,8 @@ func TestHandlePostNoTags(t *testing.T) {
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "no tags to add"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "no tags to add"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 
@@ -256,11 +256,11 @@ func TestHandlePostBadId(t *testing.T) {
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := api.StatusOkTagAddResponse{
+	expected := api.TagAddResponse{
 		Added:  []repositories.ImageTagSuccess{},
 		Errors: []repositories.ImageTagFail{{Reason: "unknown id a", Id: -1}, {Reason: "unknown id 9223372036854775808", Id: -1}},
 	}
-	var got api.StatusOkTagAddResponse
+	var got api.TagAddResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -291,11 +291,11 @@ func TestHandleDeleteSimple(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := api.StatusOkTagDeleteResponse{
+	expected := api.TagDeleteResponse{
 		Deleted: []repositories.ImageTagSuccess{*result.Success},
 		Errors:  []repositories.ImageTagFail{},
 	}
-	var got api.StatusOkTagDeleteResponse
+	var got api.TagDeleteResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -332,11 +332,11 @@ func TestHandleDeleteComplex(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	expected := api.StatusOkTagDeleteResponse{
+	expected := api.TagDeleteResponse{
 		Deleted: []repositories.ImageTagSuccess{{Id: 1, Count: 3}, {Id: 2, Count: 3}, {Id: 3, Count: 3}},
 		Errors:  []repositories.ImageTagFail{{Reason: "unknown id c", Id: -1}},
 	}
-	var got api.StatusOkTagDeleteResponse
+	var got api.TagDeleteResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	t.Log(w.Body.String())
 	assert.ElementsMatch(t, expected.Deleted, got.Deleted)
@@ -356,8 +356,8 @@ func TestHandleDeleteNoIds(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "no ids to remove tags from"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "no ids to remove tags from"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -375,8 +375,8 @@ func TestHandleDeleteNoTags(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "no tags to remove"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "no tags to remove"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 
@@ -397,11 +397,11 @@ func TestHandleDeleteBadId(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := api.StatusOkTagDeleteResponse{
+	expected := api.TagDeleteResponse{
 		Deleted: []repositories.ImageTagSuccess{},
 		Errors:  []repositories.ImageTagFail{{Reason: "unknown id a", Id: -1}, {Reason: "unknown id 9223372036854775808", Id: -1}},
 	}
-	var got api.StatusOkTagDeleteResponse
+	var got api.TagDeleteResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -459,8 +459,8 @@ func TestGetTagCountsNoIds(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/tag/counts", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "no ids specified"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "no ids specified"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -481,8 +481,8 @@ func TestGetTagCountsDatabaseError(t *testing.T) {
 	req.URL.RawQuery = q.Encode()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	expected := api.StatusBadRequestResponse{Error: "database error"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "database error"}
+	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }

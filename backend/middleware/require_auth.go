@@ -14,17 +14,17 @@ func RequireAuth(auth services.AuthService) gin.HandlerFunc {
 		JWT, err := c.Cookie("token")
 		if err != nil || JWT == "" {
 			log.Println("No JWT token provided with request to protected endpoint")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, api.StatusBadRequestResponse{Error: "Missing Authorization Token"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, api.BadRequestResponse{Error: "Missing Authorization Token"})
 			return
 		}
 
 		claims, err := auth.ValidateJWT(JWT)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, api.StatusBadRequestResponse{Error: "Invalid token: " + err.Error()})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, api.BadRequestResponse{Error: "Invalid token: " + err.Error()})
 			return
 		}
 		if claims.Subject == "" {
-			c.AbortWithStatusJSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "Invalid token: missing user ID"})
+			c.AbortWithStatusJSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid token: missing user ID"})
 			return
 		}
 		c.Set("userID", claims.Subject)

@@ -137,7 +137,7 @@ func (r *DefaultUserRepository) GetUserPermissions(userID database.UserID) (data
 }
 
 func (r *DefaultUserRepository) GrantAdminPermissions(userID database.UserID) error {
-	allPerms := data.All()
+	allPerms := data.AllPermissions()
 	err := r.GrantUserPermissions(userID, allPerms)
 	if err != nil {
 		return fmt.Errorf("failed to grant admin permissions: %w", err)
@@ -146,7 +146,7 @@ func (r *DefaultUserRepository) GrantAdminPermissions(userID database.UserID) er
 }
 
 func (r *DefaultUserRepository) RevokeAllPermissions(userID database.UserID) error {
-	allPerms := data.All()
+	allPerms := data.AllPermissions()
 	err := r.RevokeUserPermissions(userID, allPerms)
 	if err != nil {
 		return fmt.Errorf("failed to revoke all permissions: %w", err)

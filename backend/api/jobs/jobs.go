@@ -41,20 +41,20 @@ type exampleResponse struct { //nolint:unused
 // @tags        jobs
 // @param       id   path      string  true  "Job Batch UUID" format(uuid)
 // @success     200  {object}  exampleResponse
-// @failure     400  {object}  api.StatusBadRequestResponse
-// @failure     404  {object}  api.StatusNotFoundResponse
+// @failure     400  {object}  api.BadRequestResponse
+// @failure     404  {object}  api.NotFoundResponse
 func (je JobsEndpoint) Details(c *gin.Context) {
 	idParam := c.Param("id")
 	var id uuid.UUID
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "failed to parse job batch UUID: " + err.Error()})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to parse job batch UUID: " + err.Error()})
 		return
 	}
 
 	jobBatch := je.jobService.GetBatch(id)
 	if jobBatch == nil {
-		c.JSON(http.StatusNotFound, api.StatusNotFoundResponse{Error: "job batch not found"})
+		c.JSON(http.StatusNotFound, api.NotFoundResponse{Error: "job batch not found"})
 		return
 	}
 	c.JSON(http.StatusOK, jobBatch)
@@ -67,20 +67,20 @@ func (je JobsEndpoint) Details(c *gin.Context) {
 // @tags        jobs
 // @param       id   path      string  true  "Job Batch UUID" format(uuid)
 // @success     200  {object}  services.JobSummary
-// @failure     400  {object}  api.StatusBadRequestResponse
-// @failure     404  {object}  api.StatusNotFoundResponse
+// @failure     400  {object}  api.BadRequestResponse
+// @failure     404  {object}  api.NotFoundResponse
 func (je JobsEndpoint) Summary(c *gin.Context) {
 	idParam := c.Param("id")
 	var id uuid.UUID
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "failed to parse job batch UUID: " + err.Error()})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to parse job batch UUID: " + err.Error()})
 		return
 	}
 
 	summary := je.jobService.GetSummary(id)
 	if summary == nil {
-		c.JSON(http.StatusNotFound, api.StatusNotFoundResponse{Error: "job batch not found"})
+		c.JSON(http.StatusNotFound, api.NotFoundResponse{Error: "job batch not found"})
 		return
 	}
 	c.JSON(http.StatusOK, *summary)
@@ -103,22 +103,22 @@ func (je JobsEndpoint) List(c *gin.Context) {
 // @router      /jobs/cancel/{id} [post]
 // @tags        jobs
 // @param       id   path      string  true  "Job Batch UUID" format(uuid)
-// @success     200 {object} api.StatusCancelledJob
-// @failure     404 {object} api.StatusNotFoundResponse
+// @success     200 {object} api.CancelledJobResponse
+// @failure     404 {object} api.NotFoundResponse
 func (je JobsEndpoint) Cancel(c *gin.Context) {
 	idParam := c.Param("id")
 	var id uuid.UUID
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "failed to parse job batch UUID: " + err.Error()})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to parse job batch UUID: " + err.Error()})
 		return
 	}
 
 	batch := je.jobService.GetBatch(id)
 	if batch == nil {
-		c.JSON(http.StatusNotFound, api.StatusNotFoundResponse{Error: "job batch not found"})
+		c.JSON(http.StatusNotFound, api.NotFoundResponse{Error: "job batch not found"})
 		return
 	}
 	batch.Cancel()
-	c.JSON(http.StatusOK, api.StatusCancelledJob{UUID: batch.UUID})
+	c.JSON(http.StatusOK, api.CancelledJobResponse{UUID: batch.UUID})
 }

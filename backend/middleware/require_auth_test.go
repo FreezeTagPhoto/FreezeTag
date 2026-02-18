@@ -114,7 +114,6 @@ func TestAuthMiddlewareNoSub(t *testing.T) {
 	assert.Equal(t, nil, userID)
 }
 
-
 func TestAuthMiddlewareHasPermissions(t *testing.T) {
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
@@ -124,7 +123,7 @@ func TestAuthMiddlewareHasPermissions(t *testing.T) {
 
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 	claims := services.Claims{
-		Permissions: data.Permissions{"1", "2"},
+		Permissions: data.Permissions{data.CreateUser, data.ReadUser},
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: "expectedUserID",
 		},
@@ -139,7 +138,7 @@ func TestAuthMiddlewareHasPermissions(t *testing.T) {
 	}
 	permissions, exists := ctx.Get("permissions")
 	assert.True(t, exists)
-	assert.ElementsMatch(t, data.Permissions{"1", "2"}, permissions)
+	assert.ElementsMatch(t, data.Permissions{data.CreateUser, data.ReadUser}, permissions)
 }
 
 func TestAuthMiddlewareHasNoPermissions(t *testing.T) {

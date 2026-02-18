@@ -8,6 +8,8 @@ import (
 	"freezetag/backend/api/login"
 	"freezetag/backend/api/logout"
 	"freezetag/backend/api/metadata"
+	"freezetag/backend/api/password"
+	"freezetag/backend/api/permissions"
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
@@ -148,7 +150,10 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	authGroup.Use(middleware.RequireAuth(deps.authService))
 
 	initLoginEndpoints(router, deps)
+
+	initPermissionsEndpoints(authGroup)
 	initLogoutEndpoints(authGroup, deps)
+	initPasswordEndpoints(authGroup, deps)
 	initTagEndpoints(authGroup, deps)
 	initUploadEndpoints(authGroup, deps)
 	initThumbnailEndpoints(authGroup, deps)
@@ -157,6 +162,22 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	initJobsEndpoints(authGroup, deps)
 	initFileEndpoints(authGroup, deps)
 	initUserEndpoints(authGroup, deps)
+}
+
+func initPermissionsEndpoints(baseGroup gin.IRouter) {
+	permGroup := baseGroup.Group("/permissions")
+	{
+		pe := permissions.InitPermissionEndpoint()
+		permGroup.GET("/list", pe.ListPermissions)
+	}
+}
+
+func initPasswordEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	passwordGroup := baseGroup.Group("/password")
+	{
+		pe := password.InitPasswordEndpoint(deps.authService)
+		passwordGroup.POST("/change", pe.ChangePassword)
+	}
 }
 
 func initLoginEndpoints(baseGroup gin.IRouter, deps *dependencies) {

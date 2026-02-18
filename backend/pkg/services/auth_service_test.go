@@ -334,3 +334,90 @@ func TestAuthenticateUserPermissionsError(t *testing.T) {
 	_, err = authService.AuthenticateUser("authuser", plaintextPassword)
 	assert.Error(t, err)
 }
+
+func TestChangePasswordSuccess(t *testing.T) {
+	plaintextPassword := "securepassword"
+	newPassword := "newsecurepassword"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
+	require.NoError(t, err)
+
+	mockRepo := mockUserRepository.NewMockUserRepository(t)
+	mockRepo.EXPECT().
+		GetUserPasswordHash(database.UserID(7)).
+		Return(string(hashedPassword), nil).
+		Once()
+	mockRepo.EXPECT().
+		ChangePassword(database.UserID(7), mock.AnythingOfType("string")).
+		Return(nil).
+		Run(func(userID database.UserID, newHash string) {
+			err := bcrypt.CompareHashAndPassword([]byte(newHash), []byte(newPassword))
+			assert.NoError(t, err, "New password hash does not match the new password")
+		}).
+		Once()
+	authService := InitDefaultAuthService(mockRepo)
+	err = authService.ChangePassword(database.UserID(7), plaintextPassword, newPassword)
+	assert.NoError(t, err)
+}
+
+func TestChangePasswordInvalidHash(t *testing.T) {
+	plaintextPassword := "securepassword"
+	newPassword := "newsecurepassword"
+	fakeHash, err := bcrypt.GenerateFromPassword([]byte("insecurePassword"), bcrypt.DefaultCost)
+	require.NoError(t, err)
+	mockRepo := mockUserRepository.NewMockUserRepository(t)
+	mockRepo.EXPECT().
+		GetUserPasswordHash(database.UserID(7)).
+		Return(string(fakeHash), nil).
+		Once()
+	authService := InitDefaultAuthService(mockRepo)
+	err = authService.ChangePassword(database.UserID(7), plaintextPassword, newPassword)
+	assert.Error(t, err)
+}
+
+func TestUserRepoErrorChangePassword(t *testing.T) {	
+	plaintextPassword := "securepassword"
+	newPassword := "newsecurepassword"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
+	require.NoError(t, err)
+	
+	mockRepo := mockUserRepository.NewMockUserRepository(t)
+	mockRepo.EXPECT().
+		GetUserPasswordHash(database.UserID(7)).
+		Return(string(hashedPassword), nil).
+		Once()
+	mockRepo.EXPECT().
+		ChangePassword(database.UserID(7), mock.AnythingOfType("string")).
+		Return(assert.AnError).
+		Once()
+	authService := InitDefaultAuthService(mockRepo)
+	err = authService.ChangePassword(database.UserID(7), plaintextPassword, newPassword)
+	assert.Error(t, err)
+}
+
+func TestForceChangePassword(t *testing.T) {
+	newPassword := "newsecurepassword"
+	mockRepo := mockUserRepository.NewMockUserRepository(t)
+	mockRepo.EXPECT().
+		ChangePassword(database.UserID(7), mock.AnythingOfType("string")).
+		Return(nil).
+		Run(func(userID database.UserID, newHash string) {
+			err := bcrypt.CompareHashAndPassword([]byte(newHash), []byte(newPassword))
+			assert.NoError(t, err, "New password hash does not match the new password")
+		}).
+		Once()
+	authService := InitDefaultAuthService(mockRepo)
+	err := authService.ForceChangePassword(database.UserID(7), newPassword)
+	assert.NoError(t, err)
+}
+
+func TestForceChangePasswordRepoError(t *testing.T) {
+	newPassword := "newsecurepassword"
+	mockRepo := mockUserRepository.NewMockUserRepository(t)
+	mockRepo.EXPECT().
+		ChangePassword(database.UserID(7), mock.AnythingOfType("string")).
+		Return(assert.AnError).
+		Once()
+	authService := InitDefaultAuthService(mockRepo)
+	err := authService.ForceChangePassword(database.UserID(7), newPassword)
+	assert.Error(t, err)
+}

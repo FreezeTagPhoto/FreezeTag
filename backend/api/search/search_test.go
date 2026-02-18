@@ -167,8 +167,8 @@ func runNearErrorTest(t *testing.T, near string, expectedErr string) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := api.StatusBadRequestResponse{Error: expectedErr}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: expectedErr}
+	var got api.BadRequestResponse
 
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
@@ -240,8 +240,8 @@ func runBadTakenXTest(t *testing.T, query, location, expectedErr string) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := api.StatusBadRequestResponse{Error: expectedErr}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: expectedErr}
+	var got api.BadRequestResponse
 
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
@@ -275,8 +275,8 @@ func TestSearchImageFail(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	expected := api.StatusServerErrorResponse{Error: "mock error"}
-	var got api.StatusServerErrorResponse
+	expected := api.ServerErrorResponse{Error: "mock error"}
+	var got api.ServerErrorResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 
@@ -300,8 +300,8 @@ func runBadSortTest(t *testing.T, param string, value string, expected string) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expectedErr := api.StatusBadRequestResponse{Error: expected}
-	var got api.StatusBadRequestResponse
+	expectedErr := api.BadRequestResponse{Error: expected}
+	var got api.BadRequestResponse
 
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expectedErr, got)

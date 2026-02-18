@@ -27,13 +27,13 @@ func InitFileEndpoint(repo repositories.ImageRepository) FileEndpoint {
 // @router      /file/{id} [get]
 // @param       id path int true "Image ID"
 // @success     200 {file}   string "thumbnail file data"
-// @failure     400 {object} api.StatusBadRequestResponse
-// @failure     500 {object} api.StatusServerErrorResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
 func (fe FileEndpoint) HandleGet(c *gin.Context) {
 	idParam := c.Param("id")
 	var id database.ImageId
 	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
-		c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "Invalid image ID parameter"})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid image ID parameter"})
 		return
 	} else {
 		id = database.ImageId(num)
@@ -41,7 +41,7 @@ func (fe FileEndpoint) HandleGet(c *gin.Context) {
 
 	result, err := fe.imageRepository.GetImageFilepath(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.StatusServerErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
 	c.File(result)

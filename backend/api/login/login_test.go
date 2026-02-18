@@ -52,10 +52,10 @@ func TestLogin(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	got := w.Body.Bytes()
-	var gotResponse api.StatusLoginSuccess
+	var gotResponse api.LoginSuccessResponse
 	err = json.Unmarshal(got, &gotResponse)
 	assert.NoError(t, err)
-	expected := api.StatusLoginSuccess{Token: "json_token"}
+	expected := api.LoginSuccessResponse{Token: "json_token"}
 	assert.Equal(t, expected, gotResponse)
 
 	cookies := w.Result().Cookies()
@@ -88,10 +88,10 @@ func TestLoginFailure(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	var got api.StatusLoginFail
+	var got api.LoginFailResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.StatusLoginFail{Error: "authentication failed: authentication failed"}
+	expected := api.LoginFailResponse{Error: "authentication failed: authentication failed"}
 	assert.Equal(t, expected, got)
 }
 
@@ -113,7 +113,7 @@ func TestLoginBadCredentialFormat(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.StatusBadRequestResponse
+	var got api.BadRequestResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	assert.Contains(t, got.Error, "invalid request")
@@ -143,10 +143,10 @@ func TestLoginExistingLoginCookie(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	var got api.StatusLoginUser
+	var got api.LoginUserResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.StatusLoginUser{UserID: 1}
+	expected := api.LoginUserResponse{UserID: 1}
 	assert.Equal(t, expected, got)
 }
 
@@ -170,10 +170,10 @@ func TestLoginExistingLoginCookieNoAuth(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	var got api.StatusLoginFail
+	var got api.LoginFailResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.StatusLoginFail{Error: "not authenticated"}
+	expected := api.LoginFailResponse{Error: "not authenticated"}
 	assert.Equal(t, expected, got)
 }
 
@@ -197,10 +197,10 @@ func TestLoginExistingLoginCookieNoSub(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	var got api.StatusLoginFail
+	var got api.LoginFailResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.StatusLoginFail{Error: "invalid user ID in token"}
+	expected := api.LoginFailResponse{Error: "invalid user ID in token"}
 	assert.Equal(t, expected, got)
 }
 
@@ -217,10 +217,10 @@ func TestLoginNoExistingLoginCookie(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	var got api.StatusLoginFail
+	var got api.LoginFailResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.StatusLoginFail{Error: "not authenticated"}
+	expected := api.LoginFailResponse{Error: "not authenticated"}
 	assert.Equal(t, expected, got)
 }
 
@@ -232,7 +232,7 @@ func TestLoginInfoBadId(t *testing.T) {
 			RegisteredClaims: jwt.RegisteredClaims{
 				Subject: "1",
 			},
-			Permissions: data.Permissions{"permission"},
+			Permissions: data.Permissions{data.CreateUser},
 		}, nil).Once()
 
 	router := gin.Default()
@@ -248,9 +248,9 @@ func TestLoginInfoBadId(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	var got api.StatusLoginUser
+	var got api.LoginUserResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.StatusLoginUser{UserID: 1, Permissions: data.Permissions{"permission"}}
+	expected := api.LoginUserResponse{UserID: 1, Permissions: data.Permissions{data.CreateUser}}
 	assert.Equal(t, expected, got)
 }

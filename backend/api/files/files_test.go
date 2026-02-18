@@ -53,8 +53,8 @@ func TestServeFileFail(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	expected := api.StatusServerErrorResponse{Error: "mock error"}
-	var got api.StatusServerErrorResponse
+	expected := api.ServerErrorResponse{Error: "mock error"}
+	var got api.ServerErrorResponse
 	t.Log(w.Body.String())
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
@@ -70,8 +70,8 @@ func TestServeFileBadId(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := api.StatusBadRequestResponse{Error: "Invalid image ID parameter"}
-	var got api.StatusBadRequestResponse
+	expected := api.BadRequestResponse{Error: "Invalid image ID parameter"}
+	var got api.BadRequestResponse
 	t.Log(w.Body.String())
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
