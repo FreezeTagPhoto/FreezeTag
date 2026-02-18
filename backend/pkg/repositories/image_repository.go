@@ -64,7 +64,7 @@ type ImageRepository interface {
 	GetImageFilepath(id database.ImageId) (string, error)
 	GetImageMetadata(id database.ImageId) (imagedata.Metadata, error)
 	GetImageResolution(id database.ImageId) (int, int, error)
-	GetTagCounts(ids []string) (map[string]int64, error)
+	GetTagCounts(ids []database.ImageId) (map[string]int64, error)
 	GetQueryTagCounts(query queries.DatabaseQuery) (map[string]int64, error)
 }
 

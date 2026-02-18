@@ -1,14 +1,11 @@
 package search
 
 import (
-	"fmt"
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/repositories"
 	"net/http"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,30 +18,6 @@ func InitSearchEndpoint(repository repositories.ImageRepository) SearchEndpoint 
 	return SearchEndpoint{
 		repository,
 	}
-}
-
-func parseNearParam(near string) ([3]float64, error) {
-	parts := strings.Split(near, ",")
-	if len(parts) != 3 {
-		return [3]float64{}, fmt.Errorf("invalid near parameter")
-	}
-	var lat, long, dist float64
-	if f, err := strconv.ParseFloat(parts[0], 64); err != nil {
-		return [3]float64{}, fmt.Errorf("invalid latitude in near parameter")
-	} else {
-		lat = f
-	}
-	if f, err := strconv.ParseFloat(parts[1], 64); err != nil {
-		return [3]float64{}, fmt.Errorf("invalid longitude in near parameter")
-	} else {
-		long = f
-	}
-	if f, err := strconv.ParseFloat(parts[2], 64); err != nil {
-		return [3]float64{}, fmt.Errorf("invalid distance in near parameter")
-	} else {
-		dist = f
-	}
-	return [3]float64{lat, long, dist}, nil
 }
 
 // @summary     Search images
@@ -71,70 +44,15 @@ func parseNearParam(near string) ([3]float64, error) {
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
 func (se SearchEndpoint) Search(c *gin.Context) {
-	query := queries.CreateImageQuery()
-	if make := c.Query("make"); make != "" {
-		query.WithMake(make)
-	}
-	if makeLike := c.Query("makeLike"); makeLike != "" {
-		query.WithMakeLike(makeLike)
-	}
-	if model := c.Query("model"); model != "" {
-		query.WithModel(model)
-	}
-	if modelLike := c.Query("modelLike"); modelLike != "" {
-		query.WithModelLike(modelLike)
-	}
-	for _, tag := range c.QueryArray("tag") {
-		query.WithTag(tag)
-	}
-	for _, tagLike := range c.QueryArray("tagLike") {
-		query.WithTagLike(tagLike)
-	}
-	if nearParam := c.Query("near"); nearParam != "" {
-		near, err := parseNearParam(nearParam)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
-			return
-		}
-		query.WithLocation(near[0], near[1], near[2])
-	}
-	if tbParam := c.Query("takenBefore"); tbParam != "" {
-		tb, err := strconv.ParseInt(tbParam, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad takenBefore parameter"})
-			return
-		}
-		query.TakenBefore(time.Unix(tb, 0))
-	}
-	if taParam := c.Query("takenAfter"); taParam != "" {
-		ta, err := strconv.ParseInt(taParam, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad takenAfter parameter"})
-			return
-		}
-		query.TakenAfter(time.Unix(ta, 0))
-	}
-	if ubParam := c.Query("uploadedBefore"); ubParam != "" {
-		ub, err := strconv.ParseInt(ubParam, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad uploadedBefore parameter"})
-			return
-		}
-		query.UploadedBefore(time.Unix(ub, 0))
-	}
-	if uaParam := c.Query("uploadedAfter"); uaParam != "" {
-		ua, err := strconv.ParseInt(uaParam, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad uploadedAfter parameter"})
-			return
-		}
-		query.UploadedAfter(time.Unix(ua, 0))
+	query := api.GetRequestQuery(c)
+	if query == nil {
+		return
 	}
 	var pageSize uint = 0
 	if psParam := c.Query("pageSize"); psParam != "" {
 		ps, err := strconv.ParseUint(psParam, 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad pageSize parameter"})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad pageSize parameter"})
 			return
 		}
 		pageSize = uint(ps)
@@ -143,7 +61,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 	if pcParam := c.Query("pageNo"); pcParam != "" {
 		pn, err := strconv.ParseUint(pcParam, 10, 32)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, api.StatusBadRequestResponse{Error: "bad pageNo parameter"})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad pageNo parameter"})
 			return
 		}
 		pageNo = uint(pn)

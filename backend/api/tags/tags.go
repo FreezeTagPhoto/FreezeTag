@@ -189,10 +189,19 @@ func (te TagEndpoint) ImageTags(c *gin.Context) {
 // @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
 func (te TagEndpoint) ListCounts(c *gin.Context) {
-	ids := c.QueryArray("id")
-	if len(ids) == 0 {
+	idParam := c.QueryArray("id")
+	if len(idParam) == 0 {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no ids specified"})
 		return
+	}
+	ids := make([]database.ImageId, len(idParam))
+	for i, idStr := range idParam {
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad id parameter"})
+			return
+		}
+		ids[i] = database.ImageId(id)
 	}
 
 	result, err := te.imageRepository.GetTagCounts(ids)
@@ -201,4 +210,40 @@ func (te TagEndpoint) ListCounts(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, api.TagCounts(result))
+}
+
+// @summary     Get tag counts from search
+// @description Get all tags and the total overlap count for a search query
+// @tags        search, tags
+// @router      /tag/search [get]
+// @param       make           query string   false "camera make"
+// @param       makeLike       query string   false "camera make fuzzy"
+// @param       model          query string   false "camera model"
+// @param       modelLike      query string   false "camera model fuzzy"
+// @param       takenBefore    query string   false "picture taken before (unix epoch)"
+// @param       takenAfter     query string   false "picture taken after (unix epoch)"
+// @param       uploadedBefore query string   false "picture uploaded before (unix epoch)"
+// @param       uploadedAfter  query string   false "picture uploaded after (unix epoch)"
+// @param       near           query string   false "latitude/longitude/distance (degrees)" example(100.0,12.0,1.0)
+// @param       tag            query []string false "picture tag"                           collectionFormat(multi)
+// @param       tagLike        query []string false "picture tag fuzzy"                     collectionFormat(multi)
+// @param       sortBy         query string   false "sort by"                               Enums(DateAdded,DateCreated) default(DateAdded)
+// @param       sortOrder      query string   false "sort order"                            Enums(ASC,DESC) default(DESC)
+// @param       pageSize       query uint     false "page size"
+// @param       pageNo         query uint     false "page number (zero indexed)"
+// @success     200 {object} api.TagCounts
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
+func (te TagEndpoint) ListCountsQuery(c *gin.Context) {
+	query := api.GetRequestQuery(c)
+	if query == nil {
+		return
+	}
+	tc, err := te.imageRepository.GetQueryTagCounts(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, api.TagCounts(tc))
 }

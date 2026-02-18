@@ -25,6 +25,7 @@ func (te TagEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.GET("/tag/list", te.ListTags)
 	e.GET("/tag/list/:id", te.ImageTags)
 	e.GET("/tag/counts", te.ListCounts)
+	e.GET("/tag/search", te.ListCountsQuery)
 }
 
 func TestGetAllTags(t *testing.T) {
@@ -481,7 +482,86 @@ func TestGetTagCountsDatabaseError(t *testing.T) {
 	req.URL.RawQuery = q.Encode()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-	expected := api.BadRequestResponse{Error: "database error"}
+	expected := api.ServerErrorResponse{Error: "database error"}
+	var got api.ServerErrorResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestGetTagCountsInvalidId(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/tag/counts", nil)
+	q := req.URL.Query()
+	q.Add("id", "1")
+	q.Add("id", "foo")
+	req.URL.RawQuery = q.Encode()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	expected := api.BadRequestResponse{Error: "bad id parameter"}
+	var got api.BadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestGetTagCountsQuerySuccess(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		GetQueryTagCounts(mock.Anything).
+		Return(map[string]int64{"foo": 2}, nil)
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/tag/search", nil)
+	q := req.URL.Query()
+	q.Add("make", "Apple")
+	req.URL.RawQuery = q.Encode()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	expected := api.TagCounts(map[string]int64{"foo": 2})
+	var got api.TagCounts
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestGetTagCountsQueryError(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		GetQueryTagCounts(mock.Anything).
+		Return(nil, fmt.Errorf("foo"))
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/tag/search", nil)
+	q := req.URL.Query()
+	q.Add("make", "Apple")
+	req.URL.RawQuery = q.Encode()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	expected := api.ServerErrorResponse{Error: "foo"}
+	var got api.ServerErrorResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestGetTagCountsQueryInvalidField(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/tag/search", nil)
+	q := req.URL.Query()
+	q.Add("near", "foo")
+	req.URL.RawQuery = q.Encode()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	expected := api.BadRequestResponse{Error: "invalid near parameter"}
 	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)

@@ -270,5 +270,6 @@ func initTagEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		tagGroup.GET("/list", middleware.RequirePermission(data.ReadTags), te.ListTags)
 		tagGroup.GET("/list/:id", middleware.RequirePermission(data.ReadTags), te.ImageTags)
 		tagGroup.GET("/counts", middleware.RequirePermission(data.ReadTags), te.ListCounts)
+		tagGroup.GET("/search", middleware.RequirePermission(data.ReadTags), te.ListCountsQuery)
 	}
 }
