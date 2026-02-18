@@ -213,7 +213,8 @@ func initFileEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	fileGroup := baseGroup.Group("/file")
 	{
 		fe := files.InitFileEndpoint(deps.imageRepository)
-		fileGroup.GET("/:id", middleware.RequirePermission(data.ReadFiles), fe.HandleGet)
+		fileGroup.GET("/download/:id", middleware.RequirePermission(data.ReadFiles), fe.HandleGet)
+		fileGroup.DELETE("/delete/:id", middleware.RequirePermission(data.WriteFiles), fe.HandleDelete)
 	}
 }
 
@@ -265,6 +266,7 @@ func initTagEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	{
 		te := tags.InitTagEndpoint(deps.imageRepository)
 		tagGroup.DELETE("/remove", middleware.RequirePermission(data.WriteTags), te.HandleDelete)
+		tagGroup.DELETE("/delete", middleware.RequirePermission(data.WriteTags), te.HandleDeleteFull)
 		tagGroup.POST("/add", middleware.RequirePermission(data.WriteTags), te.HandlePost)
 
 		tagGroup.GET("/list", middleware.RequirePermission(data.ReadTags), te.ListTags)

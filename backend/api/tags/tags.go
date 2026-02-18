@@ -22,13 +22,35 @@ func InitTagEndpoint(repo repositories.ImageRepository) TagEndpoint {
 }
 
 // @summary     Delete tags
+// @description Delete tags from the database
+// @tags        tags
+// @produce     application/json
+// @router      /tag/delete [delete]
+// @param       tag query []string true "tags to delete" collectionFormat(multi)
+// @success     200 {object} api.TagDeleteResponse
+// @failure     400 {object} api.BadRequestResponse
+func (te TagEndpoint) HandleDeleteFull(c *gin.Context) {
+	tags := c.QueryArray("tag")
+	if len(tags) == 0 {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no tags to delete"})
+		return
+	}
+	count, err := te.imageRepository.DeleteTags(tags)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, api.TagDeleteResponse{Deleted: count})
+}
+
+// @summary     Delete image tags
 // @description Delete tags from images
 // @tags        tags
 // @produce     application/json
 // @router      /tag/remove [delete]
 // @param       tag query []string true "tags to remove"           collectionFormat(multi)
 // @param       id  query []int    true "image IDs to remove from" collectionFormat(multi)
-// @success     200 {object} api.TagDeleteResponse
+// @success     200 {object} api.TagRemoveResponse
 // @failure     400 {object} api.BadRequestResponse
 func (te TagEndpoint) HandleDelete(c *gin.Context) {
 	if len(c.QueryArray("tag")) == 0 {
@@ -72,7 +94,7 @@ func (te TagEndpoint) HandleDelete(c *gin.Context) {
 		}
 	}
 
-	response := api.TagDeleteResponse{
+	response := api.TagRemoveResponse{
 		Deleted: deleted,
 		Errors:  errors,
 	}

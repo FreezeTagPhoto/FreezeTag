@@ -6,6 +6,7 @@ import (
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/imagedata"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -61,6 +62,8 @@ type ImageRepository interface {
 	RetrieveImageTags(id database.ImageId) ([]string, error)
 	AddImageTags(id database.ImageId, tags []string) ImageTagResult
 	RemoveImageTags(id database.ImageId, tags []string) ImageTagResult
+	DeleteTags(tags []string) (int, error)
+	DeleteImage(id database.ImageId) (string, error)
 	GetImageFilepath(id database.ImageId) (string, error)
 	GetImageMetadata(id database.ImageId) (imagedata.Metadata, error)
 	GetImageResolution(id database.ImageId) (int, int, error)
@@ -219,6 +222,10 @@ func (repo *DefaultImageRepository) RemoveImageTags(id database.ImageId, tags []
 	}
 }
 
+func (repo *DefaultImageRepository) DeleteTags(tags []string) (int, error) {
+	return repo.db.RemoveTags(tags)
+}
+
 func (repo *DefaultImageRepository) GetImageFilepath(id database.ImageId) (string, error) {
 	fileName, err := repo.db.GetImageFile(id)
 	if err != nil {
@@ -228,7 +235,36 @@ func (repo *DefaultImageRepository) GetImageFilepath(id database.ImageId) (strin
 		return "", fmt.Errorf("nil or empty file")
 	}
 
-	return fmt.Sprintf("%s%s", repo.folderPath, *fileName), nil
+	return path.Join(repo.folderPath, *fileName), nil
+}
+
+func (repo *DefaultImageRepository) DeleteImage(id database.ImageId) (string, error) {
+	fileName, err := repo.db.GetImageFile(id)
+	if err != nil {
+		return "", err
+	}
+	deleteFile := true
+	if fileName == nil || *fileName == "" {
+		deleteFile = false
+		log.Printf("[WARN] the file for image %d was nil or empty during deletion", id)
+	}
+	var filePath string = ""
+	if deleteFile {
+		filePath = path.Join(repo.folderPath, *fileName)
+	}
+	_, err = repo.db.RemoveImage(id)
+	if err != nil {
+		return "", err
+	}
+	if deleteFile {
+		err = os.Remove(filePath)
+		if err != nil {
+			log.Printf("[ERR]  after deleting image id %d the file could not be deleted: %v", id, err)
+			log.Printf("[ERR]  file possibly remaining after deletion: %v", path.Join(repo.folderPath, *fileName))
+			return "", err
+		}
+	}
+	return filePath, nil
 }
 
 func (repo *DefaultImageRepository) GetImageMetadata(id database.ImageId) (imagedata.Metadata, error) {

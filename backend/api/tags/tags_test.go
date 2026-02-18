@@ -21,6 +21,7 @@ import (
 
 func (te TagEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.DELETE("/tag/remove", te.HandleDelete)
+	e.DELETE("/tag/delete", te.HandleDeleteFull)
 	e.POST("/tag/add", te.HandlePost)
 	e.GET("/tag/list", te.ListTags)
 	e.GET("/tag/list/:id", te.ImageTags)
@@ -292,11 +293,11 @@ func TestHandleDeleteSimple(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := api.TagDeleteResponse{
+	expected := api.TagRemoveResponse{
 		Deleted: []repositories.ImageTagSuccess{*result.Success},
 		Errors:  []repositories.ImageTagFail{},
 	}
-	var got api.TagDeleteResponse
+	var got api.TagRemoveResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -333,11 +334,11 @@ func TestHandleDeleteComplex(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	expected := api.TagDeleteResponse{
+	expected := api.TagRemoveResponse{
 		Deleted: []repositories.ImageTagSuccess{{Id: 1, Count: 3}, {Id: 2, Count: 3}, {Id: 3, Count: 3}},
 		Errors:  []repositories.ImageTagFail{{Reason: "unknown id c", Id: -1}},
 	}
-	var got api.TagDeleteResponse
+	var got api.TagRemoveResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	t.Log(w.Body.String())
 	assert.ElementsMatch(t, expected.Deleted, got.Deleted)
@@ -398,11 +399,11 @@ func TestHandleDeleteBadId(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := api.TagDeleteResponse{
+	expected := api.TagRemoveResponse{
 		Deleted: []repositories.ImageTagSuccess{},
 		Errors:  []repositories.ImageTagFail{{Reason: "unknown id a", Id: -1}, {Reason: "unknown id 9223372036854775808", Id: -1}},
 	}
-	var got api.TagDeleteResponse
+	var got api.TagRemoveResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -565,4 +566,43 @@ func TestGetTagCountsQueryInvalidField(t *testing.T) {
 	var got api.BadRequestResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
+}
+
+func TestFullDeleteSuccess(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		DeleteTags([]string{"foo", "bar"}).
+		Return(2, nil)
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/tag/delete?tag=foo&tag=bar", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestFullDeleteNoTags(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/tag/delete", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestFullDeleteRepoError(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		DeleteTags(mock.Anything).
+		Return(0, fmt.Errorf("test error"))
+	router := gin.Default()
+	InitTagEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/tag/delete?tag=foo", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }

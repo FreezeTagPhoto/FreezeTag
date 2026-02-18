@@ -553,3 +553,90 @@ func TestGetQueryTagCountQueryFail(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, res)
 }
+
+func TestGetImageResolution(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImageResolution(mock.Anything).
+		Return(5, 4, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
+
+	w, h, err := repo.GetImageResolution(database.ImageId(5))
+	assert.NoError(t, err)
+	assert.Equal(t, 5, w)
+	assert.Equal(t, 4, h)
+}
+
+func TestRemoveTags(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		RemoveTags(mock.Anything).
+		Return(3, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
+
+	count, err := repo.DeleteTags([]string{"foo", "bar", "baz"})
+	assert.NoError(t, err)
+	assert.Equal(t, 3, count)
+}
+
+func TestDeleteImageFailDelete(t *testing.T) {
+	id := database.ImageId(4)
+	filePath := "nonexistent/file"
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImageFile(id).
+		Return(&filePath, nil)
+	mockdb.EXPECT().
+		RemoveImage(id).
+		Return(true, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/tmp")
+	_, err := repo.DeleteImage(id)
+	assert.Error(t, err)
+}
+
+func TestDeleteImageNilFile(t *testing.T) {
+	id := database.ImageId(4)
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImageFile(id).
+		Return(nil, nil)
+	mockdb.EXPECT().
+		RemoveImage(id).
+		Return(true, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/tmp")
+	_, err := repo.DeleteImage(id)
+	assert.NoError(t, err)
+}
+
+func TestDeleteImageDatabaseErrors(t *testing.T) {
+	id := database.ImageId(4)
+	t.Run("duringFile", func(t *testing.T) {
+		mockdb := mockDatabase.NewMockImageDatabase(t)
+		mockdb.EXPECT().
+			GetImageFile(id).
+			Return(nil, fmt.Errorf("test error"))
+		parser := mockParser.NewMockParser(t)
+		repo := InitImageRepository(mockdb, parser, "/tmp")
+		_, err := repo.DeleteImage(id)
+		assert.ErrorContains(t, err, "test error")
+	})
+
+	t.Run("duringRemove", func(t *testing.T) {
+		filePath := "nonexistent/file"
+		mockdb := mockDatabase.NewMockImageDatabase(t)
+		mockdb.EXPECT().
+			GetImageFile(id).
+			Return(&filePath, nil)
+		mockdb.EXPECT().
+			RemoveImage(id).
+			Return(false, fmt.Errorf("test error"))
+		parser := mockParser.NewMockParser(t)
+		repo := InitImageRepository(mockdb, parser, "/tmp")
+		_, err := repo.DeleteImage(id)
+		assert.ErrorContains(t, err, "test error")
+	})
+}
