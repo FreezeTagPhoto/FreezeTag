@@ -248,7 +248,7 @@ func (repo *DefaultImageRepository) DeleteImage(id database.ImageId) (string, er
 		deleteFile = false
 		log.Printf("[WARN] the file for image %d was nil or empty during deletion", id)
 	}
-	var filePath string = ""
+	var filePath = ""
 	if deleteFile {
 		filePath = path.Join(repo.folderPath, *fileName)
 	}
