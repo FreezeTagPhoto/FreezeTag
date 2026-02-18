@@ -505,7 +505,7 @@ func TestGetTagCount(t *testing.T) {
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
 
-	result, err := repo.GetTagCounts([]string{"tag1", "tag2"})
+	result, err := repo.GetTagCounts([]database.ImageId{1})
 	assert.Nil(t, err, "error should be nil")
 	assert.Equal(t, expected, result)
 }
@@ -519,7 +519,37 @@ func TestGetTagCountFail(t *testing.T) {
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
 
-	_, err := repo.GetTagCounts([]string{"tag1", "tag2"})
+	_, err := repo.GetTagCounts([]database.ImageId{1})
 	assert.NotNil(t, err, "error should not be nil")
 	assert.Equal(t, "mock error", err.Error())
+}
+
+func TestGetQueryTagCountQuerySuccess(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImages(mock.Anything).
+		Return([]database.ImageId{1, 2}, nil)
+	mockdb.EXPECT().
+		GetTagCounts([]database.ImageId{1, 2}).
+		Return(map[string]int64{"foo": 2}, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
+
+	res, err := repo.GetQueryTagCounts(queries.CreateImageQuery())
+	assert.NoError(t, err)
+	assert.Contains(t, res, "foo")
+	assert.Equal(t, int64(2), res["foo"])
+}
+
+func TestGetQueryTagCountQueryFail(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImages(mock.Anything).
+		Return(nil, fmt.Errorf("test"))
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
+
+	res, err := repo.GetQueryTagCounts(queries.CreateImageQuery())
+	assert.Error(t, err)
+	assert.Nil(t, res)
 }

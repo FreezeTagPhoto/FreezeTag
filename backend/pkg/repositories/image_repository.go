@@ -65,6 +65,7 @@ type ImageRepository interface {
 	GetImageMetadata(id database.ImageId) (imagedata.Metadata, error)
 	GetImageResolution(id database.ImageId) (int, int, error)
 	GetTagCounts(ids []string) (map[string]int64, error)
+	GetQueryTagCounts(query queries.DatabaseQuery) (map[string]int64, error)
 }
 
 type DefaultImageRepository struct {
@@ -243,6 +244,14 @@ func (repo *DefaultImageRepository) GetImageResolution(id database.ImageId) (w i
 	return
 }
 
-func (repo *DefaultImageRepository) GetTagCounts(ids []string) (map[string]int64, error) {
+func (repo *DefaultImageRepository) GetTagCounts(ids []database.ImageId) (map[string]int64, error) {
 	return repo.db.GetTagCounts(ids)
+}
+
+func (repo *DefaultImageRepository) GetQueryTagCounts(query queries.DatabaseQuery) (map[string]int64, error) {
+	images, err := repo.SearchImage(query)
+	if err != nil {
+		return nil, err
+	}
+	return repo.db.GetTagCounts(images)
 }

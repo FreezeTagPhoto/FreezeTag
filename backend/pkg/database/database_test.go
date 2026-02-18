@@ -2,7 +2,6 @@ package database
 
 import (
 	"crypto/rand"
-	"fmt"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images/imagedata"
 	"io"
@@ -505,7 +504,7 @@ func TestGetTagCounts(t *testing.T) {
 	idB := insertTestImage(t, tmp)
 	_, _ = tmp.AddImageTags(idA, []string{"tag1", "tag2", "tag3"})
 	_, _ = tmp.AddImageTags(idB, []string{"tag2", "tag3", "tag4"})
-	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA), fmt.Sprint(idB)})
+	counts, err := tmp.GetTagCounts([]ImageId{idA, idB})
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), counts["tag1"])
 	assert.Equal(t, int64(2), counts["tag2"])
@@ -517,14 +516,14 @@ func TestGetTagCountsNoTags(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
 	idB := insertTestImage(t, tmp)
-	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA), fmt.Sprint(idB)})
+	counts, err := tmp.GetTagCounts([]ImageId{idA, idB})
 	require.NoError(t, err)
 	assert.Empty(t, counts)
 }
 
 func TestGetTagCountsNoIds(t *testing.T) {
 	tmp := createTempDatabase(t)
-	counts, err := tmp.GetTagCounts([]string{})
+	counts, err := tmp.GetTagCounts([]ImageId{})
 	require.NoError(t, err)
 	assert.Empty(t, counts)
 }
@@ -533,7 +532,7 @@ func TestGetTagCountsSomeIds(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
 	_, _ = tmp.AddImageTags(idA, []string{"tag1", "tag2"})
-	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA), "9999"})
+	counts, err := tmp.GetTagCounts([]ImageId{idA, 9999})
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), counts["tag1"])
 	assert.Equal(t, int64(1), counts["tag2"])
@@ -543,7 +542,7 @@ func TestGetTagCountsDuplicateTagsSingleId(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
 	_, _ = tmp.AddImageTags(idA, []string{"tag1", "tag1", "tag2"})
-	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA)})
+	counts, err := tmp.GetTagCounts([]ImageId{idA})
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), counts["tag1"])
 	assert.Equal(t, int64(1), counts["tag2"])
@@ -557,7 +556,7 @@ func TestMoreDuplicates(t *testing.T) {
 	_, _ = tmp.AddImageTags(idA, []string{"A", "B", "C"})
 	_, _ = tmp.AddImageTags(idB, []string{"A", "B", "C"})
 	_, _ = tmp.AddImageTags(idC, []string{"A", "C", "D"})
-	counts, err := tmp.GetTagCounts([]string{fmt.Sprint(idA), fmt.Sprint(idB), fmt.Sprint(idC)})
+	counts, err := tmp.GetTagCounts([]ImageId{idA, idB, idC})
 	require.NoError(t, err)
 	assert.Equal(t, map[string]int64{
 		"A": 3,

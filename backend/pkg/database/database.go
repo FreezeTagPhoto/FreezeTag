@@ -75,10 +75,10 @@ type ImageDatabase interface {
 	//
 	// returns: whether the thumbnail was removed
 	RemoveImageThumbnail(ImageId, int) (bool, error)
-	// Gets the counts of each tag in the provided list
+	// Gets the tag count for each image ID in the provided list
 	//
 	// returns: a map of tag name to count
-	GetTagCounts([]string) (map[string]int64, error)
+	GetTagCounts([]ImageId) (map[string]int64, error)
 }
 
 type SqliteImageDatabase struct {
@@ -544,7 +544,7 @@ func (db SqliteImageDatabase) RemoveImageThumbnail(id ImageId, size int) (bool, 
 	return rows != 0, nil
 }
 
-func (db SqliteImageDatabase) GetTagCounts(imageIds []string) (map[string]int64, error) {
+func (db SqliteImageDatabase) GetTagCounts(imageIds []ImageId) (map[string]int64, error) {
 	if len(imageIds) == 0 {
 		return map[string]int64{}, nil
 	}
