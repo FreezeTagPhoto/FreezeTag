@@ -9,7 +9,7 @@ export type MassTaggingGalleryProps = {
     onChange: (ids: Set<number>) => void;
 };
 
-export default function MainGallery({
+export default function MassTaggingGallery({
     image_ids,
     onChange,
 }: MassTaggingGalleryProps) {
