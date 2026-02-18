@@ -1,6 +1,7 @@
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err, Ok } from "@/common/result";
+import JobsSummarizer from "./jobssummarizer";
 
 // The outer result is Ok() if the request worked, and Err() if the request failed
 // The inner result in Ok() is Ok() if the job is complete, and Err() if not. Err() is a fraction indicating progress
@@ -10,14 +11,6 @@ export type JobsResult = Result<
     { status: number; message: string }
 >;
 
-type JobSummaryResponse = {
-    in_progress: number;
-    complete: number;
-    errors: number;
-    uuid: string;
-    status: string;
-    title: string;
-};
 type JobResponse = {
     in_progress?: {
         name: string;
@@ -38,38 +31,18 @@ type JobResponse = {
 export default async function JobsHandler(event: string): Promise<JobsResult> {
     return job_query_with_handler(
         ApiHandler<JobResponse>(SERVER_ADDRESS + "jobs/details/")(Method.GET),
-        ApiHandler<JobSummaryResponse>(SERVER_ADDRESS + "jobs/summary/")(
-            Method.GET,
-        ),
         event,
     );
 }
 
 async function job_query_with_handler(
     handler: (data: BodyInit) => Promise<Result<JobResponse, RequestError>>,
-    summary_handler: (
-        data: BodyInit,
-    ) => Promise<Result<JobSummaryResponse, RequestError>>,
     job_code: string,
 ): Promise<JobsResult> {
-    const summary_request_result = await summary_handler(job_code);
+    const summary_request_result = await JobsSummarizer(job_code);
 
     if (!summary_request_result.ok) {
-        const status = summary_request_result.error.status_code;
-        if (status == 400)
-            return Err({
-                status,
-                message: (
-                    (await summary_request_result.error.response.json()) as {
-                        error: string;
-                    }
-                ).error,
-            });
-        else
-            return Err({
-                status,
-                message: await summary_request_result.error.response.text(),
-            });
+        return summary_request_result;
     }
 
     const summary_job_response = summary_request_result.value;
