@@ -31,7 +31,7 @@ func InitUserEndpoint(userRepo repositories.UserRepository, authService services
 // @Success      200  {object}  database.PublicUser
 // @Failure      400  {object}  api.BadRequestResponse
 // @Failure      500  {object}  api.ServerErrorResponse
-// @Router       /user/{id} [get]
+// @Router       /users/{id} [get]
 func (ue UserEndpoint) GetUser(c *gin.Context) {
 	userIDString := c.Param("id")
 	var id database.UserID
@@ -56,7 +56,7 @@ func (ue UserEndpoint) GetUser(c *gin.Context) {
 // @Produce      json
 // @Success      200  {array}   database.PublicUser
 // @Failure      500  {object}  api.ServerErrorResponse
-// @Router       /users [get]
+// @Router       /users/all [get]
 func (ue UserEndpoint) ListUsers(c *gin.Context) {
 	users, err := ue.userRepo.ListAllUsers()
 	if err != nil {
@@ -75,7 +75,7 @@ func (ue UserEndpoint) ListUsers(c *gin.Context) {
 // @Success      200  {object}  api.MessageResponse
 // @Failure      400  {object}  api.BadRequestResponse
 // @Failure      500  {object}  api.ServerErrorResponse
-// @Router       /user/{id} [delete]
+// @Router       /users/{id} [delete]
 func (ue UserEndpoint) DeleteUser(c *gin.Context) {
 	userIDString := c.Param("id")
 	id, err := api.GetUserIDFromString(userIDString)
@@ -101,7 +101,7 @@ func (ue UserEndpoint) DeleteUser(c *gin.Context) {
 // @Success      200     {object}  database.PublicUser
 // @Failure      400     {object}  api.BadRequestResponse
 // @Failure      500     {object}  api.ServerErrorResponse
-// @Router       /user   [post]
+// @Router       /users/create   [post]
 func (ue UserEndpoint) CreateUser(c *gin.Context) {
 	var req api.LoginCredentials
 	if err := c.ShouldBind(&req); err != nil {
@@ -126,7 +126,7 @@ func (ue UserEndpoint) CreateUser(c *gin.Context) {
 // @Success      200  {object}  api.MessageResponse
 // @Failure      400  {object}  api.BadRequestResponse
 // @Failure      500  {object}  api.ServerErrorResponse
-// @Router       /user/permissions/{id} [post]
+// @Router       /users/permissions/{id} [post]
 func (ue UserEndpoint) AddPermissions(c *gin.Context) {
 	userIDString := c.Param("id")
 	id, err := api.GetUserIDFromString(userIDString)
@@ -158,7 +158,7 @@ func (ue UserEndpoint) AddPermissions(c *gin.Context) {
 // @Success      200  {object}  api.MessageResponse
 // @Failure      400  {object}  api.BadRequestResponse
 // @Failure      500  {object}  api.ServerErrorResponse
-// @Router       /user/permissions/{id} [delete]
+// @Router       /users/permissions/{id} [delete]
 func (ue UserEndpoint) RevokePermissions(c *gin.Context) {
 	userIDString := c.Param("id")
 	id, err := api.GetUserIDFromString(userIDString)
