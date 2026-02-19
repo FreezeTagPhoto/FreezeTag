@@ -43,7 +43,7 @@
 .subtle {
     margin-top: 6px;
     font-size: 0.85rem;
-    opacity: 0.72;
+    color: var(--subtext0);
     line-height: 1.35;
 }
 

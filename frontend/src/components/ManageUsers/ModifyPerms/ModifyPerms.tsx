@@ -6,6 +6,8 @@ export type CreateUserProps = {
 };
 
 export default function ModifyPerms({ onClose, userId }: CreateUserProps) {
+    // TODO: Add handling for the permissions endpoints, then allow viewing/modification here based on current user perms
+
     return (
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>
             <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
