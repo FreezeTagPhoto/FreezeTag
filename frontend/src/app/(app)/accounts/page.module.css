@@ -35,6 +35,10 @@
     /* z-index: -1; */
 }
 
+.account_row_current {
+    background-color: var(--accent1);
+}
+
 .account_item {
     background-color: var(--base);
     border-radius: var(--border-radius);
@@ -49,16 +53,45 @@
     align-items: center;
 }
 
-.account_row_current {
-    background-color: var(--accent1);
+@media screen and (max-width: 1010px) {
+    .account_item_label {
+        display: none;
+    }
+}
+
+.account_item_label {
+    font: inherit;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.account_item_button {
+    cursor: pointer;
+}
+
+.account_item_button:hover {
+    background-color: var(--surface0);
+}
+
+.account_item_delete:hover {
+    background-color: var(--red);
+}
+
+.account_item_button:disabled {
+    background-color: var(--crust);
+    cursor: default;
+}
+
+.account_item_button:disabled * {
+    color: var(--subtext0);
 }
 
 .date {
-    width: 250px;
+    width: 200px;
 }
 
 .username {
-    width: 300px;
+    width: 200px;
 }
 
 .username_preview {
@@ -98,5 +131,5 @@
     width: 18px;
     height: 18px;
     flex: 0 0 auto;
-    opacity: 0.95;
+    color: var(--text);
 }

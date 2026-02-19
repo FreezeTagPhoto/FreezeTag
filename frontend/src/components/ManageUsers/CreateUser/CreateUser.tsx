@@ -2,7 +2,7 @@ import { useState } from "react";
 import styles from "./CreateUser.module.css";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import UserCreator from "@/api/users/usercreator";
-import { normalizeErrorMessage } from "../Login/LoginView";
+import { normalizeErrorMessage } from "@/components/Login/LoginView";
 
 export type CreateUserProps = {
     onClose: () => void;

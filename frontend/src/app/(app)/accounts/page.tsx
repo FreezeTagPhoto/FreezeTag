@@ -2,19 +2,53 @@
 import { useContext, useEffect, useState } from "react";
 import styles from "./page.module.css";
 import UserLister, { User } from "@/api/users/userlister";
-import { formatDate } from "@/common/gallery/format";
 import { UserContext } from "@/components/Auth/AuthGate";
-import CreateUser from "@/components/ManageUsers/CreateUser";
-import { SquarePen, Trash, UserPlus } from "lucide-react";
+import CreateUser from "@/components/ManageUsers/CreateUser/CreateUser";
+import { CakeSlice, SquarePen, Trash, UserPlus } from "lucide-react";
+import DeleteUser from "@/components/ManageUsers/DeleteUser/DeleteUser";
+import ModifyPerms from "@/components/ManageUsers/ModifyPerms/ModifyPerms";
+
+function formatShortDate(
+    ts: number | null,
+    opts?: { timeZone?: string },
+): string {
+    if (ts === null) return "—";
+    const d = new Date(ts > 1e12 ? ts : ts * 1000);
+    return new Intl.DateTimeFormat(undefined, {
+        timeZone: opts?.timeZone,
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+    }).format(d);
+}
+
+function formatLongDate(
+    ts: number | null,
+    opts?: { timeZone?: string },
+): string {
+    if (ts === null) return "—";
+    const d = new Date(ts > 1e12 ? ts : ts * 1000);
+    return new Intl.DateTimeFormat(undefined, {
+        timeZone: opts?.timeZone,
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    }).format(d);
+}
 
 export default function Home() {
     const [users, setUsers] = useState<User[]>([]);
     const [userDigits, setUserDigits] = useState<number>(0);
 
     const [creatingUser, setCreatingUser] = useState<boolean>(false);
+    const [modifyingPerms, setModifyingPerms] = useState<number>(-1);
+    const [deletingUser, setDeletingUser] = useState<number>(-1);
+    const [username, setUsername] = useState<string>("");
 
-    const user = useContext(UserContext);
-    const isCurrent = (id: number) => id === user?.user_id;
+    const currentUser = useContext(UserContext);
+    const isCurrent = (id: number) => id === currentUser?.user_id;
 
     useEffect(() => {
         (async () => {
@@ -29,7 +63,7 @@ export default function Home() {
                 console.error(`User Lister Error! ${result.error.message}`);
             }
         })();
-    }, [creatingUser]);
+    }, [creatingUser, modifyingPerms, deletingUser]);
 
     return (
         <main className={styles.main}>
@@ -51,17 +85,48 @@ export default function Home() {
                                 {user.username}
                             </p>
                         </div>
-                        <p className={`${styles.account_item} ${styles.date}`}>
-                            {formatDate(user.created_at)}
+                        <p
+                            className={`${styles.account_item} ${styles.date}`}
+                            title={formatLongDate(user.created_at)}
+                        >
+                            <CakeSlice className={styles.icon} />
+                            {formatShortDate(user.created_at)}
                         </p>
-                        <p className={styles.account_item}>
+                        <button
+                            type="button"
+                            className={`${styles.account_item} ${styles.account_item_button}`}
+                            disabled={
+                                !(
+                                    currentUser?.permissions &&
+                                    currentUser?.permissions
+                                        .map((perm) => perm.permission)
+                                        .includes("read:permissions")
+                                )
+                            }
+                            onClick={() => setModifyingPerms(user.id)}
+                        >
                             <SquarePen className={styles.icon} />
-                            View/Modify Perms
-                        </p>
-                        <p className={styles.account_item}>
+                            <p className={styles.account_item_label}>Perms</p>
+                        </button>
+                        <button
+                            type="button"
+                            className={`${styles.account_item} ${styles.account_item_button} ${styles.account_item_delete}`}
+                            disabled={
+                                !(
+                                    currentUser?.permissions &&
+                                    currentUser?.permissions
+                                        .map((perm) => perm.permission)
+                                        .includes("delete:user")
+                                ) || isCurrent(user.id)
+                            }
+                            onClick={() => {
+                                setDeletingUser(user.id);
+                                setUsername(user.username);
+                            }}
+                        >
                             <Trash className={styles.icon} />
-                            Delete User
-                        </p>
+                            <p className={styles.account_item_label}>Delete</p>
+                        </button>
                     </div>
                 ))}
             </div>
@@ -70,8 +135,8 @@ export default function Home() {
                 className={styles.create_user}
                 disabled={
                     !(
-                        user?.permissions &&
-                        user?.permissions
+                        currentUser?.permissions &&
+                        currentUser?.permissions
                             .map((perm) => perm.permission)
                             .includes("create:user")
                     )
@@ -85,7 +150,23 @@ export default function Home() {
                 Create User
             </button>
             {creatingUser && (
-                <CreateUser onClose={() => setCreatingUser(false)}></CreateUser>
+                <CreateUser onClose={() => setCreatingUser(false)} />
+            )}
+            {deletingUser !== -1 && (
+                <DeleteUser
+                    onClose={() => {
+                        setDeletingUser(-1);
+                        setUsername("");
+                    }}
+                    userId={deletingUser}
+                    username={username}
+                />
+            )}
+            {modifyingPerms !== -1 && (
+                <ModifyPerms
+                    onClose={() => setModifyingPerms(-1)}
+                    userId={modifyingPerms}
+                />
             )}
         </main>
     );

@@ -1,0 +1,110 @@
+.viewerBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.panel {
+    width: min(500px, 100%);
+    min-height: 200px;
+    max-height: 100%;
+    background: var(--mantle);
+    border: var(--border-info);
+    border-radius: var(--border-radius);
+    filter: var(--dropshadow);
+
+    padding: 24px 28px;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 1rem;
+}
+
+/* modify size - padding */
+.header {
+    padding: 0.5rem;
+}
+
+.h1 {
+    font-family: var(--font-geist-sans);
+    font-size: 1.65rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+}
+
+.subtle {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    opacity: 0.72;
+    line-height: 1.35;
+    word-wrap: break-word;
+}
+
+.callout {
+    border-radius: var(--border-radius);
+    border: var(--border-info);
+    padding: 10px 12px;
+    line-height: 1.35;
+}
+
+.calloutTitle {
+    font-size: 0.7rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.calloutBody {
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+.calloutError {
+    border-color: var(--red);
+    background: var(--red);
+    color: var(--crust);
+}
+
+.calloutOk {
+    border-color: var(--green);
+    background: var(--green);
+    color: var(--crust);
+}
+
+.buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+}
+
+/* modify size - height, font-size */
+.primary {
+    height: 2.5rem;
+    border-radius: var(--border-radius);
+    border: var(--border-info);
+    filter: var(--dropshadow);
+    margin-top: 10px;
+    background: var(--base);
+    color: var(--text);
+    font-size: 1rem;
+    cursor: pointer;
+    user-select: none;
+
+    padding: 0.4rem;
+}
+
+.primary:hover {
+    background: var(--surface0);
+}
+
+.yes_button:hover {
+    background: var(--red);
+}
