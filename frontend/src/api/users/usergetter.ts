@@ -12,7 +12,7 @@ export default async function UserGetter(
     user_id: number,
 ): Promise<UserGetResult> {
     return get_user_with_handler(
-        ApiHandler<UserGetResponse>(SERVER_ADDRESS + "user/")(Method.GET),
+        ApiHandler<UserGetResponse>(SERVER_ADDRESS + "users/")(Method.GET),
         user_id,
     );
 }

@@ -1,34 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import AuthChecker from "@/api/auth/authchecker";
+import AuthChecker, { User } from "@/api/auth/authchecker";
+
+export const UserContext = createContext<User | undefined>(undefined);
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
 
     const [checked, setChecked] = useState(false);
-    const [authed, setAuthed] = useState(false);
+    const [user, setUser] = useState<User | undefined>(undefined);
 
     useEffect(() => {
         if (pathname?.startsWith("/login")) {
             setChecked(true);
-            setAuthed(true);
             return;
         }
 
         AuthChecker().then((ok) => {
-            setAuthed(ok);
-            setChecked(true);
-            if (!ok) {
+            if (ok.some) {
+                setChecked(true);
+                setUser(ok.value);
+            } else {
                 router.replace("/login");
             }
         });
     }, [pathname, router]);
 
     if (!checked) return null;
-    if (!authed) return null;
+    if (!user) return null;
 
-    return <>{children}</>;
+    return <UserContext value={user}>{children}</UserContext>;
 }

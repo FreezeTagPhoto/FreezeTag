@@ -8,7 +8,7 @@ import UserLister from "@/api/users/userlister";
 describe("User Lister", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url) => {
-            expect(url).toStrictEqual("/backend/users");
+            expect(url).toStrictEqual("/backend/users/all");
             return Promise.resolve({
                 status: 200,
                 ok: true,

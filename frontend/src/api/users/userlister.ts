@@ -2,15 +2,16 @@ import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
 
+export type User = { created_at: number; id: number; username: string };
 export type UserListResult = Result<
-    { created_at: number; id: number; username: string }[],
+    User[],
     { status: number; message: string }
 >;
-type UserListResponse = { created_at: number; id: number; username: string }[];
+type UserListResponse = User[];
 
 export default async function UserLister(): Promise<UserListResult> {
     return list_user_with_handler(
-        ApiHandler<UserListResponse>(SERVER_ADDRESS + "users")(Method.GET),
+        ApiHandler<UserListResponse>(SERVER_ADDRESS + "users/all")(Method.GET),
     );
 }
 

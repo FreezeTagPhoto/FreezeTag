@@ -166,7 +166,7 @@ func initPermissionsEndpoints(baseGroup gin.IRouter) {
 	permGroup := baseGroup.Group("/permissions")
 	{
 		pe := permissions.InitPermissionEndpoint()
-		permGroup.GET("/list", pe.ListPermissions)
+		permGroup.GET("/list", middleware.RequirePermission(data.ReadPermissions), pe.ListPermissions)
 	}
 }
 
@@ -195,9 +195,8 @@ func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		ue := user.InitUserEndpoint(deps.userRepository, deps.authService)
 		userGroup.GET("/:id", middleware.RequirePermission(data.ReadUser), ue.GetUser)
 		userGroup.GET("/all", middleware.RequirePermission(data.ReadUser), ue.ListUsers)
+		userGroup.GET("/permissions/:id", middleware.RequirePermission(data.ReadPermissions), ue.GetPermissions)
 
-		// eventually createuser needs to be just /user and then the userGroup can use "/user" as the base path,
-		// but for now this wont cause merge conflicts
 		userGroup.POST("/create", middleware.RequirePermission(data.CreateUser), ue.CreateUser)
 		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
 

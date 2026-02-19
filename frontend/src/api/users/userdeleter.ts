@@ -13,7 +13,7 @@ export default async function UserDeleter(
 ): Promise<UserDeleteResult> {
     return delete_user_with_handler(
         ApiHandler<UserDeleteResponse>(
-            SERVER_ADDRESS + "user/",
+            SERVER_ADDRESS + "users/",
             false,
         )(Method.DELETE),
         user_id,

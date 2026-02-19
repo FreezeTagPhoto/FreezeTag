@@ -3,15 +3,12 @@
  */
 
 import "@testing-library/jest-dom";
-import {
-    formatCamera,
-    formatDate,
-    formatLocation,
-} from "@/common/gallery/format";
+import { formatCamera, formatLocation } from "@/common/gallery/format";
+import { formatLongDate } from "@/common/dateformat";
 
 describe("common/format", () => {
     it('formatDate returns "—" for null', () => {
-        expect(formatDate(null)).toBe("—");
+        expect(formatLongDate(null)).toBe("—");
     });
 
     it("formatDate uses Intl.DateTimeFormat with expected options", () => {
@@ -26,7 +23,7 @@ describe("common/format", () => {
                 return formatter;
             });
 
-        const out = formatDate(1700000000);
+        const out = formatLongDate(1700000000);
         expect(out).toBe("FORMATTED");
 
         expect(spy).toHaveBeenCalledTimes(1);

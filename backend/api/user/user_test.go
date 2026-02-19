@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"freezetag/backend/api"
 	mockService "freezetag/backend/mocks/AuthService"
 	mocks "freezetag/backend/mocks/UserRepository"
@@ -24,6 +25,7 @@ import (
 func (ue UserEndpoint) RegisterEndpoints(router gin.IRoutes) {
 	router.GET("/users/:id", ue.GetUser)
 	router.GET("/users/all", ue.ListUsers)
+	router.GET("/users/permissions/:id", ue.GetPermissions)
 
 	router.POST("/createuser", ue.CreateUser)
 	router.POST("/users/permissions/:id", ue.AddPermissions)
@@ -455,4 +457,62 @@ func TestRevokePermissionsNoPermissions(t *testing.T) {
 	assert.NoError(t, err)
 	expectedError := "no permissions provided"
 	assert.Equal(t, api.BadRequestResponse{Error: expectedError}, got)
+}
+
+func TestGetPermissions(t *testing.T) {
+	mockRepo := mocks.NewMockUserRepository(t)
+	expected := data.Permissions{{Slug: "read:user", Name: "Read Users", Description: "foo"}}
+	mockRepo.EXPECT().
+		GetUserPermissions(mock.Anything).
+		Return(expected, nil)
+	mockService := mockService.NewMockAuthService(t)
+
+	router := gin.Default()
+	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
+
+	reqURL := "/users/permissions/1" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	var got data.Permissions
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestGetPermissionsFail(t *testing.T) {
+	mockRepo := mocks.NewMockUserRepository(t)
+	mockRepo.EXPECT().
+		GetUserPermissions(mock.Anything).
+		Return(nil, fmt.Errorf("big deal"))
+	mockService := mockService.NewMockAuthService(t)
+
+	router := gin.Default()
+	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
+
+	reqURL := "/users/permissions/1" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	var got api.ServerErrorResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, api.ServerErrorResponse{Error: "big deal"}, got)
+}
+
+func TestGetPermissionsBadId(t *testing.T) {
+	mockRepo := mocks.NewMockUserRepository(t)
+	mockService := mockService.NewMockAuthService(t)
+
+	router := gin.Default()
+	InitUserEndpoint(mockRepo, mockService).RegisterEndpoints(router)
+
+	reqURL := "/users/permissions/foo" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.BadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, api.BadRequestResponse{Error: "invalid user ID parameter: foo"}, got)
 }

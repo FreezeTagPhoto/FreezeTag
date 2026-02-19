@@ -9,7 +9,7 @@ export default function LoginRedirect() {
 
     useEffect(() => {
         AuthChecker().then((r) => {
-            if (r) router.replace("/");
+            if (r.some) router.replace("/");
         });
     }, [router]);
 

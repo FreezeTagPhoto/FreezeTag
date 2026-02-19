@@ -16,6 +16,7 @@ func InitPermissionEndpoint() *PermissionEndpoint {
 // @summary List all permissions
 // @description Retrieve a list of all available permissions in the system.
 // @tags permissions
+// @router /permissions/list [get]
 // @produce application/json
 // @success 200 {array} string "List of permission names"
 func (p *PermissionEndpoint) ListPermissions(c *gin.Context) {
