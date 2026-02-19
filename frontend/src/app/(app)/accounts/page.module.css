@@ -31,6 +31,8 @@
     flex-direction: row;
     gap: 0.5rem;
     width: max-content;
+
+    /* z-index: -1; */
 }
 
 .account_item {
@@ -40,10 +42,29 @@
     filter: var(--dropshadow);
 
     padding: 0.75rem 1rem;
+
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.account_row_current {
+    background-color: var(--accent1);
+}
+
+.date {
+    width: 250px;
 }
 
 .username {
-    min-width: 300px;
+    width: 300px;
+}
+
+.username_preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .create_user {
@@ -53,5 +74,29 @@
     filter: var(--dropshadow);
 
     padding: 0.75rem 1rem;
-    max-width: 140px;
+    max-width: 200px;
+
+    font: inherit;
+    color: var(--text);
+
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    align-items: center;
+    cursor: pointer;
+}
+
+.create_user:hover {
+    background-color: var(--surface0);
+}
+
+.create_user:disabled {
+    display: none;
+}
+
+.icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    opacity: 0.95;
 }

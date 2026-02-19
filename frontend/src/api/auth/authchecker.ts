@@ -3,9 +3,17 @@ import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result } from "@/common/result";
 import { None, Option, Some } from "@/common/option";
 
-export type AuthCheckOption = Option<number>;
+export type User = {
+    user_id: number;
+    permissions: {
+        description: string;
+        name: string;
+        permission: string;
+    }[];
+};
+export type AuthCheckOption = Option<AuthCheckResponse>;
 
-type AuthCheckResponse = { user_id: number; permissions: string[] };
+type AuthCheckResponse = User;
 
 /**
  *
@@ -31,11 +39,16 @@ async function auth_check_with_handler(
     if (!result.ok) {
         return None();
     }
-    if (permission && result.value.permissions.includes(permission)) {
-        return Some(result.value.user_id);
+    if (
+        permission &&
+        result.value.permissions
+            .map((perm) => perm.permission)
+            .includes(permission)
+    ) {
+        return Some(result.value);
     }
     if (permission) {
         return None();
     }
-    return Some(result.value.user_id);
+    return Some(result.value);
 }

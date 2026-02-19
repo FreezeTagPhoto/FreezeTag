@@ -93,7 +93,7 @@ function splitAuthMessage(raw: string): { title: string; body: string } {
     return { title: "Error", body: msg };
 }
 
-function normalizeErrorMessage(raw: string, status?: number) {
+export function normalizeErrorMessage(raw: string, status?: number) {
     const fallback = { title: "Error", body: "Something went wrong." };
 
     const parsedJsonInner = (s: string) => {
