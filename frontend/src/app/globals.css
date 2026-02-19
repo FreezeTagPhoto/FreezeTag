@@ -9,17 +9,19 @@ body {
     --border-radius: 12px;
     --border-info: 1px solid var(--border-color);
     --selected-overlay: rgba(255, 255, 255, 0.1);
+    --border-color: rgba(0, 0, 0, 0.1);
     max-width: 100vw;
     overflow-x: hidden;
     font-size: 18px;
+    line-height: 1.5;
 }
 
 [data-theme-type="light"] {
-    --border-color: rgba(0, 0, 0, 0.1);
+    --dropshadow: drop-shadow(0.5px 0.5px 0.5px #888888);
 }
 
 [data-theme-type="dark"] {
-    --border-color: rgba(255, 255, 255, 0.1);
+    --dropshadow: drop-shadow(0.5px 0.5px 0.5px #000000);
 }
 
 body {
