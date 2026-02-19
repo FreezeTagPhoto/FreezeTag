@@ -13,7 +13,7 @@ linters:
   exclusions:
     paths:
       - .go/
-      - .apk-cache/
+      - .pacman-cache/
       - mocks/
 output:
   formats:
