@@ -5,7 +5,7 @@ import { None, Option, Some } from "@/common/option";
 
 export type User = {
     user_id: number;
-    permissions: {
+    permissions?: {
         description: string;
         name: string;
         permission: string;
@@ -41,6 +41,7 @@ async function auth_check_with_handler(
     }
     if (
         permission &&
+        result.value.permissions &&
         result.value.permissions
             .map((perm) => perm.permission)
             .includes(permission)

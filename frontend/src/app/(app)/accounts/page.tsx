@@ -69,9 +69,12 @@ export default function Home() {
                 type="button"
                 className={styles.create_user}
                 disabled={
-                    !user?.permissions
-                        .map((perm) => perm.permission)
-                        .includes("create:user")
+                    !(
+                        user?.permissions &&
+                        user?.permissions
+                            .map((perm) => perm.permission)
+                            .includes("create:user")
+                    )
                 }
                 onClick={() => setCreatingUser(true)}
             >

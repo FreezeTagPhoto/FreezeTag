@@ -17,25 +17,41 @@ import {
     Users,
     LogOut,
 } from "lucide-react";
+import { useContext } from "react";
+import { UserContext } from "../Auth/AuthGate";
 
 type NavItem = {
     label: string;
     href: string;
     icon: LucideIcon;
+    permissions?: string[];
 };
 
 const navItems: NavItem[] = [
     { label: "Gallery", href: "/", icon: Images },
-    { label: "Upload", href: "/upload", icon: Upload },
-    { label: "Tags", href: "/manage", icon: Tags },
+    {
+        label: "Upload",
+        href: "/upload",
+        icon: Upload,
+        permissions: ["write:files"],
+    },
+    { label: "Tags", href: "/manage", icon: Tags, permissions: ["read:tags"] },
     { label: "Settings", href: "/settings", icon: Settings },
     { label: "Plugins", href: "/plugins", icon: Puzzle },
-    { label: "Accounts", href: "/accounts", icon: Users },
+    {
+        label: "Accounts",
+        href: "/accounts",
+        icon: Users,
+        permissions: ["read:user"],
+    },
 ];
 
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
+
+    const user = useContext(UserContext);
+    const userPerms = user?.permissions?.map((perm) => perm.permission);
 
     const onLogout = () => {
         LogoutHandler();
@@ -67,6 +83,20 @@ export default function Sidebar() {
                               pathname.startsWith(item.href + "/");
 
                     const Icon = item.icon;
+                    let hasPermission = true;
+                    if (item.permissions) {
+                        item.permissions.forEach((perm) => {
+                            if (!userPerms?.includes(perm)) {
+                                hasPermission = false;
+                            }
+                        });
+                    }
+
+                    if (!hasPermission) {
+                        return (
+                            <div key={item.label} className={styles.noop}></div>
+                        );
+                    }
 
                     return (
                         <Link
