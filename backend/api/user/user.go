@@ -122,7 +122,7 @@ func (ue UserEndpoint) CreateUser(c *gin.Context) {
 // @Accept       application/json
 // @Produce      application/json
 // @Param        id   path      int  true  "User ID"
-// @Param        permission query []string true "Permissions to grant"
+// @Param        permission query []string true "Permissions to grant" collectionFormat(multi)
 // @Success      200  {object}  api.MessageResponse
 // @Failure      400  {object}  api.BadRequestResponse
 // @Failure      500  {object}  api.ServerErrorResponse
@@ -154,7 +154,7 @@ func (ue UserEndpoint) AddPermissions(c *gin.Context) {
 // @Accept       application/json
 // @Produce      application/json
 // @Param        id   path      int  true  "User ID"
-// @Param        permission query []string true "Permissions to revoke in the form name:read/write/delete"
+// @Param        permission query []string true "Permissions to revoke in the form read/write/delete:name" collectionFormat(multi)
 // @Success      200  {object}  api.MessageResponse
 // @Failure      400  {object}  api.BadRequestResponse
 // @Failure      500  {object}  api.ServerErrorResponse
@@ -177,6 +177,29 @@ func (ue UserEndpoint) RevokePermissions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "permissions revoked"})
+}
+
+// @Summary     List user permissions
+// @Description Lists the permissions of a user by their ID.
+// @Tags        users
+// @Produce     application/json
+// @Param       id path int true "User ID"
+// @Success     200 {object} data.Permissions
+// @Failure     400 {object} api.BadRequestResponse
+// @Failure     500 {object} api.ServerErrorResponse
+// @Router      /users/permissions/{id} [get]
+func (ue UserEndpoint) GetPermissions(c *gin.Context) {
+	id, err := api.GetUserIDFromString(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
+	perms, err := ue.userRepo.GetUserPermissions(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, perms)
 }
 
 func queryPermissionsFromRequest(c *gin.Context) (data.Permissions, error) {

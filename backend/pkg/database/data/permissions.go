@@ -15,6 +15,7 @@ var (
 	DeleteUser       Permission = register("delete:user", "Delete User", "Allows deleting user accounts.")
 	ReadFiles        Permission = register("read:files", "Read Files", "Allows downloading/viewing stored files.")
 	WriteFiles       Permission = register("write:files", "Write Files", "Allows uploading files.")
+	ReadPermissions  Permission = register("read:permissions", "Read Permissions", "Administrative access to read system roles and rights.")
 	WritePermissions Permission = register("write:permissions", "Write Permissions", "Administrative access to modify system roles and rights.")
 	ReadTags         Permission = register("read:tags", "Read Tags", "Allows viewing metadata tags.")
 	WriteTags        Permission = register("write:tags", "Write Tags", "Allows creating and editing metadata tags.")
