@@ -113,7 +113,7 @@ test-frontend:
   paths:
     - $BACK_DIR/.go/pkg/mod
 
-.pacman_cache: &alpine_cache
+.pacman_cache: &pacman_cache
   key:
     files:
       - $PACMAN_REQS
