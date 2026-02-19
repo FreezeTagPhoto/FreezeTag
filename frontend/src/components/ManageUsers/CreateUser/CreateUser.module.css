@@ -131,7 +131,7 @@
 }
 
 .iconBtn:hover {
-    background: var(--selected-overlay);
+    background: var(--surface0);
 }
 
 .iconBtn:disabled {
@@ -197,7 +197,7 @@
 }
 
 .primary:hover {
-    background: var(--selected-overlay);
+    background: var(--surface0);
 }
 
 .primary:active {
