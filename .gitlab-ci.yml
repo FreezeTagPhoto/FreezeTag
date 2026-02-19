@@ -13,9 +13,9 @@ dummy:
   stage: test
   image: alpine:latest
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
   script:
-    - echo "placeholder, this is the only job that runs in MR flows if only documentation changed."
+    - echo "placeholder, this is the only job that runs in MR flows that don't need a pipeline."
 
 # ------------ Frontend Jobs ------------ #
 
