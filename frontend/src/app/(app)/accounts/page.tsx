@@ -7,36 +7,7 @@ import CreateUser from "@/components/ManageUsers/CreateUser/CreateUser";
 import { CakeSlice, SquarePen, Trash, UserPlus } from "lucide-react";
 import DeleteUser from "@/components/ManageUsers/DeleteUser/DeleteUser";
 import ModifyPerms from "@/components/ManageUsers/ModifyPerms/ModifyPerms";
-
-function formatShortDate(
-    ts: number | null,
-    opts?: { timeZone?: string },
-): string {
-    if (ts === null) return "—";
-    const d = new Date(ts > 1e12 ? ts : ts * 1000);
-    return new Intl.DateTimeFormat(undefined, {
-        timeZone: opts?.timeZone,
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    }).format(d);
-}
-
-function formatLongDate(
-    ts: number | null,
-    opts?: { timeZone?: string },
-): string {
-    if (ts === null) return "—";
-    const d = new Date(ts > 1e12 ? ts : ts * 1000);
-    return new Intl.DateTimeFormat(undefined, {
-        timeZone: opts?.timeZone,
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-    }).format(d);
-}
+import { formatLongDate, formatShortDate } from "@/common/dateformat";
 
 export default function Home() {
     const [users, setUsers] = useState<User[]>([]);

@@ -14,10 +14,10 @@ import Pill from "@/components/UI/Pill/Pill";
 import { useCachedById } from "@/common/gallery/cache";
 import {
     formatCamera,
-    formatDate,
     formatLocation,
     formatResultion,
 } from "@/common/gallery/format";
+import { formatLongDate } from "@/common/dateformat";
 import { useTagEditor } from "@/common/gallery/tageditor";
 import {
     MoreHorizontal,
@@ -178,7 +178,7 @@ export default function MetadataSidebar({
                     </div>
                     <div className={styles.detailValue}>
                         {currentMetadata
-                            ? formatDate(currentMetadata.dateTaken, {
+                            ? formatLongDate(currentMetadata.dateTaken, {
                                   timeZone: "UTC",
                               })
                             : "—"}
@@ -194,7 +194,7 @@ export default function MetadataSidebar({
                     </div>
                     <div className={styles.detailValue}>
                         {currentMetadata
-                            ? formatDate(currentMetadata.dateUploaded)
+                            ? formatLongDate(currentMetadata.dateUploaded)
                             : "—"}
                     </div>
                 </div>
