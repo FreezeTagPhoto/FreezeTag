@@ -43,7 +43,7 @@
     justify-content: flex-start;
     padding: 4px 14px;
     min-height: 44px;
-    border-radius: 10px;
+    border-radius: var(--border-radius);
     border: var(--border-info);
     background: var(--mantle);
     color: var(--text);
