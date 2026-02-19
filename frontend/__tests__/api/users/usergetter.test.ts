@@ -8,7 +8,7 @@ import UserGetter from "@/api/users/usergetter";
 describe("User Getter", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url) => {
-            expect(url).toStrictEqual("/backend/user/1");
+            expect(url).toStrictEqual("/backend/users/1");
             return Promise.resolve({
                 status: 200,
                 ok: true,

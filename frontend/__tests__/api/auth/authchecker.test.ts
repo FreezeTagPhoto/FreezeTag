@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import AuthChecker from "@/api/auth/authchecker";
+import { Some } from "@/common/option";
 
 describe("Auth Checker", () => {
     it("should pass full integration test", async () => {
@@ -32,7 +33,7 @@ describe("Auth Checker", () => {
 
         const result = await AuthChecker();
 
-        expect(result).toBeFalsy();
+        expect(result.some).toBeFalsy();
     });
 
     it("should handle granted perms well", async () => {
@@ -41,13 +42,43 @@ describe("Auth Checker", () => {
                 status: 200,
                 ok: true,
                 json: () => {
-                    return { user_id: 0, permissions: ["delete", "push"] };
+                    return {
+                        user_id: 0,
+                        permissions: [
+                            {
+                                permission: "delete",
+                                name: "Delete",
+                                description: "Deletes",
+                            },
+                            {
+                                permission: "push",
+                                name: "Push",
+                                description: "Pushes",
+                            },
+                        ],
+                    };
                 },
             });
         }) as jest.Mock;
 
         const result = await AuthChecker("delete");
-        expect(result).toBeTruthy();
+        expect(result).toStrictEqual(
+            Some({
+                user_id: 0,
+                permissions: [
+                    {
+                        permission: "delete",
+                        name: "Delete",
+                        description: "Deletes",
+                    },
+                    {
+                        permission: "push",
+                        name: "Push",
+                        description: "Pushes",
+                    },
+                ],
+            }),
+        );
     });
 
     it("should handle ungranted perms well", async () => {
@@ -62,6 +93,6 @@ describe("Auth Checker", () => {
         }) as jest.Mock;
 
         const result = await AuthChecker("read");
-        expect(result).toBeFalsy();
+        expect(result.some).toBeFalsy();
     });
 });
