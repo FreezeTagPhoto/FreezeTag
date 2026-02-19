@@ -36,14 +36,11 @@ func TestFilterPluginHooks(t *testing.T) {
 	imgRepo := mocks.NewMockImageRepository(t)
 	serv, err := InitDefaultPluginService("./test_resources", imgRepo)
 	assert.NoError(t, err)
-	filteredTypeHooks := serv.HooksWithType("bar", plugins.PreUpload)
-	assert.Contains(t, filteredTypeHooks, "locate_image")
-	assert.Equal(t, 1, len(filteredTypeHooks))
-	filteredSigHooks := serv.HooksWithSignature("bar", plugins.ImageProcess)
+	filteredTypeHooks := serv.HooksWithType("bar", plugins.PostUpload)
+	assert.Equal(t, 2, len(filteredTypeHooks))
+	filteredSigHooks := serv.HooksWithSignature("bar", plugins.ProcessOneImage)
 	assert.Contains(t, filteredSigHooks, "tag_image")
 	assert.Equal(t, 1, len(filteredSigHooks))
-	filteredBothHooks := serv.Hooks("bar", plugins.PreUpload, plugins.ImageProcess)
-	assert.Empty(t, filteredBothHooks)
 }
 
 func TestPhonyPostUploadJob(t *testing.T) {

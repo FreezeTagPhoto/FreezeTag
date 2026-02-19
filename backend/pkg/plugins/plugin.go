@@ -15,7 +15,7 @@ type HookedPlugin struct {
 }
 
 // Get all the hooks of the specified type and signature
-func (h HookedPlugin) GetHooks(kind HookType, sig HookSignature) []string {
+func (h *HookedPlugin) GetHooks(kind HookType, sig HookSignature) []string {
 	var hooks []string
 	for hook, info := range h.manifest.Hooks {
 		if info.Signature == sig && info.Type == kind {

@@ -133,7 +133,7 @@ func (ps defaultPluginService) RunPostUpload(plugin string, ctx context.Context,
 	results := make(chan error)
 	go func() {
 		// hook functions of the same type will run sequentially for each job.
-		hooks := ps.Hooks(plugin, plugins.PostUpload, plugins.ImageProcess)
+		hooks := ps.Hooks(plugin, plugins.PostUpload, plugins.ProcessOneImage)
 	jobLoop:
 		for _, job := range uploadJob {
 			for _, hook := range hooks {

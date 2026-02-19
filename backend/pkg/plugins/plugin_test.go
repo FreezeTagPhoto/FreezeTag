@@ -86,7 +86,7 @@ func TestTaggingPluginWithManifest(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
-	for _, hook := range plugin.GetHooks(PostUpload, ImageProcess) {
+	for _, hook := range plugin.GetHooks(PostUpload, ProcessOneImage) {
 		err := ProcessImage(plugin, hook, database.ImageId(42), repo)
 		assert.NoError(t, err)
 	}
@@ -104,7 +104,7 @@ func TestTaggingPluginWithManifestAndRequirements(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
-	for _, hook := range plugin.GetHooks(PostUpload, ImageProcess) {
+	for _, hook := range plugin.GetHooks(PostUpload, ProcessOneImage) {
 		err := ProcessImage(plugin, hook, database.ImageId(42), repo)
 		assert.NoError(t, err)
 	}
@@ -124,7 +124,7 @@ func TestReuseSameVenv(t *testing.T) {
 	for i := 1; i <= 2; i++ {
 		plugin, err := PluginFromManifest(manifest, t.Context())
 		require.NoError(t, err)
-		for _, hook := range plugin.GetHooks(PostUpload, ImageProcess) {
+		for _, hook := range plugin.GetHooks(PostUpload, ProcessOneImage) {
 			err := ProcessImage(plugin, hook, database.ImageId(i), repo)
 			assert.NoError(t, err)
 		}
@@ -146,7 +146,7 @@ func TestMultipleActionsOnePlugin(t *testing.T) {
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
 	for i := 1; i <= 4; i++ {
-		err := ProcessImage(plugin, plugin.GetHooks(PostUpload, ImageProcess)[0], database.ImageId(i), repo)
+		err := ProcessImage(plugin, plugin.GetHooks(PostUpload, ProcessOneImage)[0], database.ImageId(i), repo)
 		assert.NoError(t, err)
 	}
 	err = plugin.Shutdown()
@@ -162,7 +162,7 @@ func TestPluginProcessError(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
-	err = ProcessImage(plugin, plugin.GetHooks(PostUpload, ImageProcess)[0], database.ImageId(67), repo)
+	err = ProcessImage(plugin, plugin.GetHooks(PostUpload, ProcessOneImage)[0], database.ImageId(67), repo)
 	assert.Error(t, err)
 	err = plugin.Shutdown()
 	assert.NoError(t, err)
@@ -180,7 +180,7 @@ func TestPluginMetadataRequest(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
-	err = ProcessImage(plugin, plugin.GetHooks(PostUpload, ImageProcess)[0], database.ImageId(76), repo)
+	err = ProcessImage(plugin, plugin.GetHooks(PostUpload, ProcessOneImage)[0], database.ImageId(76), repo)
 	assert.NoError(t, err)
 	err = plugin.Shutdown()
 	assert.NoError(t, err)

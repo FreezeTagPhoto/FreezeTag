@@ -5,7 +5,7 @@
     "hooks": {
         "tag_image": {
             "type": "post_upload",
-            "signature": "process_image"
+            "signature": "single_image"
         }
     },
     "requirements": "requirements.txt"
