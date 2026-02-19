@@ -113,12 +113,12 @@ test-frontend:
   paths:
     - $BACK_DIR/.go/pkg/mod
 
-.alpine_cache: &alpine_cache
+.pacman_cache: &pacman_cache
   key:
     files:
-      - $ALPINE_REQS
+      - $PACMAN_REQS
   paths:
-    - $APK_CACHE_DIR
+    - $PACMAN_CACHE
 
 format-backend:
   stage: check-formatting
@@ -141,19 +141,20 @@ format-backend:
 
 lint-backend:
   stage: lint
-  image: alpine:latest
+  image: archlinux:latest
   variables:
-    ALPINE_REQS: $BACK_DIR/.alpine-requirements
-    APK_CACHE_DIR: $BACK_DIR/.apk-cache
+    PACMAN_REQS: $BACK_DIR/.arch-requirements
+    PACMAN_CACHE: $BACK_DIR/.pacman-cache
     GOPATH: $BACK_DIR/.go
   cache:
     - <<: *golang_cache
-    - <<: *alpine_cache
+    - <<: *pacman_cache
   before_script:
     - cd $BACK_DIR
-    - mkdir -p $APK_CACHE_DIR
-    - apk update --cache-dir $APK_CACHE_DIR
-    - xargs -t -a $ALPINE_REQS apk add --cache-dir $APK_CACHE_DIR
+    - mkdir -p $PACMAN_CACHE
+    - echo "CacheDir = $PACMAN_CACHE" >> /etc/pacman.conf
+    - pacman -Syu --noconfirm
+    - xargs -t -a $PACMAN_REQS pacman -S --noconfirm
     - export PATH="$GOPATH/bin:$PATH"
     - make tidy
     - wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $GOPATH/bin v2.5.0
@@ -172,23 +173,24 @@ lint-backend:
 
 test-backend:
   stage: test
-  image: alpine:latest
+  image: archlinux:latest
   variables:
-    ALPINE_REQS: $BACK_DIR/.alpine-requirements
-    APK_CACHE_DIR: $BACK_DIR/.apk-cache
+    PACMAN_REQS: $BACK_DIR/.arch-requirements
+    PACMAN_CACHE: $BACK_DIR/.pacman-cache
     GOPATH: $BACK_DIR/.go
   before_script:
     - cd $BACK_DIR
-    - mkdir -p $APK_CACHE_DIR
-    - apk update --cache-dir $APK_CACHE_DIR
-    - xargs -t -a $ALPINE_REQS apk add --cache-dir $APK_CACHE_DIR
+    - mkdir -p $PACMAN_CACHE
+    - echo "CacheDir = $PACMAN_CACHE" >> /etc/pacman.conf
+    - pacman -Syu --noconfirm
+    - xargs -t -a $PACMAN_REQS pacman -S --noconfirm
     - export PATH="$GOPATH/bin:$PATH"
   script:
     - make test
   coverage: '/total:\s+\(statements\)\s+\d+.\d+%/'
   cache:
     - <<: *golang_cache
-    - <<: *alpine_cache
+    - <<: *pacman_cache
   artifacts:
     reports:
       coverage_report:

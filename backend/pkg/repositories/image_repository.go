@@ -6,6 +6,7 @@ import (
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/images"
 	"freezetag/backend/pkg/images/imagedata"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -54,16 +55,20 @@ type ImageTagResult struct {
 type ImageRepository interface {
 	SearchImage(query queries.DatabaseQuery) ([]database.ImageId, error)
 	SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder) ([]database.ImageId, error)
+	SearchImageOrderedPaged(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, pageSize uint, page uint) ([]database.ImageId, error)
 	StoreImageBytes(data []byte, filename string) (database.ImageId, error)
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
 	RetrieveAllTags() (map[string]int64, error)
 	RetrieveImageTags(id database.ImageId) ([]string, error)
 	AddImageTags(id database.ImageId, tags []string) ImageTagResult
 	RemoveImageTags(id database.ImageId, tags []string) ImageTagResult
+	DeleteTags(tags []string) (int, error)
+	DeleteImage(id database.ImageId) (string, error)
 	GetImageFilepath(id database.ImageId) (string, error)
 	GetImageMetadata(id database.ImageId) (imagedata.Metadata, error)
 	GetImageResolution(id database.ImageId) (int, int, error)
-	GetTagCounts(ids []string) (map[string]int64, error)
+	GetTagCounts(ids []database.ImageId) (map[string]int64, error)
+	GetQueryTagCounts(query queries.DatabaseQuery) (map[string]int64, error)
 }
 
 type DefaultImageRepository struct {
@@ -97,7 +102,7 @@ func (repo *DefaultImageRepository) safeFilePath(path string) (string, error) {
 var namingMutex sync.Mutex
 
 // errors and results are given using the simple filename,
-// the full filepath (e.g /tmp/filename) is given to the database
+// the full filepath after the repo base folder is given to the database (this allows things to be moved around)
 func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string) (database.ImageId, error) {
 	imagedata, err := repo.parser.ParseImage(filename, data)
 	if err != nil {
@@ -116,7 +121,7 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 
 	namingMutex.Lock()
 	defer namingMutex.Unlock()
-	filepath, err := repo.safeFilePath(path.Join(repo.folderPath, filename))
+	filepath, err := repo.safeFilePath(filename)
 	if err != nil {
 		return 0, err
 	}
@@ -147,7 +152,7 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	if err := os.MkdirAll(repo.folderPath, 0755); err != nil {
 		return 0, err
 	}
-	if err := os.WriteFile(filepath, data, 0644); err != nil {
+	if err := os.WriteFile(path.Join(repo.folderPath, filepath), data, 0644); err != nil {
 		return 0, err
 	}
 	return id, nil
@@ -163,6 +168,10 @@ func (repo *DefaultImageRepository) SearchImage(query queries.DatabaseQuery) ([]
 
 func (repo *DefaultImageRepository) SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder) ([]database.ImageId, error) {
 	return repo.db.GetImagesOrder(query, field, order)
+}
+
+func (repo *DefaultImageRepository) SearchImageOrderedPaged(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, pageSize uint, pageNo uint) ([]database.ImageId, error) {
+	return repo.db.GetImagesOrderPaged(query, field, order, pageSize, pageNo)
 }
 
 func (repo *DefaultImageRepository) RetrieveAllTags() (map[string]int64, error) {
@@ -213,6 +222,10 @@ func (repo *DefaultImageRepository) RemoveImageTags(id database.ImageId, tags []
 	}
 }
 
+func (repo *DefaultImageRepository) DeleteTags(tags []string) (int, error) {
+	return repo.db.RemoveTags(tags)
+}
+
 func (repo *DefaultImageRepository) GetImageFilepath(id database.ImageId) (string, error) {
 	fileName, err := repo.db.GetImageFile(id)
 	if err != nil {
@@ -222,7 +235,25 @@ func (repo *DefaultImageRepository) GetImageFilepath(id database.ImageId) (strin
 		return "", fmt.Errorf("nil or empty file")
 	}
 
-	return fmt.Sprintf("%s%s", repo.folderPath, *fileName), nil
+	return path.Join(repo.folderPath, *fileName), nil
+}
+
+func (repo *DefaultImageRepository) DeleteImage(id database.ImageId) (string, error) {
+	fileName, err := repo.GetImageFilepath(id)
+	if err != nil {
+		return "", err
+	}
+	_, err = repo.db.RemoveImage(id)
+	if err != nil {
+		return "", err
+	}
+	err = os.Remove(fileName)
+	if err != nil {
+		log.Printf("[ERR]  after deleting image id %d the file could not be deleted: %v", id, err)
+		log.Printf("[ERR]  file possibly remaining after deletion: %v", fileName)
+		return "", err
+	}
+	return fileName, nil
 }
 
 func (repo *DefaultImageRepository) GetImageMetadata(id database.ImageId) (imagedata.Metadata, error) {
@@ -238,6 +269,14 @@ func (repo *DefaultImageRepository) GetImageResolution(id database.ImageId) (w i
 	return
 }
 
-func (repo *DefaultImageRepository) GetTagCounts(ids []string) (map[string]int64, error) {
+func (repo *DefaultImageRepository) GetTagCounts(ids []database.ImageId) (map[string]int64, error) {
 	return repo.db.GetTagCounts(ids)
+}
+
+func (repo *DefaultImageRepository) GetQueryTagCounts(query queries.DatabaseQuery) (map[string]int64, error) {
+	images, err := repo.SearchImage(query)
+	if err != nil {
+		return nil, err
+	}
+	return repo.db.GetTagCounts(images)
 }

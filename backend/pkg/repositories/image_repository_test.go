@@ -22,7 +22,7 @@ import (
 // for good data
 func initParserCollection() images.Parser {
 	parserCollection := images.InitParserCollection()
-	err := parserCollection.RegisterParserFunc("*.{cr3,CR3,nef,NEF,dng,DNG}", formats.ParseRaw)
+	err := parserCollection.RegisterParserFunc("*.{cr3,CR3,nef,NEF,dng,DNG}", formats.ParseBasic)
 	require.NoError(nil, err, "registering RAW parser should not fail")
 
 	err = parserCollection.RegisterParserFunc("*.{png,jpg,jpeg}", formats.ParseBasic)
@@ -178,7 +178,7 @@ func TestStoreImageBytesNameCollision(t *testing.T) {
 		Return(true, nil)
 	mockdb.
 		EXPECT().
-		GetNonOverlappingSuffix(path.Join(tmpDir, "gopher.png")).
+		GetNonOverlappingSuffix("gopher.png").
 		Return(1, nil)
 
 	parser := initParserCollection() // we need good data here
@@ -265,6 +265,18 @@ func TestSearchImageOrderedSomeReturnedIDs(t *testing.T) {
 	repo := InitImageRepository(mockdb, parser, "")
 
 	result, err := repo.SearchImageOrdered(queries.CreateImageQuery(), queries.DateCreated, queries.Ascending)
+	assert.NoError(t, err)
+	assert.Equal(t, result, ids)
+}
+
+func TestSearchImageOrderedPagedSomeReturnedIDs(t *testing.T) {
+	ids := []database.ImageId{1, 3, 2, 4, 5}
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().GetImagesOrderPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(ids, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "")
+
+	result, err := repo.SearchImageOrderedPaged(queries.CreateImageQuery(), queries.DateCreated, queries.Ascending, 4, 20)
 	assert.NoError(t, err)
 	assert.Equal(t, result, ids)
 }
@@ -493,7 +505,7 @@ func TestGetTagCount(t *testing.T) {
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
 
-	result, err := repo.GetTagCounts([]string{"tag1", "tag2"})
+	result, err := repo.GetTagCounts([]database.ImageId{1})
 	assert.Nil(t, err, "error should be nil")
 	assert.Equal(t, expected, result)
 }
@@ -507,7 +519,109 @@ func TestGetTagCountFail(t *testing.T) {
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
 
-	_, err := repo.GetTagCounts([]string{"tag1", "tag2"})
+	_, err := repo.GetTagCounts([]database.ImageId{1})
 	assert.NotNil(t, err, "error should not be nil")
 	assert.Equal(t, "mock error", err.Error())
+}
+
+func TestGetQueryTagCountQuerySuccess(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImages(mock.Anything).
+		Return([]database.ImageId{1, 2}, nil)
+	mockdb.EXPECT().
+		GetTagCounts([]database.ImageId{1, 2}).
+		Return(map[string]int64{"foo": 2}, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
+
+	res, err := repo.GetQueryTagCounts(queries.CreateImageQuery())
+	assert.NoError(t, err)
+	assert.Contains(t, res, "foo")
+	assert.Equal(t, int64(2), res["foo"])
+}
+
+func TestGetQueryTagCountQueryFail(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImages(mock.Anything).
+		Return(nil, fmt.Errorf("test"))
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
+
+	res, err := repo.GetQueryTagCounts(queries.CreateImageQuery())
+	assert.Error(t, err)
+	assert.Nil(t, res)
+}
+
+func TestGetImageResolution(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImageResolution(mock.Anything).
+		Return(5, 4, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
+
+	w, h, err := repo.GetImageResolution(database.ImageId(5))
+	assert.NoError(t, err)
+	assert.Equal(t, 5, w)
+	assert.Equal(t, 4, h)
+}
+
+func TestRemoveTags(t *testing.T) {
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		RemoveTags(mock.Anything).
+		Return(3, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
+
+	count, err := repo.DeleteTags([]string{"foo", "bar", "baz"})
+	assert.NoError(t, err)
+	assert.Equal(t, 3, count)
+}
+
+func TestDeleteImageFailDelete(t *testing.T) {
+	id := database.ImageId(4)
+	filePath := "/tmp/nonexistent/file"
+	mockdb := mockDatabase.NewMockImageDatabase(t)
+	mockdb.EXPECT().
+		GetImageFile(id).
+		Return(&filePath, nil)
+	mockdb.EXPECT().
+		RemoveImage(id).
+		Return(true, nil)
+	parser := mockParser.NewMockParser(t)
+	repo := InitImageRepository(mockdb, parser, "/tmp")
+	_, err := repo.DeleteImage(id)
+	assert.Error(t, err)
+}
+
+func TestDeleteImageDatabaseErrors(t *testing.T) {
+	id := database.ImageId(4)
+	t.Run("duringFile", func(t *testing.T) {
+		mockdb := mockDatabase.NewMockImageDatabase(t)
+		mockdb.EXPECT().
+			GetImageFile(id).
+			Return(nil, fmt.Errorf("test error"))
+		parser := mockParser.NewMockParser(t)
+		repo := InitImageRepository(mockdb, parser, "/tmp")
+		_, err := repo.DeleteImage(id)
+		assert.ErrorContains(t, err, "test error")
+	})
+
+	t.Run("duringRemove", func(t *testing.T) {
+		filePath := "nonexistent/file"
+		mockdb := mockDatabase.NewMockImageDatabase(t)
+		mockdb.EXPECT().
+			GetImageFile(id).
+			Return(&filePath, nil)
+		mockdb.EXPECT().
+			RemoveImage(id).
+			Return(false, fmt.Errorf("test error"))
+		parser := mockParser.NewMockParser(t)
+		repo := InitImageRepository(mockdb, parser, "/tmp")
+		_, err := repo.DeleteImage(id)
+		assert.ErrorContains(t, err, "test error")
+	})
 }

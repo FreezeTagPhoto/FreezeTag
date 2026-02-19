@@ -76,12 +76,10 @@ func main() {
 
 func initParserCollection() images.Parser {
 	parserCollection := images.InitParserCollection()
-	if err := parserCollection.RegisterParserFunc("*.{cr3,nef,dng,hei{c,f}}", formats.ParseRaw); err != nil {
-		log.Fatalf("[ERROR] failed to register RAW parser: %v", err)
+	if err := parserCollection.RegisterParserFunc("*", formats.ParseBasic); err != nil {
+		log.Fatalf("[ERR]  failed to register default parser: %v", err)
 	}
-	if err := parserCollection.RegisterParserFunc("*.{png,jpg,jpeg,webp}", formats.ParseBasic); err != nil {
-		log.Fatalf("[ERROR] failed to register basic parser: %v", err)
-	}
+	// more specific parsers can be registered here
 	return parserCollection
 }
 
@@ -213,7 +211,8 @@ func initFileEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	fileGroup := baseGroup.Group("/file")
 	{
 		fe := files.InitFileEndpoint(deps.imageRepository)
-		fileGroup.GET("/:id", middleware.RequirePermission(data.ReadFiles), fe.HandleGet)
+		fileGroup.GET("/download/:id", middleware.RequirePermission(data.ReadFiles), fe.HandleGet)
+		fileGroup.DELETE("/delete/:id", middleware.RequirePermission(data.WriteFiles), fe.HandleDelete)
 	}
 }
 
@@ -265,10 +264,12 @@ func initTagEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	{
 		te := tags.InitTagEndpoint(deps.imageRepository)
 		tagGroup.DELETE("/remove", middleware.RequirePermission(data.WriteTags), te.HandleDelete)
+		tagGroup.DELETE("/delete", middleware.RequirePermission(data.WriteTags), te.HandleDeleteFull)
 		tagGroup.POST("/add", middleware.RequirePermission(data.WriteTags), te.HandlePost)
 
 		tagGroup.GET("/list", middleware.RequirePermission(data.ReadTags), te.ListTags)
 		tagGroup.GET("/list/:id", middleware.RequirePermission(data.ReadTags), te.ImageTags)
 		tagGroup.GET("/counts", middleware.RequirePermission(data.ReadTags), te.ListCounts)
+		tagGroup.GET("/search", middleware.RequirePermission(data.ReadTags), te.ListCountsQuery)
 	}
 }

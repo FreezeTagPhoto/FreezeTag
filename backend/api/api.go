@@ -15,9 +15,18 @@ type UploadResponse struct {
 	Errors   []repositories.ImageUploadFailure `json:"errors"`
 }
 
-type TagDeleteResponse struct {
+type TagRemoveResponse struct {
 	Deleted []repositories.ImageTagSuccess `json:"deleted"`
 	Errors  []repositories.ImageTagFail    `json:"errors"`
+}
+
+type TagDeleteResponse struct {
+	Deleted int `json:"deleted"`
+}
+
+type ImageDeleteResponse struct {
+	Id   database.ImageId `json:"id"`
+	File string           `json:"file"`
 }
 
 type TagAddResponse struct {

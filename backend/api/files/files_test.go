@@ -17,7 +17,8 @@ import (
 )
 
 func (fe FileEndpoint) RegisterEndpoints(e gin.IRouter) {
-	e.GET("/file/:id", fe.HandleGet)
+	e.GET("/file/download/:id", fe.HandleGet)
+	e.DELETE("/file/delete/:id", fe.HandleDelete)
 }
 
 func TestServeFileSuccess(t *testing.T) {
@@ -30,7 +31,7 @@ func TestServeFileSuccess(t *testing.T) {
 	InitFileEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/file/1", nil)
+	req, _ := http.NewRequest("GET", "/file/download/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -49,7 +50,7 @@ func TestServeFileFail(t *testing.T) {
 	InitFileEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/file/1", nil)
+	req, _ := http.NewRequest("GET", "/file/download/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
@@ -66,7 +67,7 @@ func TestServeFileBadId(t *testing.T) {
 	InitFileEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/file/a", nil)
+	req, _ := http.NewRequest("GET", "/file/download/a", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -87,7 +88,58 @@ func TestServeFileNotFound(t *testing.T) {
 	InitFileEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/file/1", nil)
+	req, _ := http.NewRequest("GET", "/file/download/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestDeleteFile(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		DeleteImage(mock.Anything).
+		Return("/foo/bar", nil)
+	router := gin.Default()
+	InitFileEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/file/delete/1", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	expected := api.ImageDeleteResponse{Id: 1, File: "/foo/bar"}
+	var got api.ImageDeleteResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestDeleteFileBadId(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	router := gin.Default()
+	InitFileEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/file/delete/foo", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	expected := api.BadRequestResponse{Error: "Invalid image ID parameter"}
+	var got api.BadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
+}
+
+func TestDeleteFileFail(t *testing.T) {
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		DeleteImage(mock.Anything).
+		Return("", fmt.Errorf("test error"))
+	router := gin.Default()
+	InitFileEndpoint(m).RegisterEndpoints(router)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/file/delete/1", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	expected := api.ServerErrorResponse{Error: "test error"}
+	var got api.ServerErrorResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
 }
