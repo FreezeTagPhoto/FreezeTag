@@ -1,6 +1,9 @@
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result } from "@/common/result";
+import { None, Option, Some } from "@/common/option";
+
+export type AuthCheckOption = Option<number>;
 
 type AuthCheckResponse = { user_id: number; permissions: string[] };
 
@@ -11,7 +14,7 @@ type AuthCheckResponse = { user_id: number; permissions: string[] };
  */
 export default async function AuthChecker(
     permission?: string,
-): Promise<boolean> {
+): Promise<AuthCheckOption> {
     return auth_check_with_handler(
         ApiHandler<AuthCheckResponse>(SERVER_ADDRESS + "login")(Method.GET),
         permission,
@@ -23,16 +26,16 @@ async function auth_check_with_handler(
         data: BodyInit,
     ) => Promise<Result<AuthCheckResponse, RequestError>>,
     permission?: string,
-): Promise<boolean> {
+): Promise<AuthCheckOption> {
     const result = await handler("");
     if (!result.ok) {
-        return false;
+        return None();
     }
     if (permission && result.value.permissions.includes(permission)) {
-        return true;
+        return Some(result.value.user_id);
     }
     if (permission) {
-        return false;
+        return None();
     }
-    return true;
+    return Some(result.value.user_id);
 }
