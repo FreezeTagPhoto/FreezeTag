@@ -59,6 +59,10 @@
     background: var(--surface1);
 }
 
+.item:active {
+    transform: scale(0.98);
+}
+
 .itemActive {
     background: var(--surface0);
     color: var(--subtext0);
