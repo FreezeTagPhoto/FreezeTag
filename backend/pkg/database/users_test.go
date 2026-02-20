@@ -139,7 +139,7 @@ func TestSetUserPassword(t *testing.T) {
 func TestSetUserPasswordNonexistentUser(t *testing.T) {
 	db := createTempUserDatabase(t)
 	err := db.SetUserPassword(999, "newhashedpassword")
-	require.NoError(t, err) // Should not error even if user does not exist
+	require.Error(t, err) // Should error if user does not exist
 }
 
 func TestGetUserById(t *testing.T) {

@@ -11,7 +11,9 @@ type TokenEndpoint struct {
 }
 
 func InitTokenEndpoint(auth services.AuthService) TokenEndpoint {
-	return TokenEndpoint{auth}
+	return TokenEndpoint{
+		authService: auth,
+	}
 }
 
 func (te TokenEndpoint) RevokeUserToken(c *gin.Context) {

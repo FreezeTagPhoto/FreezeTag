@@ -71,6 +71,12 @@ type AuthService interface {
 	AllUsers() ([]database.PublicUser, error)
 	// Delete a user by ID
 	DeleteUser(userID database.UserID) error
+	// GrantPermissions grants the specified permissions to the user with the given ID
+	GrantPermissions(userID database.UserID, permissions data.Permissions) error
+	// RevokePermissions revokes the specified permissions from the user with the given ID
+	RevokePermissions(userID database.UserID, permissions data.Permissions) error
+	// GetUserPermissions returns the permissions associated with the given user ID
+	GetUserPermissions(userID database.UserID) (data.Permissions, error)
 }
 
 type DefaultAuthService struct {
@@ -258,6 +264,20 @@ func (s *DefaultAuthService) AllUsers() ([]database.PublicUser, error) {
 
 func (s *DefaultAuthService) DeleteUser(userID database.UserID) error {
 	return s.userDatabase.DeleteUser(userID)
+}
+
+func (s *DefaultAuthService) GrantPermissions(userID database.UserID, permissions data.Permissions) error {
+	log.Printf("[ADMIN] Granting permissions %v to user with ID %d", permissions, userID)
+	return s.userDatabase.GrantUserPermissions(userID, permissions)
+}
+
+func (s *DefaultAuthService) RevokePermissions(userID database.UserID, permissions data.Permissions) error {
+	log.Printf("[ADMIN] Revoking permissions %v from user with ID %d", permissions, userID)
+	return s.userDatabase.RevokeUserPermissions(userID, permissions)
+}
+
+func (s *DefaultAuthService) GetUserPermissions(userID database.UserID) (data.Permissions, error) {
+	return s.userDatabase.GetUserPermissions(userID)
 }
 
 func hashToken(token string) [32]byte {

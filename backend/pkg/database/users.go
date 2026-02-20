@@ -347,7 +347,7 @@ func (s SqliteUserDatabase) SaveApiToken(userID UserID, expiresAt *time.Time, to
 		return 0, err
 	}
 	permStmt, err := tx.Prepare(`
-		INSERT INTO API_Token_Permissions (tokenId, permissionId)
+		INSERT INTO Token_Permissions (tokenId, permissionId)
 		VALUES (?, (SELECT id FROM App_Permissions WHERE slug = ?))`)
 	if err != nil {
 		return 0, err
