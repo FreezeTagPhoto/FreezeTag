@@ -208,6 +208,7 @@ func TestImageBatchPlugin(t *testing.T) {
 	res, err := plugin.RunHook("tag_batch", in, repo)
 	assert.NoError(t, err)
 	assert.NotZero(t, res)
+	assert.NoError(t, plugin.Shutdown())
 }
 
 func TestEveryHook(t *testing.T) {

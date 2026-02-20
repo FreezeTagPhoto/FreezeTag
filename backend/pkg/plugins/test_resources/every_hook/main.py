@@ -31,12 +31,12 @@ def every(image, id) -> HookAction:
                 return Error("couldn't get all tags")
             return NoAction()
         case 9:
-            res = search_images()
+            res = search_images(near=(6.9, 42.0, 6.7), tags=["foo", "bar"])
             if res is None:
                 return Error("couldn't search")
             return NoAction()
         case 10:
-            res = query_tags()
+            res = query_tags(tagsLike=["foo"])
             if res is None:
                 return Error("couldn't query tags")
             return NoAction()
