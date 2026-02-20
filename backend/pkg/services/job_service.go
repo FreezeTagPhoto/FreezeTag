@@ -6,6 +6,7 @@ import (
 	"log"
 	"sync"
 
+	"freezetag/backend/pkg/plugins"
 	"freezetag/backend/pkg/repositories"
 
 	"github.com/google/uuid"
@@ -14,6 +15,18 @@ import (
 // only one plugin can run at a time
 // (TODO: change this eventually to be plugin-specific)
 var pluginLock sync.Mutex
+var currentPlugin *plugins.HookedPlugin
+
+func lockNewPlugin(p *plugins.HookedPlugin) {
+	if p == currentPlugin {
+		return // already locked in
+	}
+	currentPlugin = p
+	go func() {
+		<-currentPlugin.WaitFinished()
+		pluginLock.Unlock()
+	}()
+}
 
 type FileJob struct {
 	Name  string `json:"name"`
@@ -29,8 +42,6 @@ type JobSummary struct {
 	Errors     int       `json:"errors"`
 }
 
-// required to make FileJobs satisfy the JobInput interface
-// without requiring someone else to assign them IDs
 type innerFileJob struct {
 	FileJob
 	id int `json:"-"`
@@ -120,54 +131,112 @@ func (s *defaultJobService) RunUploadJob(batch []FileJob) uuid.UUID {
 }
 
 type pluginRun struct {
-	Name string `json:"name"`
-	Hook string `json:"hook"`
-	id   int    `json:"-"`
+	Name  string `json:"name"`
+	Hook  string `json:"hook"`
+	Input any    `json:"input"`
+	id    int    `json:"-"`
 }
-type pluginResult map[string]any
 
 func (p pluginRun) ID() int {
 	return p.id
 }
 
+type dummy struct {
+	id int `json:"-"`
+}
+
+func (d dummy) ID() int {
+	return d.id
+}
+
 func (s *defaultJobService) SchedulePostUploads(upload uuid.UUID) {
 	batch := s.GetBatch(upload)
-	var jobs []repositories.JobInput
-	// create a giant list of plugin hooks to run synchronously in order
-	for i, plugin := range s.plugins.AllPlugins() {
-		jobs = append(jobs, pluginRun{plugin, "PostUpload", i})
-	}
-	s.jobRepository.Create("PostUpload plugin hooks for upload "+batch.UUID.String(), batch.Context, jobs, repositories.Job(func(p pluginRun, c context.Context, status func(string)) (pluginResult, error) {
-		<-batch.WaitFinished()
-		result := make(map[string]any)
-		if batch.Cancelled {
-			return result, fmt.Errorf("cancelled")
-		}
-		uploads := make([]repositories.ImageUploadSuccess, len(batch.Completed))
-		for i, succ := range batch.Completed {
-			uploads[i] = succ.(repositories.ImageUploadSuccess)
-		}
-		// only one plugin can run at once
-		pluginLock.Lock()
-		defer pluginLock.Unlock()
-		log.Printf("[INFO] running plugin '%s' on upload batch %v", p.Name, upload)
-		status(fmt.Sprintf("Running plugin %s", p.Name))
-		results, err := s.plugins.RunPostUpload(p.Name, c, uploads)
-		if err != nil {
-			return result, err
-		}
-		for {
-			err, ok := <-results
-			if !ok {
-				break
+	s.jobRepository.Create(
+		"Schedule PostUpload plugin hooks for upload "+batch.UUID.String(),
+		batch.Context,
+		[]repositories.JobInput{dummy{1}},
+		repositories.Job(func(_ dummy, c context.Context, status func(string)) (plugins.PluginResult, error) {
+			status("Waiting")
+			<-batch.WaitFinished()
+			status("Running")
+			if batch.Cancelled {
+				return nil, fmt.Errorf("cancelled")
 			}
-			if err != nil {
-				log.Printf("[ERR]  %s: %s", p.Name, err.Error())
+			uploads := make([]repositories.ImageUploadSuccess, len(batch.Completed))
+			for i, succ := range batch.Completed {
+				uploads[i] = succ.(repositories.ImageUploadSuccess)
 			}
-		}
-		result["name"] = p.Name
-		result["status"] = "success"
-		log.Printf("[INFO] finished plugin '%s' on upload batch %v", p.Name, upload)
-		return result, nil
-	}))
+			// create a job for every plugin that has PostUpload hooks
+			for _, plugin := range s.plugins.Plugins() {
+				if !plugin.Enabled {
+					continue
+				}
+				hooks := plugin.HooksWithType(plugins.PostUpload)
+				if len(hooks) == 0 {
+					continue
+				}
+				var jobs []repositories.JobInput
+				count := 0
+				// schedule all the batchwise PostUpload hooks to run first
+				batchHooks := plugin.FilterHooks(plugins.PostUpload, plugins.ProcessImageBatch)
+				for _, hook := range batchHooks {
+					jobs = append(jobs, pluginRun{Name: plugin.Name, Hook: hook.Name, Input: uploads, id: count})
+					count++
+				}
+				// schedule all the individual PostUpload hooks to run in sequence next
+				indivHooks := plugin.FilterHooks(plugins.PostUpload, plugins.ProcessOneImage)
+				for _, hook := range indivHooks {
+					for _, upload := range uploads {
+						jobs = append(jobs, pluginRun{Name: plugin.Name, Hook: hook.Name, Input: upload, id: count})
+						count++
+					}
+				}
+				// launch the job
+				// new context because being here means that the upload wasn't cancelled
+				// and we don't want something like a 15 minute run to break
+				ctx := context.Background()
+				idx := 0
+				dead := false
+				s.jobRepository.CreateSync(
+					fmt.Sprintf("%s PostUpload on upload %s", plugin.Name, batch.UUID.String()),
+					ctx,
+					jobs,
+					repositories.Job(func(in pluginRun, c context.Context, status func(string)) (plugins.PluginResult, error) {
+						defer func() {
+							idx++
+							if idx == count && !dead {
+								log.Printf("[INFO] shutting down plugin %s", in.Name)
+								err := currentPlugin.Shutdown()
+								if err != nil {
+									log.Printf("[WARN] plugin failed to shut down gracefully: %v", err)
+								}
+								log.Printf("[INFO] shut down plugin %s", in.Name)
+							}
+						}()
+						if idx == 0 {
+							status("Waiting")
+							pluginLock.Lock()
+							if c.Err() != nil {
+								return nil, fmt.Errorf("cancelled")
+							}
+							log.Printf("[INFO] launching plugin %s", in.Name)
+							p, err := s.plugins.LaunchPlugin(in.Name, ctx)
+							if err != nil {
+								log.Printf("[ERR]  failed to launch plugin %s", in.Name)
+								dead = true
+								pluginLock.Unlock()
+								return nil, fmt.Errorf("plugin failed to launch: %w", err)
+							}
+							lockNewPlugin(p)
+						} else if c.Err() != nil || dead {
+							return nil, fmt.Errorf("cancelled")
+						}
+						status(fmt.Sprintf("Running hook %s", in.Hook))
+						return currentPlugin.RunHook(in.Hook, in.Input, s.imageRepository)
+					}),
+				)
+			}
+			return map[string]any{"success": true}, nil
+		}),
+	)
 }

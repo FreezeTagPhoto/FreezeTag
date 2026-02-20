@@ -12,10 +12,12 @@ import (
 type HookedPlugin struct {
 	Plugin
 	manifest PluginManifest
+	stopped  bool
+	subs     []chan<- struct{}
 }
 
 // Get all the hooks of the specified type and signature
-func (h HookedPlugin) GetHooks(kind HookType, sig HookSignature) []string {
+func (h *HookedPlugin) GetHooks(kind HookType, sig HookSignature) []string {
 	var hooks []string
 	for hook, info := range h.manifest.Hooks {
 		if info.Signature == sig && info.Type == kind {
@@ -23,6 +25,34 @@ func (h HookedPlugin) GetHooks(kind HookType, sig HookSignature) []string {
 		}
 	}
 	return hooks
+}
+
+func (h *HookedPlugin) HookDetails(name string) PluginHook {
+	return h.manifest.Hooks[name]
+}
+
+func (h *HookedPlugin) WaitFinished() <-chan struct{} {
+	sub := make(chan struct{}, 1)
+	if h.stopped {
+		sub <- struct{}{}
+		close(sub)
+	} else {
+		h.subs = append(h.subs, sub)
+	}
+	return sub
+}
+
+func (h *HookedPlugin) Shutdown() error {
+	if h.stopped {
+		return nil
+	}
+	err := h.Plugin.Shutdown()
+	h.stopped = true
+	for _, sub := range h.subs {
+		sub <- struct{}{}
+		close(sub)
+	}
+	return err
 }
 
 //go:embed scripts/launch_plugin.sh
@@ -52,7 +82,7 @@ func PluginFromManifest(manifest PluginManifest, ctx context.Context) (HookedPlu
 	if err != nil {
 		return HookedPlugin{}, err
 	}
-	return HookedPlugin{plugin, manifest}, nil
+	return HookedPlugin{plugin, manifest, false, nil}, nil
 }
 
 type pythonPlugin struct {

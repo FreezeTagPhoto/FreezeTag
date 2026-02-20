@@ -77,6 +77,10 @@ type CancelledJobResponse struct {
 	UUID uuid.UUID `json:"uuid"`
 }
 
+type PluginDisabledResponse struct {
+	Disabled bool `json:"disabled"`
+}
+
 type LoginCredentials struct {
 	Username string `form:"username" json:"username" binding:"required"`
 	Password string `form:"password" json:"password" binding:"required"`

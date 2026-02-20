@@ -81,14 +81,15 @@ func TestTaggingPluginWithManifest(t *testing.T) {
 		os.RemoveAll("test_resources/tagger/.venv") //nolint:errcheck
 	})
 	repo := createMockRepo(t)
-	repo.EXPECT().AddImageTags(database.ImageId(42), []string{"foo", "bar"}).Return(repositories.ImageTagResult{})
+	repo.EXPECT().AddImageTags(database.ImageId(42), []string{"foo", "bar"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 42, Count: 2}})
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
-	for _, hook := range plugin.GetHooks(PostUpload, ImageProcess) {
-		err := ProcessImage(plugin, hook, database.ImageId(42), repo)
+	for _, hook := range plugin.GetHooks(PostUpload, ProcessOneImage) {
+		res, err := plugin.processOneImage(hook, database.ImageId(42), repo)
 		assert.NoError(t, err)
+		assert.NotZero(t, res)
 	}
 	err = plugin.Shutdown()
 	assert.NoError(t, err)
@@ -99,14 +100,15 @@ func TestTaggingPluginWithManifestAndRequirements(t *testing.T) {
 		os.RemoveAll("test_resources/tagger_numpy/.venv") //nolint:errcheck
 	})
 	repo := createMockRepo(t)
-	repo.EXPECT().AddImageTags(database.ImageId(42), []string{"2", "3", "4", "5", "6"}).Return(repositories.ImageTagResult{})
+	repo.EXPECT().AddImageTags(database.ImageId(42), []string{"2", "3", "4", "5", "6"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 42, Count: 5}})
 	manifest, err := ReadManifest("test_resources/tagger_numpy")
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
-	for _, hook := range plugin.GetHooks(PostUpload, ImageProcess) {
-		err := ProcessImage(plugin, hook, database.ImageId(42), repo)
+	for _, hook := range plugin.GetHooks(PostUpload, ProcessOneImage) {
+		res, err := plugin.processOneImage(hook, database.ImageId(42), repo)
 		assert.NoError(t, err)
+		assert.NotZero(t, res)
 	}
 	err = plugin.Shutdown()
 	assert.NoError(t, err)
@@ -117,16 +119,17 @@ func TestReuseSameVenv(t *testing.T) {
 		os.RemoveAll("test_resources/tagger/.venv") //nolint:errcheck
 	})
 	repo := createMockRepo(t)
-	repo.EXPECT().AddImageTags(database.ImageId(1), []string{"foo", "bar"}).Return(repositories.ImageTagResult{})
-	repo.EXPECT().AddImageTags(database.ImageId(2), []string{"foo", "bar"}).Return(repositories.ImageTagResult{})
+	repo.EXPECT().AddImageTags(database.ImageId(1), []string{"foo", "bar"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 1, Count: 2}})
+	repo.EXPECT().AddImageTags(database.ImageId(2), []string{"foo", "bar"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 2, Count: 2}})
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
 	for i := 1; i <= 2; i++ {
 		plugin, err := PluginFromManifest(manifest, t.Context())
 		require.NoError(t, err)
-		for _, hook := range plugin.GetHooks(PostUpload, ImageProcess) {
-			err := ProcessImage(plugin, hook, database.ImageId(i), repo)
+		for _, hook := range plugin.GetHooks(PostUpload, ProcessOneImage) {
+			res, err := plugin.RunHook(hook, repositories.ImageUploadSuccess{Id: database.ImageId(i)}, repo)
 			assert.NoError(t, err)
+			assert.NotZero(t, res)
 		}
 		err = plugin.Shutdown()
 		assert.NoError(t, err)
@@ -139,15 +142,16 @@ func TestMultipleActionsOnePlugin(t *testing.T) {
 	})
 	repo := createMockRepo(t)
 	for i := 1; i <= 4; i++ {
-		repo.EXPECT().AddImageTags(database.ImageId(i), []string{"foo", "bar"}).Return(repositories.ImageTagResult{})
+		repo.EXPECT().AddImageTags(database.ImageId(i), []string{"foo", "bar"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: database.ImageId(i), Count: 2}})
 	}
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
 	for i := 1; i <= 4; i++ {
-		err := ProcessImage(plugin, plugin.GetHooks(PostUpload, ImageProcess)[0], database.ImageId(i), repo)
+		res, err := plugin.RunHook(plugin.GetHooks(PostUpload, ProcessOneImage)[0], repositories.ImageUploadSuccess{Id: database.ImageId(i)}, repo)
 		assert.NoError(t, err)
+		assert.NotZero(t, res)
 	}
 	err = plugin.Shutdown()
 	assert.NoError(t, err)
@@ -162,7 +166,7 @@ func TestPluginProcessError(t *testing.T) {
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
-	err = ProcessImage(plugin, plugin.GetHooks(PostUpload, ImageProcess)[0], database.ImageId(67), repo)
+	_, err = plugin.RunHook(plugin.GetHooks(PostUpload, ProcessOneImage)[0], repositories.ImageUploadSuccess{Id: 67}, repo)
 	assert.Error(t, err)
 	err = plugin.Shutdown()
 	assert.NoError(t, err)
@@ -175,13 +179,64 @@ func TestPluginMetadataRequest(t *testing.T) {
 	repo := createMockRepo(t)
 	filename := "abc.png"
 	repo.EXPECT().GetImageMetadata(database.ImageId(76)).Return(imagedata.Metadata{FileName: &filename}, nil)
-	repo.EXPECT().AddImageTags(database.ImageId(76), []string{"abc.png"}).Return(repositories.ImageTagResult{})
+	repo.EXPECT().AddImageTags(database.ImageId(76), []string{"abc.png"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 76, Count: 1}})
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context())
 	require.NoError(t, err)
-	err = ProcessImage(plugin, plugin.GetHooks(PostUpload, ImageProcess)[0], database.ImageId(76), repo)
+	res, err := plugin.RunHook(plugin.GetHooks(PostUpload, ProcessOneImage)[0], repositories.ImageUploadSuccess{Id: 76}, repo)
 	assert.NoError(t, err)
+	assert.NotZero(t, res)
 	err = plugin.Shutdown()
 	assert.NoError(t, err)
+}
+
+func TestImageBatchPlugin(t *testing.T) {
+	t.Cleanup(func() {
+		os.RemoveAll("test_resources/tagger/.venv") //nolint:errcheck
+	})
+	repo := mocks.NewMockImageRepository(t)
+	var in []repositories.ImageUploadSuccess
+	for i := range 10 {
+		repo.EXPECT().AddImageTags(database.ImageId(i), []string{"foo"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: database.ImageId(i), Count: 1}})
+		in = append(in, repositories.ImageUploadSuccess{Id: database.ImageId(i)})
+	}
+	manifest, err := ReadManifest("test_resources/tagger")
+	require.NoError(t, err)
+	plugin, err := PluginFromManifest(manifest, t.Context())
+	require.NoError(t, err)
+	res, err := plugin.RunHook("tag_batch", in, repo)
+	assert.NoError(t, err)
+	assert.NotZero(t, res)
+	assert.NoError(t, plugin.Shutdown())
+}
+
+func TestEveryHook(t *testing.T) {
+	t.Cleanup(func() {
+		os.RemoveAll("test_resources/every_hook/.venv") //nolint:errcheck
+	})
+	repo := createMockRepo(t)
+	var in []repositories.ImageUploadSuccess
+	for i := range 11 {
+		in = append(in, repositories.ImageUploadSuccess{Id: database.ImageId(i)})
+	}
+	repo.EXPECT().AddImageTags(database.ImageId(1), []string{"foo"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 1, Count: 1}})
+	repo.EXPECT().RemoveImageTags(database.ImageId(1), []string{"foo"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 1, Count: 1}})
+	repo.EXPECT().DeleteTags([]string{"foo"}).Return(1, nil)
+	repo.EXPECT().DeleteImage(database.ImageId(1)).Return("foo", nil)
+	repo.EXPECT().StoreImageBytes(mock.AnythingOfType("[]uint8"), "foo.webp").Return(database.ImageId(2), nil)
+	repo.EXPECT().SearchImage(mock.Anything).Return([]database.ImageId{4, 20}, nil)
+	repo.EXPECT().RetrieveImageTags(database.ImageId(1)).Return([]string{"foo"}, nil)
+	repo.EXPECT().RetrieveAllTags().Return(map[string]int64{"foo": 1, "bar": 2}, nil)
+	repo.EXPECT().GetQueryTagCounts(mock.Anything).Return(map[string]int64{"foo": 1, "bar": 2}, nil)
+	manifest, err := ReadManifest("test_resources/every_hook")
+	require.NoError(t, err)
+	plugin, err := PluginFromManifest(manifest, t.Context())
+	require.NoError(t, err)
+	for _, input := range in {
+		res, err := plugin.RunHook("every", input, repo)
+		assert.NoError(t, err)
+		assert.NotZero(t, res)
+	}
+	assert.NoError(t, plugin.Shutdown())
 }

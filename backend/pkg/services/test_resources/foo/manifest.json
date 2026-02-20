@@ -5,11 +5,11 @@
     "hooks": {
         "tag_image": {
             "type": "post_upload",
-            "signature": "process_image"
+            "signature": "single_image"
         },
         "tag_image_2": {
             "type": "post_upload",
-            "signature": "process_image"
+            "signature": "single_image"
         }
     }
 }

@@ -25,24 +25,43 @@ def run():
             break
         match msg.mtype:
             case MessageType.GET:
-                if msg.contents["action"] == "process-image":
-                    hook = msg.contents["hook"]
-                    id = msg.contents["id"]
-                    msg = read_message()
-                    if msg.mtype != MessageType.BIN:
-                        write_message(Message(MessageType.ERR, b'no context provided with process-image'))
-                        continue
-                    img = Image.open(io.BytesIO(msg.contents))
-                    hook_func = hooks._plugin_hooks.get(hook, None)
-                    if hook_func is None:
-                        write_message(Message(MessageType.ERR, f'process-image hook "{hook}" not found'.encode("utf-8")))
-                        continue
-                    action = hook_func(img, id)
-                    write_message(action)
-                else:
-                    write_message(Message(MessageType.ERR, b'non-process-image requests not supported yet.'))
+                match msg.contents["action"]:
+                    case "single_image":
+                        hook = msg.contents["hook"]
+                        id = msg.contents["id"]
+                        msg = read_message()
+                        if msg.mtype != MessageType.BIN:
+                            write_message(Message(MessageType.ERR, b'no context provided with process-image'))
+                            continue
+                        img = Image.open(io.BytesIO(msg.contents))
+                        hook_func = hooks._plugin_hooks.get(hook, None)
+                        if hook_func is None:
+                            write_message(Message(MessageType.ERR, f'single_image hook "{hook}" not found'.encode("utf-8")))
+                            continue
+                        try:
+                            action = hook_func(img, id)
+                        except Exception as error:
+                            write_message(Message(MessageType.ERR, f'exception during hook: {error}'))
+                            continue
+                        write_message(action)
+                    case "image_batch":
+                        hook = msg.contents["hook"]
+                        ids = msg.contents["ids"]
+                        hook_func = hooks._plugin_hooks.get(hook, None)
+                        if hook_func is None:
+                            write_message(Message(MessageType.ERR, f'image_batch hook "{hook}" not found'))
+                            continue
+                        action = hooks.NoAction()
+                        try:
+                            action = hook_func(ids)
+                        except Exception as error:
+                            write_message(Message(MessageType.ERR, f'exception during hook: {error}'))
+                            continue
+                        write_message(action)
+                    case _:
+                        write_message(Message(MessageType.ERR, f'unsupported hook signature'))
             case _:
-                write_message(Message(MessageType.ERR, f'{msg.mtype.name} not supported yet'.encode("utf-8")))
+                write_message(Message(MessageType.ERR, f'{msg.mtype.name} not supported.'.encode("utf-8")))
     
     if hooks._plugin_teardown is not None:
         msg = hooks._plugin_teardown()

@@ -1,12 +1,12 @@
 {
-    "name": "tagger-numpy",
-    "version": "0.0.1",
+    "name": "png-duper",
     "main_file": "main.py",
     "hooks": {
-        "tag_image": {
+        "dupe_image": {
             "type": "post_upload",
             "signature": "single_image"
         }
     },
-    "requirements": "requirements.txt"
+    "version": "1.0.0",
+    "default_disabled": true
 }

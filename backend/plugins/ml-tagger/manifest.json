@@ -4,9 +4,10 @@
     "hooks": {
         "tag_image": {
             "type": "post_upload",
-            "signature": "process_image"
+            "signature": "single_image"
         }
     },
+    "version": "1.0.0",
     "requirements": "requirements.txt",
     "python_version": "3.13"
 }

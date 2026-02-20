@@ -5,7 +5,12 @@
     "hooks": {
         "tag_image": {
             "type": "post_upload",
-            "signature": "process_image"
+            "signature": "single_image"
+        },
+        "tag_batch": {
+            "type": "post_upload",
+            "signature": "image_batch"
         }
-    }
+    },
+    "python_version": "3.13"
 }

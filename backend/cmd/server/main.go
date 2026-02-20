@@ -10,6 +10,7 @@ import (
 	"freezetag/backend/api/metadata"
 	"freezetag/backend/api/password"
 	"freezetag/backend/api/permissions"
+	"freezetag/backend/api/plugins"
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
@@ -26,7 +27,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 
 	docs "freezetag/backend/cmd/docs"
 
@@ -48,8 +48,9 @@ type dependencies struct {
 	jobRepository   repositories.JobRepository
 	userRepository  repositories.UserRepository
 
-	jobService  services.JobService
-	authService services.AuthService
+	jobService    services.JobService
+	authService   services.AuthService
+	pluginService services.PluginService
 }
 
 // @title FreezeTag API
@@ -93,11 +94,12 @@ func initializeDependencies() *dependencies {
 		log.Fatalf("[ERR]  error launching plugin service: %v", err)
 	}
 	log.Printf("[INFO] loaded plugins:")
-	plugs := strings.Join(pluginService.AllPlugins(), ", ")
-	if plugs == "" {
-		log.Printf("[INFO] no plugins loaded")
-	} else {
-		log.Printf("[INFO] %s", plugs)
+	for _, plug := range pluginService.Plugins() {
+		dis := ""
+		if !plug.Enabled {
+			dis = " [disabled]"
+		}
+		log.Printf("       - %s version %s%s", plug.Name, plug.Version, dis)
 	}
 	jobService := services.InitDefaultJobService(jobRepo, imageRepo, pluginService)
 	authService := services.InitDefaultAuthService(userRepo)
@@ -112,6 +114,7 @@ func initializeDependencies() *dependencies {
 		userRepository:  userRepo,
 		jobService:      jobService,
 		authService:     authService,
+		pluginService:   pluginService,
 	}
 }
 
@@ -160,6 +163,7 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	initJobsEndpoints(authGroup, deps)
 	initFileEndpoints(authGroup, deps)
 	initUserEndpoints(authGroup, deps)
+	initPluginEndpoints(authGroup, deps)
 }
 
 func initPermissionsEndpoints(baseGroup gin.IRouter) {
@@ -167,6 +171,15 @@ func initPermissionsEndpoints(baseGroup gin.IRouter) {
 	{
 		pe := permissions.InitPermissionEndpoint()
 		permGroup.GET("/list", middleware.RequirePermission(data.ReadPermissions), pe.ListPermissions)
+	}
+}
+
+func initPluginEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	pluginGroup := baseGroup.Group("/plugins")
+	{
+		pe := plugins.InitPluginEndpoint(deps.pluginService)
+		pluginGroup.GET("/", middleware.RequirePermission(data.ReadPlugins), pe.ListAll)
+		pluginGroup.POST("/", middleware.RequirePermission(data.WritePlugins), pe.SetEnabled)
 	}
 }
 

@@ -21,6 +21,19 @@ type PluginManifest struct {
 	MainFile      string                `json:"main_file"`
 	Requirements  *string               `json:"requirements"`
 	PythonVersion *string               `json:"python_version"`
+	Disabled      bool                  `json:"default_disabled"`
+}
+
+type PluginInfo struct {
+	Name    string                `json:"name"`
+	Version string                `json:"version"`
+	Enabled bool                  `json:"enabled"`
+	Hooks   map[string]PluginHook `json:"hooks"`
+}
+
+type HookInfo struct {
+	Name string     `json:"name"`
+	Hook PluginHook `json:"hook"`
 }
 
 // This function reads a manifest
@@ -45,21 +58,71 @@ func ReadManifest(directory string) (PluginManifest, error) {
 	return manifest, nil
 }
 
+func (pi PluginInfo) HooksWithType(ty HookType) []HookInfo {
+	var info []HookInfo
+	for k, v := range pi.Hooks {
+		if v.Type == ty {
+			info = append(info, HookInfo{Name: k, Hook: v})
+		}
+	}
+	return info
+}
+
+func (pi PluginInfo) HooksWithSignature(si HookSignature) []HookInfo {
+	var info []HookInfo
+	for k, v := range pi.Hooks {
+		if v.Signature == si {
+			info = append(info, HookInfo{Name: k, Hook: v})
+		}
+	}
+	return info
+}
+
+func (pi PluginInfo) FilterHooks(ty HookType, si HookSignature) []HookInfo {
+	var info []HookInfo
+	for k, v := range pi.Hooks {
+		if v.Signature == si && v.Type == ty {
+			info = append(info, HookInfo{Name: k, Hook: v})
+		}
+	}
+	return info
+}
+
 type HookType uint8
 
 const (
 	PostUpload HookType = iota
-	PreUpload
+	ManualTrigger
+)
+
+type HookSignature uint8
+
+const (
+	ProcessOneImage HookSignature = iota
+	ProcessImageBatch
 )
 
 var stringHookMap map[string]HookType = map[string]HookType{
-	"post_upload": PostUpload,
-	"pre_upload":  PreUpload,
+	"post_upload":    PostUpload,
+	"manual_trigger": ManualTrigger,
 }
+var hookStringMap map[HookType]string
 
-var hookStringMap map[HookType]string = map[HookType]string{
-	PostUpload: "post_upload",
-	PreUpload:  "pre_upload",
+var stringSignatureMap map[string]HookSignature = map[string]HookSignature{
+	"single_image": ProcessOneImage,
+	"image_batch":  ProcessImageBatch,
+}
+var signatureStringMap map[HookSignature]string
+
+func init() {
+	hookStringMap = make(map[HookType]string)
+	for k, v := range stringHookMap {
+		hookStringMap[v] = k
+	}
+	signatureStringMap = make(map[HookSignature]string)
+	for k, v := range stringSignatureMap {
+		signatureStringMap[v] = k
+	}
 }
 
 func (h *HookType) UnmarshalJSON(data []byte) error {
@@ -79,23 +142,6 @@ func (h HookType) MarshalJSON() ([]byte, error) {
 		return json.Marshal(str)
 	}
 	return nil, fmt.Errorf("unknown hook type")
-}
-
-type HookSignature uint8
-
-const (
-	ImageProcess HookSignature = iota
-	MetadataProcess
-)
-
-var stringSignatureMap map[string]HookSignature = map[string]HookSignature{
-	"process_image":    ImageProcess,
-	"process_metadata": MetadataProcess,
-}
-
-var signatureStringMap map[HookSignature]string = map[HookSignature]string{
-	ImageProcess:    "process_image",
-	MetadataProcess: "process_metadata",
 }
 
 func (s *HookSignature) UnmarshalJSON(data []byte) error {

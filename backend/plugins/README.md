@@ -11,7 +11,7 @@ Each plugin is launched as a separate Python process by the backend server when 
 ### Plugin Lifecycle
 The life cycle of a plugin is separated into 3 phases:
 - **Initialization:** The function registered to the init hook (if there is one) is run before the server makes any requests. This is when the plugin can load models, initialize API connections, etc.
-- **Processing**: The process hook (different for different plugin types) is executed at least 1 and potentially many times. If there are multiple process hooks of the same type, they are executed sequentially per job (however, the order is not guaranteed). This happens synchronously (the backend waits for process to complete before requesting another)
+- **Processing**: The process hook (different for different plugin types) is executed at least 1 and potentially many times. If there are multiple process hooks of the same type, they are not guaranteed to execute in the same process (for efficiency, the server will try to re-use the same process anyways). There is no guarantee on the relative order of execution for multiple hooks of the same type.
 - **Shutdown**: The function registered to the teardown hook (if there is one) is run once the server is done making requests. This allows plugins to clean up, save persistent files for the next run, etc...
 
 ## Plugin Protocol Implementation
@@ -43,8 +43,13 @@ P: SHUTDOWN
 ```
 Communicating in this order means that there's never ambiguity about which messages belong to which transaction, so neither the plugin nor the backend has to buffer or filter messages.
 
-The only special case messages that don't fit into this 2-layer context-free onion exactly are `LOG`, `ERR`, and `BIN`. `LOG` will only ever be sent by plugins, and the server only has to log (or handle the error) without explicitly responding. `BIN` will only ever show up as additional context after a request or response, never as its own thing.
+The only special case messages that don't fit into this 2-layer context-free onion exactly are `LOG`, `ERR`, and `BIN`. `LOG` will only ever be sent by plugins, and the server only has to log without explicitly responding. `BIN` will only ever show up as additional context after a request or response, never as its own thing.
 
 `ERR` will always be considered a response to the most recent request, so e.g. a "process" request sent by the server that receives `ERR` as a response will be considered completed (in an error state). This is to make sure errors are recoverable in a way that doesn't break the protocol.
 
 If the server receives an `ERR` response to the `READY` message, then it will cancel the plugin. Errors during initialization are considered unrecoverable.
+
+### One Finicky Spot
+When plugins return, their PUT can be multipart (e.g. delete the image with this ID, add an image with this name).
+To handle this without having problems with non-determinism (the Go runtime purposefully shuffles maps), we need to store image data in an `add_image` action as a base64 string inside the JSON object, rather than as a BIN followup to the main body.
+This is slightly less IO-efficient, but what can you do ¯\\\_(ツ)\_/¯

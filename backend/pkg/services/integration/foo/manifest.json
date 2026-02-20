@@ -1,12 +1,15 @@
 {
-    "name": "tagger-numpy",
+    "name": "foo",
     "version": "0.0.1",
     "main_file": "main.py",
     "hooks": {
         "tag_image": {
             "type": "post_upload",
             "signature": "single_image"
+        },
+        "tag_all": {
+            "type": "post_upload",
+            "signature": "image_batch"
         }
-    },
-    "requirements": "requirements.txt"
+    }
 }
