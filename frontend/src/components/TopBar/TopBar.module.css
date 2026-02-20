@@ -68,8 +68,28 @@
 }
 
 .menuEmpty {
-    opacity: 0.8;
-    padding: 6px 4px;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.menuEmptyTitle {
+    font-family: var(--font-geist-sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.menuEmptySub {
+    font-family: var(--font-geist-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--subtext0, var(--text));
+    opacity: 0.75;
 }
 
 .pillMosaic {

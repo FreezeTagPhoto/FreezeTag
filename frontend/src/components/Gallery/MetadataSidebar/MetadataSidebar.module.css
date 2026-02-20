@@ -6,8 +6,25 @@
     border-left: 1px solid #111827;
     padding: 20px 24px;
 
-    overflow: visible;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+
     box-sizing: border-box;
+}
+
+.viewerSidebar::-webkit-scrollbar {
+    width: 10px;
+}
+.viewerSidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
 }
 
 .sidebarTitle {
@@ -67,7 +84,8 @@
     gap: 6px;
     margin-bottom: 8px;
     min-width: 0;
-    line-height: 1;
+    line-height: 14px;
+    min-height: 14px;
 }
 
 .detailLabelIcon {
@@ -75,15 +93,17 @@
     height: 14px;
     flex: 0 0 14px;
     color: #9ca3af;
-    transform: translateY(-1px);
+    transform: none;
+    display: block;
 }
 
 .detailLabel {
     font-size: 0.75rem;
     font-weight: 600;
     color: #9ca3af;
-    margin-bottom: 0;
-    line-height: 1;
+    margin: 0;
+    line-height: 14px;
+
     letter-spacing: 0.02em;
     text-transform: uppercase;
     min-width: 0;
@@ -411,10 +431,12 @@
     width: 16px;
     height: 16px;
     flex: 0 0 16px;
+    display: block;
 }
 
 .iconSm {
     width: 14px;
     height: 14px;
     flex: 0 0 14px;
+    display: block;
 }

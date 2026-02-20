@@ -56,12 +56,16 @@
 }
 
 .item:hover {
-    background: var(--base);
+    background: var(--surface1);
+}
+
+.item:active {
+    transform: scale(0.98);
 }
 
 .itemActive {
     background: var(--surface0);
-    color: var(--subtext0);
+    color: var(--subtext1);
     filter: none;
 }
 

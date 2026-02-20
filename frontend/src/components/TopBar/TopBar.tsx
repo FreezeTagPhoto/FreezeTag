@@ -91,12 +91,6 @@ export default function TopBar({
     const tagsWrapRef = useRef<HTMLDivElement>(null);
     const sortWrapRef = useRef<HTMLDivElement>(null);
 
-    const alphaTags = useMemo(
-        () => [...tags].sort((a, b) => a.name.localeCompare(b.name)),
-        [tags],
-    );
-
-    // Get active tags from the search query
     const activeTags = useMemo(() => {
         const set = new Set<string>();
         for (const tok of parseUserQuery(searchTerm)) {
@@ -106,7 +100,15 @@ export default function TopBar({
         return set;
     }, [searchTerm]);
 
-    // Close menus on outside click
+    const alphaTags = useMemo(() => {
+        return (
+            [...tags]
+                .filter((t) => (t.count ?? 0) > 0) // hides all 0-count tags
+                // .filter((t) => (t.count ?? 0) > 0 || activeTags.has(t.name)) // shows active tags even if they are 0-count
+                .sort((a, b) => a.name.localeCompare(b.name))
+        );
+    }, [tags]);
+
     useEffect(() => {
         const onMouseDown = (e: MouseEvent) => {
             const node = e.target as Node;
@@ -163,7 +165,14 @@ export default function TopBar({
                             aria-label="Tags"
                         >
                             {alphaTags.length === 0 ? (
-                                <div className={styles.menuEmpty}>No tags</div>
+                                <div className={styles.menuEmpty}>
+                                    <div className={styles.menuEmptyTitle}>
+                                        No tags
+                                    </div>
+                                    <div className={styles.menuEmptySub}>
+                                        Nothing to filter.
+                                    </div>
+                                </div>
                             ) : (
                                 <div
                                     className={styles.pillMosaic}

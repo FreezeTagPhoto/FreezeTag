@@ -6,10 +6,11 @@ export const DarkThemeRegistry = [
     "Catppuccin Frappe",
 ];
 export const LightThemeRegistry = ["Catppuccin Latte"];
+export const THEME_STORAGE_KEY = "freezetag-theme-option";
 
 // Returns the string for the proper selected theme. Should be put into a `data-theme` element in the most base element of a page
 export const ThemeGetter: () => string = () => {
-    const stored_theme = localStorage.getItem("freezetag-theme-option");
+    const stored_theme = localStorage.getItem(THEME_STORAGE_KEY);
     if (stored_theme) {
         if (
             DarkThemeRegistry.includes(stored_theme) ||
@@ -29,7 +30,7 @@ export const ThemeGetter: () => string = () => {
 
 // Returns the string for the proper selected theme type. Should be put into a `data-theme-type` element in the most base element of a page
 export const ThemeTypeGetter: () => string = () => {
-    const stored_theme = localStorage.getItem("freezetag-theme-option");
+    const stored_theme = localStorage.getItem(THEME_STORAGE_KEY);
     if (stored_theme) {
         if (DarkThemeRegistry.includes(stored_theme)) {
             return "dark";
