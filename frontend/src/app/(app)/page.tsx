@@ -95,12 +95,7 @@ export default function Home() {
         let cancelled = false;
 
         (async () => {
-            if (imageIds.length === 0) {
-                setTagCounts({});
-                return;
-            }
-
-            const counts_result = await TagCounter(imageIds);
+            const counts_result = await TagCounter(query);
             if (cancelled) return;
             if (counts_result.ok) {
                 setTagCounts(counts_result.value);
@@ -113,7 +108,7 @@ export default function Home() {
         return () => {
             cancelled = true;
         };
-    }, [imageIds]);
+    }, [query]);
 
     // Prepare tags for the top bar
     const tagsForTopBar: TagInfo[] = useMemo(

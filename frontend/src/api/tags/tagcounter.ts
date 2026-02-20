@@ -1,6 +1,8 @@
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
+import { parseUserQuery } from "@/common/search/parse";
+import { compileTokensToApiQuery } from "@/common/search/compile";
 
 export type TagCountResult = Result<
     Record<string, number>,
@@ -8,19 +10,15 @@ export type TagCountResult = Result<
 >;
 
 type TagCountResponse = Record<string, number>;
-/**
- *
- * @param image_ids Image Ids to get tags for
- * @returns A TagGetResult promise
- */
+
 export default async function TagCounter(
-    image_ids: number[],
+    search_query: string,
 ): Promise<TagCountResult> {
     return count_tags_with_handler(
-        ApiHandler<TagCountResponse>(SERVER_ADDRESS + "tag/counts?")(
+        ApiHandler<TagCountResponse>(SERVER_ADDRESS + "tag/search?")(
             Method.GET,
         ),
-        image_ids,
+        search_query,
     );
 }
 
@@ -28,11 +26,11 @@ async function count_tags_with_handler(
     handler: (
         data: BodyInit,
     ) => Promise<Result<TagCountResponse, RequestError>>,
-    image_ids: number[],
+    search_query: string,
 ): Promise<TagCountResult> {
-    const query_arr = [];
-    for (const image_id of image_ids) query_arr.push(`id=${image_id}`);
-    const result = await handler(query_arr.join("&"));
+    const tokens = parseUserQuery(search_query);
+    const api_query = compileTokensToApiQuery(tokens);
+    const result = await handler(api_query);
 
     if (!result.ok) {
         const status = result.error.status_code;
