@@ -1,0 +1,11 @@
+{
+    "name": "png-duper",
+    "main_file": "main.py",
+    "hooks": {
+        "dupe_image": {
+            "type": "post_upload",
+            "signature": "single_image"
+        }
+    },
+    "version": "1.0.0"
+}

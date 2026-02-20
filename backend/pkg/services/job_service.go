@@ -156,7 +156,9 @@ func (s *defaultJobService) SchedulePostUploads(upload uuid.UUID) {
 		batch.Context,
 		[]repositories.JobInput{dummy{1}},
 		repositories.Job(func(_ dummy, c context.Context, status func(string)) (plugins.PluginResult, error) {
+			status("Waiting")
 			<-batch.WaitFinished()
+			status("Running")
 			if batch.Cancelled {
 				return nil, fmt.Errorf("cancelled")
 			}
@@ -208,6 +210,7 @@ func (s *defaultJobService) SchedulePostUploads(upload uuid.UUID) {
 							}
 						}()
 						if idx == 0 {
+							status("Waiting")
 							pluginLock.Lock()
 							if c.Err() != nil {
 								return nil, fmt.Errorf("cancelled")
