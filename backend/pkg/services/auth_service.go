@@ -56,7 +56,9 @@ type AuthService interface {
 	// creates an API token. Returns the Plaintext token. Plaintext token is not stored
 	CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (ApiCreateToken, error)
 	// soft delete an API token, returning an error if the token does not exist or could not be revoked
-	RevokeAPIToken(tokenID database.TokenID) error
+	RevokeAPIToken(userId database.UserID, tokenID database.TokenID) error
+	// permanently delete an API token, returning an error if the token does not exist or could not be deleted. Admin only operation
+	AdminRevokeAPIToken(tokenID database.TokenID) error
 	// delete an API token, returning an error if the token does not exist or could not be deleted
 	DeleteAPIToken(tokenID database.TokenID) error
 	// Get the IDs of the tokens associated with a user
@@ -65,6 +67,10 @@ type AuthService interface {
 	GetUserById(userID database.UserID) (*database.PublicUser, error)
 	// GetPublicUser returns the public user information for a given user ID, or an error if the user does not exist
 	GetPublicUser(userID database.UserID) (*database.PublicUser, error)
+	// List all users in the system
+	AllUsers() ([]database.PublicUser, error)
+	// Delete a user by ID
+	DeleteUser(userID database.UserID) error
 }
 
 type DefaultAuthService struct {
@@ -218,11 +224,19 @@ func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions 
 	}, nil
 }
 
-func (s *DefaultAuthService) RevokeAPIToken(tokenID database.TokenID) error {
-	return s.userDatabase.RevokeApiToken(tokenID)
+// ** these dont need much protection, but the auth service later can add additional checks/sorting/buiness/whatever logic here if needed, and the database layer can focus on just data access**
+
+func (s *DefaultAuthService) RevokeAPIToken(userID database.UserID,tokenID database.TokenID) error {
+	return s.userDatabase.RevokeApiToken(userID, tokenID)
+}
+
+func (s *DefaultAuthService) AdminRevokeAPIToken(tokenID database.TokenID) error {
+	log.Printf("[ADMIN] revoking API token with ID %d", tokenID)
+	return s.userDatabase.AdminRevokeApiToken(tokenID)
 }
 
 func (s *DefaultAuthService) DeleteAPIToken(tokenID database.TokenID) error {
+	log.Printf("[ADMIN] Deleting an API token with ID %d", tokenID)
 	return s.userDatabase.DeleteApiToken(tokenID)
 }
 
@@ -236,6 +250,14 @@ func (s *DefaultAuthService) GetUserById(userID database.UserID) (*database.Publ
 
 func (s *DefaultAuthService) GetPublicUser(userID database.UserID) (*database.PublicUser, error) {
 	return s.userDatabase.GetUserById(userID)
+}
+
+func (s *DefaultAuthService) AllUsers() ([]database.PublicUser, error) {
+	return s.userDatabase.AllUsers()
+}
+
+func (s *DefaultAuthService) DeleteUser(userID database.UserID) error {
+	return s.userDatabase.DeleteUser(userID)
 }
 
 func hashToken(token string) [32]byte {

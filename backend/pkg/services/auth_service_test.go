@@ -59,7 +59,7 @@ func TestEnsureLoginNoUsers(t *testing.T) {
 
 func TestEnsureLoginAlreadyUser(t *testing.T) {
 	mockDb := mockUserDatabase.NewMockUserDatabase(t)
-	mockDb.EXPECT().AllUsers().Return([]*database.PublicUser{{ID: 1}}, nil)
+	mockDb.EXPECT().AllUsers().Return([]database.PublicUser{{ID: 1}}, nil)
 	authService := InitDefaultAuthService(mockDb)
 	err := authService.EnsureLogin()
 	assert.NoError(t, err)
@@ -249,7 +249,7 @@ func TestEnsureLoginCreatesAdmin(t *testing.T) {
 
 func TestEnsureLoginWithUsers(t *testing.T) {
 	mockDb := mockUserDatabase.NewMockUserDatabase(t)
-	mockDb.EXPECT().AllUsers().Return([]*database.PublicUser{{ID: 1}}, nil)
+	mockDb.EXPECT().AllUsers().Return([]database.PublicUser{{ID: 1}}, nil)
 	authService := InitDefaultAuthService(mockDb)
 	err := authService.EnsureLogin()
 	assert.NoError(t, err)

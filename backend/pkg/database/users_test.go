@@ -361,7 +361,7 @@ func TestRevokeApiKeySuccess(t *testing.T) {
 	apiId, err := db.SaveApiToken(user.ID, nil, tokenHash, label, data.Permissions{})
 	require.NoError(t, err)
 
-	err = db.RevokeApiToken(apiId)
+	err = db.AdminRevokeApiToken(apiId)
 	require.NoError(t, err)
 
 	info, err := db.GetApiTokenInfo(apiId)
@@ -377,7 +377,7 @@ func TestRevokeApiKeyNonexistentToken(t *testing.T) {
 	db := createTempUserDatabase(t)
 
 	apiId := TokenID(999) // non-existent token ID
-	err := db.RevokeApiToken(apiId)
+	err := db.AdminRevokeApiToken(apiId)
 	require.Error(t, err)
 }
 
@@ -397,7 +397,7 @@ func TestGetUserApiTokenLabels(t *testing.T) {
 	id2, err := db.SaveApiToken(user.ID, nil, tokenHash2, label2, data.Permissions{})
 	require.NoError(t, err)
 
-	err = db.RevokeApiToken(id1)
+	err = db.AdminRevokeApiToken(id1)
 	require.NoError(t, err)
 
 	labels, err := db.GetUserApiTokenInfo(user.ID)
