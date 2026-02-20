@@ -3,12 +3,12 @@
     grid-template-columns: 240px 1fr;
     height: 100svh;
     color: var(--text);
-    background: var(--background);
+    background: var(--crust);
 }
 
 .nav {
     border-right: var(--border-info);
-    background: var(--foreground2);
+    background: var(--mantle);
 }
 
 .content {
