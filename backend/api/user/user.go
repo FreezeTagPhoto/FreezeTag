@@ -5,7 +5,6 @@ import (
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/data"
-	"freezetag/backend/pkg/repositories"
 	"freezetag/backend/pkg/services"
 	"net/http"
 	"strconv"
@@ -14,12 +13,11 @@ import (
 )
 
 type UserEndpoint struct {
-	userRepo    repositories.UserRepository
 	authService services.AuthService
 }
 
-func InitUserEndpoint(userRepo repositories.UserRepository, authService services.AuthService) UserEndpoint {
-	return UserEndpoint{userRepo: userRepo, authService: authService}
+func InitUserEndpoint(authService services.AuthService) UserEndpoint {
+	return UserEndpoint{authService: authService}
 }
 
 // @Summary      Get a public user by ID
@@ -41,7 +39,7 @@ func (ue UserEndpoint) GetUser(c *gin.Context) {
 	} else {
 		id = database.UserID(num)
 	}
-	user, err := ue.userRepo.GetUserByID(id)
+	user, err := ue.authService.GetUserById(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "User not found"})
 		return
@@ -58,7 +56,7 @@ func (ue UserEndpoint) GetUser(c *gin.Context) {
 // @Failure      500  {object}  api.ServerErrorResponse
 // @Router       /users/all [get]
 func (ue UserEndpoint) ListUsers(c *gin.Context) {
-	users, err := ue.userRepo.ListAllUsers()
+	users, err := ue.authService.AllUsers()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "Failed to list users"})
 		return
@@ -84,7 +82,7 @@ func (ue UserEndpoint) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	err = ue.userRepo.DeleteUser(id)
+	err = ue.authService.DeleteUser(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "Failed to delete user"})
 		return
@@ -140,7 +138,7 @@ func (ue UserEndpoint) AddPermissions(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
 	}
-	err = ue.userRepo.GrantPermissions(id, permissions)
+	err = ue.authService.GrantPermissions(id, permissions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "failed to grant permissions: " + err.Error()})
 		return
@@ -171,7 +169,7 @@ func (ue UserEndpoint) RevokePermissions(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
 	}
-	err = ue.userRepo.RevokePermissions(id, permissions)
+	err = ue.authService.RevokePermissions(id, permissions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "failed to revoke permissions: " + err.Error()})
 		return
@@ -194,7 +192,7 @@ func (ue UserEndpoint) GetPermissions(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
 	}
-	perms, err := ue.userRepo.GetUserPermissions(id)
+	perms, err := ue.authService.GetUserPermissions(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return

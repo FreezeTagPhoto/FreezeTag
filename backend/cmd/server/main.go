@@ -46,7 +46,6 @@ const (
 type dependencies struct {
 	imageRepository repositories.ImageRepository
 	jobRepository   repositories.JobRepository
-	userRepository  repositories.UserRepository
 
 	jobService    services.JobService
 	authService   services.AuthService
@@ -87,7 +86,7 @@ func initParserCollection() images.Parser {
 func initializeDependencies() *dependencies {
 	jobRepo := repositories.NewDefaultJobRepository()
 	imageRepo := initDefaultImageRepository(defaultDataDir)
-	userRepo := initDefaultUserRepository(defaultDataDir)
+	userRepo := initDefaultUserDatabase(defaultDataDir)
 
 	pluginService, err := services.InitDefaultPluginService("./plugins", imageRepo)
 	if err != nil {
@@ -111,14 +110,13 @@ func initializeDependencies() *dependencies {
 	return &dependencies{
 		imageRepository: imageRepo,
 		jobRepository:   jobRepo,
-		userRepository:  userRepo,
 		jobService:      jobService,
 		authService:     authService,
 		pluginService:   pluginService,
 	}
 }
 
-func initDefaultUserRepository(dataDir string) repositories.UserRepository {
+func initDefaultUserDatabase(dataDir string) database.UserDatabase {
 	err := os.MkdirAll(dataDir, os.ModePerm)
 	if err != nil {
 		log.Fatalf("failed to create data directory")
@@ -127,7 +125,7 @@ func initDefaultUserRepository(dataDir string) repositories.UserRepository {
 	if err != nil {
 		log.Fatalf("failed to initialize user database: %v", err.Error())
 	}
-	return repositories.InitDefaultUserRepository(db)
+	return db
 }
 
 func initDefaultImageRepository(dataDir string) repositories.ImageRepository {
@@ -205,7 +203,7 @@ func initLogoutEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	userGroup := baseGroup.Group("/users")
 	{
-		ue := user.InitUserEndpoint(deps.userRepository, deps.authService)
+		ue := user.InitUserEndpoint(deps.authService)
 		userGroup.GET("/:id", middleware.RequirePermission(data.ReadUser), ue.GetUser)
 		userGroup.GET("/all", middleware.RequirePermission(data.ReadUser), ue.ListUsers)
 		userGroup.GET("/permissions/:id", middleware.RequirePermission(data.ReadPermissions), ue.GetPermissions)

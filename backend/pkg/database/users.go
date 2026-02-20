@@ -43,8 +43,8 @@ type UserDatabase interface {
 	GetUserByUsername(username string) (*PublicUser, error)
 	// Get User by ID, return error if not found
 	GetUserById(id UserID) (*PublicUser, error)
-	// Set a User Password, return true if successful, false if user not found
-	SetUserPassword(userID UserID, newPasswordHash string) (bool, error)
+	// Set a User Password, return error if user not found or issue occurs
+	SetUserPassword(userID UserID, newPasswordHash string) (error)
 	// Get Password Hash for a User by ID, return error if ID is not found
 	GetPasswordHash(userID UserID) (string, error)
 	// List all users in the database
@@ -58,7 +58,7 @@ type UserDatabase interface {
 	// delete a user by ID
 	DeleteUser(userID UserID) error
 	// save a new API token for a user, return the token hash and error if user not found. expiresAt can be nil for no expiration
-	SaveApiToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string) (TokenID, error)
+	SaveApiToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string, permissions data.Permissions) (TokenID, error)
 	// Get API permissions for a user by token hash, return error if not found
 	GetApiPermissions(tokenHash [32]byte) (data.Permissions, error)
 	// get user ID associated with an API token hash, return error if not found
@@ -68,9 +68,13 @@ type UserDatabase interface {
 	// delete an API token by its id from the database
 	DeleteApiToken(tokenId TokenID) error
 	// get the label for an API token by its id, return error if not found
-	GetApiTokenInfoById(tokenId TokenID) (ApiTokenInfo, error)
+	GetApiTokenInfo(tokenId TokenID) (ApiTokenInfo, error)
 	// get all API token labels for a user by user ID, return error if user not found
 	GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, error)
+	// ensure an admin has all permissions
+	EnsureAdmin(userID UserID) error
+	// Get all users in the database with their ID, username, and createdAt fields. Does not include password hashes. Return error if issue occurs
+	AllUsers() ([]*PublicUser, error)
 }
 
 type SqliteUserDatabase struct {
@@ -193,20 +197,23 @@ func (s SqliteUserDatabase) GetPasswordHash(userID UserID) (string, error) {
 	return passwordHash, nil
 }
 
-func (s SqliteUserDatabase) SetUserPassword(userID UserID, newPasswordHash string) (bool, error) {
+func (s SqliteUserDatabase) SetUserPassword(userID UserID, newPasswordHash string) error {
 	result, err := s.db.Exec(
 		"UPDATE Users SET passwordHash = ? WHERE id = ?",
 		newPasswordHash,
 		userID,
 	)
 	if err != nil {
-		return false, err
+		return err
 	}
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return false, err
+		return err
 	}
-	return rowsAffected > 0, nil
+	if rowsAffected != 1 {
+		return errors.New("failed to update password: user not found")
+	}
+	return nil
 }
 
 func (s SqliteUserDatabase) ListUsers() ([]*PublicUser, error) {
@@ -312,31 +319,45 @@ func (s SqliteUserDatabase) DeleteUser(userID UserID) error {
 }
 
 // API token related methods
-
-func (s SqliteUserDatabase) SaveApiToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string) (TokenID, error) {
+func (s SqliteUserDatabase) SaveApiToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string, permissions data.Permissions) (TokenID, error) {
 	var expiresUnix any
-	if expiresAt == nil {
-		expiresUnix = nil
-	} else {
+	if expiresAt != nil {
 		expiresUnix = expiresAt.Unix()
 	}
 
-	query := `
+	tx, err := s.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	res, err := tx.Exec(`
 		INSERT INTO API_Token (userId, tokenHash, createdAt, expiresAt, label) 
-		VALUES (?, ?, ?, ?, ?)
-	`
-	result, err := s.db.Exec(
-		query,
-		userID,
-		tokenHash[:],
-		time.Now().Unix(),
-		expiresUnix,
-		label,
+		VALUES (?, ?, ?, ?, ?)`,
+		userID, tokenHash[:], time.Now().Unix(), expiresUnix, label,
 	)
 	if err != nil {
 		return 0, err
 	}
-	tokenID, err := result.LastInsertId()
+	tokenID, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	permStmt, err := tx.Prepare(`
+		INSERT INTO API_Token_Permissions (tokenId, permissionId)
+		VALUES (?, (SELECT id FROM App_Permissions WHERE slug = ?))`)
+	if err != nil {
+		return 0, err
+	}
+	defer permStmt.Close() //nolint:errcheck
+
+	for _, perm := range permissions {
+		_, err := permStmt.Exec(tokenID, perm.Slug)
+		if err != nil {
+			return 0, err
+		}
+	}
+	err = tx.Commit()
 	if err != nil {
 		return 0, err
 	}
@@ -467,7 +488,7 @@ func (s SqliteUserDatabase) GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, 
 	return labels, nil
 }
 
-func (s SqliteUserDatabase) GetApiTokenInfoById(tokenID TokenID) (ApiTokenInfo, error) {
+func (s SqliteUserDatabase) GetApiTokenInfo(tokenId TokenID) (ApiTokenInfo, error) {
 	var info ApiTokenInfo
 	var revoked int
 	var expiresAt sql.NullInt64
@@ -478,7 +499,7 @@ func (s SqliteUserDatabase) GetApiTokenInfoById(tokenID TokenID) (ApiTokenInfo, 
 	`
 	err := s.db.QueryRow(
 		query,
-		tokenID,
+		tokenId,
 		time.Now().Unix(),
 	).Scan(&info.Label, &expiresAt, &revoked)
 	if err != nil {
@@ -488,6 +509,14 @@ func (s SqliteUserDatabase) GetApiTokenInfoById(tokenID TokenID) (ApiTokenInfo, 
 	return info, nil
 }
 
+func (s SqliteUserDatabase) EnsureAdmin(userID UserID) error {
+
+	err := s.GrantUserPermissions(userID, data.AllPermissions())
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func getTokenStatus(revoked int, expiresAt sql.NullInt64) TokenStatus {
 	if revoked == 1 {
@@ -497,4 +526,23 @@ func getTokenStatus(revoked int, expiresAt sql.NullInt64) TokenStatus {
 		return TokenStatusExpired
 	}
 	return TokenStatusActive
+}
+
+func (s SqliteUserDatabase) AllUsers() ([]*PublicUser, error) {
+	rows, err := s.db.Query("SELECT id, username, createdAt FROM Users")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() //nolint:errcheck
+
+	var users []*PublicUser
+	for rows.Next() {
+		var user PublicUser
+		err := rows.Scan(&user.ID, &user.Username, &user.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, &user)
+	}
+	return users, nil
 }
