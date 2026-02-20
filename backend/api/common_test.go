@@ -13,20 +13,39 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetUserIdFromStringSuccess(t *testing.T) {
-	id, err := GetUserIDFromString("123")
+func TestParseParamStringSuccess(t *testing.T) {
+	id, err := ParseParamIntoID[database.UserID]("123")
 	assert.NoError(t, err)
 	assert.Equal(t, database.UserID(123), id)
 }
 
-func TestGetUserIdFromStringInvalid(t *testing.T) {
-	id, err := GetUserIDFromString("one")
+func TestParseParamStringNonNumeric(t *testing.T) {
+	id, err := ParseParamIntoID[database.UserID]("abc")
+	assert.Error(t, err)
+	assert.Equal(t, database.UserID(0), id)
+}
+
+func TestParseParamEmpty(t *testing.T) {
+	id, err := ParseParamIntoID[database.TokenID]("")
+	assert.Error(t, err)
+	assert.Equal(t, database.TokenID(0), id)
+}	
+
+
+func TestParseParamNonString(t *testing.T) {
+	id, err := ParseParamIntoID[database.UserID](123)
+	assert.Error(t, err)
+	assert.Equal(t, database.UserID(0), id)
+}
+
+func TestParseParamStringInvalid(t *testing.T) {
+	id, err := ParseParamIntoID[database.UserID]("one")
 	assert.Error(t, err)
 	assert.Equal(t, database.UserID(0), id)
 }
 
 func TestGetUserIdFromStringNegative(t *testing.T) {
-	id, err := GetUserIDFromString("-5")
+	id, err := ParseParamIntoID[database.UserID]("-5")
 	assert.Error(t, err)
 	assert.Equal(t, database.UserID(0), id)
 }

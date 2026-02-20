@@ -76,7 +76,7 @@ func (ue UserEndpoint) ListUsers(c *gin.Context) {
 // @Router       /users/{id} [delete]
 func (ue UserEndpoint) DeleteUser(c *gin.Context) {
 	userIDString := c.Param("id")
-	id, err := api.GetUserIDFromString(userIDString)
+	id, err := api.ParseParamIntoID[database.UserID](userIDString)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
@@ -127,7 +127,7 @@ func (ue UserEndpoint) CreateUser(c *gin.Context) {
 // @Router       /users/permissions/{id} [post]
 func (ue UserEndpoint) AddPermissions(c *gin.Context) {
 	userIDString := c.Param("id")
-	id, err := api.GetUserIDFromString(userIDString)
+	id, err := api.ParseParamIntoID[database.UserID](userIDString)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
@@ -159,7 +159,7 @@ func (ue UserEndpoint) AddPermissions(c *gin.Context) {
 // @Router       /users/permissions/{id} [delete]
 func (ue UserEndpoint) RevokePermissions(c *gin.Context) {
 	userIDString := c.Param("id")
-	id, err := api.GetUserIDFromString(userIDString)
+	id, err := api.ParseParamIntoID[database.UserID](userIDString)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
@@ -187,7 +187,7 @@ func (ue UserEndpoint) RevokePermissions(c *gin.Context) {
 // @Failure     500 {object} api.ServerErrorResponse
 // @Router      /users/permissions/{id} [get]
 func (ue UserEndpoint) GetPermissions(c *gin.Context) {
-	id, err := api.GetUserIDFromString(c.Param("id"))
+	id, err := api.ParseParamIntoID[database.UserID](c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
