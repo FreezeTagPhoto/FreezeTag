@@ -45,7 +45,7 @@
     min-height: 44px;
     border-radius: var(--border-radius);
     border: var(--border-info);
-    background: var(--mantle);
+    background: var(--crust);
     color: var(--text);
     cursor: pointer;
     text-decoration: none;
@@ -60,7 +60,10 @@
 }
 
 .item:active {
-    transform: scale(0.98);
+    filter: none;
+    /* transform: scale(0.98); */
+    translate: 1px 1px;
+
 }
 
 .itemActive {
@@ -106,10 +109,12 @@
 .logoutItem {
     margin-top: auto;
     margin-bottom: 2rem;
+    color: var(--red);
 }
 
 .logoutItem:hover {
     background: var(--red);
+    color: var(--base);
     border: var(--border-info);
 }
 
