@@ -5,7 +5,7 @@
 import PermsRevoker from "@/api/permissions/permsrevoker";
 import { Ok, Err } from "@/common/result";
 
-describe("User Getter", () => {
+describe("Perms Revoker", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url, body) => {
             expect(url).toBe(

@@ -2,26 +2,24 @@
  * @jest-environment node
  */
 
-import PermsAdder from "@/api/permissions/permsadder";
+import PermsGetter from "@/api/permissions/permsgetter";
 import { Ok, Err } from "@/common/result";
 
-describe("Perms Adder", () => {
+describe("Perms Getter", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url) => {
-            expect(url).toStrictEqual(
-                "/backend/user/permissions/1?permission=post,read",
-            );
+            expect(url).toStrictEqual("/backend/user/permissions/1");
             return Promise.resolve({
                 status: 200,
                 ok: true,
                 json: () => {
-                    return { message: "cool" };
+                    return [];
                 },
             });
         }) as jest.Mock;
 
-        const result = await PermsAdder(1, ["post", "read"]);
-        expect(result).toStrictEqual(Ok({ message: "cool" }));
+        const result = await PermsGetter(1);
+        expect(result).toStrictEqual(Ok([]));
     });
 
     it("should handle 400 well", async () => {
@@ -35,7 +33,7 @@ describe("Perms Adder", () => {
             });
         }) as jest.Mock;
 
-        const result = await PermsAdder(2, []);
+        const result = await PermsGetter(2);
         expect(result).toStrictEqual(Err({ status: 400, message: "explode" }));
     });
 
@@ -50,7 +48,7 @@ describe("Perms Adder", () => {
             });
         }) as jest.Mock;
 
-        const result = await PermsAdder(5, ["delete"]);
+        const result = await PermsGetter(5);
         expect(result).toStrictEqual(Err({ status: 404, message: "explode" }));
     });
 });
