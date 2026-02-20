@@ -61,10 +61,10 @@ func (ps defaultPluginService) Plugins() []plugins.PluginInfo {
 	info := make([]plugins.PluginInfo, 0, len(ps.plugins))
 	for k, v := range ps.plugins {
 		info = append(info, plugins.PluginInfo{
-			Name:     k,
-			Version:  v.Version,
-			Disabled: v.Disabled,
-			Hooks:    v.Hooks,
+			Name:    k,
+			Version: v.Version,
+			Enabled: !v.Disabled,
+			Hooks:   v.Hooks,
 		})
 	}
 	return info
@@ -76,10 +76,10 @@ func (ps defaultPluginService) PluginInfo(plugin string) *plugins.PluginInfo {
 		return nil
 	}
 	return &plugins.PluginInfo{
-		Name:     plugin,
-		Version:  man.Version,
-		Disabled: man.Disabled,
-		Hooks:    man.Hooks,
+		Name:    plugin,
+		Version: man.Version,
+		Enabled: !man.Disabled,
+		Hooks:   man.Hooks,
 	}
 }
 

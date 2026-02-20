@@ -25,10 +25,10 @@ type PluginManifest struct {
 }
 
 type PluginInfo struct {
-	Name     string                `json:"name"`
-	Version  string                `json:"version"`
-	Disabled bool                  `json:"disabled"`
-	Hooks    map[string]PluginHook `json:"hooks"`
+	Name    string                `json:"name"`
+	Version string                `json:"version"`
+	Enabled bool                  `json:"enabled"`
+	Hooks   map[string]PluginHook `json:"hooks"`
 }
 
 type HookInfo struct {

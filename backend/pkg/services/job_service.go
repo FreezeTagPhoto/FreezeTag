@@ -168,7 +168,7 @@ func (s *defaultJobService) SchedulePostUploads(upload uuid.UUID) {
 			}
 			// create a job for every plugin that has PostUpload hooks
 			for _, plugin := range s.plugins.Plugins() {
-				if plugin.Disabled {
+				if !plugin.Enabled {
 					continue
 				}
 				hooks := plugin.HooksWithType(plugins.PostUpload)

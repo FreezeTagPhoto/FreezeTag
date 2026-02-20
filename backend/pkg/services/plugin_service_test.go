@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var fooInfo plugins.PluginInfo = plugins.PluginInfo{Name: "foo", Version: "0.0.1", Disabled: false, Hooks: map[string]plugins.PluginHook{
+var fooInfo plugins.PluginInfo = plugins.PluginInfo{Name: "foo", Version: "0.0.1", Enabled: true, Hooks: map[string]plugins.PluginHook{
 	"tag_image":   {Type: plugins.PostUpload, Signature: plugins.ProcessOneImage},
 	"tag_image_2": {Type: plugins.PostUpload, Signature: plugins.ProcessOneImage},
 }}
 
-var barInfo plugins.PluginInfo = plugins.PluginInfo{Name: "bar", Version: "0", Disabled: false, Hooks: map[string]plugins.PluginHook{
+var barInfo plugins.PluginInfo = plugins.PluginInfo{Name: "bar", Version: "0", Enabled: true, Hooks: map[string]plugins.PluginHook{
 	"tag_image":    {Type: plugins.PostUpload, Signature: plugins.ProcessOneImage},
 	"locate_image": {Type: plugins.PostUpload, Signature: plugins.ProcessImageBatch},
 }}
@@ -43,7 +43,7 @@ func TestEnableDisablePlugin(t *testing.T) {
 	serv.SetEnabled("bar", false)
 	plugs := serv.Plugins()
 	expected := barInfo
-	expected.Disabled = true
+	expected.Enabled = false
 	assert.Contains(t, plugs, expected)
 	assert.Equal(t, 2, len(plugs))
 }

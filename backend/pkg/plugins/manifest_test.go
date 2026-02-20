@@ -29,9 +29,9 @@ func TestNonexistentManifestImport(t *testing.T) {
 
 func TestFilteredPluginInfo(t *testing.T) {
 	info := PluginInfo{
-		Name:     "foo",
-		Version:  "1.2.3",
-		Disabled: false,
+		Name:    "foo",
+		Version: "1.2.3",
+		Enabled: true,
 		Hooks: map[string]PluginHook{
 			"foo": {Type: PostUpload, Signature: ProcessOneImage},
 			"bar": {Type: ManualTrigger, Signature: ProcessImageBatch},

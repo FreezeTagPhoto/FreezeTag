@@ -20,6 +20,8 @@ var (
 	WriteTags        Permission = register("write:tags", "Write Tags", "Allows creating and editing metadata tags.")
 	CreateUser       Permission = register("create:user", "Create User", "Allows registering new users.")
 	WriteUser        Permission = register("write:user", "Write User", "Allows updating existing user information. (e.g passwords).")
+	ReadPlugins      Permission = register("read:plugins", "Read Plugins", "Allows viewing the plugins enabled on the system.")
+	WritePlugins     Permission = register("write:plugins", "Write Plugins", "Allows changing plugins' enabled status, as well as downloading new plugins.")
 )
 
 var allPermissions Permissions
