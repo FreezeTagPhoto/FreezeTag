@@ -1,9 +1,9 @@
 "use client";
 // When adding a theme, add it to this registry and also add it to themes.css
 export const DarkThemeRegistry = [
-    "Catppuccin Mocha",
-    "Catppuccin Macchiato",
     "Catppuccin Frappe",
+    "Catppuccin Macchiato",
+    "Catppuccin Mocha",
 ];
 export const LightThemeRegistry = ["Catppuccin Latte"];
 export const THEME_STORAGE_KEY = "freezetag-theme-option";
