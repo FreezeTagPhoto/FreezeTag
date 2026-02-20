@@ -65,7 +65,7 @@
 
 .itemActive {
     background: var(--surface0);
-    color: var(--subtext0);
+    color: var(--subtext1);
     filter: none;
 }
 

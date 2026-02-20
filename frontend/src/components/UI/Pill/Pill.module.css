@@ -1,12 +1,12 @@
 .pill {
     height: 34px;
     padding: 0 12px;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
 
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(38, 42, 56, 0.75);
+    border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
 
-    color: #dfe3f0;
+    color: var(--text);
     font-size: 13px;
     font-weight: 500;
 
@@ -18,15 +18,16 @@
     user-select: none;
     white-space: nowrap;
 
-    transition:
+    /* transition:
         background 120ms ease,
         border-color 120ms ease,
         transform 80ms ease,
-        box-shadow 120ms ease;
+        box-shadow 120ms ease,
+        color 120ms ease; */
 }
 
 .pill:hover {
-    background: rgba(46, 51, 69, 0.85);
+    background: var(--surface1);
 }
 
 .pill:active {
@@ -35,21 +36,17 @@
 
 .pill:focus-visible {
     outline: none;
-    border-color: rgba(120, 140, 255, 0.55);
-    box-shadow: 0 0 0 4px rgba(120, 140, 255, 0.14);
+    border-color: var(--blue);
 }
 
 .pill.open {
-    border-radius: 12px 12px 0 0;
-    background: rgba(55, 61, 84, 0.92);
-    border-color: rgba(255, 255, 255, 0.18);
-    box-shadow:
-        0 10px 24px rgba(0, 0, 0, 0.35),
-        0 0 0 3px rgba(120, 140, 255, 0.12);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    background: var(--surface1);
+    /* border-color: color-mix(in srgb, var(--text) 18%, transparent); */
 }
 
 .pill.open:hover {
-    background: rgba(62, 70, 98, 0.95);
+    background: var(--surface2);
 }
 
 .label {
@@ -73,9 +70,9 @@
     flex: 0 0 auto;
 }
 
-/* dropdown menu */
+/* dropdown menus */
 .menu {
-    background: rgba(38, 42, 56, 0.78);
+    background: var(--surface0);
 }
 
 /* filter tokens */
@@ -83,8 +80,8 @@
     height: 32px;
     border-radius: 999px;
     padding: 0 10px;
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: var(--background);
+    border: var(--border-info);
 }
 
 /* error */
@@ -93,11 +90,12 @@
     border-radius: 999px;
     padding: 0 10px;
 
-    background: rgba(255, 80, 80, 0.1);
-    border-color: rgba(255, 80, 80, 0.25);
-    color: #ffd7d7;
+    background: color-mix(in srgb, var(--red) 18%, transparent);
+    border: var(--border-info);
+    border-color: color-mix(in srgb, var(--red) 35%, transparent);
+    color: var(--maroon);
 }
 
 .error:hover {
-    background: rgba(255, 80, 80, 0.14);
+    background: color-mix(in srgb, var(--red) 24%, transparent);
 }
