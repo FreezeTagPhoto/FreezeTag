@@ -3,8 +3,8 @@
     padding: 0 12px;
     border-radius: var(--border-radius);
 
-    border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-    background: color-mix(in srgb, var(--text) 8%, transparent);
+    border: 1px solid var(--surface2);
+    background: var(--base);
 
     color: var(--text);
     font-size: 13px;
@@ -50,14 +50,14 @@
 }
 
 .label {
-    opacity: 0.98;
+    color: inherit;
     display: inline-flex;
     align-items: center;
     gap: 6px;
 }
 
 .caret {
-    opacity: 0.75;
+    color: var(--subtext0);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -80,7 +80,7 @@
     height: 32px;
     border-radius: 999px;
     padding: 0 10px;
-    background: var(--background);
+    background: var(--crust);
     border: var(--border-info);
 }
 
@@ -90,12 +90,12 @@
     border-radius: 999px;
     padding: 0 10px;
 
-    background: color-mix(in srgb, var(--red) 18%, transparent);
-    border: var(--border-info);
-    border-color: color-mix(in srgb, var(--red) 35%, transparent);
-    color: var(--maroon);
+    background: var(--rosewater);
+    border: 1px solid var(--red);
+    color: var(--red);
 }
 
 .error:hover {
-    background: color-mix(in srgb, var(--red) 24%, transparent);
+    background: var(--red);
+    color: var(--base);
 }
