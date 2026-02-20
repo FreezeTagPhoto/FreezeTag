@@ -2,18 +2,11 @@ import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result } from "@/common/result";
 import { None, Option, Some } from "@/common/option";
+import { PermedUser, UserHasPerm } from "@/api/permissions/permshelpers";
 
-export type User = {
-    user_id: number;
-    permissions?: {
-        description: string;
-        name: string;
-        permission: string;
-    }[];
-};
 export type AuthCheckOption = Option<AuthCheckResponse>;
 
-type AuthCheckResponse = User;
+type AuthCheckResponse = PermedUser;
 
 /**
  *
@@ -39,13 +32,7 @@ async function auth_check_with_handler(
     if (!result.ok) {
         return None();
     }
-    if (
-        permission &&
-        result.value.permissions &&
-        result.value.permissions
-            .map((perm) => perm.permission)
-            .includes(permission)
-    ) {
+    if (permission && UserHasPerm(result.value, permission)) {
         return Some(result.value);
     }
     if (permission) {

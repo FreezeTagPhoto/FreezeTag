@@ -8,6 +8,7 @@ import { CakeSlice, SquarePen, Trash, UserPlus } from "lucide-react";
 import DeleteUser from "@/components/ManageUsers/DeleteUser/DeleteUser";
 import ModifyPerms from "@/components/ManageUsers/ModifyPerms/ModifyPerms";
 import { formatLongDate, formatShortDate } from "@/common/dateformat";
+import { UserHasPerm } from "@/api/permissions/permshelpers";
 
 export default function Home() {
     const [users, setUsers] = useState<User[]>([]);
@@ -67,12 +68,7 @@ export default function Home() {
                             type="button"
                             className={`${styles.account_item} ${styles.account_item_button}`}
                             disabled={
-                                !(
-                                    currentUser?.permissions &&
-                                    currentUser?.permissions
-                                        .map((perm) => perm.permission)
-                                        .includes("read:permissions")
-                                )
+                                !UserHasPerm(currentUser, "read:permissions")
                             }
                             onClick={() => setModifyingPerms(user.id)}
                         >
@@ -83,12 +79,8 @@ export default function Home() {
                             type="button"
                             className={`${styles.account_item} ${styles.account_item_button} ${styles.account_item_delete}`}
                             disabled={
-                                !(
-                                    currentUser?.permissions &&
-                                    currentUser?.permissions
-                                        .map((perm) => perm.permission)
-                                        .includes("delete:user")
-                                ) || isCurrent(user.id)
+                                !UserHasPerm(currentUser, "delete:user") ||
+                                isCurrent(user.id)
                             }
                             onClick={() => {
                                 setDeletingUser(user.id);
@@ -104,14 +96,7 @@ export default function Home() {
             <button
                 type="button"
                 className={styles.create_user}
-                disabled={
-                    !(
-                        currentUser?.permissions &&
-                        currentUser?.permissions
-                            .map((perm) => perm.permission)
-                            .includes("create:user")
-                    )
-                }
+                disabled={!UserHasPerm(currentUser, "create:user")}
                 onClick={() => setCreatingUser(true)}
             >
                 <UserPlus
