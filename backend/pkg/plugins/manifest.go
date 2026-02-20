@@ -24,6 +24,18 @@ type PluginManifest struct {
 	Disabled      bool                  `json:"default_disabled"`
 }
 
+type PluginInfo struct {
+	Name     string                `json:"name"`
+	Version  string                `json:"version"`
+	Disabled bool                  `json:"disabled"`
+	Hooks    map[string]PluginHook `json:"hooks"`
+}
+
+type HookInfo struct {
+	Name string     `json:"name"`
+	Hook PluginHook `json:"hook"`
+}
+
 // This function reads a manifest
 func ReadManifest(directory string) (PluginManifest, error) {
 	absPath, err := filepath.Abs(directory)
@@ -46,10 +58,41 @@ func ReadManifest(directory string) (PluginManifest, error) {
 	return manifest, nil
 }
 
+func (pi PluginInfo) HooksWithType(ty HookType) []HookInfo {
+	var info []HookInfo
+	for k, v := range pi.Hooks {
+		if v.Type == ty {
+			info = append(info, HookInfo{Name: k, Hook: v})
+		}
+	}
+	return info
+}
+
+func (pi PluginInfo) HooksWithSignature(si HookSignature) []HookInfo {
+	var info []HookInfo
+	for k, v := range pi.Hooks {
+		if v.Signature == si {
+			info = append(info, HookInfo{Name: k, Hook: v})
+		}
+	}
+	return info
+}
+
+func (pi PluginInfo) FilterHooks(ty HookType, si HookSignature) []HookInfo {
+	var info []HookInfo
+	for k, v := range pi.Hooks {
+		if v.Signature == si && v.Type == ty {
+			info = append(info, HookInfo{Name: k, Hook: v})
+		}
+	}
+	return info
+}
+
 type HookType uint8
 
 const (
 	PostUpload HookType = iota
+	ManualTrigger
 )
 
 type HookSignature uint8
@@ -60,7 +103,8 @@ const (
 )
 
 var stringHookMap map[string]HookType = map[string]HookType{
-	"post_upload": PostUpload,
+	"post_upload":    PostUpload,
+	"manual_trigger": ManualTrigger,
 }
 var hookStringMap map[HookType]string
 

@@ -46,7 +46,7 @@ def run():
                         write_message(action)
                     case "image_batch":
                         hook = msg.contents["hook"]
-                        ids = mgs.contents["ids"]
+                        ids = msg.contents["ids"]
                         hook_func = hooks._plugin_hooks.get(hook, None)
                         if hook_func is None:
                             write_message(Message(MessageType.ERR, f'image_batch hook "{hook}" not found'))

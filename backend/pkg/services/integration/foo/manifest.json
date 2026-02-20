@@ -1,5 +1,5 @@
 {
-    "name": "tagger",
+    "name": "foo",
     "version": "0.0.1",
     "main_file": "main.py",
     "hooks": {
@@ -7,10 +7,9 @@
             "type": "post_upload",
             "signature": "single_image"
         },
-        "tag_batch": {
+        "tag_all": {
             "type": "post_upload",
             "signature": "image_batch"
         }
-    },
-    "python_version": "3.13"
+    }
 }

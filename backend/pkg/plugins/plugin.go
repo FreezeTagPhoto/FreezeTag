@@ -42,16 +42,17 @@ func (h *HookedPlugin) WaitFinished() <-chan struct{} {
 	return sub
 }
 
-func (h *HookedPlugin) Shutdown() {
+func (h *HookedPlugin) Shutdown() error {
 	if h.stopped {
-		return
+		return nil
 	}
-	h.Plugin.Shutdown() //nolint:errcheck
+	err := h.Plugin.Shutdown()
 	h.stopped = true
 	for _, sub := range h.subs {
 		sub <- struct{}{}
 		close(sub)
 	}
+	return err
 }
 
 //go:embed scripts/launch_plugin.sh

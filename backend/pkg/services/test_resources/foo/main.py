@@ -3,7 +3,7 @@ from freezetag.hooks import process_func, init_func, TagAction
 from freezetag.message import log
 
 # this file shows off the way functions are called in the same context
-# and also sequentially (although in no guaranteed order)
+# (although in no guaranteed order)
 
 index_A = 0
 index_B = 3

@@ -1,16 +1,21 @@
 package services
 
 import (
+	"os"
+	"strings"
 	"testing"
+	"time"
 
 	mockImageRepo "freezetag/backend/mocks/ImageRepository"
 	mockJobRepo "freezetag/backend/mocks/JobRepository"
 	mockPluginService "freezetag/backend/mocks/PluginService"
+	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/repositories"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRunUploadJobsAsyncExecution(t *testing.T) {
@@ -32,9 +37,6 @@ func TestRunUploadJobsAsyncExecution(t *testing.T) {
 		Get(id).
 		Return(&repositories.JobBatch[repositories.JobInput, any]{}).
 		Once()
-	p.EXPECT().
-		AllPlugins().
-		Return([]string{})
 
 	testid := jobService.RunUploadJob([]FileJob{
 		{Name: fileName, Bytes: fileData},
@@ -82,4 +84,37 @@ func TestGetJobList(t *testing.T) {
 		{UUID: id1, Title: "foo", Status: "bar"},
 		{UUID: id2, Title: "abc", Status: "def"},
 	}, list)
+}
+
+func TestPostUploadPlugin(t *testing.T) {
+	t.Cleanup(func() {
+		os.RemoveAll("integration/foo/.venv") //nolint:errcheck
+	})
+	i := mockImageRepo.NewMockImageRepository(t)
+	p, err := InitDefaultPluginService("integration", i)
+	require.NoError(t, err)
+	j := repositories.NewDefaultJobRepository()
+	jobService := InitDefaultJobService(j, i, p)
+	batch := []FileJob{{Name: "foo.png", Bytes: []byte{}}}
+	i.EXPECT().StoreImageBytes(mock.Anything, mock.Anything).Return(database.ImageId(1), nil)
+	i.EXPECT().AddImageTags(mock.Anything, mock.Anything).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 1, Count: 1}}).Times(2)
+	data, err := os.ReadFile("test_resources/gopher.webp")
+	require.NoError(t, err)
+	i.EXPECT().RetrieveThumbnail(mock.Anything, mock.Anything).Return(data, nil)
+	j1 := jobService.RunUploadJob(batch)
+	job1 := jobService.GetBatch(j1)
+	require.NotNil(t, job1)
+	<-job1.WaitFinished()
+	time.Sleep(1 * time.Second) // plenty of time for plugin jobs to kick off
+	jobs := jobService.AllJobs()
+	job1 = nil
+	for _, job := range jobs {
+		if strings.Contains(job.Title, "foo") {
+			job1 = jobService.GetBatch(job.UUID)
+			break
+		}
+	}
+	require.NotNil(t, job1)
+	<-job1.WaitFinished()
+	assert.Empty(t, job1.Failed)
 }

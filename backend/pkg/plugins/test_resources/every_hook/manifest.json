@@ -1,0 +1,11 @@
+{
+    "name": "every-hook",
+    "version": "0.0.1",
+    "main_file": "main.py",
+    "hooks": {
+        "every": {
+            "type": "post_upload",
+            "signature": "single_image"
+        }
+    }
+}

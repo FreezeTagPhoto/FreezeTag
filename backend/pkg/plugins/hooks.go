@@ -26,8 +26,8 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 			}
 			return h.processOneImage(hookName, resolved.Id, repo)
 		case ProcessImageBatch:
-			resolved, err := intoList[repositories.ImageUploadSuccess](in)
-			if err != nil {
+			resolved, ok := in.([]repositories.ImageUploadSuccess)
+			if !ok {
 				return nil, fmt.Errorf("invalid input type for post_upload,image_batch")
 			}
 			ids := make([]database.ImageId, len(resolved))
@@ -123,7 +123,7 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 		}
 		res := repo.AddImageTags(id, tags)
 		if res.Err != nil {
-			return nil, fmt.Errorf("%w", res.Err.Reason)
+			return nil, fmt.Errorf("%s", res.Err.Reason)
 		}
 		return map[string]any{"count": res.Success.Count}, nil
 	case "remove_tags":
@@ -137,7 +137,7 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 		}
 		res := repo.RemoveImageTags(id, tags)
 		if res.Err != nil {
-			return nil, fmt.Errorf("%w", res.Err.Reason)
+			return nil, fmt.Errorf("%s", res.Err.Reason)
 		}
 		return map[string]any{"count": res.Success.Count}, nil
 	case "delete_tags":
@@ -277,9 +277,9 @@ func (h *HookedPlugin) handleGet(repo repositories.ImageRepository, m PluginMess
 }
 
 func pluginSearchRequest(msg map[string]any, repo repositories.ImageRepository) ([]database.ImageId, error) {
-	qParams, err := intoMap[string, any](msg["query"])
-	if err != nil {
-		return nil, err
+	qParams, ok := msg["query"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("couldn't deserialize query parameters")
 	}
 	q := queries.ImageQueryParams{
 		Make:           intoOrEmpty[string](qParams["make"]),
@@ -302,9 +302,9 @@ func pluginSearchRequest(msg map[string]any, repo repositories.ImageRepository) 
 }
 
 func pluginTagSearchRequest(msg map[string]any, repo repositories.ImageRepository) (map[string]int64, error) {
-	qParams, err := intoMap[string, any](msg["query"])
-	if err != nil {
-		return nil, err
+	qParams, ok := msg["query"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("couldn't deserialize query parameters")
 	}
 	q := queries.ImageQueryParams{
 		Make:           intoOrEmpty[string](qParams["make"]),
@@ -374,24 +374,4 @@ func intoListOrEmpty[V any](v any) []V {
 		return []V{}
 	}
 	return l
-}
-
-func intoMap[K comparable, V any](v any) (map[K]V, error) {
-	a, ok := v.(map[any]any)
-	if !ok {
-		return nil, fmt.Errorf("failed to extract map")
-	}
-	m := make(map[K]V, len(a))
-	for k, v := range a {
-		kt, err := into[K](k)
-		if err != nil {
-			return nil, err
-		}
-		vt, err := into[V](v)
-		if err != nil {
-			return nil, err
-		}
-		m[kt] = vt
-	}
-	return m, nil
 }

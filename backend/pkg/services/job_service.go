@@ -206,7 +206,11 @@ func (s *defaultJobService) SchedulePostUploads(upload uuid.UUID) {
 							idx++
 							if idx == count && !dead {
 								log.Printf("[INFO] shutting down plugin %s", in.Name)
-								currentPlugin.Shutdown()
+								err := currentPlugin.Shutdown()
+								if err != nil {
+									log.Printf("[WARN] plugin failed to shut down gracefully: %v", err)
+								}
+								log.Printf("[INFO] shut down plugin %s", in.Name)
 							}
 						}()
 						if idx == 0 {
@@ -235,54 +239,4 @@ func (s *defaultJobService) SchedulePostUploads(upload uuid.UUID) {
 			return map[string]any{"success": true}, nil
 		}),
 	)
-	// // create a job for every plugin that has PostUpload hooks
-	// for _, plugin := range s.plugins.Plugins() {
-	// 	hooks := plugin.HooksWithType(plugins.PostUpload)
-	// 	if len(hooks) == 0 {
-	// 		continue
-	// 	}
-	// 	var jobs []repositories.JobInput
-	// 	index := 0
-	// 	// schedule all the batchwise PostUpload hooks to run first
-	// 	batchHooks := plugin.FilterHooks(plugins.PostUpload, plugins.ProcessImageBatch)
-	// 	for _, hook := range batchHooks {
-	// 		jobs = append(jobs, pluginRun{Name: plugin.Name, Hook: hook.Name, Input: })
-	// 	}
-	// }
-	// for i, plugin := range s.plugins.AllPlugins() {
-	// 	jobs = append(jobs, pluginRun{plugin, "PostUpload", i})
-	// }
-	// s.jobRepository.Create("PostUpload plugin hooks for upload "+batch.UUID.String(), batch.Context, jobs, repositories.Job(func(p pluginRun, c context.Context, status func(string)) (pluginResult, error) {
-	// 	<-batch.WaitFinished()
-	// 	result := make(map[string]any)
-	// 	if batch.Cancelled {
-	// 		return result, fmt.Errorf("cancelled")
-	// 	}
-	// 	uploads := make([]repositories.ImageUploadSuccess, len(batch.Completed))
-	// 	for i, succ := range batch.Completed {
-	// 		uploads[i] = succ.(repositories.ImageUploadSuccess)
-	// 	}
-	// 	// only one plugin can run at once
-	// 	pluginLock.Lock()
-	// 	defer pluginLock.Unlock()
-	// 	log.Printf("[INFO] running plugin '%s' on upload batch %v", p.Name, upload)
-	// 	status(fmt.Sprintf("Running plugin %s", p.Name))
-	// 	results, err := s.plugins.RunPostUpload(p.Name, c, uploads)
-	// 	if err != nil {
-	// 		return result, err
-	// 	}
-	// 	for {
-	// 		err, ok := <-results
-	// 		if !ok {
-	// 			break
-	// 		}
-	// 		if err != nil {
-	// 			log.Printf("[ERR]  %s: %s", p.Name, err.Error())
-	// 		}
-	// 	}
-	// 	result["name"] = p.Name
-	// 	result["status"] = "success"
-	// 	log.Printf("[INFO] finished plugin '%s' on upload batch %v", p.Name, upload)
-	// 	return result, nil
-	// }))
 }
