@@ -17,15 +17,6 @@ type HandlerReturnType = Promise<
 >;
 
 describe("Tag Counter", () => {
-    it("should correctly form query string", () => {
-        const handler = async (query: BodyInit): HandlerReturnType => {
-            expect(query).toBe("id=1&id=10");
-            return Ok({});
-        };
-
-        testing_TagCounter(handler, [1, 10]);
-    });
-
     it("should get message on 400", async () => {
         const handler = async (_: BodyInit): HandlerReturnType => {
             const response = new Response('{"error": "true"}');
@@ -35,7 +26,7 @@ describe("Tag Counter", () => {
             });
         };
 
-        const result = await testing_TagCounter(handler, []);
+        const result = await testing_TagCounter(handler, "");
         expect(result).toStrictEqual(Err({ status: 400, message: "true" }));
     });
 
@@ -44,7 +35,7 @@ describe("Tag Counter", () => {
             return Err({ status_code: 404, response: new Response() });
         };
 
-        const result = await testing_TagCounter(handler, [1, 23]);
+        const result = await testing_TagCounter(handler, "");
         expect(result).toStrictEqual(
             Err({ status: 404, message: await new Response().text() }),
         );
@@ -55,7 +46,7 @@ describe("Tag Counter", () => {
             return Ok({ arches: 1, wedding: 5, banquet: 3 });
         };
 
-        const result = await testing_TagCounter(handler, [1, 2, 3, 4, 5, 6]);
+        const result = await testing_TagCounter(handler, "");
         expect(result).toStrictEqual(Ok({ arches: 1, wedding: 5, banquet: 3 }));
     });
 
@@ -70,7 +61,7 @@ describe("Tag Counter", () => {
             });
         }) as jest.Mock;
 
-        const result = await TagCounter([1, 2, 3, 4, 5]);
+        const result = await TagCounter("");
         expect(result).toStrictEqual(Ok({ sus: 1 }));
     });
 });
