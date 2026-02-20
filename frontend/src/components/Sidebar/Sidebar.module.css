@@ -56,7 +56,7 @@
 }
 
 .item:hover {
-    background: var(--base);
+    background: var(--surface1);
 }
 
 .itemActive {
