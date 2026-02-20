@@ -8,6 +8,7 @@ import {
     useState,
     MouseEvent as ReactMouseEvent,
 } from "react";
+import SERVER_ADDRESS from "@/api/common/serveraddress";
 import styles from "./PreviewWindow.module.css";
 import MetadataSidebar from "../MetadataSidebar/MetadataSidebar";
 import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
@@ -284,7 +285,7 @@ export default function PreviewWindow({
                     >
                         <img
                             ref={imgRef}
-                            src={`http://localhost:3824/thumbnails/${selectedId}?size=2`}
+                            src={`${SERVER_ADDRESS}/thumbnails/${selectedId}?size=2`}
                             alt={`Preview of image ${selectedId}`}
                             className={styles.viewerImage}
                             draggable={false}

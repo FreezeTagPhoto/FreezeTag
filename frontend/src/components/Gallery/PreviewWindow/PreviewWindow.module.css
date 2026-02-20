@@ -5,8 +5,8 @@
 .viewerBackdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
+    /* background: var(--crust); */
+    backdrop-filter: blur(3px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -22,11 +22,11 @@
 
     width: min(1200px, 100%);
     height: min(820px, 100%);
-    background: #000;
-    border-radius: 12px;
+    background: var(--crust);
+    border-radius: var(--border-radius);
     overflow: hidden;
     box-shadow: none;
-    border: 2px solid #111827;
+    border: var(--border-info);
 
     min-width: 0;
 }
@@ -42,7 +42,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #121219;
+    background: var(--crust);
     overflow: hidden;
 
     user-select: none;
@@ -81,9 +81,9 @@
 .navButton,
 .closeButton,
 .zoomButton {
-    background: rgba(0, 0, 0, 0.7);
-    color: #f9fafb;
-    border: none;
+    background: var(--mantle);
+    color: var(--text);
+    border: var(--border-info);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -106,13 +106,13 @@
 .navButton:hover,
 .closeButton:hover,
 .zoomButton:hover {
-    background: rgba(0, 0, 0, 0.9);
+    background: var(--surface0);
 }
 
 .navButton:focus-visible,
 .closeButton:focus-visible,
 .zoomButton:focus-visible {
-    outline: 2px solid #00add8;
+    outline: 2px solid var(--blue);
     outline-offset: 2px;
     opacity: 1;
     pointer-events: auto;

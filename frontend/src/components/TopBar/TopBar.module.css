@@ -8,8 +8,8 @@
     gap: 16px;
 
     padding: 10px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: var(--foreground1);
+    border-bottom: var(--border-info);
+    background: var(--base);
 }
 
 .pills {
@@ -35,13 +35,11 @@
     margin-top: -1px;
 
     padding: 10px;
-    background: rgba(38, 42, 56, 0.78);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
-    gap: 10px;
+    background: var(--base);
+    border: 1px solid var(--surface2);
 
-    backdrop-filter: blur(10px);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+    border-radius: var(--border-radius);
+    gap: 10px;
 
     width: max-content;
     min-width: 0;
@@ -53,12 +51,6 @@
     text-rendering: geometricPrecision;
 
     isolation: isolate;
-}
-
-.menuDropdownActive {
-    background: rgba(45, 50, 70, 0.9);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.5);
 }
 
 .menuDropdown * {
@@ -88,8 +80,7 @@
     font-family: var(--font-geist-sans);
     font-size: 12px;
     font-weight: 500;
-    color: var(--subtext0, var(--text));
-    opacity: 0.75;
+    color: var(--subtext0);
 }
 
 .pillMosaic {
@@ -110,14 +101,12 @@
 }
 
 .pillMosaic::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--surface1);
     border-radius: 999px;
-    border: 3px solid rgba(0, 0, 0, 0);
-    background-clip: padding-box;
 }
 
 .pillMosaic::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--base);
     border-radius: 999px;
 }
 
@@ -130,10 +119,10 @@
     padding: 0 10px;
 
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(25, 27, 36, 0.55);
+    border: var(--border-info);
+    background: var(--mantle);
 
-    color: #dfe3f0;
+    color: var(--text);
     font-size: 13px;
     font-weight: 500;
 
@@ -149,7 +138,7 @@
 }
 
 .pillChoice:hover {
-    background: rgba(25, 27, 36, 0.8);
+    background: var(--surface0);
 }
 
 .pillChoice:active {
@@ -158,18 +147,17 @@
 
 .pillChoice:focus-visible {
     outline: none;
-    border-color: rgba(120, 140, 255, 0.55);
-    box-shadow: 0 0 0 4px rgba(120, 140, 255, 0.14);
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 4px var(--accent1);
 }
 
 .pillChoiceActive {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.18);
+    background: var(--surface1);
+    border-color: var(--accent2);
 }
 
 .pillChoiceActive:hover {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.26);
+    background: var(--surface2);
 }
 
 .pillChoiceLabel {
@@ -190,10 +178,10 @@
 
     font-size: 12px;
     font-variant-numeric: tabular-nums;
-    opacity: 0.85;
 
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--subtext0);
+    background: var(--surface0);
+    border: var(--border-info);
 }
 
 .sortGridDropdown {
@@ -216,7 +204,8 @@
     font-size: 0.66rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    opacity: 0.75;
+
+    color: var(--subtext0);
 
     padding: 2px 4px 0;
     white-space: nowrap;
@@ -227,9 +216,9 @@
     padding: 7px 10px;
 
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(25, 27, 36, 0.55);
-    color: #dfe3f0;
+    border: var(--border-info);
+    background: var(--mantle);
+    color: var(--text);
 
     font-size: 12.5px;
     font-weight: 500;
@@ -246,7 +235,7 @@
 }
 
 .sortCell:hover {
-    background: rgba(25, 27, 36, 0.8);
+    background: var(--surface0);
 }
 
 .sortCell:active {
@@ -255,16 +244,15 @@
 
 .sortCell:focus-visible {
     outline: none;
-    border-color: rgba(120, 140, 255, 0.55);
-    box-shadow: 0 0 0 4px rgba(120, 140, 255, 0.14);
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 4px var(--accent1);
 }
 
 .sortCellActive {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.18);
+    background: var(--surface1);
+    border-color: var(--accent2);
 }
 
 .sortCellActive:hover {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.26);
+    background: var(--surface2);
 }

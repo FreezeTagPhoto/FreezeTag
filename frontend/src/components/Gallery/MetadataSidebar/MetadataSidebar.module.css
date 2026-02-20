@@ -2,8 +2,8 @@
     width: 100%;
     min-width: 0;
 
-    background: #1e2031;
-    border-left: 1px solid #111827;
+    background: var(--base);
+    border-left: var(--border-info);
     padding: 20px 24px;
 
     height: 100%;
@@ -12,7 +12,7 @@
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+    scrollbar-color: var(--surface1) var(--base);
 
     box-sizing: border-box;
 }
@@ -21,9 +21,9 @@
     width: 10px;
 }
 .viewerSidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--surface1);
     border-radius: 999px;
-    border: 3px solid transparent;
+    border: 3px solid var(--base);
     background-clip: content-box;
 }
 
@@ -31,7 +31,7 @@
     margin: 0 0 16px;
     font-size: 0.95rem;
     font-weight: 600;
-    color: #e5e7eb;
+    color: var(--subtext0);
     letter-spacing: 0.03em;
     text-transform: uppercase;
 }
@@ -48,18 +48,18 @@
     font-size: 0.75rem;
     padding: 4px 10px;
     border-radius: 999px;
-    color: #e5e7eb;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    background: var(--mantle);
+    border: var(--border-info);
 }
 
 .errorBanner {
     margin-bottom: 12px;
     padding: 10px 12px;
-    border-radius: 12px;
-    color: #fee2e2;
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: var(--border-radius);
+    color: var(--maroon);
+    background: var(--rosewater);
+    border: 1px solid var(--red);
     font-size: 0.85rem;
     line-height: 1.2rem;
 }
@@ -72,9 +72,9 @@
 
 .detailRow {
     padding: 10px 12px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: calc(var(--border-radius) + 2px);
+    background: var(--mantle);
+    border: var(--border-info);
     min-width: 0;
 }
 
@@ -92,7 +92,7 @@
     width: 14px;
     height: 14px;
     flex: 0 0 14px;
-    color: #9ca3af;
+    color: var(--subtext0);
     transform: none;
     display: block;
 }
@@ -100,7 +100,7 @@
 .detailLabel {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #9ca3af;
+    color: var(--subtext0);
     margin: 0;
     line-height: 14px;
 
@@ -112,7 +112,7 @@
 .detailValue {
     font-size: 0.95rem;
     font-weight: 500;
-    color: #e5e7eb;
+    color: var(--text);
     word-break: break-word;
     min-width: 0;
 }
@@ -131,9 +131,9 @@
     align-items: center;
     justify-content: center;
 
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
-    color: #e5e7eb;
+    border: var(--border-info);
+    background: var(--crust);
+    color: var(--text);
 
     cursor: pointer;
     transition:
@@ -143,7 +143,7 @@
 }
 
 .tagAddIconPill:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface0);
 }
 
 .tagAddIconPill:active {
@@ -183,52 +183,60 @@
     width: 20px;
     border-radius: 999px;
 
-    border: 1px solid rgba(255, 90, 90, 0.35);
-    background: rgba(255, 90, 90, 0.16);
-    color: #ffd7d7;
+    border: 1px solid var(--red);
+    background: var(--rosewater);
+    color: var(--base);
 
     display: grid;
     place-items: center;
 
     cursor: pointer;
-    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
     transform: scale(0.92);
     transition:
-        opacity 120ms ease,
         transform 120ms ease,
-        background 120ms ease;
+        background 120ms ease,
+        border-color 120ms ease;
 }
 
 .tagTokenWrap:hover .tagTokenClose,
 .tagTokenWrap:focus-within .tagTokenClose {
-    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
     transform: scale(1);
 }
 
 .tagTokenClose:hover {
-    background: rgba(255, 90, 90, 0.24);
+    background: var(--red);
+    color: var(--base);
 }
 
 .tagTokenClose:disabled {
     cursor: default;
+    background: var(--surface0);
+    border-color: var(--surface2);
+    color: var(--subtext0);
 }
 .tagTokenWrap:hover .tagTokenClose:disabled,
 .tagTokenWrap:focus-within .tagTokenClose:disabled {
-    opacity: 0.35;
+    visibility: visible;
+    pointer-events: none;
     transform: scale(1);
 }
 
 .tagAddPill {
-    opacity: 0.9;
+    color: var(--subtext0);
 }
 
 .tagInfoBanner {
     margin-bottom: 10px;
     padding: 10px 12px;
-    border-radius: 12px;
-    color: #e5e7eb;
-    background: rgba(120, 140, 255, 0.1);
-    border: 1px solid rgba(120, 140, 255, 0.2);
+    border-radius: var(--border-radius);
+    color: var(--text);
+    background: var(--accent1);
+    border: var(--border-info);
+    border-color: var(--accent2);
     font-size: 0.85rem;
     line-height: 1.2rem;
 }
@@ -244,8 +252,8 @@
 
     padding: 6px 8px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
+    border: var(--border-info);
+    background: var(--crust);
 
     flex-wrap: nowrap;
     max-width: 100%;
@@ -275,23 +283,23 @@
     border: none;
     outline: none;
     background: transparent;
-    color: #e5e7eb;
+    color: var(--text);
     font-size: 13px;
 
     padding-left: 8px;
 }
 
 .tagAddInput::placeholder {
-    color: #9aa0b5;
+    color: var(--subtext0);
 }
 
 .tagSuggestToggle {
     height: 28px;
     width: 28px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
-    color: #dfe3f0;
+    border: var(--border-info);
+    background: var(--base);
+    color: var(--text);
     cursor: pointer;
     display: grid;
     place-items: center;
@@ -303,16 +311,16 @@
 }
 
 .tagSuggestToggle:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface0);
 }
 
 .tagActionBtn {
     height: 28px;
     width: 28px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.04);
-    color: #dfe3f0;
+    border: var(--border-info);
+    background: var(--base);
+    color: var(--text);
     cursor: pointer;
     display: grid;
     place-items: center;
@@ -326,7 +334,7 @@
 }
 
 .tagActionBtn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface0);
 }
 
 .tagActionBtn:active {
@@ -334,7 +342,9 @@
 }
 
 .tagActionBtn:disabled {
-    opacity: 0.5;
+    color: var(--subtext0);
+    background: var(--mantle);
+    border-color: var(--surface1);
     cursor: default;
 }
 
@@ -347,13 +357,11 @@
     width: max-content;
     max-width: 320px;
 
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(16, 18, 26, 0.98);
+    border-radius: calc(var(--border-radius) + 2px);
+    border: var(--border-info);
+    background: var(--base);
 
-    box-shadow:
-        0 18px 40px rgba(0, 0, 0, 0.55),
-        0 0 0 1px rgba(255, 255, 255, 0.04);
+    filter: var(--dropshadow);
 
     overflow: hidden;
     z-index: 60;
@@ -367,16 +375,16 @@
     scrollbar-gutter: stable;
 
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+    scrollbar-color: var(--surface1) var(--base);
 }
 
 .tagSuggestScroll::-webkit-scrollbar {
     width: 10px;
 }
 .tagSuggestScroll::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--surface1);
     border-radius: 999px;
-    border: 3px solid transparent;
+    border: 3px solid var(--base);
     background-clip: content-box;
 }
 
@@ -387,19 +395,19 @@
     justify-content: flex-start;
     padding: 10px 12px;
 
-    background: transparent;
+    background: var(--base);
     border: none;
-    color: #eef1ff;
+    color: var(--text);
     cursor: pointer;
     text-align: left;
 }
 
 .tagSuggestItem:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--mantle);
 }
 
 .tagSuggestActive {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--mantle);
 }
 
 .tagSuggestLabel {
@@ -413,12 +421,12 @@
 
 .tagSuggestLoading {
     padding: 10px 12px;
-    color: #aeb5cf;
+    color: var(--subtext0);
     font-size: 13px;
 }
 
 .inlineError {
-    color: #fca5a5;
+    color: var(--red);
     font-size: 0.85rem;
     line-height: 1.2rem;
 }

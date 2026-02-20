@@ -317,7 +317,7 @@ export default function SearchBar({
                                             ),
                                         );
                                     }}
-                                    title="Remove"
+                                    // title="Remove"
                                 >
                                     <X
                                         className={styles.tokenCloseIcon}
