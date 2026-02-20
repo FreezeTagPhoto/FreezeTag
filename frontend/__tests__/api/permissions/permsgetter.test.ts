@@ -8,7 +8,7 @@ import { Ok, Err } from "@/common/result";
 describe("Perms Getter", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url) => {
-            expect(url).toStrictEqual("/backend/user/permissions/1");
+            expect(url).toStrictEqual("/backend/users/permissions/1");
             return Promise.resolve({
                 status: 200,
                 ok: true,
@@ -50,5 +50,21 @@ describe("Perms Getter", () => {
 
         const result = await PermsGetter(5);
         expect(result).toStrictEqual(Err({ status: 404, message: "explode" }));
+    });
+
+    it("should handle null well", async () => {
+        global.fetch = jest.fn((url) => {
+            expect(url).toStrictEqual("/backend/users/permissions/5");
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return undefined;
+                },
+            });
+        }) as jest.Mock;
+
+        const result = await PermsGetter(5);
+        expect(result).toStrictEqual(Ok([]));
     });
 });
