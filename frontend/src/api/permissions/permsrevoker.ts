@@ -14,7 +14,7 @@ export default async function PermsRevoker(
 ): Promise<PermsRevokeResult> {
     return revoke_perms_with_handler(
         ApiHandler<PermsRevokeResponse>(
-            SERVER_ADDRESS + "user/permissions/",
+            SERVER_ADDRESS + "users/permissions/",
             false,
         )(Method.DELETE),
         user_id,

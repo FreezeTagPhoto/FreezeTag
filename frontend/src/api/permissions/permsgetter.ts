@@ -1,19 +1,19 @@
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
-import { Result, Err } from "@/common/result";
+import { Result, Err, Ok } from "@/common/result";
 import { Perm } from "./permshelpers";
 
 export type PermsGetResult = Result<
-    PermsGetResponse,
+    Perm[],
     { status: number; message: string }
 >;
-type PermsGetResponse = Perm[];
+type PermsGetResponse = Perm[] | undefined;
 
 export default async function PermsGetter(
     user_id: number,
 ): Promise<PermsGetResult> {
     return get_perms_with_handler(
-        ApiHandler<PermsGetResponse>(SERVER_ADDRESS + "user/permissions/")(
+        ApiHandler<PermsGetResponse>(SERVER_ADDRESS + "users/permissions/")(
             Method.GET,
         ),
         user_id,
@@ -46,5 +46,5 @@ async function get_perms_with_handler(
             });
     }
 
-    return request_result;
+    return Ok(request_result.value ?? []);
 }

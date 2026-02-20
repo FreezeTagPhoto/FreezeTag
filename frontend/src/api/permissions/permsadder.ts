@@ -14,7 +14,7 @@ export default async function PermsAdder(
 ): Promise<PermsAddResult> {
     return add_perms_with_handler(
         ApiHandler<PermsAddResponse>(
-            SERVER_ADDRESS + "user/permissions/",
+            SERVER_ADDRESS + "users/permissions/",
             false,
         )(Method.POST),
         user_id,
