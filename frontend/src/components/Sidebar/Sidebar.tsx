@@ -13,6 +13,7 @@ import {
     Upload,
     Tags,
     Settings,
+    Briefcase,
     Puzzle,
     Users,
     LogOut,
@@ -36,7 +37,6 @@ const navItems: NavItem[] = [
         permissions: ["write:files"],
     },
     { label: "Tags", href: "/tags", icon: Tags, permissions: ["read:tags"] },
-    { label: "Settings", href: "/settings", icon: Settings },
     { label: "Plugins", href: "/plugins", icon: Puzzle },
     {
         label: "Accounts",
@@ -44,6 +44,8 @@ const navItems: NavItem[] = [
         icon: Users,
         permissions: ["read:user"],
     },
+    { label: "Jobs", href: "/jobs", icon: Briefcase },
+    { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
