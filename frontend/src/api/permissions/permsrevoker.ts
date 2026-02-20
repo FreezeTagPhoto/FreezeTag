@@ -1,6 +1,7 @@
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
+import { ParsePermsQuery } from "./permshelpers";
 
 export type PermsRevokeResult = Result<
     { message: string },
@@ -14,7 +15,7 @@ export default async function PermsRevoker(
 ): Promise<PermsRevokeResult> {
     return revoke_perms_with_handler(
         ApiHandler<PermsRevokeResponse>(
-            SERVER_ADDRESS + "user/permissions/",
+            SERVER_ADDRESS + "users/permissions/",
             false,
         )(Method.DELETE),
         user_id,
@@ -29,7 +30,7 @@ async function revoke_perms_with_handler(
     user_id: number,
     permissions: string[],
 ): Promise<PermsRevokeResult> {
-    const query = `${user_id}?permission=${permissions.join()}`;
+    const query = `${user_id}?${ParsePermsQuery(permissions)}`;
     const request_result = await handler(query);
 
     if (!request_result.ok) {

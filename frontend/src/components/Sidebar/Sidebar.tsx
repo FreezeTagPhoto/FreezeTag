@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useContext } from "react";
 import { UserContext } from "../Auth/AuthGate";
+import { ExtractPermsList } from "@/api/permissions/permshelpers";
 
 type NavItem = {
     label: string;
@@ -58,7 +59,7 @@ export default function Sidebar() {
     const router = useRouter();
 
     const user = useContext(UserContext);
-    const userPerms = user?.permissions?.map((perm) => perm.permission);
+    const userPerms = ExtractPermsList(user);
 
     const onLogout = () => {
         LogoutHandler();

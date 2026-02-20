@@ -2,16 +2,17 @@
 
 import { createContext, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import AuthChecker, { User } from "@/api/auth/authchecker";
+import AuthChecker from "@/api/auth/authchecker";
+import { PermedUser } from "@/api/permissions/permshelpers";
 
-export const UserContext = createContext<User | undefined>(undefined);
+export const UserContext = createContext<PermedUser | undefined>(undefined);
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
 
     const [checked, setChecked] = useState(false);
-    const [user, setUser] = useState<User | undefined>(undefined);
+    const [user, setUser] = useState<PermedUser | undefined>(undefined);
 
     useEffect(() => {
         if (pathname?.startsWith("/login")) {

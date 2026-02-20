@@ -2,14 +2,14 @@
  * @jest-environment node
  */
 
-import PermsRevoker from "@/api/auth/permsrevoker";
+import PermsRevoker from "@/api/permissions/permsrevoker";
 import { Ok, Err } from "@/common/result";
 
-describe("User Getter", () => {
+describe("Perms Revoker", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url, body) => {
             expect(url).toBe(
-                "/backend/user/permissions/1?permission=post,read",
+                "/backend/users/permissions/1?permission=post&permission=read",
             );
             expect(body.method).toBe("DELETE");
             return Promise.resolve({

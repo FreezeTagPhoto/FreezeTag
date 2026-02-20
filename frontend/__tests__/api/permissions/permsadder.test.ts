@@ -2,14 +2,14 @@
  * @jest-environment node
  */
 
-import PermsAdder from "@/api/auth/permsadder";
+import PermsAdder from "@/api/permissions/permsadder";
 import { Ok, Err } from "@/common/result";
 
-describe("User Getter", () => {
+describe("Perms Adder", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url) => {
             expect(url).toStrictEqual(
-                "/backend/user/permissions/1?permission=post,read",
+                "/backend/users/permissions/1?permission=post&permission=read",
             );
             return Promise.resolve({
                 status: 200,
