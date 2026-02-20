@@ -14,6 +14,7 @@ type UserRepository interface {
 	GetUserByUsername(username string) (*database.PublicUser, error)
 	GetUserByID(id database.UserID) (*database.PublicUser, error)
 	GetApiPermissions(tokenHash [32]byte) (data.Permissions, error)
+	GetApiUserID(tokenHash [32]byte) (database.UserID, error)
 	GetUserPermissions(userID database.UserID) (data.Permissions, error)
 	AddUser(username string, passwordHash string) (*database.PublicUser, error)
 	DeleteUser(userID database.UserID) error
@@ -177,4 +178,12 @@ func (r *DefaultUserRepository) DeleteUser(userID database.UserID) error {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
 	return nil
+}
+
+func (r *DefaultUserRepository) GetApiUserID(tokenHash [32]byte) (database.UserID, error) {
+	userID, err := r.UserDatabase.GetApiUserID(tokenHash)
+	if err != nil {
+		return 0, fmt.Errorf("invalid API token: %w", err)
+	}
+	return userID, nil
 }

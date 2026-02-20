@@ -29,14 +29,26 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+type ApiClaims struct { 
+	UserID database.UserID `json:"userId"`
+	Permissions data.Permissions `json:"permissions"`
+}
+
 type AuthService interface {
+	// add a user with the given username and password, returning the created user. The password will be hashed before being stored.
 	AddUser(username string, password string) (*database.PublicUser, error)
+	// Ensures that there is a valid login by creating a default admin user if no users exist. Should be called at server startup.
 	EnsureLogin() error
+	// ChangePassword changes the user's password after verifying the current password. Returns an error if the current password is incorrect.
 	ChangePassword(userID database.UserID, currentPassword string, newPassword string) error
+	// ForceChangePassword changes the user's password without requiring the current password. Use with caution.
 	ForceChangePassword(userID database.UserID, newPassword string) error
+	// returns a JWT token if the username and password are correct
 	AuthenticateUser(username string, password string) (string, error)
+	// validates the userID, permissions, and default JWT claims associated with the provided JWT token
 	ValidateJWT(tokenString string) (Claims, error)
-	ValidateAPIToken(token string) (data.Permissions, error)
+	// validates the userID and permissions associated with the provided API token
+	ValidateAPIToken(token string) (ApiClaims, error)
 }
 
 type DefaultAuthService struct {
@@ -119,14 +131,22 @@ func (s *DefaultAuthService) ValidateJWT(tokenString string) (Claims, error) {
 	return claims, nil
 }
 
-func (s *DefaultAuthService) ValidateAPIToken(token string) (data.Permissions, error) {
+func (s *DefaultAuthService) ValidateAPIToken(token string) (ApiClaims, error) {
 	tokenHash := hashToken(token)
+	userID, err := s.userRepo.GetApiUserID(tokenHash)
+	if err != nil {
+		return ApiClaims{}, err
+	}
 	permissions, err := s.userRepo.GetApiPermissions(tokenHash)
 	if err != nil {
-		return nil, err
+		return ApiClaims{}, err
 	}
-	return permissions, nil
+	return ApiClaims{
+		UserID:      userID,
+		Permissions: permissions,
+	}, nil
 }
+
 
 func (s *DefaultAuthService) ChangePassword(userID database.UserID, currentPassword string, newPassword string) error {
 	hash, err := s.userRepo.GetUserPasswordHash(userID)

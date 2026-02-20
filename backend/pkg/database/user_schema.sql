@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS API_Token (
     userId INTEGER NOT NULL,
     tokenHash TEXT NOT NULL UNIQUE,
     createdAt INTEGER NOT NULL,
-    expiresAt INTEGER NOT NULL,
+    expiresAt INTEGER,
     label TEXT NOT NULL,
     revoked INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE

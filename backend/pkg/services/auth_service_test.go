@@ -278,27 +278,31 @@ func TestEnsureLoginFailsGrantAdmin(t *testing.T) {
 func TestValidateAPIToken(t *testing.T) {
 	mockRepo := mockUserRepository.NewMockUserRepository(t)
 	mockRepo.EXPECT().
+		GetApiUserID(mock.Anything).
+		Return(database.UserID(1), nil).
+		Once()
+	mockRepo.EXPECT().
 		GetApiPermissions(mock.Anything).
 		Return(data.Permissions{data.ReadUser}, nil).
 		Once()
 	authService := InitDefaultAuthService(mockRepo)
 
-	permissions, err := authService.ValidateAPIToken("token")
+	claims, err := authService.ValidateAPIToken("token")
 	require.NoError(t, err)
-	assert.ElementsMatch(t, data.Permissions{data.ReadUser}, permissions)
+	assert.ElementsMatch(t, data.Permissions{data.ReadUser}, claims.Permissions)
 }
 
 func TestValidateAPITokenInvalid(t *testing.T) {
 	mockRepo := mockUserRepository.NewMockUserRepository(t)
 	mockRepo.EXPECT().
-		GetApiPermissions(mock.Anything).
-		Return(nil, assert.AnError).
+		GetApiUserID(mock.Anything).
+		Return(database.UserID(1), assert.AnError).
 		Once()
 	authService := InitDefaultAuthService(mockRepo)
 
-	permissions, err := authService.ValidateAPIToken("invalid_token")
+	claims, err := authService.ValidateAPIToken("invalid_token")
 	require.Error(t, err)
-	assert.Nil(t, permissions)
+	assert.Equal(t, ApiClaims{}, claims)
 }
 
 func TestHashToken(t *testing.T) {

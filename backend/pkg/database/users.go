@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"freezetag/backend/pkg/database/data"
 
 	_ "embed"
@@ -11,6 +12,7 @@ import (
 )
 
 type UserID uint64
+type TokenID uint64
 
 type PublicUser struct {
 	ID        UserID `json:"id"`
@@ -18,6 +20,20 @@ type PublicUser struct {
 	CreatedAt int64  `json:"created_at"`
 
 	PasswordHash string `json:"-"`
+}
+
+type TokenStatus string
+
+const (
+	TokenStatusActive  TokenStatus = "active"
+	TokenStatusExpired TokenStatus = "expired"
+	TokenStatusRevoked TokenStatus = "revoked"
+)
+
+type ApiTokenInfo struct {
+	Id     TokenID     `json:"id"`
+	Label  string      `json:"label"`
+	Status TokenStatus `json:"status"` // active, expired, revoked
 }
 
 type UserDatabase interface {
@@ -33,8 +49,6 @@ type UserDatabase interface {
 	GetPasswordHash(userID UserID) (string, error)
 	// List all users in the database
 	ListUsers() ([]*PublicUser, error)
-	// Get API permissions for a user by token hash, return error if not found
-	GetApiPermissions(tokenHash [32]byte) (data.Permissions, error)
 	// Get User permissions by user ID, return error if not found
 	GetUserPermissions(userID UserID) (data.Permissions, error)
 	// revoke permissions for a user by user ID
@@ -43,6 +57,20 @@ type UserDatabase interface {
 	GrantUserPermissions(userID UserID, permissions data.Permissions) error
 	// delete a user by ID
 	DeleteUser(userID UserID) error
+	// save a new API token for a user, return the token hash and error if user not found. expiresAt can be nil for no expiration
+	SaveApiToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string) (TokenID, error)
+	// Get API permissions for a user by token hash, return error if not found
+	GetApiPermissions(tokenHash [32]byte) (data.Permissions, error)
+	// get user ID associated with an API token hash, return error if not found
+	GetApiUserID(tokenHash [32]byte) (UserID, error)
+	// soft delete an API token by its id. This does NOT delete the token from the database, but it does remove permissions/userID/etc
+	RevokeApiToken(tokenId TokenID) error
+	// delete an API token by its id from the database
+	DeleteApiToken(tokenId TokenID) error
+	// get the label for an API token by its id, return error if not found
+	GetApiTokenInfoById(tokenId TokenID) (ApiTokenInfo, error)
+	// get all API token labels for a user by user ID, return error if user not found
+	GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, error)
 }
 
 type SqliteUserDatabase struct {
@@ -200,36 +228,6 @@ func (s SqliteUserDatabase) ListUsers() ([]*PublicUser, error) {
 	return users, nil
 }
 
-func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (data.Permissions, error) {
-	query := `
-		SELECT p.slug, p.name, p.description
-		FROM API_Token t
-		JOIN User_Permissions up ON t.userId = up.userId
-		JOIN App_Permissions p  ON up.permissionId = p.id
-		WHERE t.tokenHash = ? 
-		AND t.revoked = 0 
-		AND t.expiresAt > strftime('%s', 'now')
-	`
-	rows, err := s.db.Query(query, tokenHash[:])
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close() //nolint:errcheck
-	var permissions data.Permissions
-	for rows.Next() {
-		var slug, name, description string
-		if err := rows.Scan(&slug, &name, &description); err != nil {
-			return nil, err
-		}
-		permissions = append(permissions, data.Permission{Slug: slug, Name: name, Description: description})
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return permissions, nil
-}
-
 func (s SqliteUserDatabase) GetUserPermissions(userID UserID) (data.Permissions, error) {
 	query := `
 		SELECT p.slug, p.name, p.description
@@ -311,4 +309,192 @@ func (s SqliteUserDatabase) GrantUserPermissions(userID UserID, permissions data
 func (s SqliteUserDatabase) DeleteUser(userID UserID) error {
 	_, err := s.db.Exec("DELETE FROM Users WHERE id = ?", userID)
 	return err
+}
+
+// API token related methods
+
+func (s SqliteUserDatabase) SaveApiToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string) (TokenID, error) {
+	var expiresUnix any
+	if expiresAt == nil {
+		expiresUnix = nil
+	} else {
+		expiresUnix = expiresAt.Unix()
+	}
+
+	query := `
+		INSERT INTO API_Token (userId, tokenHash, createdAt, expiresAt, label) 
+		VALUES (?, ?, ?, ?, ?)
+	`
+	result, err := s.db.Exec(
+		query,
+		userID,
+		tokenHash[:],
+		time.Now().Unix(),
+		expiresUnix,
+		label,
+	)
+	if err != nil {
+		return 0, err
+	}
+	tokenID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	return TokenID(tokenID), nil
+}
+
+func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (data.Permissions, error) {
+	query := `
+		SELECT p.slug, p.name, p.description
+		FROM API_Token t
+		JOIN User_Permissions up ON t.userId = up.userId
+		JOIN App_Permissions p  ON up.permissionId = p.id
+		WHERE t.tokenHash = ? 
+		AND t.revoked = 0 
+		AND (t.expiresAt > ? OR t.expiresAt IS NULL)
+	`
+	rows, err := s.db.Query(
+		query,
+		tokenHash[:],
+		time.Now().Unix(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() //nolint:errcheck
+	var permissions data.Permissions
+	for rows.Next() {
+		var slug, name, description string
+		if err := rows.Scan(&slug, &name, &description); err != nil {
+			return nil, err
+		}
+		permissions = append(permissions, data.Permission{Slug: slug, Name: name, Description: description})
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+func (s SqliteUserDatabase) GetApiUserID(tokenHash [32]byte) (UserID, error) {
+	var userID UserID
+	query := `
+		SELECT userId 
+		FROM API_Token 
+		WHERE tokenHash = ? 
+		AND (expiresAt IS NULL OR expiresAt > ?)
+		AND revoked = 0 
+	`
+	err := s.db.QueryRow(
+		query,
+		tokenHash[:],
+		time.Now().Unix(),
+	).Scan(&userID)
+	if err != nil {
+		return 0, err
+	}
+	return userID, nil
+}
+
+func (s SqliteUserDatabase) RevokeApiToken(tokenID TokenID) error {
+	query := `
+		UPDATE API_Token 
+		SET revoked = 1 
+		WHERE id = ?
+	`
+	result, err := s.db.Exec(query, tokenID)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return errors.New("failed to revoke API token")
+	}
+	return nil
+}
+
+func (s SqliteUserDatabase) DeleteApiToken(tokenID TokenID) error {
+	query := `
+		DELETE FROM API_Token 
+		WHERE id = ?
+	`
+	result, err := s.db.Exec(query, tokenID)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if affected == 0 || affected > 1 || err != nil {
+		return errors.New("an issue occurred while deleting API token")
+	}
+	return nil
+}
+
+func (s SqliteUserDatabase) GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, error) {
+	var info ApiTokenInfo
+	var revoked int
+	var expiresAt sql.NullInt64
+	query := `
+		SELECT label, id, expiresAt, revoked
+		FROM API_Token
+		WHERE userId = ?
+	`
+	rows, err := s.db.Query(
+		query,
+		userID,
+		time.Now().Unix(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var labels []ApiTokenInfo
+	for rows.Next() {
+		if err := rows.Scan(&info.Label, &info.Id, &expiresAt, &revoked); err != nil {
+			return nil, err
+		}
+		info.Status = getTokenStatus(revoked, expiresAt)
+		labels = append(labels, info)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return labels, nil
+}
+
+func (s SqliteUserDatabase) GetApiTokenInfoById(tokenID TokenID) (ApiTokenInfo, error) {
+	var info ApiTokenInfo
+	var revoked int
+	var expiresAt sql.NullInt64
+	query := `
+		SELECT label, expiresAt, revoked
+		FROM API_Token
+		WHERE id = ?
+	`
+	err := s.db.QueryRow(
+		query,
+		tokenID,
+		time.Now().Unix(),
+	).Scan(&info.Label, &expiresAt, &revoked)
+	if err != nil {
+		return ApiTokenInfo{}, err
+	}
+	info.Status = getTokenStatus(revoked, expiresAt)
+	return info, nil
+}
+
+
+func getTokenStatus(revoked int, expiresAt sql.NullInt64) TokenStatus {
+	if revoked == 1 {
+		return TokenStatusRevoked
+	}
+	if expiresAt.Valid && expiresAt.Int64 < time.Now().Unix() {
+		return TokenStatusExpired
+	}
+	return TokenStatusActive
 }
