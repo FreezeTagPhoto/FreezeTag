@@ -1,6 +1,6 @@
 import freezetag
 import spacy
-from freezetag.hooks import process_func, init_func, TagAction, SkipAction
+from freezetag.hooks import single_image, init_func, AddTagsAction
 from freezetag.message import log
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
@@ -19,8 +19,8 @@ def init():
     model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large")
     log("finished loading models")
 
-@process_func
-def tag_image(img: Image.Image, id: int) -> TagAction:
+@single_image
+def tag_image(img: Image.Image, id: int) -> AddTagsAction:
     global processor, model, nlp
     img.thumbnail((1024, 1024))
     input_image = img.convert("RGB")
@@ -32,7 +32,7 @@ def tag_image(img: Image.Image, id: int) -> TagAction:
     doc = nlp(sentence)
     nouns = [token.text for token in doc if token.pos_ == "NOUN" or token.pos_ == "PROPN"]
     log(f"nouns = {nouns}")
-    return TagAction(id, nouns)
+    return AddTagsAction(id, nouns)
 
 if __name__ == "__main__":
     freezetag.run()

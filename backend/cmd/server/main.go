@@ -26,7 +26,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 
 	docs "freezetag/backend/cmd/docs"
 
@@ -93,11 +92,12 @@ func initializeDependencies() *dependencies {
 		log.Fatalf("[ERR]  error launching plugin service: %v", err)
 	}
 	log.Printf("[INFO] loaded plugins:")
-	plugs := strings.Join(pluginService.AllPlugins(), ", ")
-	if plugs == "" {
-		log.Printf("[INFO] no plugins loaded")
-	} else {
-		log.Printf("[INFO] %s", plugs)
+	for _, plug := range pluginService.Plugins() {
+		dis := ""
+		if plug.Disabled {
+			dis = " [disabled]"
+		}
+		log.Printf("     - %s version %s%s", plug.Name, plug.Version, dis)
 	}
 	jobService := services.InitDefaultJobService(jobRepo, imageRepo, pluginService)
 	authService := services.InitDefaultAuthService(userRepo)

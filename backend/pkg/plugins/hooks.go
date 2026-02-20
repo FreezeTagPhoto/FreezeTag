@@ -10,38 +10,67 @@ import (
 	"reflect"
 )
 
-func (h *HookedPlugin) RunHook(t HookType, s HookSignature, in any, repo repositories.ImageRepository) (any, error) {
+type PluginResult map[string]any
+
+func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageRepository) (PluginResult, error) {
+	details := h.HookDetails(hookName)
+	s := details.Signature
+	t := details.Type
 	switch t {
 	case PostUpload:
 		switch s {
 		case ProcessOneImage:
 			resolved, ok := in.(repositories.ImageUploadSuccess)
 			if !ok {
-				return nil, fmt.Errorf("invalid input type for PostUpload,ProcessOneImage")
+				return nil, fmt.Errorf("invalid input type for post_upload,single_image")
 			}
-			return h.processOneImage(resolved, repo)
+			return h.processOneImage(hookName, resolved.Id, repo)
 		case ProcessImageBatch:
-			break
+			resolved, err := intoList[repositories.ImageUploadSuccess](in)
+			if err != nil {
+				return nil, fmt.Errorf("invalid input type for post_upload,image_batch")
+			}
+			ids := make([]database.ImageId, len(resolved))
+			for i, res := range resolved {
+				ids[i] = res.Id
+			}
+			return h.processImageBatch(hookName, ids, repo)
 		}
 	}
 	return nil, fmt.Errorf("unknown hook type: %v,%v", t, s)
 }
 
-func (h *HookedPlugin) processOneImage(in repositories.ImageUploadSuccess, repo repositories.ImageRepository) (any, error) {
-	webp, err := repo.RetrieveThumbnail(in.Id, 2)
+func (h *HookedPlugin) processOneImage(hookName string, id database.ImageId, repo repositories.ImageRepository) (PluginResult, error) {
+	webp, err := repo.RetrieveThumbnail(id, 2)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving image for plugin: %w", err)
 	}
 	h.IO().In <- PluginMessage{
 		GET,
-		map[string]any{"action": "single_image", "id": in.Id},
+		map[string]any{"action": "single_image", "id": id, "hook": hookName},
 	}
 	h.IO().In <- PluginMessage{BIN, webp}
 	resp, err := h.handleRequests(repo)
 	if err != nil {
 		return nil, err
 	}
-	res, err := h.handlePost(repo, resp)
+	res, err := h.handlePost(repo, resp.Contents)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (h *HookedPlugin) processImageBatch(hookName string, ids []database.ImageId, repo repositories.ImageRepository) (PluginResult, error) {
+	h.IO().In <- PluginMessage{
+		GET,
+		map[string]any{"action": "image_batch", "ids": ids, "hook": hookName},
+	}
+	resp, err := h.handleRequests(repo)
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.handlePost(repo, resp.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +104,14 @@ func (h *HookedPlugin) handleRequests(repo repositories.ImageRepository) (Plugin
 	}
 }
 
-func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m PluginMessage) (any, error) {
-	msg, ok := m.Contents.(map[string]any)
+func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (PluginResult, error) {
+	msg, ok := m.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("failed to deserialize request contents")
 	}
 	switch msg["action"] {
+	case "none":
+		return map[string]any{"skipped": true}, nil
 	case "add_tags":
 		id, err := intoId(msg["id"])
 		if err != nil {
@@ -91,7 +122,10 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m PluginMes
 			return nil, err
 		}
 		res := repo.AddImageTags(id, tags)
-		return res, nil
+		if res.Err != nil {
+			return nil, fmt.Errorf("%w", res.Err.Reason)
+		}
+		return map[string]any{"count": res.Success.Count}, nil
 	case "remove_tags":
 		id, err := intoId(msg["id"])
 		if err != nil {
@@ -102,7 +136,10 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m PluginMes
 			return nil, err
 		}
 		res := repo.RemoveImageTags(id, tags)
-		return res, nil
+		if res.Err != nil {
+			return nil, fmt.Errorf("%w", res.Err.Reason)
+		}
+		return map[string]any{"count": res.Success.Count}, nil
 	case "delete_tags":
 		tags, err := intoList[string](msg["tags"])
 		if err != nil {
@@ -148,8 +185,14 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m PluginMes
 		}
 		results := make([]any, 0, len(parts))
 		for _, part := range parts {
-
+			res, err := h.handlePost(repo, part)
+			if err != nil {
+				results = append(results, map[string]any{"error": err.Error()})
+			} else {
+				results = append(results, res)
+			}
 		}
+		return map[string]any{"results": results}, nil
 	}
 	return nil, fmt.Errorf("unrecognized message action")
 }

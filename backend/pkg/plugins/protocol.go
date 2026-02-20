@@ -75,14 +75,15 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 				close(out)
 				break ReadOut
 			} else if err != nil {
-				log.Fatalf("Failed to read from plugin stdout: %v", err)
+				log.Printf("[ERR]  Failed to read from plugin stdout: %v", err)
 				close(out)
 				break ReadOut
 			}
 			typeByte := typeBuf[0]
 			msgType := MessageType(typeByte)
 			if !msgType.IsValid() {
-				log.Fatalf("Message from plugin has invalid type")
+				log.Printf("[ERR]  Message from plugin has invalid type")
+				continue
 			}
 			switch msgType {
 			case READY, SHUTDOWN:
@@ -96,13 +97,15 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 				sizeBuf := make([]byte, 8)
 				_, err := io.ReadFull(outBuf, sizeBuf)
 				if err != nil {
-					log.Fatalf("Failed to read message size from plugin: %v", err)
+					log.Printf("[ERR]  Failed to read message size from plugin: %v", err)
+					continue
 				}
 				size := binary.LittleEndian.Uint64(sizeBuf)
 				contentBuf := make([]byte, size)
 				_, err = io.ReadFull(outBuf, contentBuf)
 				if err != nil {
-					log.Fatalf("Failed to read message contents from plugin: %v", err)
+					log.Printf("[ERR]  Failed to read message contents from plugin: %v", err)
+					continue
 				}
 				out <- PluginMessage{
 					Type:     msgType,
@@ -113,18 +116,21 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 				sizeBuf := make([]byte, 8)
 				_, err := io.ReadFull(outBuf, sizeBuf)
 				if err != nil {
-					log.Fatalf("Failed to read message size from plugin: %v", err)
+					log.Printf("[ERR]  Failed to read message size from plugin: %v", err)
+					continue
 				}
 				size := binary.LittleEndian.Uint64(sizeBuf)
 				contentBuf := make([]byte, size)
 				_, err = io.ReadFull(outBuf, contentBuf)
 				if err != nil {
-					log.Fatalf("Failed to read message contents from plugin: %v", err)
+					log.Printf("[ERR]  Failed to read message contents from plugin: %v", err)
+					continue
 				}
 				var contents any
 				err = json.Unmarshal(contentBuf, &contents)
 				if err != nil {
-					log.Fatalf("Failed to deserialize plugin message contents: %v", err)
+					log.Printf("[ERR]  Failed to deserialize plugin message contents: %v", err)
+					continue
 				}
 				out <- PluginMessage{
 					Type:     msgType,
@@ -139,7 +145,7 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 			if !ok {
 				err := stdin.Close()
 				if err != nil {
-					log.Fatalf("failed to close stdin on plugin: %v", err)
+					log.Printf("[ERR]  failed to close stdin on plugin: %v", err)
 				}
 				break
 			}
@@ -148,14 +154,16 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 				// special case messages with nil contents
 				_, err := stdin.Write([]byte{byte(msg.Type)})
 				if err != nil {
-					log.Fatalf("Failed to send plugin message: %v", err)
+					log.Printf("[ERR]  Failed to send plugin message: %v", err)
+					continue
 				}
 			case BIN, LOG, ERR:
 				// special case with plain binary/text contents
 				packet := append(binary.LittleEndian.AppendUint64([]byte{byte(msg.Type)}, uint64(len(msg.Contents.([]byte)))), msg.Contents.([]byte)...)
 				_, err := stdin.Write(packet)
 				if err != nil {
-					log.Fatalf("Failed to send plugin message: %v", err)
+					log.Printf("[ERR]  Failed to send plugin message: %v", err)
+					continue
 				}
 			default:
 				// regular case messages with JSON contents
@@ -167,7 +175,8 @@ func protocolFromPipes(stdin io.WriteCloser, stdout io.ReadCloser) (PluginIo, fu
 				packet := append(binary.LittleEndian.AppendUint64([]byte{byte(msg.Type)}, uint64(len(contents))), contents...)
 				_, err = stdin.Write(packet)
 				if err != nil {
-					log.Fatalf("Failed to send plugin message: %v", err)
+					log.Printf("[ERR]  Failed to send plugin message: %v", err)
+					continue
 				}
 			}
 		}

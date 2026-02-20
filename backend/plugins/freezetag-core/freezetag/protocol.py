@@ -58,6 +58,11 @@ def write_message(msg: Message):
                 msg_size = len(msg.contents)
                 _stdout.buffer.write(int.to_bytes(msg_size, 8, byteorder='little', signed=False))
                 _stdout.buffer.write(msg.contents)
+            elif isinstance(msg.contents, str):
+                contents = msg.contents.encode("utf-8")
+                msg_size = len(contents)
+                _stdout.buffer.write(int.to_bytes(msg_size, 8, byteorder='little', signed=False))
+                _stdout.buffer.write(contents)
             else:
                 raise ValueError("non-bytes BIN/LOG/ERR not allowed")
         case _:

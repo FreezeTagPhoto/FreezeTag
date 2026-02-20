@@ -21,6 +21,7 @@ type PluginManifest struct {
 	MainFile      string                `json:"main_file"`
 	Requirements  *string               `json:"requirements"`
 	PythonVersion *string               `json:"python_version"`
+	Disabled      bool                  `json:"default_disabled"`
 }
 
 // This function reads a manifest
