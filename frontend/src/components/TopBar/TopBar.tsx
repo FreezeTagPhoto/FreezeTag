@@ -160,7 +160,7 @@ export default function TopBar({
 
                     {open === "tags" && (
                         <div
-                            className={`${styles.menuDropdown} ${styles.menuDropdownActive}`}
+                            className={`${styles.menuDropdown}`}
                             role="menu"
                             aria-label="Tags"
                         >
