@@ -107,7 +107,7 @@ export default function TopBar({
                 // .filter((t) => (t.count ?? 0) > 0 || activeTags.has(t.name)) // shows active tags even if they are 0-count
                 .sort((a, b) => a.name.localeCompare(b.name))
         );
-    }, [tags, activeTags]);
+    }, [tags]);
 
     useEffect(() => {
         const onMouseDown = (e: MouseEvent) => {

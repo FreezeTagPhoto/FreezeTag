@@ -38,9 +38,7 @@ export default function SettingsPage() {
 
             <section className={styles.section}>
                 <div className={styles.row}>
-                    <label className={styles.label}>
-                        Theme
-                    </label>
+                    <label className={styles.label}>Theme</label>
 
                     <select
                         id="theme"
