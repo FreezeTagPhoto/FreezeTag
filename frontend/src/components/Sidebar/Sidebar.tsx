@@ -36,7 +36,13 @@ const navItems: NavItem[] = [
         icon: Upload,
         permissions: ["write:files"],
     },
-    { label: "Tags", href: "/tags", icon: Tags, permissions: ["read:tags"] },
+    { label: "Jobs", href: "/jobs", icon: Briefcase },
+    {
+        label: "Tags",
+        href: "/tags",
+        icon: Tags,
+        permissions: ["read:tags"],
+    },
     { label: "Plugins", href: "/plugins", icon: Puzzle },
     {
         label: "Accounts",
@@ -44,7 +50,6 @@ const navItems: NavItem[] = [
         icon: Users,
         permissions: ["read:user"],
     },
-    { label: "Jobs", href: "/jobs", icon: Briefcase },
     { label: "Settings", href: "/settings", icon: Settings },
 ];
 
