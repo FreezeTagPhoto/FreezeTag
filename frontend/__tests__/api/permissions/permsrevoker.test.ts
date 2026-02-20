@@ -9,7 +9,7 @@ describe("Perms Revoker", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url, body) => {
             expect(url).toBe(
-                "/backend/users/permissions/1?permission=post,read",
+                "/backend/users/permissions/1?permission=post&permission=read",
             );
             expect(body.method).toBe("DELETE");
             return Promise.resolve({

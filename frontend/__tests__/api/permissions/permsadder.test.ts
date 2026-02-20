@@ -9,7 +9,7 @@ describe("Perms Adder", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url) => {
             expect(url).toStrictEqual(
-                "/backend/users/permissions/1?permission=post,read",
+                "/backend/users/permissions/1?permission=post&permission=read",
             );
             return Promise.resolve({
                 status: 200,

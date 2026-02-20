@@ -96,4 +96,8 @@ describe("Perms Helpers", () => {
 
         expect(UserHasPerm(user, "write:images")).toBeFalsy();
     });
+
+    it("UserHasPerm should properly disapprove on undefined user", () => {
+        expect(UserHasPerm(undefined, "write:images")).toBeFalsy();
+    });
 });
