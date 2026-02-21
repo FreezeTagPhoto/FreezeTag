@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS User_Permissions (
     FOREIGN KEY (permissionId) REFERENCES App_Permissions(id) ON DELETE CASCADE,
     PRIMARY KEY (userId, permissionId)
 );
--- admin users might not necessarily want to give all permissions to a token
+
 CREATE TABLE IF NOT EXISTS Token_Permissions (
     tokenId INTEGER NOT NULL,
     permissionId INTEGER NOT NULL,

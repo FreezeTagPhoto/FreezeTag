@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/database"
-	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/services"
 	"net/http"
 	"strconv"
@@ -133,7 +132,7 @@ func (ue UserEndpoint) AddPermissions(c *gin.Context) {
 		return
 	}
 
-	permissions, err := queryPermissionsFromRequest(c)
+	permissions, err := api.QueryPermissionsFromRequest(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
@@ -164,7 +163,7 @@ func (ue UserEndpoint) RevokePermissions(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
 	}
-	permissions, err := queryPermissionsFromRequest(c)
+	permissions, err := api.QueryPermissionsFromRequest(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
@@ -198,20 +197,4 @@ func (ue UserEndpoint) GetPermissions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, perms)
-}
-
-func queryPermissionsFromRequest(c *gin.Context) (data.Permissions, error) {
-	permissions := c.QueryArray("permission")
-	if len(permissions) == 0 {
-		return nil, fmt.Errorf("no permissions provided")
-	}
-	var perms data.Permissions
-	for _, perm := range permissions {
-		permission, ok := data.GetPermissionFromSlug(perm)
-		if !ok {
-			return nil, fmt.Errorf("invalid permission: %s", perm)
-		}
-		perms = append(perms, permission)
-	}
-	return perms, nil
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/database/queries"
 	"net/http"
 	"strconv"
@@ -46,4 +47,20 @@ func GetRequestQuery(c *gin.Context) *queries.ImageQuery {
 		return nil
 	}
 	return q
+}
+
+func QueryPermissionsFromRequest(c *gin.Context) (data.Permissions, error) {
+	permissions := c.QueryArray("permission")
+	if len(permissions) == 0 {
+		return nil, fmt.Errorf("no permissions provided")
+	}
+	var perms data.Permissions
+	for _, perm := range permissions {
+		permission, ok := data.GetPermissionFromSlug(perm)
+		if !ok {
+			return nil, fmt.Errorf("invalid permission: %s", perm)
+		}
+		perms = append(perms, permission)
+	}
+	return perms, nil
 }

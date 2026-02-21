@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/data"
 	"log"
@@ -53,7 +54,8 @@ type AuthService interface {
 	ValidateJWT(tokenString string) (JWTClaims, error)
 	// validates the userID and permissions associated with the provided API token
 	ValidateAPIToken(token string) (ApiClaims, error)
-	// creates an API token. Returns the Plaintext token. Plaintext token is not stored
+	// creates an API token. Returns the Plaintext token. Plaintext token is not stored. A token can only have as many or fewer permissions as the user has. 
+	// Returns an error if the user does not have the requested permissions.
 	CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (ApiCreateToken, error)
 	// soft delete an API token, returning an error if the token does not exist or could not be revoked
 	RevokeAPIToken(userId database.UserID, tokenID database.TokenID) error
@@ -220,6 +222,16 @@ func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions 
 	}
 	plaintextToken := base64.StdEncoding.EncodeToString(plaintextTokenBytes)
 	tokenHash := hashToken(plaintextToken)
+
+	user_permissions, err := s.userDatabase.GetUserPermissions(userID)
+	if err != nil {
+		return ApiCreateToken{}, err
+	}
+	if !user_permissions.Contains(permissions) {
+		log.Printf("[WARN]User with ID %d attempted to create an API token with permissions that exceed their own", userID)
+		return ApiCreateToken{}, fmt.Errorf("invalid permissions requested")
+	}
+
 	tokenID, err := s.userDatabase.SaveApiToken(userID, expiresAt, tokenHash, label, permissions)
 	if err != nil {
 		return ApiCreateToken{}, err

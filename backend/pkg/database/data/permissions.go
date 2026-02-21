@@ -55,6 +55,15 @@ func GetPermissionFromSlug(slug string) (Permission, bool) {
 	return Permission{}, false
 }
 
+func (p Permissions) Contains(permissions Permissions) bool {
+	for _, perm := range permissions {
+		if !p.HasPermission(perm) {
+			return false
+		}
+	}
+	return true
+}
+
 func AllPermissions() Permissions {
 	return allPermissions
 }
