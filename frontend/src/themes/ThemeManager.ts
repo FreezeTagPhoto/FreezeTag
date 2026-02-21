@@ -7,7 +7,7 @@ export const DarkThemeRegistry = [
 ];
 export const LightThemeRegistry = [
     "Catppuccin Latte",
-    "Microsoft Hotdog Stand",
+    "Microsoft Hot Dog Stand",
 ];
 export const THEME_STORAGE_KEY = "freezetag-theme-option";
 
