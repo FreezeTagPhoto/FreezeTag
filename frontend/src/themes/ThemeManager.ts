@@ -5,7 +5,10 @@ export const DarkThemeRegistry = [
     "Catppuccin Macchiato",
     "Catppuccin Mocha",
 ];
-export const LightThemeRegistry = ["Catppuccin Latte"];
+export const LightThemeRegistry = [
+    "Catppuccin Latte",
+    "Microsoft Hot Dog Stand",
+];
 export const THEME_STORAGE_KEY = "freezetag-theme-option";
 
 // Returns the string for the proper selected theme. Should be put into a `data-theme` element in the most base element of a page

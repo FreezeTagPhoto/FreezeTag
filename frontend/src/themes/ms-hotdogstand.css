@@ -1,0 +1,28 @@
+[data-theme="Microsoft Hot Dog Stand"] {
+    --rosewater: #881500; /* For accessibility reasons, all of the accent reds are darker than they "should be" */
+    --flamingo: #880000;
+    --pink: #ff00b3; /* All other accents are the CTP Mocha accents, max saturation and max brightness */
+    --mauve: #7300ff;
+    --red: #880024;
+    --maroon: #880016;
+    --peach: #ff6200;
+    --yellow: #ffae00;
+    --green: #15ff00;
+    --teal: #00ffd5;
+    --sky: #00d9ff;
+    --sapphire: #00aeff;
+    --blue: #0062ff;
+    --lavender: #0022ff;
+    --text: #ffff00;
+    --subtext1: #cccc00;
+    --subtext0: #cccc00;
+    --overlay2: #cc0000;
+    --overlay1: #ff0000;
+    --overlay0: #cc0000;
+    --surface2: #ff0000;
+    --surface1: #cc0000;
+    --surface0: #ff0000;
+    --base: #cc0000;
+    --mantle: #ff0000;
+    --crust: #ff0000;
+}
