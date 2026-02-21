@@ -1,10 +1,10 @@
 [data-theme="Microsoft Hotdog Stand"] {
-    --rosewater: #ff2a00;
-    --flamingo: #ff0000;
-    --pink: #ff00b3;
+    --rosewater: #881500; /* For accessibility reasons, all of the accent reds are darker than they "should be" */
+    --flamingo: #880000;
+    --pink: #ff00b3; /* All other accents are the CTP Mocha accents, max saturation and max brightness */
     --mauve: #7300ff;
-    --red: #ff0048;
-    --maroon: #ff002b;
+    --red: #880024;
+    --maroon: #880016;
     --peach: #ff6200;
     --yellow: #ffae00;
     --green: #15ff00;
