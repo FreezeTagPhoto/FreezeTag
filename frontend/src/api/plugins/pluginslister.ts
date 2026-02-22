@@ -11,7 +11,9 @@ type PluginListResponse = Plugin[];
 
 export default async function PluginsLister(): Promise<PluginListResult> {
     return list_plugins_with_handler(
-        ApiHandler<PluginListResponse>(SERVER_ADDRESS + "plugins")(Method.GET),
+        ApiHandler<PluginListResponse>(SERVER_ADDRESS + "plugins/list")(
+            Method.GET,
+        ),
     );
 }
 

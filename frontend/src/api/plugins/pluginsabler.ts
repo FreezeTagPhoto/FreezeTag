@@ -14,7 +14,7 @@ export default async function PluginsAbler(
 ): Promise<PluginAbleResult> {
     return able_plugins_with_handler(
         ApiHandler<PluginAbleResponse>(
-            SERVER_ADDRESS + "plugins",
+            SERVER_ADDRESS + "plugins/enable",
             false,
         )(Method.POST),
         plugin,

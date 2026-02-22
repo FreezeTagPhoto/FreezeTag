@@ -9,7 +9,7 @@ describe("Plugins Lister", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url) => {
             expect(url).toStrictEqual(
-                "/backend/plugins?plugin=test&enabled=false",
+                "/backend/plugins/enable?plugin=test&enabled=false",
             );
             return Promise.resolve({
                 status: 200,

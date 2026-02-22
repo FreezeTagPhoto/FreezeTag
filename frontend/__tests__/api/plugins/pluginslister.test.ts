@@ -8,7 +8,7 @@ import PluginsLister from "@/api/plugins/pluginslister";
 describe("Plugins Lister", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url) => {
-            expect(url).toStrictEqual("/backend/plugins");
+            expect(url).toStrictEqual("/backend/plugins/list");
             return Promise.resolve({
                 status: 200,
                 ok: true,
