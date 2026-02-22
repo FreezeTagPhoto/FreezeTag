@@ -20,7 +20,7 @@ func InitPluginEndpoint(service services.PluginService) PluginEndpoint {
 // @description List plugins along with their hooks and enabled status
 // @tags        plugins
 // @produce     application/json
-// @router      /plugins [get]
+// @router      /plugins/list [get]
 // @success     200 {array} plugins.PluginInfo
 func (pe PluginEndpoint) ListAll(c *gin.Context) {
 	c.JSON(http.StatusOK, pe.service.Plugins())
@@ -30,10 +30,10 @@ func (pe PluginEndpoint) ListAll(c *gin.Context) {
 // @description Set the enabled status of a plugin by name (plugin names are unique)
 // @tags        plugins
 // @produce     application/json
-// @router      /plugins [post]
+// @router      /plugins/enable [post]
 // @param       plugin  query string true "plugin to enable/disable"
 // @param       enabled query bool true "whether the plugin should be enabled"
-// @success     200 {array}  plugins.PluginInfo
+// @success     200 {array}  api.PluginDisabledResponse
 // @failure     400 {object} api.BadRequestResponse
 func (pe PluginEndpoint) SetEnabled(c *gin.Context) {
 	plug := c.Query("plugin")
