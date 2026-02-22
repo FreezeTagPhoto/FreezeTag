@@ -165,3 +165,43 @@ func TestExtractDatabaseQueries(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 }
+
+
+func TestQueryPermissionsFromRequest(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		req, _ := http.NewRequest(http.MethodGet, "/permissions", nil)
+		q := req.URL.Query()
+		q.Add("permission", "read:user")
+		q.Add("permission", "write:user")
+		req.URL.RawQuery = q.Encode()
+		ctx.Request = req
+		perms, err := QueryPermissionsFromRequest(ctx)
+		require.NoError(t, err)
+		assert.Len(t, perms, 2)
+	})
+
+	t.Run("failNoPermissions", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		req, _ := http.NewRequest(http.MethodGet, "/permissions", nil)
+		ctx.Request = req
+		perms, err := QueryPermissionsFromRequest(ctx)
+		assert.Error(t, err)
+		assert.Nil(t, perms)
+	})
+
+	t.Run("failInvalidPermission", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		req, _ := http.NewRequest(http.MethodGet, "/permissions", nil)
+		q := req.URL.Query()
+		q.Add("permission", "invalid")
+		req.URL.RawQuery = q.Encode()
+		ctx.Request = req
+		perms, err := QueryPermissionsFromRequest(ctx)
+		assert.Error(t, err)
+		assert.Nil(t, perms)
+	})
+}

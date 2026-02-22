@@ -208,3 +208,186 @@ func TestCreateTokenSuccess(t *testing.T) {
 	expected := services.ApiCreateToken{TokenId: 1, TokenString: "plaintexttoken"}
 	assert.Equal(t, expected, got)
 }
+
+func TestCreateUserTokenNoUserId(t *testing.T) {
+	w := httptest.NewRecorder()
+	authService := mockService.NewMockAuthService(t)
+	router := gin.New()
+
+	te := InitTokenEndpoint(authService)
+	te.RegisterEndpoints(router)
+
+	req, _ := http.NewRequest("POST", "/tokens/create?permission=read:files&label=test token", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	var got api.BadRequestResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, got)
+}
+
+func TestCreateUserTokenInvalidPermission(t *testing.T) {
+	w := httptest.NewRecorder()
+	authService := mockService.NewMockAuthService(t)
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
+	te := InitTokenEndpoint(authService)
+	te.RegisterEndpoints(router)
+
+	req, _ := http.NewRequest("POST", "/tokens/create?permission=invalid:perm&label=test token", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.BadRequestResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, got)
+}
+
+func TestCreateUserTokenInvalidUserId(t *testing.T) {
+	w := httptest.NewRecorder()
+	authService := mockService.NewMockAuthService(t)
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "abc")
+		c.Next()
+	})
+	te := InitTokenEndpoint(authService)
+	te.RegisterEndpoints(router)
+
+	req, _ := http.NewRequest("POST", "/tokens/create?permission=read:files&label=test token", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.BadRequestResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, got)
+}
+
+func TestCreateUserTokenShouldBindQueryError(t *testing.T) {
+	w := httptest.NewRecorder()
+	authService := mockService.NewMockAuthService(t)
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
+	te := InitTokenEndpoint(authService)
+	te.RegisterEndpoints(router)
+
+	req, _ := http.NewRequest("POST", "/tokens/create?permission=read:files&expiresAt=invalid&label=test token", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.BadRequestResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, got)
+}
+
+func TestCreateUserTokenDatabaseError(t *testing.T) {
+	w := httptest.NewRecorder()
+	authService := mockService.NewMockAuthService(t)
+	authService.
+		EXPECT().
+		CreateAPIToken(database.UserID(1), data.Permissions{data.ReadFiles}, (*time.Time)(nil), "test token").
+		Return(services.ApiCreateToken{}, assert.AnError).
+		Once()
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
+	te := InitTokenEndpoint(authService)
+	te.RegisterEndpoints(router)
+
+	req, _ := http.NewRequest("POST", "/tokens/create?permission=read:files&label=test token", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	var got api.ServerErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, got)
+}
+
+func TestAdminDeleteUserToken(t *testing.T) {
+	w := httptest.NewRecorder()
+	authService := mockService.NewMockAuthService(t)
+	authService.EXPECT().DeleteAPIToken(database.TokenID(1)).Return(nil).Once()
+	router := gin.New()
+	te := InitTokenEndpoint(authService)
+	te.RegisterEndpoints(router)
+
+	req, _ := http.NewRequest("DELETE", "/tokens/delete/1", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var got api.MessageResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expected := api.MessageResponse{Message: "Token deleted successfully"}
+	assert.Equal(t, expected, got)
+}
+
+func TestAdminRevokeUserToken(t *testing.T) {
+	w := httptest.NewRecorder()
+	authService := mockService.NewMockAuthService(t)
+	authService.EXPECT().AdminRevokeAPIToken(database.TokenID(1)).Return(nil).Once()
+	router := gin.New()
+	te := InitTokenEndpoint(authService)
+	te.RegisterEndpoints(router)
+
+	req, _ := http.NewRequest("POST", "/tokens/admin/revoke/1", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var got api.MessageResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expected := api.MessageResponse{Message: "Token revoked successfully"}
+	assert.Equal(t, expected, got)
+}
+
+func TestAdminRevokeUserTokenDatabaseError(t *testing.T) {
+	w := httptest.NewRecorder()
+	authService := mockService.NewMockAuthService(t)
+	authService.EXPECT().AdminRevokeAPIToken(database.TokenID(1)).Return(assert.AnError).Once()
+	router := gin.New()
+	te := InitTokenEndpoint(authService)
+	te.RegisterEndpoints(router)
+
+	req, _ := http.NewRequest("POST", "/tokens/admin/revoke/1", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	var got api.ServerErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, got)
+}	
+
+
+func TestAdminDeleteUserTokenDatabaseError(t *testing.T) {
+	w := httptest.NewRecorder()
+	authService := mockService.NewMockAuthService(t)
+	authService.EXPECT().DeleteAPIToken(database.TokenID(1)).Return(assert.AnError).Once()
+	router := gin.New()
+	te := InitTokenEndpoint(authService)
+	te.RegisterEndpoints(router)
+
+	req, _ := http.NewRequest("DELETE", "/tokens/delete/1", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	var got api.ServerErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, got)
+}	
+

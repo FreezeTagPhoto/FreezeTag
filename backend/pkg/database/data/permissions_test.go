@@ -47,3 +47,18 @@ func TestPermissionsHasPermissionSlug(t *testing.T) {
 		t.Errorf("Expected not to have permission with slug 'delete:user', but it was found")
 	}
 }
+
+
+func TestPermissionsContains(t *testing.T) {
+	perms1 := Permissions{ReadUser, WriteFiles}
+	perms2 := Permissions{ReadUser}
+
+	if !perms1.Contains(perms2) {
+		t.Errorf("Expected permissions %v to contain %v, but it did not", perms1, perms2)
+	}
+
+	perms3 := Permissions{DeleteUser}
+	if perms1.Contains(perms3) {
+		t.Errorf("Expected permissions %v not to contain %v, but it did", perms1, perms3)
+	}
+}

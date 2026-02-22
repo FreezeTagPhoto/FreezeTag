@@ -281,9 +281,9 @@ func TestDeleteUser(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestSaveApiTokenSuccess(t *testing.T) { 
+func TestSaveApiTokenSuccess(t *testing.T) {
 	db := createTempUserDatabase(t)
-	
+
 	user, err := db.AddUser("apitest", "hash")
 	require.NoError(t, err)
 	tokenHash := [32]byte{1, 2, 3} // example token hash
@@ -310,7 +310,7 @@ func TestSaveApiTokenNonexistentUser(t *testing.T) {
 
 func TestSaveApiTokensSuccess(t *testing.T) {
 	db := createTempUserDatabase(t)
-	
+
 	user, err := db.AddUser("apitest", "hash")
 	require.NoError(t, err)
 
@@ -352,7 +352,7 @@ func TestSaveApiTokensSuccess(t *testing.T) {
 
 func TestRevokeApiKeySuccess(t *testing.T) {
 	db := createTempUserDatabase(t)
-	
+
 	user, err := db.AddUser("apitest", "hash")
 	require.NoError(t, err)
 
@@ -383,7 +383,7 @@ func TestRevokeApiKeyNonexistentToken(t *testing.T) {
 
 func TestGetUserApiTokenLabels(t *testing.T) {
 	db := createTempUserDatabase(t)
-	
+
 	user, err := db.AddUser("apitest", "hash")
 	require.NoError(t, err)
 
@@ -407,8 +407,8 @@ func TestGetUserApiTokenLabels(t *testing.T) {
 	tokenHash2 = [32]byte{7, 8, 9}
 	label3 := "test-token-3"
 	id3, err := db.SaveApiToken(user.ID, nil, tokenHash2, label3, data.Permissions{})
-	require.NoError(t, err)	
-	
+	require.NoError(t, err)
+
 	labels, err = db.GetUserApiTokenInfo(user.ID)
 	require.NoError(t, err)
 	expected = append(expected, ApiTokenInfo{id3, label3, TokenStatusActive})
@@ -417,7 +417,7 @@ func TestGetUserApiTokenLabels(t *testing.T) {
 
 func TestExpiredTokenIsExpired(t *testing.T) {
 	db := createTempUserDatabase(t)
-	
+
 	user, err := db.AddUser("apitest", "hash")
 	require.NoError(t, err)
 
@@ -433,4 +433,118 @@ func TestExpiredTokenIsExpired(t *testing.T) {
 
 	_, err = db.GetApiUserID(tokenHash)
 	require.Error(t, err)
+}
+
+func TestAllUsers(t *testing.T) {
+	db := createTempUserDatabase(t)
+	_, err := db.AddUser("homer", "hash1")
+	require.NoError(t, err)
+	_, err = db.AddUser("bart", "hash2")
+	require.NoError(t, err)
+
+	users, err := db.AllUsers()
+	require.NoError(t, err)
+	assert.Len(t, users, 2)
+	assert.ElementsMatch(t, []string{"homer", "bart"}, []string{users[0].Username, users[1].Username})
+}
+
+func TestAllUsersNoUsers(t *testing.T) {
+	db := createTempUserDatabase(t)
+	users, err := db.AllUsers()
+	require.NoError(t, err)
+	assert.Equal(t, 0, len(users))
+}
+
+func TestEnsureAdmin(t *testing.T) {
+	db := createTempUserDatabase(t)
+	user, err := db.AddUser("username", "hash")
+	require.NoError(t, err)
+
+	err = db.EnsureAdmin(user.ID)
+	require.NoError(t, err)
+	
+	permissions, err := db.GetUserPermissions(user.ID)
+	require.NoError(t, err)
+	assert.True(t, permissions.Contains(data.AllPermissions()))
+}
+
+func TestDeleteApiToken(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("apitest", "hash")
+	require.NoError(t, err)
+
+	tokenHash := [32]byte{1, 2, 3}
+	label := "test-token"
+	apiId, err := db.SaveApiToken(user.ID, nil, tokenHash, label, data.Permissions{})
+	require.NoError(t, err)
+
+	err = db.DeleteApiToken(apiId)
+	require.NoError(t, err)
+
+	_, err = db.GetApiTokenInfo(apiId)
+	require.Error(t, err)
+
+	_, err = db.GetApiUserID(tokenHash)
+	require.Error(t, err)
+}
+
+func TestDeleteUserDeletesToken(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("apitest", "hash")
+	require.NoError(t, err)
+
+	tokenHash := [32]byte{1, 2, 3}
+	label := "test-token"
+	apiId, err := db.SaveApiToken(user.ID, nil, tokenHash, label, data.Permissions{})
+	require.NoError(t, err)
+
+	err = db.DeleteUser(user.ID)
+	require.NoError(t, err)
+
+	_, err = db.GetApiTokenInfo(apiId)
+	require.Error(t, err)
+
+	_, err = db.GetApiUserID(tokenHash)
+	require.Error(t, err)
+}
+
+func TestRevokeApiTokenSuccess(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("apitest", "hash")
+	require.NoError(t, err)
+
+	tokenHash := [32]byte{1, 2, 3}
+	label := "test-token"
+	apiId, err := db.SaveApiToken(user.ID, nil, tokenHash, label, data.Permissions{})
+	require.NoError(t, err)
+
+	err = db.RevokeApiToken(user.ID, apiId)
+	require.NoError(t, err)
+
+	_, err = db.GetApiTokenInfo(apiId)
+	require.NoError(t, err)
+
+	_, err = db.GetApiUserID(tokenHash)
+	require.Error(t, err)
+}
+
+func TestGetApiPermissionsSuccess(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("apitest", "hash")
+	require.NoError(t, err)
+
+	tokenHash := [32]byte{1, 2, 3}
+	label := "test-token"
+	permissions := data.Permissions{data.ReadUser, data.WriteFiles}
+	_, err = db.SaveApiToken(user.ID, nil, tokenHash, label, permissions)
+	require.NoError(t, err)
+
+	retrievedPermissions, err := db.GetApiPermissions(tokenHash)
+	require.NoError(t, err)
+	t.Logf("Expected permissions: %v, Retrieved permissions: %v", permissions, retrievedPermissions)
+	assert.ElementsMatch(t, permissions, retrievedPermissions)
 }
