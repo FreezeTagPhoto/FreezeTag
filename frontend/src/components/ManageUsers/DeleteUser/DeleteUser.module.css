@@ -105,6 +105,11 @@
     background: var(--surface0);
 }
 
+.yes_button {
+    color: var(--red);
+}
+
 .yes_button:hover {
     background: var(--red);
+    color: var(--base);
 }

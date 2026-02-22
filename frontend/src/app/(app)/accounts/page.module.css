@@ -73,8 +73,16 @@
     background-color: var(--surface0);
 }
 
+.account_item_delete * {
+    color: var(--red);
+}
+
 .account_item_delete:hover {
     background-color: var(--red);
+}
+
+.account_item_delete:hover * {
+    color: var(--base);
 }
 
 .account_item_button:disabled {
