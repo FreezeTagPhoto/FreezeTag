@@ -52,17 +52,23 @@ export default function SettingsPage() {
                             applyTheme(next);
                         }}
                     >
-                        {ALL_THEMES.map((t) => (
-                            <option key={t} value={t}>
-                                {t}
-                            </option>
-                        ))}
+                        <optgroup label="Light Themes">
+                            {[...LightThemeRegistry].sort().map((t) => (
+                                <option key={t} value={t}>
+                                    {t}
+                                </option>
+                            ))}
+                        </optgroup>
+
+                        <optgroup label="Dark Themes">
+                            {[...DarkThemeRegistry].sort().map((t) => (
+                                <option key={t} value={t}>
+                                    {t}
+                                </option>
+                            ))}
+                        </optgroup>
                     </select>
                 </div>
-
-                <p className={styles.hint}>
-                    (this is just a proof of concept for now)
-                </p>
             </section>
         </main>
     );
