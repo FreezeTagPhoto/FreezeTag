@@ -123,4 +123,47 @@ describe("API Handler", () => {
             expect(response.error.status_code).toBe(0);
         }
     });
+
+    it("properly handles a bad json response on post", async () => {
+        global.fetch = jest.fn((request: string, init: RequestInit) => {
+            expect(request).toBe("http://bad_url.test/");
+            expect(init.body).toStrictEqual(new FormData());
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return new Response("failed parsing").json();
+                },
+            });
+        }) as jest.Mock;
+
+        const handler = ApiHandler("http://bad_url.test/", true)(Method.POST);
+        const response = await handler(new FormData());
+
+        expect(response.ok).toBeFalsy();
+        if (!response.ok) {
+            expect(response.error.status_code).toBe(0);
+        }
+    });
+
+    it("properly handles a bad json response on get", async () => {
+        global.fetch = jest.fn((request: string) => {
+            expect(request).toBe("http://bad_url.test/");
+            return Promise.resolve({
+                status: 200,
+                ok: true,
+                json: () => {
+                    return new Response("failed parsing").json();
+                },
+            });
+        }) as jest.Mock;
+
+        const handler = ApiHandler("http://bad_url.test/")(Method.GET);
+        const response = await handler("");
+
+        expect(response.ok).toBeFalsy();
+        if (!response.ok) {
+            expect(response.error.status_code).toBe(0);
+        }
+    });
 });
