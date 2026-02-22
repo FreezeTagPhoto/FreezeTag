@@ -69,7 +69,8 @@ type UserDatabase interface {
 	AdminRevokeApiToken(tokenId TokenID) error
 	// delete an API token by its id from the database
 	DeleteApiToken(tokenId TokenID) error
-	// get the label for an API token by its id, return error if not found
+	// get the label for an API token by its id, return error if not found. 
+	// revoked and expired tokens are still returned by this function, but not deleted tokens
 	GetApiTokenInfo(tokenId TokenID) (ApiTokenInfo, error)
 	// get all API token labels for a user by user ID, return error if user not found
 	GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, error)
@@ -371,7 +372,7 @@ func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (data.Permissi
 	query := `
 		SELECT p.slug, p.name, p.description
 		FROM API_Token t
-		JOIN User_Permissions up ON t.userId = up.userId
+		JOIN Token_Permissions up ON t.id = up.tokenId
 		JOIN App_Permissions p  ON up.permissionId = p.id
 		WHERE t.tokenHash = ? 
 		AND t.revoked = 0 
