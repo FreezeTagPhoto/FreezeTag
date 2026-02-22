@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import logo from "@/icons/freezetag+text.svg";
 
@@ -174,21 +173,6 @@ export default function LoginView({ mode }: { mode: Mode }) {
     const primaryLabel = mode === "login" ? "Sign in" : "Create user";
     const PrimaryIcon = mode === "login" ? LogIn : UserPlus;
 
-    const footer = useMemo(() => {
-        if (mode === "login") {
-            return {
-                text: "No account?",
-                href: "/login/createuser",
-                link: "Create one",
-            };
-        }
-        return {
-            text: "Already have an account?",
-            href: "/login",
-            link: "Sign in",
-        };
-    }, [mode]);
-
     async function doLogin(u: string, p: string) {
         const fd = new FormData();
         fd.set("username", u);
@@ -327,9 +311,7 @@ export default function LoginView({ mode }: { mode: Mode }) {
 
                         <button
                             type="button"
-                            className={`${styles.iconBtn} ${
-                                showPassword ? styles.iconBtnActive : ""
-                            }`}
+                            className={`${styles.iconBtn}`}
                             onClick={() => setShowPassword((v) => !v)}
                             aria-label={
                                 showPassword ? "Hide password" : "Show password"
@@ -380,11 +362,7 @@ export default function LoginView({ mode }: { mode: Mode }) {
 
                             <button
                                 type="button"
-                                className={`${styles.iconBtn} ${
-                                    showConfirmPassword
-                                        ? styles.iconBtnActive
-                                        : ""
-                                }`}
+                                className={`${styles.iconBtn}`}
                                 onClick={() =>
                                     setShowConfirmPassword((v) => !v)
                                 }
@@ -446,13 +424,6 @@ export default function LoginView({ mode }: { mode: Mode }) {
                         <span>{busy ? "Working…" : primaryLabel}</span>
                     </span>
                 </button>
-
-                <div className={styles.footerRow}>
-                    <span className={styles.footerText}>{footer.text}</span>
-                    <Link className={styles.link} href={footer.href}>
-                        {footer.link}
-                    </Link>
-                </div>
             </form>
         </section>
     );
