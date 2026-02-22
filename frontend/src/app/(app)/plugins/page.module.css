@@ -13,13 +13,13 @@
     letter-spacing: 0.01em;
 }
 
-.user_container {
+.plugin_container {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-.account_row {
+.plugin_row {
     background-color: var(--mantle);
     border-radius: var(--border-radius);
     border: var(--border-info);
@@ -31,15 +31,9 @@
     flex-direction: row;
     gap: 0.5rem;
     width: max-content;
-
-    /* z-index: -1; */
 }
 
-.account_row_current {
-    background-color: var(--accent1);
-}
-
-.account_item {
+.plugin_item {
     background-color: var(--base);
     border-radius: var(--border-radius);
     border: var(--border-info);
@@ -54,85 +48,42 @@
 }
 
 @media screen and (max-width: 1010px) {
-    .account_item_label {
+    .plugin_item_label {
         display: none;
     }
 }
 
-.account_item_label {
+.plugin_item_label {
     font: inherit;
     font-size: 1rem;
     color: var(--text);
 }
 
-.account_item_button {
+.plugin_item_button {
     cursor: pointer;
 }
 
-.account_item_button:hover {
+.plugin_item_button:hover {
     background-color: var(--surface0);
 }
 
-.account_item_delete * {
-    color: var(--red);
-}
-
-.account_item_delete:hover {
-    background-color: var(--red);
-}
-
-.account_item_delete:hover * {
-    color: var(--base);
-}
-
-.account_item_button:disabled {
+.plugin_item_button:disabled {
     background-color: var(--crust);
     cursor: default;
 }
 
-.account_item_button:disabled * {
-    color: var(--subtext0);
-}
-
-.date {
+.version {
     width: 200px;
 }
 
-.username {
+.plugin_name {
     width: 200px;
 }
 
-.username_preview {
+.plugin_name_preview {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.create_user {
-    background-color: var(--base);
-    border-radius: var(--border-radius);
-    border: var(--border-info);
-    filter: var(--dropshadow);
-
-    padding: 0.75rem 1rem;
-    max-width: 200px;
-
-    font: inherit;
-    color: var(--text);
-
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    align-items: center;
-    cursor: pointer;
-}
-
-.create_user:hover {
-    background-color: var(--surface0);
-}
-
-.create_user:disabled {
-    display: none;
 }
 
 .icon {
@@ -140,4 +91,12 @@
     height: 18px;
     flex: 0 0 auto;
     color: var(--text);
+}
+
+.power_icon_on {
+    color: var(--green);
+}
+
+.power_icon_off {
+    color: var(--red);
 }
