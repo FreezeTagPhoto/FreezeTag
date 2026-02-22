@@ -14,25 +14,33 @@ import PermsRevoker from "@/api/permissions/permsrevoker";
 export type ModifyPermsProps = {
     onClose: () => void;
     userId: number;
+    username: string;
 };
 
-export default function ModifyPerms({ onClose, userId }: ModifyPermsProps) {
+export default function ModifyPerms({
+    onClose,
+    userId,
+    username,
+}: ModifyPermsProps) {
     const currentUser = useContext(UserContext);
     const currentCanEdit = UserHasPerm(currentUser, "write:permissions");
 
-    const [checkedPerms, setCheckedPerms] = useState<string[]>([]);
-    const [newCheckedPerms, setNewCheckedPerms] = useState<string[]>([]);
+    const [checkedPerms, setCheckedPerms] = useState<string[] | undefined>(
+        undefined,
+    );
+    const [newCheckedPerms, setNewCheckedPerms] = useState<
+        string[] | undefined
+    >(undefined);
     const [allPerms, setAllPerms] = useState<Perm[]>([]);
 
     useEffect(() => {
         (async () => {
             const result = await PermsGetter(userId);
             if (result.ok) {
-                const perms =
-                    ExtractPermsList({
-                        user_id: userId,
-                        permissions: result.value,
-                    }) ?? [];
+                const perms = ExtractPermsList({
+                    user_id: userId,
+                    permissions: result.value,
+                });
                 setCheckedPerms(perms);
                 setNewCheckedPerms(perms);
             } else {
@@ -54,6 +62,11 @@ export default function ModifyPerms({ onClose, userId }: ModifyPermsProps) {
     }, [userId]);
 
     const onSubmit = async () => {
+        if (newCheckedPerms === undefined || checkedPerms === undefined) {
+            console.error("One of the checked perms arrays was undefined!");
+            return;
+        }
+
         const addedPerms = newCheckedPerms.filter(
             (v) => !checkedPerms.includes(v),
         );
@@ -87,69 +100,75 @@ export default function ModifyPerms({ onClose, userId }: ModifyPermsProps) {
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>
             <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
                 <header className={styles.header}>
-                    <h1 className={styles.h1}>Modify Perms</h1>
+                    <h1 className={styles.h1}>
+                        {currentCanEdit ? "Modify" : "View"} Perms for{" "}
+                        {username}
+                    </h1>
                     <p className={styles.subtle}>Perms Modification</p>
                 </header>
                 <div className={styles.perms_container}>
-                    {allPerms.map((perm) => (
-                        <div
-                            key={perm.permission}
-                            className={`${styles.perms_row}`}
-                        >
-                            <input
-                                className={styles.checkbox}
-                                disabled={
-                                    !currentCanEdit ||
-                                    currentUser?.user_id === userId
-                                }
-                                type="checkbox"
-                                defaultChecked={checkedPerms.includes(
-                                    perm.permission,
-                                )}
-                                onChange={(e) => {
-                                    if (e.currentTarget.checked) {
-                                        setNewCheckedPerms([
-                                            ...new Set([
-                                                perm.permission,
-                                                ...newCheckedPerms,
-                                            ]),
-                                        ]);
-                                    } else {
-                                        setNewCheckedPerms(
-                                            newCheckedPerms.filter(
-                                                (value) =>
-                                                    value !== perm.permission,
-                                            ),
-                                        );
+                    {checkedPerms !== undefined &&
+                        newCheckedPerms !== undefined &&
+                        allPerms.map((perm) => (
+                            <div
+                                key={perm.permission}
+                                className={`${styles.perms_row}`}
+                            >
+                                <input
+                                    className={styles.checkbox}
+                                    disabled={
+                                        !currentCanEdit ||
+                                        currentUser?.user_id === userId
                                     }
-                                }}
-                            ></input>
-                            <div
-                                className={`${styles.perms_item} ${styles.text}`}
-                                title={perm.permission}
-                            >
-                                <p className={styles.text_preview}>
-                                    {perm.permission}
-                                </p>
+                                    type="checkbox"
+                                    defaultChecked={checkedPerms.includes(
+                                        perm.permission,
+                                    )}
+                                    onChange={(e) => {
+                                        if (e.currentTarget.checked) {
+                                            setNewCheckedPerms([
+                                                ...new Set([
+                                                    perm.permission,
+                                                    ...newCheckedPerms,
+                                                ]),
+                                            ]);
+                                        } else {
+                                            setNewCheckedPerms(
+                                                newCheckedPerms.filter(
+                                                    (value) =>
+                                                        value !==
+                                                        perm.permission,
+                                                ),
+                                            );
+                                        }
+                                    }}
+                                ></input>
+                                <div
+                                    className={`${styles.perms_item} ${styles.text}`}
+                                    title={perm.permission}
+                                >
+                                    <p className={styles.text_preview}>
+                                        {perm.permission}
+                                    </p>
+                                </div>
+                                <div
+                                    className={`${styles.perms_item} ${styles.text}`}
+                                    title={perm.name}
+                                >
+                                    <p className={styles.text_preview}>
+                                        {perm.name}
+                                    </p>
+                                </div>
+                                <div
+                                    className={`${styles.perms_item} ${styles.description}`}
+                                    title={perm.description}
+                                >
+                                    <p className={styles.text_preview}>
+                                        {perm.description}
+                                    </p>
+                                </div>
                             </div>
-                            <div
-                                className={`${styles.perms_item} ${styles.text}`}
-                                title={perm.name}
-                            >
-                                <p className={styles.text_preview}>
-                                    {perm.name}
-                                </p>
-                            </div>
-                            <div
-                                className={`${styles.perms_item} ${styles.description}`}
-                                title={perm.description}
-                            >
-                                <p className={styles.text_preview}>
-                                    {perm.description}
-                                </p>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
                 </div>
                 {currentCanEdit && (
                     <button
