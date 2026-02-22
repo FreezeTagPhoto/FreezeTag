@@ -47,7 +47,14 @@ export function ApiHandler<T>(address: string, body_request: boolean = true) {
                 }
 
                 if (response.ok) {
-                    return Ok((await response.json()) as T);
+                    try {
+                        return Ok((await response.json()) as T);
+                    } catch (error) {
+                        return Err({
+                            status_code: 0,
+                            response: new Response(`Catastrophic! ${error}`),
+                        });
+                    }
                 } else {
                     return Err({ status_code: response.status, response });
                 }
