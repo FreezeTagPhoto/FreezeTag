@@ -7,6 +7,7 @@ import PluginsLister from "@/api/plugins/pluginslister";
 import { UserHasPerm } from "@/api/permissions/permshelpers";
 import PluginsAbler from "@/api/plugins/pluginsabler";
 import { FishingHook, History, Power } from "lucide-react";
+import Hooks from "@/components/Plugins/Hooks/Hooks";
 
 export default function Home() {
     const [plugins, setPlugins] = useState<Plugin[]>([]);
@@ -96,6 +97,12 @@ export default function Home() {
                     </div>
                 ))}
             </div>
+            {viewingHooks && (
+                <Hooks
+                    onClose={() => setViewingHooks(undefined)}
+                    plugin={viewingHooks}
+                />
+            )}
         </main>
     );
 }
