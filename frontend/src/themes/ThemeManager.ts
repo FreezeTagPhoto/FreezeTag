@@ -1,4 +1,5 @@
 "use client";
+
 // When adding a theme, add it to this registry and also add it to themes.css
 export const DarkThemeRegistry = [
     "Catppuccin Frappe",
@@ -9,9 +10,9 @@ export const LightThemeRegistry = [
     "Catppuccin Latte",
     "Microsoft Hot Dog Stand",
 ];
+
 export const THEME_STORAGE_KEY = "freezetag-theme-option";
 
-// Returns the string for the proper selected theme. Should be put into a `data-theme` element in the most base element of a page
 export const ThemeGetter: () => string = () => {
     const stored_theme = localStorage.getItem(THEME_STORAGE_KEY);
     if (stored_theme) {
@@ -31,7 +32,6 @@ export const ThemeGetter: () => string = () => {
     return default_light ? "Catppuccin Latte" : "Catppuccin Mocha";
 };
 
-// Returns the string for the proper selected theme type. Should be put into a `data-theme-type` element in the most base element of a page
 export const ThemeTypeGetter: () => string = () => {
     const stored_theme = localStorage.getItem(THEME_STORAGE_KEY);
     if (stored_theme) {
@@ -48,4 +48,21 @@ export const ThemeTypeGetter: () => string = () => {
         "(prefers-color-scheme: light)",
     ).matches;
     return default_light ? "light" : "dark";
+};
+
+export const ThemeSetter = (theme: string) => {
+    if (DarkThemeRegistry.includes(theme) || LightThemeRegistry.includes(theme)) {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } else {
+        console.error("Attempted to set invalid theme:", theme);
+    }
+};
+
+export const ApplyTheme = (theme: string) => {
+    if (typeof document === "undefined") return;
+
+    document.documentElement.setAttribute("data-theme", theme);
+
+    const type = DarkThemeRegistry.includes(theme) ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme-type", type);
 };

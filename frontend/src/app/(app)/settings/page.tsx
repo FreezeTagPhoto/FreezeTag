@@ -6,31 +6,35 @@ import {
     DarkThemeRegistry,
     LightThemeRegistry,
     ThemeGetter,
+    ThemeSetter,
+    ApplyTheme,
 } from "@/themes/ThemeManager";
-import { THEME_STORAGE_KEY as STORAGE_KEY } from "@/themes/ThemeManager";
+import {
+    ApplyUnits,
+    UnitsGetter,
+    UnitsSetter,
+    type UnitSystem,
+} from "@/common/units/UnitManager";
 
 const ALL_THEMES = [...LightThemeRegistry, ...DarkThemeRegistry];
-
 type ThemeName = (typeof ALL_THEMES)[number];
 
-function applyTheme(theme: ThemeName) {
-    const root = document.documentElement;
-
-    root.setAttribute("data-theme", theme);
-
-    const type = DarkThemeRegistry.includes(theme) ? "dark" : "light";
-    root.setAttribute("data-theme-type", type);
-}
-
 export default function SettingsPage() {
-    const fallback = useMemo<ThemeName>(() => "Catppuccin Mocha", []);
-    const [theme, setTheme] = useState<ThemeName>(fallback);
+    const fallbackTheme = useMemo<ThemeName>(() => "Catppuccin Mocha", []);
+    const [theme, setTheme] = useState<ThemeName>(fallbackTheme);
+
+    const fallbackUnits = useMemo<UnitSystem>(() => "metric", []);
+    const [units, setUnits] = useState<UnitSystem>(fallbackUnits);
 
     useEffect(() => {
-        const initial = ThemeGetter() as ThemeName;
-        setTheme(initial);
-        applyTheme(initial);
-    }, [fallback]);
+        const initialTheme = ThemeGetter() as ThemeName;
+        setTheme(initialTheme);
+        ApplyTheme(initialTheme);
+
+        const initialUnits = UnitsGetter();
+        setUnits(initialUnits);
+        ApplyUnits(initialUnits);
+    }, [fallbackTheme, fallbackUnits]);
 
     return (
         <main className={styles.main}>
@@ -48,8 +52,11 @@ export default function SettingsPage() {
                             const next = e.target.value as ThemeName;
 
                             setTheme(next);
-                            localStorage.setItem(STORAGE_KEY, next);
-                            applyTheme(next);
+                            ThemeSetter(next);
+                            ApplyTheme(next);
+                            window.dispatchEvent(
+                                new Event("freezetag:theme-changed"),
+                            );
                         }}
                     >
                         <optgroup label="Light Themes">
@@ -67,6 +74,29 @@ export default function SettingsPage() {
                                 </option>
                             ))}
                         </optgroup>
+                    </select>
+                </div>
+
+                <div className={styles.row}>
+                    <label className={styles.label}>Units</label>
+
+                    <select
+                        id="units"
+                        className={styles.select}
+                        value={units}
+                        onChange={(e) => {
+                            const next = e.target.value as UnitSystem;
+
+                            setUnits(next);
+                            UnitsSetter(next);
+                            ApplyUnits(next);
+                            window.dispatchEvent(
+                                new Event("freezetag:units-changed"),
+                            );
+                        }}
+                    >
+                        <option value="metric">Metric (km, m)</option>
+                        <option value="imperial">Imperial (mi, ft, yd)</option>
                     </select>
                 </div>
             </section>
