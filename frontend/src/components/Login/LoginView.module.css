@@ -8,8 +8,7 @@
     object-fit: contain;
     object-position: center;
     display: block;
-    opacity: 0.98;
-    filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.16));
+    filter: var(--dropshadow);
 }
 
 /* modify size - width */
@@ -18,9 +17,7 @@
     border-radius: var(--border-radius);
     border: var(--border-info);
     background: var(--mantle);
-    box-shadow:
-        0 10px 26px rgba(0, 0, 0, 0.34),
-        0 0 0 1px rgba(255, 255, 255, 0.03);
+    filter: var(--dropshadow);
     overflow: hidden;
 }
 
@@ -60,7 +57,6 @@
 .label {
     font-size: 15px;
     color: var(--subtext0);
-    opacity: 0.92;
 }
 
 .inlineRow {
@@ -84,6 +80,7 @@
     transition:
         border-color 120ms ease,
         box-shadow 120ms ease;
+    filter: var(--dropshadow);
 }
 
 .input::placeholder {
@@ -92,7 +89,6 @@
 
 .input:focus {
     border-color: var(--accent1);
-    box-shadow: 0 0 0 4px rgba(120, 140, 255, 0.14);
 }
 
 .inlineRow .input {
@@ -114,10 +110,7 @@
     user-select: none;
     font-size: 1rem;
     line-height: 1;
-    transition:
-        background 120ms ease,
-        opacity 120ms ease,
-        border-color 120ms ease;
+    filter: var(--dropshadow);
 }
 
 .iconBtnIcon {
@@ -127,21 +120,11 @@
 }
 
 .iconBtn:hover {
-    background: var(--selected-overlay);
+    background: var(--surface0);
 }
 
 .iconBtn:disabled {
-    opacity: 0.6;
     cursor: default;
-}
-
-.iconBtnOff * {
-    opacity: 0.55;
-}
-
-.iconBtnOn * {
-    opacity: 1;
-    /* border-color: rgba(255, 255, 255, 0.22); */
 }
 
 .callout {
@@ -187,22 +170,14 @@
     letter-spacing: 0.01em;
     cursor: pointer;
     user-select: none;
-    transition:
-        background 120ms ease,
-        transform 120ms ease,
-        opacity 120ms ease;
+    filter: var(--dropshadow);
 }
 
 .primary:hover {
-    background: var(--selected-overlay);
-}
-
-.primary:active {
-    transform: translateY(1px);
+    background: var(--surface0);
 }
 
 .primary:disabled {
-    opacity: 0.6;
     cursor: default;
 }
 
@@ -217,31 +192,4 @@
     width: 18px;
     height: 18px;
     flex: 0 0 auto;
-    opacity: 0.95;
-}
-
-.footerRow {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    justify-content: center;
-    padding-top: 6px;
-}
-
-.footerText {
-    font-size: 0.85rem;
-    color: var(--subtext1);
-}
-
-.link {
-    font-size: 0.85rem;
-    color: var(--accent1);
-    text-decoration: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0);
-    padding-bottom: 1px;
-    transition: border-color 120ms ease;
-}
-
-.link:hover {
-    border-bottom: 1px solid var(--accent1);
 }
