@@ -93,7 +93,8 @@
 }
 
 .dangerButton {
-    border-color: var(--red);
+    /* border-color: var(--red); */
+    color: var(--red);
 }
 
 .dangerButton:hover {
