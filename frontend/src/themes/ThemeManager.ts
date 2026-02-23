@@ -51,7 +51,10 @@ export const ThemeTypeGetter: () => string = () => {
 };
 
 export const ThemeSetter = (theme: string) => {
-    if (DarkThemeRegistry.includes(theme) || LightThemeRegistry.includes(theme)) {
+    if (
+        DarkThemeRegistry.includes(theme) ||
+        LightThemeRegistry.includes(theme)
+    ) {
         localStorage.setItem(THEME_STORAGE_KEY, theme);
     } else {
         console.error("Attempted to set invalid theme:", theme);

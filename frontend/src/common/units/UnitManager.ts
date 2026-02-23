@@ -12,7 +12,8 @@ export const UnitsGetter: () => UnitSystem = () => {
     const region = lang.split("-")[1] ?? "";
 
     // usa, liberia, and myanmar commonly use imperial
-    if (region === "us" || region === "lr" || region === "mm") return "imperial";
+    if (region === "us" || region === "lr" || region === "mm")
+        return "imperial";
 
     return "metric";
 };
