@@ -283,7 +283,6 @@ func TestAddPermissionsSuccess(t *testing.T) {
 	params.Add("permission", data.WriteUser.Slug)
 	params.Add("permission", data.ReadFiles.Slug)
 	params.Add("permission", data.WriteFiles.Slug)
-	params.Add("permission", data.DeleteUser.Slug)
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", reqURL, nil)
@@ -365,11 +364,10 @@ func TestRevokePermissionsSuccess(t *testing.T) {
 	params.Add("permission", "write:user")
 	params.Add("permission", "read:files")
 	params.Add("permission", "write:files")
-	params.Add("permission", "delete:user")
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
-	mockService.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.WriteUser, data.ReadFiles, data.WriteFiles, data.DeleteUser}).Return(nil)
+	mockService.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.WriteUser, data.ReadFiles, data.WriteFiles}).Return(nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	var got api.MessageResponse

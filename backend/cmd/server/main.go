@@ -226,7 +226,7 @@ func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
 
 		userGroup.DELETE("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)
-		userGroup.DELETE("/:id", middleware.RequirePermission(data.DeleteUser), ue.DeleteUser)
+		userGroup.DELETE("/:id", middleware.RequirePermission(data.WriteUser), ue.DeleteUser)
 
 	}
 }

@@ -18,7 +18,6 @@ var (
 
 	WriteUser  Permission = register("write:user", "Write User", "Allows updating existing user information. (e.g passwords).")
 	ReadUser   Permission = register("read:user", "Read User", "Allows viewing user profiles.")
-	DeleteUser Permission = register("delete:user", "Delete User", "Allows deleting user accounts.")
 
 	ReadPlugins  Permission = register("read:plugins", "Read Plugins", "Allows viewing the plugins enabled on the system.")
 	WritePlugins Permission = register("write:plugins", "Write Plugins", "Allows changing plugins' enabled status, as well as downloading new plugins.")

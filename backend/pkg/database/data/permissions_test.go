@@ -13,8 +13,8 @@ func TestPermissionsHasPermission(t *testing.T) {
 		t.Errorf("Expected to have permission %s, but it was not found", WriteFiles)
 	}
 
-	if perms.HasPermission(DeleteUser) {
-		t.Errorf("Expected not to have permission %s, but it was found", DeleteUser)
+	if perms.HasPermission(ReadTags) {
+		t.Errorf("Expected not to have permission %s, but it was found", ReadTags)
 	}
 }
 
@@ -56,7 +56,7 @@ func TestPermissionsContains(t *testing.T) {
 		t.Errorf("Expected permissions %v to contain %v, but it did not", perms1, perms2)
 	}
 
-	perms3 := Permissions{DeleteUser}
+	perms3 := Permissions{ReadTags}
 	if perms1.Contains(perms3) {
 		t.Errorf("Expected permissions %v not to contain %v, but it did", perms1, perms3)
 	}
