@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 import {
     DarkThemeRegistry,
@@ -23,23 +23,21 @@ import { Eye, EyeOff } from "lucide-react";
 const ALL_THEMES = [...LightThemeRegistry, ...DarkThemeRegistry];
 type ThemeName = (typeof ALL_THEMES)[number];
 
+type PwKey = "current" | "new" | "confirm";
+
 export default function SettingsPage() {
-    const fallbackTheme = useMemo<ThemeName>(() => "Catppuccin Mocha", []);
-    const [theme, setTheme] = useState<ThemeName>(fallbackTheme);
+    const [theme, setTheme] = useState<ThemeName>("Catppuccin Mocha");
+    const [units, setUnits] = useState<UnitSystem>("metric");
 
-    const fallbackUnits = useMemo<UnitSystem>(() => "metric", []);
-    const [units, setUnits] = useState<UnitSystem>(fallbackUnits);
-
-    const [currentPassword, setCurrentPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
+    const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
     const [pwBusy, setPwBusy] = useState(false);
     const [pwStatus, setPwStatus] =
         useState<Option<Result<string, string>>>(None());
-
-    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-    const [showNewPassword, setShowNewPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [pwShow, setPwShow] = useState({
+        current: false,
+        new: false,
+        confirm: false,
+    });
 
     useEffect(() => {
         const initialTheme = ThemeGetter() as ThemeName;
@@ -49,7 +47,20 @@ export default function SettingsPage() {
         const initialUnits = UnitsGetter();
         setUnits(initialUnits);
         ApplyUnits(initialUnits);
-    }, [fallbackTheme, fallbackUnits]);
+    }, []);
+
+    const resetPw = () => {
+        setPw({ current: "", next: "", confirm: "" });
+        setPwShow({ current: false, new: false, confirm: false });
+    };
+
+    const setPwField = (key: keyof typeof pw, value: string) => {
+        setPwStatus(None());
+        setPw((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const toggleShow = (key: PwKey) =>
+        setPwShow((prev) => ({ ...prev, [key]: !prev[key] }));
 
     const onChangePassword: React.FormEventHandler<HTMLFormElement> = async (
         e,
@@ -57,17 +68,17 @@ export default function SettingsPage() {
         e.preventDefault();
         setPwStatus(None());
 
-        if (!currentPassword || !newPassword || !confirmPassword) {
+        if (!pw.current || !pw.next || !pw.confirm) {
             setPwStatus(Some(Err("Please fill out all fields.")));
             return;
         }
 
-        if (newPassword !== confirmPassword) {
+        if (pw.next !== pw.confirm) {
             setPwStatus(Some(Err("New passwords do not match.")));
             return;
         }
 
-        if (newPassword === currentPassword) {
+        if (pw.next === pw.current) {
             setPwStatus(
                 Some(
                     Err(
@@ -81,20 +92,15 @@ export default function SettingsPage() {
         setPwBusy(true);
 
         const fd = new FormData();
-        fd.set("current_password", currentPassword);
-        fd.set("new_password", newPassword);
+        fd.set("current_password", pw.current);
+        fd.set("new_password", pw.next);
 
         const res = await PasswordChanger(fd);
 
         setPwBusy(false);
 
         if (res.ok) {
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-            setShowCurrentPassword(false);
-            setShowNewPassword(false);
-            setShowConfirmPassword(false);
+            resetPw();
             setPwStatus(
                 Some(Ok(res.value.message || "Password changed successfully.")),
             );
@@ -105,10 +111,63 @@ export default function SettingsPage() {
         }
     };
 
-    const pwDisabled =
-        pwBusy || !currentPassword || !newPassword || !confirmPassword;
-
+    const pwDisabled = pwBusy || !pw.current || !pw.next || !pw.confirm;
     const status = pwStatus.some ? pwStatus.value : null;
+
+    const PasswordField = ({
+        id,
+        label,
+        value,
+        onChange,
+        show,
+        onToggleShow,
+        autoComplete,
+        disabled,
+    }: {
+        id: string;
+        label: string;
+        value: string;
+        onChange: (v: string) => void;
+        show: boolean;
+        onToggleShow: () => void;
+        autoComplete: string;
+        disabled: boolean;
+    }) => (
+        <div className={styles.passwordField}>
+            <label className={styles.inputLabel} htmlFor={id}>
+                {label}
+            </label>
+            <div className={styles.inlineRow}>
+                <input
+                    id={id}
+                    name={id}
+                    type={show ? "text" : "password"}
+                    className={styles.input}
+                    autoComplete={autoComplete}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    disabled={disabled}
+                />
+                <button
+                    type="button"
+                    className={`${styles.iconBtn} ${
+                        show ? styles.iconBtnActive : ""
+                    }`}
+                    onClick={onToggleShow}
+                    aria-label={show ? `Hide ${label}` : `Show ${label}`}
+                    title={show ? `Hide ${label}` : `Show ${label}`}
+                    aria-pressed={show}
+                    disabled={disabled}
+                >
+                    {show ? (
+                        <EyeOff className={styles.iconBtnIcon} aria-hidden />
+                    ) : (
+                        <Eye className={styles.iconBtnIcon} aria-hidden />
+                    )}
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <main className={styles.main}>
@@ -164,7 +223,6 @@ export default function SettingsPage() {
                                 value={theme}
                                 onChange={(e) => {
                                     const next = e.target.value as ThemeName;
-
                                     setTheme(next);
                                     ThemeSetter(next);
                                     ApplyTheme(next);
@@ -288,221 +346,46 @@ export default function SettingsPage() {
                                 onSubmit={onChangePassword}
                             >
                                 <div className={styles.passwordGrid}>
-                                    <div className={styles.passwordField}>
-                                        <label
-                                            className={styles.inputLabel}
-                                            htmlFor="current_password"
-                                        >
-                                            Current password
-                                        </label>
-                                        <div className={styles.inlineRow}>
-                                            <input
-                                                id="current_password"
-                                                name="current_password"
-                                                type={
-                                                    showCurrentPassword
-                                                        ? "text"
-                                                        : "password"
-                                                }
-                                                className={styles.input}
-                                                autoComplete="current-password"
-                                                value={currentPassword}
-                                                onChange={(e) => {
-                                                    setPwStatus(None());
-                                                    setCurrentPassword(
-                                                        e.target.value,
-                                                    );
-                                                }}
-                                                disabled={pwBusy}
-                                            />
-                                            <button
-                                                type="button"
-                                                className={`${styles.iconBtn} ${
-                                                    showCurrentPassword
-                                                        ? styles.iconBtnActive
-                                                        : ""
-                                                }`}
-                                                onClick={() =>
-                                                    setShowCurrentPassword(
-                                                        (v) => !v,
-                                                    )
-                                                }
-                                                aria-label={
-                                                    showCurrentPassword
-                                                        ? "Hide current password"
-                                                        : "Show current password"
-                                                }
-                                                title={
-                                                    showCurrentPassword
-                                                        ? "Hide current password"
-                                                        : "Show current password"
-                                                }
-                                                aria-pressed={
-                                                    showCurrentPassword
-                                                }
-                                                disabled={pwBusy}
-                                            >
-                                                {showCurrentPassword ? (
-                                                    <EyeOff
-                                                        className={
-                                                            styles.iconBtnIcon
-                                                        }
-                                                        aria-hidden="true"
-                                                    />
-                                                ) : (
-                                                    <Eye
-                                                        className={
-                                                            styles.iconBtnIcon
-                                                        }
-                                                        aria-hidden="true"
-                                                    />
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <PasswordField
+                                        id="current_password"
+                                        label="Current password"
+                                        value={pw.current}
+                                        onChange={(v) =>
+                                            setPwField("current", v)
+                                        }
+                                        show={pwShow.current}
+                                        onToggleShow={() =>
+                                            toggleShow("current")
+                                        }
+                                        autoComplete="current-password"
+                                        disabled={pwBusy}
+                                    />
 
-                                    <div className={styles.passwordField}>
-                                        <label
-                                            className={styles.inputLabel}
-                                            htmlFor="new_password"
-                                        >
-                                            New password
-                                        </label>
-                                        <div className={styles.inlineRow}>
-                                            <input
-                                                id="new_password"
-                                                name="new_password"
-                                                type={
-                                                    showNewPassword
-                                                        ? "text"
-                                                        : "password"
-                                                }
-                                                className={styles.input}
-                                                autoComplete="new-password"
-                                                value={newPassword}
-                                                onChange={(e) => {
-                                                    setPwStatus(None());
-                                                    setNewPassword(
-                                                        e.target.value,
-                                                    );
-                                                }}
-                                                disabled={pwBusy}
-                                            />
-                                            <button
-                                                type="button"
-                                                className={`${styles.iconBtn} ${
-                                                    showNewPassword
-                                                        ? styles.iconBtnActive
-                                                        : ""
-                                                }`}
-                                                onClick={() =>
-                                                    setShowNewPassword(
-                                                        (v) => !v,
-                                                    )
-                                                }
-                                                aria-label={
-                                                    showNewPassword
-                                                        ? "Hide new password"
-                                                        : "Show new password"
-                                                }
-                                                title={
-                                                    showNewPassword
-                                                        ? "Hide new password"
-                                                        : "Show new password"
-                                                }
-                                                aria-pressed={showNewPassword}
-                                                disabled={pwBusy}
-                                            >
-                                                {showNewPassword ? (
-                                                    <EyeOff
-                                                        className={
-                                                            styles.iconBtnIcon
-                                                        }
-                                                        aria-hidden="true"
-                                                    />
-                                                ) : (
-                                                    <Eye
-                                                        className={
-                                                            styles.iconBtnIcon
-                                                        }
-                                                        aria-hidden="true"
-                                                    />
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <PasswordField
+                                        id="new_password"
+                                        label="New password"
+                                        value={pw.next}
+                                        onChange={(v) => setPwField("next", v)}
+                                        show={pwShow.new}
+                                        onToggleShow={() => toggleShow("new")}
+                                        autoComplete="new-password"
+                                        disabled={pwBusy}
+                                    />
 
-                                    <div className={styles.passwordField}>
-                                        <label
-                                            className={styles.inputLabel}
-                                            htmlFor="confirm_password"
-                                        >
-                                            Confirm new password
-                                        </label>
-                                        <div className={styles.inlineRow}>
-                                            <input
-                                                id="confirm_password"
-                                                type={
-                                                    showConfirmPassword
-                                                        ? "text"
-                                                        : "password"
-                                                }
-                                                className={styles.input}
-                                                autoComplete="new-password"
-                                                value={confirmPassword}
-                                                onChange={(e) => {
-                                                    setPwStatus(None());
-                                                    setConfirmPassword(
-                                                        e.target.value,
-                                                    );
-                                                }}
-                                                disabled={pwBusy}
-                                            />
-                                            <button
-                                                type="button"
-                                                className={`${styles.iconBtn} ${
-                                                    showConfirmPassword
-                                                        ? styles.iconBtnActive
-                                                        : ""
-                                                }`}
-                                                onClick={() =>
-                                                    setShowConfirmPassword(
-                                                        (v) => !v,
-                                                    )
-                                                }
-                                                aria-label={
-                                                    showConfirmPassword
-                                                        ? "Hide confirm password"
-                                                        : "Show confirm password"
-                                                }
-                                                title={
-                                                    showConfirmPassword
-                                                        ? "Hide confirm password"
-                                                        : "Show confirm password"
-                                                }
-                                                aria-pressed={
-                                                    showConfirmPassword
-                                                }
-                                                disabled={pwBusy}
-                                            >
-                                                {showConfirmPassword ? (
-                                                    <EyeOff
-                                                        className={
-                                                            styles.iconBtnIcon
-                                                        }
-                                                        aria-hidden="true"
-                                                    />
-                                                ) : (
-                                                    <Eye
-                                                        className={
-                                                            styles.iconBtnIcon
-                                                        }
-                                                        aria-hidden="true"
-                                                    />
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <PasswordField
+                                        id="confirm_password"
+                                        label="Confirm new password"
+                                        value={pw.confirm}
+                                        onChange={(v) =>
+                                            setPwField("confirm", v)
+                                        }
+                                        show={pwShow.confirm}
+                                        onToggleShow={() =>
+                                            toggleShow("confirm")
+                                        }
+                                        autoComplete="new-password"
+                                        disabled={pwBusy}
+                                    />
 
                                     <div className={styles.passwordActions}>
                                         <button

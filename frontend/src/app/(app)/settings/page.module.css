@@ -4,6 +4,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
+    font-family: var(--font-geist-sans, inherit);
 }
 
 .header {
@@ -13,7 +14,6 @@
 }
 
 .h1 {
-    font-family: var(--font-geist-sans, inherit);
     font-size: 40px;
     font-weight: 800;
     letter-spacing: 0.01em;
@@ -21,58 +21,20 @@
 }
 
 .subtitle {
-    color: var(--text-muted, var(--subtext1));
+    color: var(--subtext1);
     font-size: 15px;
     line-height: 1.4;
     max-width: 70ch;
 }
 
-.jumpNav {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding-top: 4px;
-}
-
-.jumpLink {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-
-    padding: 8px 10px;
-    border-radius: var(--border-radius);
-
-    border: var(--border-info);
-    background: color-mix(
-        in srgb,
-        var(--panel-bg, var(--mantle)) 85%,
-        transparent
-    );
-
-    font-family: var(--font-geist-sans, inherit);
-    font-size: 13px;
-    font-weight: 650;
-    color: var(--text);
-    outline: none;
-}
-
-.jumpLink:hover {
-    background: color-mix(in srgb, var(--text) 6%, transparent);
-}
-
-.jumpLink:focus-visible {
-    box-shadow: var(--focus-ring, 0 0 0 3px rgba(87, 157, 215, 0.25));
-}
-
 .panel {
     width: 100%;
-    max-width: var(--settings-panel-max, 980px);
+    max-width: 980px;
     border: var(--border-info);
     border-radius: var(--border-radius);
-    background: var(--panel-bg, var(--mantle));
+    background: var(--mantle);
     overflow: hidden;
-    padding: 18px 18px;
-
+    padding: 18px;
     scroll-margin-top: 18px;
 }
 
@@ -84,7 +46,6 @@
 }
 
 .sectionTitle {
-    font-family: var(--font-geist-sans, inherit);
     font-size: 24px;
     font-weight: 800;
     letter-spacing: 0.01em;
@@ -92,7 +53,7 @@
 }
 
 .sectionDescription {
-    color: var(--text-muted, var(--subtext1));
+    color: var(--subtext1);
     font-size: 14px;
     line-height: 1.4;
 }
@@ -123,14 +84,13 @@
 }
 
 .label {
-    font-family: var(--font-geist-sans, inherit);
     font-weight: 650;
     font-size: 15px;
     line-height: 1.2;
 }
 
 .hint {
-    color: var(--text-muted, var(--subtext1));
+    color: var(--subtext1);
     font-size: 13px;
     line-height: 1.35;
 }
@@ -141,91 +101,76 @@
     justify-content: flex-end;
 }
 
-.select {
-    width: 100%;
-    padding: 10px 12px;
-
-    color: var(--text);
-    background: var(--control-bg, var(--base));
-
+/* Shared control primitives */
+.select,
+.button,
+.input,
+.iconBtn {
+    height: 44px;
     border: var(--border-info);
     border-radius: var(--border-radius);
-
-    font-size: 15px;
-    line-height: 1;
+    background: var(--base);
+    color: var(--text);
     outline: none;
 }
 
-.select:focus-visible {
-    box-shadow: var(--focus-ring, 0 0 0 3px rgba(87, 157, 215, 0.25));
+.select:hover,
+.button:hover,
+.input:hover,
+.iconBtn:hover {
+    background: var(--surface0);
+}
+
+.select {
+    width: 100%;
+    padding: 0 12px;
+    font-size: 15px;
+    line-height: 1;
 }
 
 .button {
     width: 100%;
-    height: 44px;
     padding: 0 14px;
-
-    color: var(--text);
-    background: var(--control-bg, var(--base));
-
-    border: var(--border-info);
-    border-radius: var(--border-radius);
-
-    font-family: var(--font-geist-sans, inherit);
     font-size: 15px;
     font-weight: 750;
     line-height: 1;
     cursor: pointer;
-    outline: none;
     transition:
         background 120ms ease,
         transform 120ms ease,
         opacity 120ms ease,
-        border-color 120ms ease;
-}
-
-.button:hover {
-    background: color-mix(in srgb, var(--text) 6%, transparent);
+        border-color 120ms ease,
+        color 120ms ease;
 }
 
 .button:active {
     transform: translateY(1px);
 }
 
-.button:focus-visible {
-    box-shadow: var(--focus-ring, 0 0 0 3px rgba(87, 157, 215, 0.25));
-}
-
 .button:disabled {
-    opacity: 0.65;
+    opacity: 0.45;
     cursor: not-allowed;
 }
 
 .primaryButton {
-    background: color-mix(
-        in srgb,
-        var(--accent2) 18%,
-        var(--control-bg, var(--base))
-    );
-    border-color: color-mix(in srgb, var(--accent2) 38%, var(--border-color));
+    background: var(--accent1);
+    color: var(--base);
+    border-color: var(--accent1);
 }
 
 .primaryButton:hover {
-    background: color-mix(
-        in srgb,
-        var(--accent2) 24%,
-        var(--control-bg, var(--base))
-    );
+    background: var(--accent1);
+    border-color: var(--accent1);
+    color: var(--base);
 }
 
 .segmented {
     width: 100%;
     display: flex;
-    background: var(--control-bg, var(--base));
+    background: var(--base);
     border: var(--border-info);
     border-radius: var(--border-radius);
     overflow: hidden;
-
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -236,7 +181,6 @@
     flex: 1;
     position: relative;
     cursor: pointer;
-
     -webkit-user-select: none;
     user-select: none;
 }
@@ -257,23 +201,22 @@
     display: block;
     padding: 10px 12px;
     text-align: center;
-    font-family: var(--font-geist-sans, inherit);
     font-size: 15px;
     font-weight: 650;
     line-height: 1;
     color: var(--text);
     background: transparent;
-
     -webkit-user-select: none;
     user-select: none;
 }
 
 .segment:hover .segmentText {
-    background: color-mix(in srgb, var(--text) 6%, transparent);
+    background: var(--surface0);
 }
 
 .segment input:checked + .segmentText {
-    background: color-mix(in srgb, var(--accent2) 22%, transparent);
+    background: var(--accent1);
+    color: var(--base);
 }
 
 .passwordForm {
@@ -299,11 +242,10 @@
 }
 
 .inputLabel {
-    font-family: var(--font-geist-sans, inherit);
     font-weight: 650;
     font-size: 13px;
     line-height: 1.2;
-    color: var(--text-muted, var(--subtext1));
+    color: var(--subtext1);
 }
 
 .inlineRow {
@@ -314,31 +256,17 @@
 
 .input {
     width: 100%;
-    height: 44px;
     padding: 0 14px;
-
-    color: var(--text);
-    background: var(--control-bg, var(--base));
-
-    border: var(--border-info);
-    border-radius: var(--border-radius);
-
     font-size: 15px;
     line-height: 1;
-    outline: none;
-    transition:
-        border-color 120ms ease,
-        box-shadow 120ms ease,
-        background 120ms ease;
 }
 
 .input::placeholder {
-    color: var(--text-muted, var(--subtext0));
+    color: var(--subtext0);
 }
 
 .input:focus {
     border-color: var(--accent2);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent2) 22%, transparent);
 }
 
 .inlineRow .input {
@@ -347,22 +275,30 @@
 }
 
 .iconBtn {
-    height: 44px;
     width: 44px;
-    border-radius: var(--border-radius);
-    border: var(--border-info);
-    background: var(--control-bg, var(--base));
-    color: var(--subtext0);
     display: grid;
     place-items: center;
+    color: var(--subtext0);
     cursor: pointer;
     user-select: none;
     line-height: 1;
     transition:
         background 120ms ease,
-        opacity 120ms ease,
         border-color 120ms ease,
-        transform 120ms ease;
+        transform 120ms ease,
+        color 120ms ease;
+}
+
+.iconBtn:active {
+    transform: translateY(1px);
+}
+
+.iconBtn:focus {
+    border-color: var(--accent2);
+}
+
+.iconBtn:disabled {
+    cursor: default;
 }
 
 .iconBtnIcon {
@@ -371,22 +307,8 @@
     flex: 0 0 auto;
 }
 
-.iconBtn:hover {
-    background: color-mix(in srgb, var(--text) 6%, transparent);
-}
-
-.iconBtn:active {
-    transform: translateY(1px);
-}
-
-.iconBtn:disabled {
-    opacity: 0.6;
-    cursor: default;
-}
-
 .iconBtnActive {
     color: var(--text);
-    border-color: color-mix(in srgb, var(--accent2) 38%, var(--border-color));
 }
 
 .passwordActions {
@@ -405,7 +327,7 @@
     border: var(--border-info);
     padding: 10px 12px;
     line-height: 1.35;
-    background: color-mix(in srgb, var(--base) 75%, transparent);
+    background: var(--base);
 }
 
 .calloutTitle {
@@ -413,22 +335,21 @@
     font-weight: 800;
     margin-bottom: 6px;
     color: var(--text);
-    opacity: 0.92;
 }
 
 .calloutBody {
     font-size: 13px;
-    opacity: 0.95;
+    color: var(--text);
 }
 
 .calloutError {
-    border-color: color-mix(in srgb, var(--red) 55%, var(--border-color));
-    background: color-mix(in srgb, var(--red) 14%, transparent);
+    border-color: var(--red);
+    background: var(--base);
 }
 
 .calloutOk {
-    border-color: color-mix(in srgb, var(--green) 55%, var(--border-color));
-    background: color-mix(in srgb, var(--green) 14%, transparent);
+    border-color: var(--green);
+    background: var(--base);
 }
 
 @media (max-width: 820px) {
