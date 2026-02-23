@@ -17,11 +17,12 @@ import {
 } from "@/common/units/UnitManager";
 import PasswordChanger from "@/api/auth/passwordchanger";
 import { Option, Some, None } from "@/common/option";
-import { Result, Ok, Err } from "@/common/result";
+import { Result, Err } from "@/common/result";
 import { Eye, EyeOff } from "lucide-react";
 
-const ALL_THEMES = [...LightThemeRegistry, ...DarkThemeRegistry];
-type ThemeName = (typeof ALL_THEMES)[number];
+type ThemeName =
+    | (typeof LightThemeRegistry)[number]
+    | (typeof DarkThemeRegistry)[number];
 
 type PwKey = "current" | "new" | "confirm";
 
