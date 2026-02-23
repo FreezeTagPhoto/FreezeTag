@@ -280,7 +280,7 @@ func TestAddPermissionsSuccess(t *testing.T) {
 	InitUserEndpoint(mockService).RegisterEndpoints(router)
 
 	params := url.Values{}
-	params.Add("permission", data.CreateUser.Slug)
+	params.Add("permission", data.WriteUser.Slug)
 	params.Add("permission", data.ReadFiles.Slug)
 	params.Add("permission", data.WriteFiles.Slug)
 	params.Add("permission", data.DeleteUser.Slug)
@@ -325,7 +325,7 @@ func TestAddPermissionsFailGrant(t *testing.T) {
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", reqURL, nil)
-	mockService.EXPECT().GrantPermissions(database.UserID(1), data.Permissions{data.CreateUser}).Return(errors.New("database error"))
+	mockService.EXPECT().GrantPermissions(database.UserID(1), data.Permissions{data.WriteUser}).Return(errors.New("database error"))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	var got api.BadRequestResponse
@@ -369,7 +369,7 @@ func TestRevokePermissionsSuccess(t *testing.T) {
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
-	mockService.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.CreateUser, data.ReadFiles, data.WriteFiles, data.DeleteUser}).Return(nil)
+	mockService.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.WriteUser, data.ReadFiles, data.WriteFiles, data.DeleteUser}).Return(nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	var got api.MessageResponse
@@ -407,7 +407,7 @@ func TestRevokePermissionsFailGrant(t *testing.T) {
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
-	mockService.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.CreateUser}).Return(errors.New("database error"))
+	mockService.EXPECT().RevokePermissions(database.UserID(1), data.Permissions{data.WriteUser}).Return(errors.New("database error"))
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	var got api.BadRequestResponse

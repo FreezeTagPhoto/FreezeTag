@@ -232,7 +232,7 @@ func TestLoginInfoBadId(t *testing.T) {
 			RegisteredClaims: jwt.RegisteredClaims{
 				Subject: "1",
 			},
-			Permissions: data.Permissions{data.CreateUser},
+			Permissions: data.Permissions{data.WriteUser},
 		}, nil).Once()
 
 	router := gin.Default()
@@ -251,6 +251,6 @@ func TestLoginInfoBadId(t *testing.T) {
 	var got api.LoginUserResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.LoginUserResponse{UserID: 1, Permissions: data.Permissions{data.CreateUser}}
+	expected := api.LoginUserResponse{UserID: 1, Permissions: data.Permissions{data.WriteUser}}
 	assert.Equal(t, expected, got)
 }

@@ -16,7 +16,6 @@ var (
 	ReadTags   Permission = register("read:tags", "Read Tags", "Allows viewing metadata tags.")
 	WriteTags  Permission = register("write:tags", "Write Tags", "Allows creating and editing metadata tags.")
 
-	CreateUser Permission = register("create:user", "Create User", "Allows registering new users.")
 	WriteUser  Permission = register("write:user", "Write User", "Allows updating existing user information. (e.g passwords).")
 	ReadUser   Permission = register("read:user", "Read User", "Allows viewing user profiles.")
 	DeleteUser Permission = register("delete:user", "Delete User", "Allows deleting user accounts.")
