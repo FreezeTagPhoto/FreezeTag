@@ -228,7 +228,7 @@ func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions 
 		return ApiCreateToken{}, err
 	}
 	if !user_permissions.Contains(permissions) {
-		log.Printf("[WARN]User with ID %d attempted to create an API token with permissions that exceed their own", userID)
+		log.Printf("[WARN] User with ID %d attempted to create an API token with permissions that exceed their own", userID)
 		return ApiCreateToken{}, fmt.Errorf("invalid permissions requested")
 	}
 
@@ -249,12 +249,12 @@ func (s *DefaultAuthService) RevokeAPIToken(userID database.UserID, tokenID data
 }
 
 func (s *DefaultAuthService) AdminRevokeAPIToken(tokenID database.TokenID) error {
-	log.Printf("[ADMIN] revoking API token with ID %d", tokenID)
+	log.Printf("[INFO] revoking API token with ID %d", tokenID)
 	return s.userDatabase.AdminRevokeApiToken(tokenID)
 }
 
 func (s *DefaultAuthService) DeleteAPIToken(tokenID database.TokenID) error {
-	log.Printf("[ADMIN] Deleting an API token with ID %d", tokenID)
+	log.Printf("[INFO] Deleting an API token with ID %d", tokenID)
 	return s.userDatabase.DeleteApiToken(tokenID)
 }
 

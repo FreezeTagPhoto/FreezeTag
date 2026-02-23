@@ -48,7 +48,6 @@ func TestPermissionsHasPermissionSlug(t *testing.T) {
 	}
 }
 
-
 func TestPermissionsContains(t *testing.T) {
 	perms1 := Permissions{ReadUser, WriteFiles}
 	perms2 := Permissions{ReadUser}

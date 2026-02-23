@@ -441,3 +441,53 @@ func TestValidateAPITokenFailsGettingPermissions(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, ApiClaims{}, claims)
 }
+
+func TestCreateApiToken(t *testing.T) {
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetUserPermissions(database.UserID(1)).
+		Return(data.Permissions{data.ReadUser}, nil).
+		Once()
+	mockDb.EXPECT().
+		SaveApiToken(database.UserID(1), mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(database.TokenID(1), nil).
+		Once()
+	authService := InitDefaultAuthService(mockDb)
+
+	token, err := authService.CreateAPIToken(database.UserID(1), data.Permissions{data.ReadUser}, nil, "test token")
+	assert.NoError(t, err)
+	assert.Equal(t, database.TokenID(1), token.TokenId)
+	assert.NotEmpty(t, token.TokenString)
+}
+
+func TestCreateApiTokenFail(t *testing.T) {
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetUserPermissions(database.UserID(1)).
+		Return(data.Permissions{data.ReadUser}, nil).
+		Once()
+	mockDb.EXPECT().
+		SaveApiToken(database.UserID(1), mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(database.TokenID(0), assert.AnError).
+		Once()
+	authService := InitDefaultAuthService(mockDb)
+
+	token, err := authService.CreateAPIToken(database.UserID(1), data.Permissions{data.ReadUser}, nil, "test token")
+	assert.Error(t, err)
+	assert.Equal(t, database.TokenID(0), token.TokenId)
+	assert.Empty(t, token.TokenString)
+}
+
+func TestCreateApiTokenInvalidPermissions(t *testing.T) {
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetUserPermissions(database.UserID(1)).
+		Return(data.Permissions{data.ReadUser}, nil).
+		Once()
+	authService := InitDefaultAuthService(mockDb)
+
+	token, err := authService.CreateAPIToken(database.UserID(1), data.Permissions{data.WriteUser}, nil, "test token")
+	assert.Error(t, err)
+	assert.Equal(t, database.TokenID(0), token.TokenId)
+	assert.Empty(t, token.TokenString)
+}
