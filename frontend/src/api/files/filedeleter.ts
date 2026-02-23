@@ -31,13 +31,6 @@ export default function FileDeleter(id: number) {
             return Err({ status_code: response.status, response });
         }
 
-        try {
-            return Ok((await response.json()) as FileDeleteResponse);
-        } catch (error) {
-            return Err({
-                status_code: response.status,
-                response: new Response(`Invalid JSON response: ${error}`),
-            });
-        }
+        return Ok((await response.json()) as FileDeleteResponse);
     };
 }

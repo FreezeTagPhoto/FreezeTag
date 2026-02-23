@@ -13,17 +13,11 @@ export type FileDownloadSuccess = {
 function parseContentDispositionFilename(header: string | null): string | null {
     if (!header) return null;
 
-    // RFC 5987 form: filename*=UTF-8''...
     const utf8 = header.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
     if (utf8?.[1]) {
-        try {
-            return decodeURIComponent(utf8[1].trim().replace(/^"+|"+$/g, ""));
-        } catch {
-            // ignore
-        }
+        return decodeURIComponent(utf8[1].trim().replace(/^"+|"+$/g, ""));
     }
 
-    // Basic form: filename="..."
     const basic = header.match(/filename\s*=\s*("?)([^";]+)\1/i);
     if (basic?.[2]) return basic[2].trim();
 
