@@ -112,11 +112,9 @@ export default function SettingsPage() {
     };
 
     const handleToggleEdit = () => {
-        if (isEditingPassword) {
-            resetPw();
-            setPwStatus(None());
-        }
-        setIsEditingPassword(!isEditingPassword);
+        resetPw();
+        setPwStatus(None());
+        setIsEditingPassword((prev) => !prev);
     };
 
     const setPwField = (key: keyof typeof pw, value: string) => {
@@ -167,9 +165,9 @@ export default function SettingsPage() {
         if (res.ok) {
             resetPw();
             setIsEditingPassword(false);
-            setPwStatus(
-                Some(Ok(res.value.message || "Password changed successfully.")),
-            );
+            // setPwStatus(
+            //     Some(Ok(res.value.message || "Password changed successfully.")),
+            // );
         } else {
             setPwStatus(
                 Some(Err(res.error.message || "Failed to change password.")),
@@ -349,7 +347,9 @@ export default function SettingsPage() {
                                 }`}
                                 onClick={handleToggleEdit}
                             >
-                                {isEditingPassword ? "Cancel" : "Change password"}
+                                {isEditingPassword
+                                    ? "Cancel"
+                                    : "Change password"}
                             </button>
                         </div>
                     </div>
@@ -404,7 +404,9 @@ export default function SettingsPage() {
                                         disabled={pwBusy}
                                     />
 
-                                    <div className={`${styles.passwordActions} ${styles.fullWidthField}`}>
+                                    <div
+                                        className={`${styles.passwordActions} ${styles.fullWidthField}`}
+                                    >
                                         <button
                                             type="submit"
                                             className={`${styles.button} ${styles.buttonInline} ${styles.primaryButton}`}
