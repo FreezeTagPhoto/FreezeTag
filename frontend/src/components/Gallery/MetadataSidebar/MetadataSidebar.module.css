@@ -44,6 +44,78 @@
     margin-bottom: 12px;
 }
 
+.headerRight {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.headerIconButton {
+    height: 28px;
+    width: 28px;
+    border-radius: 999px;
+
+    display: grid;
+    place-items: center;
+
+    border: var(--border-info);
+    background: var(--mantle);
+    color: var(--text);
+
+    cursor: pointer;
+    padding: 0;
+
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        transform 80ms ease;
+}
+
+.headerIconButton:hover {
+    background: var(--surface0);
+}
+
+.headerIconButton:active {
+    transform: scale(0.98);
+}
+
+.headerIconButton:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+}
+
+.headerIconButton:disabled {
+    cursor: default;
+    transform: none;
+    color: var(--subtext0);
+    background: var(--mantle);
+    border-color: var(--surface1);
+}
+
+.dangerButton {
+    /* border-color: var(--red); */
+    color: var(--red);
+}
+
+.dangerButton:hover {
+    background: var(--red);
+    color: var(--base);
+}
+
+.dangerButton:focus-visible {
+    outline-color: var(--red);
+}
+
+.spinning {
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .pill {
     font-size: 0.75rem;
     padding: 4px 10px;

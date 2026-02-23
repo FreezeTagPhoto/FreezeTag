@@ -91,6 +91,12 @@ export default function TopBar({
     const tagsWrapRef = useRef<HTMLDivElement>(null);
     const sortWrapRef = useRef<HTMLDivElement>(null);
 
+    const tagScrollRef = useRef<HTMLDivElement>(null);
+    const [tagFade, setTagFade] = useState<{ top: boolean; bottom: boolean }>({
+        top: false,
+        bottom: false,
+    });
+
     const activeTags = useMemo(() => {
         const set = new Set<string>();
         for (const tok of parseUserQuery(searchTerm)) {
@@ -134,6 +140,57 @@ export default function TopBar({
         return () => document.removeEventListener("keydown", onKeyDown);
     }, []);
 
+    const syncTagFade = () => {
+        const el = tagScrollRef.current;
+        if (!el) {
+            setTagFade((prev) =>
+                prev.top === false && prev.bottom === false
+                    ? prev
+                    : { top: false, bottom: false },
+            );
+            return;
+        }
+
+        const overflow = el.scrollHeight > el.clientHeight + 1;
+        if (!overflow) {
+            setTagFade((prev) =>
+                prev.top === false && prev.bottom === false
+                    ? prev
+                    : { top: false, bottom: false },
+            );
+            return;
+        }
+
+        const atTop = el.scrollTop <= 1;
+        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+
+        const next = { top: !atTop, bottom: !atBottom };
+        setTagFade((prev) =>
+            prev.top === next.top && prev.bottom === next.bottom ? prev : next,
+        );
+    };
+
+    useEffect(() => {
+        if (open !== "tags") return;
+
+        const el = tagScrollRef.current;
+        if (!el) return;
+
+        const raf = requestAnimationFrame(syncTagFade);
+
+        const onResize = () => syncTagFade();
+        window.addEventListener("resize", onResize);
+
+        const ro = new ResizeObserver(() => syncTagFade());
+        ro.observe(el);
+
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener("resize", onResize);
+            ro.disconnect();
+        };
+    }, [open, alphaTags.length]);
+
     // Toggle a tag in the search query
     const toggleTag = (tag: string) => {
         onSearchTermChange((prev) => {
@@ -175,45 +232,57 @@ export default function TopBar({
                                 </div>
                             ) : (
                                 <div
-                                    className={styles.pillMosaic}
-                                    role="group"
-                                    aria-label="Tag filters"
+                                    className={styles.pillMosaicWrap}
+                                    data-fade-top={tagFade.top ? "1" : "0"}
+                                    data-fade-bottom={
+                                        tagFade.bottom ? "1" : "0"
+                                    }
                                 >
-                                    {alphaTags.map((t) => {
-                                        const isActive = activeTags.has(t.name);
-                                        return (
-                                            <button
-                                                key={t.name}
-                                                type="button"
-                                                className={`${styles.pillChoice} ${
-                                                    isActive
-                                                        ? styles.pillChoiceActive
-                                                        : ""
-                                                }`}
-                                                onMouseDown={(e) =>
-                                                    e.preventDefault()
-                                                }
-                                                onClick={() =>
-                                                    toggleTag(t.name)
-                                                }
-                                            >
-                                                <span
-                                                    className={
-                                                        styles.pillChoiceLabel
+                                    <div
+                                        ref={tagScrollRef}
+                                        className={styles.pillMosaic}
+                                        role="group"
+                                        aria-label="Tag filters"
+                                        onScroll={syncTagFade}
+                                    >
+                                        {alphaTags.map((t) => {
+                                            const isActive = activeTags.has(
+                                                t.name,
+                                            );
+                                            return (
+                                                <button
+                                                    key={t.name}
+                                                    type="button"
+                                                    className={`${styles.pillChoice} ${
+                                                        isActive
+                                                            ? styles.pillChoiceActive
+                                                            : ""
+                                                    }`}
+                                                    onMouseDown={(e) =>
+                                                        e.preventDefault()
+                                                    }
+                                                    onClick={() =>
+                                                        toggleTag(t.name)
                                                     }
                                                 >
-                                                    {t.name}
-                                                </span>
-                                                <span
-                                                    className={
-                                                        styles.pillChoiceBadge
-                                                    }
-                                                >
-                                                    {t.count ?? 0}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
+                                                    <span
+                                                        className={
+                                                            styles.pillChoiceLabel
+                                                        }
+                                                    >
+                                                        {t.name}
+                                                    </span>
+                                                    <span
+                                                        className={
+                                                            styles.pillChoiceBadge
+                                                        }
+                                                    >
+                                                        {t.count ?? 0}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
                         </div>

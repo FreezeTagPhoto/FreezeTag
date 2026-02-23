@@ -1,6 +1,7 @@
 import { splitBySemicolonOutsideQuotes } from "./querysplit";
 import type { Token } from "./tokens";
 import { isFieldKey, isDateKey } from "./keys";
+import { UnitsNearDefault } from "@/common/units/UnitManager";
 
 type StripResult = {
     text: string;
@@ -111,7 +112,7 @@ function parseDistanceToAngularDegrees(raw: string): {
     }
 
     const distNum = Number(match[1]);
-    const unitRaw = match[2] ?? "km"; // unitless defaults to km
+    const unitRaw = match[2] ?? UnitsNearDefault(); // unitless defaults to user choice
 
     if (!Number.isFinite(distNum) || distNum <= 0) {
         return { deg: null, error: `near distance must be a positive number` };

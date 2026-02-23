@@ -18,13 +18,15 @@ body {
     --accent1: #aedbf0;
     --accent2: #579dd7;
     --accent3: #ffffff;
+    --backdrop: rgba(0, 0, 0, 0.15);
 }
 
 [data-theme-type="dark"] {
-    --dropshadow: drop-shadow(0.5px 0.5px 0.5px #000000);
+    --dropshadow: drop-shadow(0.25px 0.25px 0.25px #000000);
     --accent1: #579dd7;
     --accent2: #aedbf0;
     --accent3: #ffffff;
+    --backdrop: rgba(255, 255, 255, 0.15);
 }
 
 body {
