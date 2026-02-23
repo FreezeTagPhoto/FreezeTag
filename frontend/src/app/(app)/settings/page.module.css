@@ -36,6 +36,7 @@
     overflow: hidden;
     padding: 18px;
     scroll-margin-top: 18px;
+    filter: var(--dropshadow);
 }
 
 .sectionHeader {
@@ -112,6 +113,7 @@
     background: var(--base);
     color: var(--text);
     outline: none;
+    filter: var(--dropshadow);
 }
 
 .select:hover,
