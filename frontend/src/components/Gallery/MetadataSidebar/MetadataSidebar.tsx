@@ -71,7 +71,9 @@ async function requestErrorToMessage(err: {
 
         return text;
     } catch {
-        return err.status_code === 0 ? "Network error" : `HTTP ${err.status_code}`;
+        return err.status_code === 0
+            ? "Network error"
+            : `HTTP ${err.status_code}`;
     }
 }
 
@@ -114,7 +116,9 @@ export default function MetadataSidebar({
         ? tags.current.value
         : null;
 
-    const [fileBusy, setFileBusy] = useState<null | "download" | "delete">(null);
+    const [fileBusy, setFileBusy] = useState<null | "download" | "delete">(
+        null,
+    );
     const [fileError, setFileError] = useState<string | null>(null);
 
     const {
