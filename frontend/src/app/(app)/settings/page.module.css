@@ -378,3 +378,24 @@
         align-items: stretch;
     }
 }
+
+.expandedForm {
+    width: 100%;
+    margin-top: 4px;
+    padding-top: 18px;
+    border-top: var(--border-info);
+}
+
+.fullWidthField {
+    grid-column: 1 / -1;
+}
+
+.cancelButton {
+    color: var(--red);
+}
+
+.cancelButton:hover {
+    background: var(--red);
+    color: var(--base);
+    border-color: var(--red);
+}

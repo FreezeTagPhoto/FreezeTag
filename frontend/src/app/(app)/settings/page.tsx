@@ -25,9 +25,66 @@ type ThemeName = (typeof ALL_THEMES)[number];
 
 type PwKey = "current" | "new" | "confirm";
 
+const PasswordField = ({
+    id,
+    label,
+    value,
+    onChange,
+    show,
+    onToggleShow,
+    autoComplete,
+    disabled,
+}: {
+    id: string;
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    show: boolean;
+    onToggleShow: () => void;
+    autoComplete: string;
+    disabled: boolean;
+}) => (
+    <div className={styles.passwordField}>
+        <label className={styles.inputLabel} htmlFor={id}>
+            {label}
+        </label>
+        <div className={styles.inlineRow}>
+            <input
+                id={id}
+                name={id}
+                type={show ? "text" : "password"}
+                className={styles.input}
+                autoComplete={autoComplete}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
+            />
+            <button
+                type="button"
+                className={`${styles.iconBtn} ${
+                    show ? styles.iconBtnActive : ""
+                }`}
+                onClick={onToggleShow}
+                aria-label={show ? `Hide ${label}` : `Show ${label}`}
+                title={show ? `Hide ${label}` : `Show ${label}`}
+                aria-pressed={show}
+                disabled={disabled}
+            >
+                {show ? (
+                    <EyeOff className={styles.iconBtnIcon} aria-hidden />
+                ) : (
+                    <Eye className={styles.iconBtnIcon} aria-hidden />
+                )}
+            </button>
+        </div>
+    </div>
+);
+
 export default function SettingsPage() {
     const [theme, setTheme] = useState<ThemeName>("Catppuccin Mocha");
     const [units, setUnits] = useState<UnitSystem>("metric");
+
+    const [isEditingPassword, setIsEditingPassword] = useState(false);
 
     const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
     const [pwBusy, setPwBusy] = useState(false);
@@ -52,6 +109,14 @@ export default function SettingsPage() {
     const resetPw = () => {
         setPw({ current: "", next: "", confirm: "" });
         setPwShow({ current: false, new: false, confirm: false });
+    };
+
+    const handleToggleEdit = () => {
+        if (isEditingPassword) {
+            resetPw();
+            setPwStatus(None());
+        }
+        setIsEditingPassword(!isEditingPassword);
     };
 
     const setPwField = (key: keyof typeof pw, value: string) => {
@@ -101,6 +166,7 @@ export default function SettingsPage() {
 
         if (res.ok) {
             resetPw();
+            setIsEditingPassword(false);
             setPwStatus(
                 Some(Ok(res.value.message || "Password changed successfully.")),
             );
@@ -114,61 +180,6 @@ export default function SettingsPage() {
     const pwDisabled = pwBusy || !pw.current || !pw.next || !pw.confirm;
     const status = pwStatus.some ? pwStatus.value : null;
 
-    const PasswordField = ({
-        id,
-        label,
-        value,
-        onChange,
-        show,
-        onToggleShow,
-        autoComplete,
-        disabled,
-    }: {
-        id: string;
-        label: string;
-        value: string;
-        onChange: (v: string) => void;
-        show: boolean;
-        onToggleShow: () => void;
-        autoComplete: string;
-        disabled: boolean;
-    }) => (
-        <div className={styles.passwordField}>
-            <label className={styles.inputLabel} htmlFor={id}>
-                {label}
-            </label>
-            <div className={styles.inlineRow}>
-                <input
-                    id={id}
-                    name={id}
-                    type={show ? "text" : "password"}
-                    className={styles.input}
-                    autoComplete={autoComplete}
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    disabled={disabled}
-                />
-                <button
-                    type="button"
-                    className={`${styles.iconBtn} ${
-                        show ? styles.iconBtnActive : ""
-                    }`}
-                    onClick={onToggleShow}
-                    aria-label={show ? `Hide ${label}` : `Show ${label}`}
-                    title={show ? `Hide ${label}` : `Show ${label}`}
-                    aria-pressed={show}
-                    disabled={disabled}
-                >
-                    {show ? (
-                        <EyeOff className={styles.iconBtnIcon} aria-hidden />
-                    ) : (
-                        <Eye className={styles.iconBtnIcon} aria-hidden />
-                    )}
-                </button>
-            </div>
-        </div>
-    );
-
     return (
         <main className={styles.main}>
             <header className={styles.header}>
@@ -176,16 +187,6 @@ export default function SettingsPage() {
                 <p className={styles.subtitle}>
                     Customize preferences and manage account security.
                 </p>
-
-                {/* TODO: enable this when we have more settings options. */}
-                {/* <nav className={styles.jumpNav} aria-label="Settings sections">
-                    <a className={styles.jumpLink} href="#preferences">
-                        Preferences
-                    </a>
-                    <a className={styles.jumpLink} href="#security">
-                        Security
-                    </a>
-                </nav> */}
             </header>
 
             <section
@@ -332,7 +333,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className={styles.fields}>
-                    <div className={`${styles.fieldRow} ${styles.fieldRowTop}`}>
+                    <div className={styles.fieldRow}>
                         <div className={styles.fieldText}>
                             <div className={styles.label}>Password</div>
                             <p className={styles.hint}>
@@ -341,25 +342,41 @@ export default function SettingsPage() {
                         </div>
 
                         <div className={styles.control}>
+                            <button
+                                type="button"
+                                className={`${styles.button} ${styles.buttonInline} ${
+                                    isEditingPassword ? styles.cancelButton : ""
+                                }`}
+                                onClick={handleToggleEdit}
+                            >
+                                {isEditingPassword ? "Cancel" : "Change password"}
+                            </button>
+                        </div>
+                    </div>
+
+                    {isEditingPassword && (
+                        <div className={styles.expandedForm}>
                             <form
                                 className={styles.passwordForm}
                                 onSubmit={onChangePassword}
                             >
                                 <div className={styles.passwordGrid}>
-                                    <PasswordField
-                                        id="current_password"
-                                        label="Current password"
-                                        value={pw.current}
-                                        onChange={(v) =>
-                                            setPwField("current", v)
-                                        }
-                                        show={pwShow.current}
-                                        onToggleShow={() =>
-                                            toggleShow("current")
-                                        }
-                                        autoComplete="current-password"
-                                        disabled={pwBusy}
-                                    />
+                                    <div className={styles.fullWidthField}>
+                                        <PasswordField
+                                            id="current_password"
+                                            label="Current password"
+                                            value={pw.current}
+                                            onChange={(v) =>
+                                                setPwField("current", v)
+                                            }
+                                            show={pwShow.current}
+                                            onToggleShow={() =>
+                                                toggleShow("current")
+                                            }
+                                            autoComplete="current-password"
+                                            disabled={pwBusy}
+                                        />
+                                    </div>
 
                                     <PasswordField
                                         id="new_password"
@@ -387,15 +404,15 @@ export default function SettingsPage() {
                                         disabled={pwBusy}
                                     />
 
-                                    <div className={styles.passwordActions}>
+                                    <div className={`${styles.passwordActions} ${styles.fullWidthField}`}>
                                         <button
                                             type="submit"
                                             className={`${styles.button} ${styles.buttonInline} ${styles.primaryButton}`}
                                             disabled={pwDisabled}
                                         >
                                             {pwBusy
-                                                ? "Changing..."
-                                                : "Change password"}
+                                                ? "Saving..."
+                                                : "Save new password"}
                                         </button>
                                     </div>
                                 </div>
@@ -421,7 +438,7 @@ export default function SettingsPage() {
                                 )}
                             </form>
                         </div>
-                    </div>
+                    )}
                 </div>
             </section>
         </main>
