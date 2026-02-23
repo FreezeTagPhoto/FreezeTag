@@ -70,7 +70,10 @@ export default function Home() {
                             disabled={
                                 !UserHasPerm(currentUser, "read:permissions")
                             }
-                            onClick={() => setModifyingPerms(user.id)}
+                            onClick={() => {
+                                setModifyingPerms(user.id);
+                                setUsername(user.username);
+                            }}
                         >
                             <SquarePen className={styles.icon} />
                             <p className={styles.account_item_label}>Perms</p>
@@ -122,6 +125,7 @@ export default function Home() {
                 <ModifyPerms
                     onClose={() => setModifyingPerms(-1)}
                     userId={modifyingPerms}
+                    username={username}
                 />
             )}
         </main>

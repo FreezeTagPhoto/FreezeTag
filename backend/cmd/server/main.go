@@ -178,8 +178,8 @@ func initPluginEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	pluginGroup := baseGroup.Group("/plugins")
 	{
 		pe := plugins.InitPluginEndpoint(deps.pluginService)
-		pluginGroup.GET("/", middleware.RequirePermission(data.ReadPlugins), pe.ListAll)
-		pluginGroup.POST("/", middleware.RequirePermission(data.WritePlugins), pe.SetEnabled)
+		pluginGroup.GET("/list", middleware.RequirePermission(data.ReadPlugins), pe.ListAll)
+		pluginGroup.POST("/enable", middleware.RequirePermission(data.WritePlugins), pe.SetEnabled)
 	}
 }
 

@@ -4,17 +4,16 @@ export type PermedUser = {
     permissions?: Perm[];
 };
 
-export function ExtractPermsList(user: PermedUser): string[] | undefined {
-    return user.permissions?.map((v) => v.permission);
+export function ExtractPermsList(
+    user: PermedUser | undefined,
+): string[] | undefined {
+    return user?.permissions?.map((v) => v.permission);
 }
 
 export function UserHasPerm(
     user: PermedUser | undefined,
     permission: string,
 ): boolean {
-    if (!user) {
-        return false;
-    }
     return ExtractPermsList(user)?.includes(permission) ?? false;
 }
 
