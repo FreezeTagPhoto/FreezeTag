@@ -81,8 +81,7 @@
 
 .navButton,
 .closeButton,
-.zoomButton,
-.actionButton {
+.zoomButton {
     background: var(--mantle);
     color: var(--text);
     border: var(--border-info);
@@ -100,32 +99,24 @@
 
 .viewerImageArea:hover .navButton,
 .viewerImageArea:hover .closeButton,
-.viewerImageArea:hover .zoomButton,
-.viewerImageArea:hover .actionButton {
+.viewerImageArea:hover .zoomButton {
     opacity: 1;
     pointer-events: auto;
 }
 
 .navButton:hover,
 .closeButton:hover,
-.zoomButton:hover,
-.actionButton:hover {
+.zoomButton:hover {
     background: var(--surface0);
 }
 
 .navButton:focus-visible,
 .closeButton:focus-visible,
-.zoomButton:focus-visible,
-.actionButton:focus-visible {
+.zoomButton:focus-visible {
     outline: 2px solid var(--blue);
     outline-offset: 2px;
     opacity: 1;
     pointer-events: auto;
-}
-
-.actionButton:disabled {
-    cursor: default;
-    color: var(--subtext0);
 }
 
 /* ===========================
@@ -168,39 +159,17 @@
 }
 
 /* ===========================
-   Top-right actions (Zoom / Download / Delete)
+   Zoom toggle button
    =========================== */
 
-.actionBar {
+.zoomButton {
     position: absolute;
     top: 16px;
     right: 16px;
-    display: flex;
-    gap: 10px;
-}
-
-.actionButton {
     width: 32px;
     height: 32px;
     border-radius: 999px;
     padding: 0;
-
-    display: grid;
-    place-items: center;
-}
-
-.dangerButton {
-    border-color: var(--red);
-    color: var(--red);
-}
-
-.dangerButton:hover {
-    background: var(--red);
-    color: var(--base);
-}
-
-.dangerButton:focus-visible {
-    outline-color: var(--red);
 }
 
 /* ===========================
@@ -215,14 +184,4 @@
 .iconLg {
     width: 18px;
     height: 18px;
-}
-
-.spinning {
-    animation: spin 0.9s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
 }

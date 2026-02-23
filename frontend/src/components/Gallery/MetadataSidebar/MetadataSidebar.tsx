@@ -19,31 +19,78 @@ import {
 } from "@/common/gallery/format";
 import { formatLongDate } from "@/common/dateformat";
 import { useTagEditor } from "@/common/gallery/tageditor";
+import FileDownloader from "@/api/files/filedownloader";
+import FileDeleter from "@/api/files/filedeleter";
 import {
     MoreHorizontal,
     PlusCircle,
     Plus,
     X,
     XCircle,
-    // FileText,
     Calendar,
     CloudUpload,
     MapPin,
     Camera,
     Tag,
     FullscreenIcon,
+    Download,
+    Trash2,
+    Loader2,
 } from "lucide-react";
 
 export type MetadataSidebarProps = {
     selectedId: number;
     onSearchTag?: (tag: string) => void;
     viewerRef: RefObject<HTMLDivElement | null>;
+
+    // optional: lets the parent close the preview after deletion
+    onDeleted?: () => void;
 };
+
+async function requestErrorToMessage(err: {
+    status_code: number;
+    response: Response;
+}): Promise<string> {
+    try {
+        const text = await err.response.text();
+        if (!text) return err.response.statusText || `HTTP ${err.status_code}`;
+
+        try {
+            const json = JSON.parse(text) as unknown;
+            if (
+                json &&
+                typeof json === "object" &&
+                "error" in json &&
+                typeof (json as { error: unknown }).error === "string"
+            ) {
+                return (json as { error: string }).error;
+            }
+        } catch {
+            // ignore
+        }
+
+        return text;
+    } catch {
+        return err.status_code === 0 ? "Network error" : `HTTP ${err.status_code}`;
+    }
+}
+
+function triggerBrowserDownload(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
 
 export default function MetadataSidebar({
     selectedId,
     onSearchTag,
     viewerRef,
+    onDeleted,
 }: MetadataSidebarProps) {
     const comboRef = useRef<HTMLDivElement | null>(null);
     const [tagDropdownMaxHeight, setTagDropdownMaxHeight] =
@@ -66,6 +113,9 @@ export default function MetadataSidebar({
     const currentTags: string[] | null = tags.current.some
         ? tags.current.value
         : null;
+
+    const [fileBusy, setFileBusy] = useState<null | "download" | "delete">(null);
+    const [fileError, setFileError] = useState<string | null>(null);
 
     const {
         tagMutating,
@@ -129,14 +179,100 @@ export default function MetadataSidebar({
 
     const stopClick = (e: ReactMouseEvent<HTMLElement>) => e.stopPropagation();
 
+    const downloadBusy = fileBusy === "download";
+    const deleteBusy = fileBusy === "delete";
+    const anyBusy = fileBusy !== null;
+
+    const handleDownload = async (e: ReactMouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        if (anyBusy) return;
+
+        setFileError(null);
+        setFileBusy("download");
+
+        const res = await FileDownloader(selectedId)();
+        if (res.ok) {
+            triggerBrowserDownload(res.value.blob, res.value.filename);
+        } else {
+            setFileError(await requestErrorToMessage(res.error));
+        }
+
+        setFileBusy(null);
+    };
+
+    const handleDelete = async (e: ReactMouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        if (anyBusy) return;
+
+        const confirmed = window.confirm(
+            "Delete this image? This cannot be undone.",
+        );
+        if (!confirmed) return;
+
+        setFileError(null);
+        setFileBusy("delete");
+
+        const res = await FileDeleter(selectedId)();
+        if (res.ok) {
+            onDeleted?.();
+        } else {
+            setFileError(await requestErrorToMessage(res.error));
+        }
+
+        setFileBusy(null);
+    };
+
     return (
         <aside className={styles.viewerSidebar}>
             <div className={styles.detailsHeaderRow}>
                 <h2 className={styles.sidebarTitle}>Image details</h2>
-                {metadataLoading && (
-                    <span className={styles.pill}>Loading</span>
-                )}
+
+                <div className={styles.headerRight} onClick={stopClick}>
+                    <button
+                        type="button"
+                        className={styles.headerIconButton}
+                        onClick={handleDownload}
+                        disabled={anyBusy}
+                        aria-label="Download image"
+                        title="Download"
+                    >
+                        {downloadBusy ? (
+                            <Loader2
+                                className={`${styles.icon} ${styles.spinning}`}
+                            />
+                        ) : (
+                            <Download className={styles.icon} />
+                        )}
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`${styles.headerIconButton} ${styles.dangerButton}`}
+                        onClick={handleDelete}
+                        disabled={anyBusy}
+                        aria-label="Delete image"
+                        title="Delete"
+                    >
+                        {deleteBusy ? (
+                            <Loader2
+                                className={`${styles.icon} ${styles.spinning}`}
+                            />
+                        ) : (
+                            <Trash2 className={styles.icon} />
+                        )}
+                    </button>
+
+                    {metadataLoading && (
+                        <span className={styles.pill}>Loading</span>
+                    )}
+                </div>
             </div>
+
+            {fileError && (
+                <div className={styles.errorBanner}>
+                    File action failed: {fileError}
+                </div>
+            )}
 
             {metadataError && (
                 <div className={styles.errorBanner}>
@@ -145,17 +281,6 @@ export default function MetadataSidebar({
             )}
 
             <div className={styles.detailGrid}>
-                {/* <div className={styles.detailRow}>
-                    <div className={styles.detailLabelRow}>
-                        <FileText className={styles.detailLabelIcon} />
-                        <span className={styles.detailLabel}>Filename</span>
-                    </div>
-                    <div className={styles.detailValue}>
-                        {currentMetadata?.fileName ?? "—"}
-                    </div>
-                </div> 
-                */}
-
                 <div className={styles.detailRow}>
                     <div className={styles.detailLabelRow}>
                         <FullscreenIcon className={styles.detailLabelIcon} />

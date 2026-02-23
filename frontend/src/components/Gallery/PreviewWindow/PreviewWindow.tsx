@@ -11,18 +11,7 @@ import {
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import styles from "./PreviewWindow.module.css";
 import MetadataSidebar from "../MetadataSidebar/MetadataSidebar";
-import {
-    ChevronLeft,
-    ChevronRight,
-    X,
-    ZoomIn,
-    ZoomOut,
-    Download,
-    Trash2,
-    Loader2,
-} from "lucide-react";
-import FileDownloader from "@/api/files/filedownloader";
-import FileDeleter from "@/api/files/filedeleter";
+import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
 
 type PendingPan = null | { fx: number; fy: number };
 type BaseSize = null | { w: number; h: number };
@@ -35,45 +24,6 @@ export type PreviewWindowProps = {
     onNavigate: (nextId: number, nextIndex: number) => void;
     onSearchTag?: (tag: string) => void;
 };
-
-async function requestErrorToMessage(err: {
-    status_code: number;
-    response: Response;
-}): Promise<string> {
-    try {
-        const text = await err.response.text();
-        if (!text) return err.response.statusText || `HTTP ${err.status_code}`;
-
-        try {
-            const json = JSON.parse(text) as unknown;
-            if (
-                json &&
-                typeof json === "object" &&
-                "error" in json &&
-                typeof (json as { error: unknown }).error === "string"
-            ) {
-                return (json as { error: string }).error;
-            }
-        } catch {
-            // ignore
-        }
-
-        return text;
-    } catch {
-        return err.status_code === 0 ? "Network error" : `HTTP ${err.status_code}`;
-    }
-}
-
-function triggerBrowserDownload(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-}
 
 export default function PreviewWindow({
     imageIds,
@@ -90,10 +40,6 @@ export default function PreviewWindow({
     const [hoveringImage, setHoveringImage] = useState(false);
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
     const [baseSize, setBaseSize] = useState<BaseSize>(null);
-
-    const [actionBusy, setActionBusy] = useState<null | "download" | "delete">(
-        null,
-    );
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -241,51 +187,6 @@ export default function PreviewWindow({
         setPendingPan(null);
     }, [zoom, pendingPan]);
 
-    const handleDownload = async (event: ReactMouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        if (actionBusy) return;
-
-        setActionBusy("download");
-        const result = await FileDownloader(selectedId)();
-
-        if ("ok" in result && result.ok) {
-            triggerBrowserDownload(result.value.blob, result.value.filename);
-        } else {
-            const msg = await requestErrorToMessage(
-                (result as { ok: false; error: { status_code: number; response: Response } })
-                    .error,
-            );
-            window.alert(`Download failed: ${msg}`);
-        }
-
-        setActionBusy(null);
-    };
-
-    const handleDelete = async (event: ReactMouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        if (actionBusy) return;
-
-        const confirmed = window.confirm(
-            "Delete this image? This cannot be undone.",
-        );
-        if (!confirmed) return;
-
-        setActionBusy("delete");
-        const result = await FileDeleter(selectedId)();
-
-        if ("ok" in result && result.ok) {
-            onClose();
-        } else {
-            const msg = await requestErrorToMessage(
-                (result as { ok: false; error: { status_code: number; response: Response } })
-                    .error,
-            );
-            window.alert(`Delete failed: ${msg}`);
-        }
-
-        setActionBusy(null);
-    };
-
     const zoomed = zoom !== 1;
 
     const cursor = hoveringImage
@@ -310,9 +211,6 @@ export default function PreviewWindow({
                 maxWidth: "none",
                 maxHeight: "none",
             };
-
-    const downloadBusy = actionBusy === "download";
-    const deleteBusy = actionBusy === "delete";
 
     return (
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>
@@ -361,63 +259,27 @@ export default function PreviewWindow({
                         <X className={styles.iconLg} />
                     </button>
 
-                    <div className={styles.actionBar}>
-                        <button
-                            type="button"
-                            className={styles.actionButton}
-                            onClick={handleZoomButtonClick}
-                            aria-label={zoom === 1 ? "Zoom to 2x" : "Zoom to 1x"}
-                            title={zoom === 1 ? "Zoom in" : "Zoom out"}
-                            disabled={actionBusy !== null}
-                        >
-                            {zoom === 1 ? (
-                                <ZoomIn className={styles.icon} />
-                            ) : (
-                                <ZoomOut className={styles.icon} />
-                            )}
-                        </button>
-
-                        <button
-                            type="button"
-                            className={styles.actionButton}
-                            onClick={handleDownload}
-                            aria-label="Download image"
-                            title="Download"
-                            disabled={actionBusy !== null}
-                        >
-                            {downloadBusy ? (
-                                <Loader2
-                                    className={`${styles.icon} ${styles.spinning}`}
-                                />
-                            ) : (
-                                <Download className={styles.icon} />
-                            )}
-                        </button>
-
-                        <button
-                            type="button"
-                            className={`${styles.actionButton} ${styles.dangerButton}`}
-                            onClick={handleDelete}
-                            aria-label="Delete image"
-                            title="Delete"
-                            disabled={actionBusy !== null}
-                        >
-                            {deleteBusy ? (
-                                <Loader2
-                                    className={`${styles.icon} ${styles.spinning}`}
-                                />
-                            ) : (
-                                <Trash2 className={styles.icon} />
-                            )}
-                        </button>
-                    </div>
+                    <button
+                        type="button"
+                        className={styles.zoomButton}
+                        onClick={handleZoomButtonClick}
+                        aria-label={zoom === 1 ? "Zoom to 2x" : "Zoom to 1x"}
+                        title={zoom === 1 ? "Zoom in" : "Zoom out"}
+                    >
+                        {zoom === 1 ? (
+                            <ZoomIn className={styles.icon} />
+                        ) : (
+                            <ZoomOut className={styles.icon} />
+                        )}
+                    </button>
 
                     <div
                         className={styles.viewerImageScroll}
                         ref={scrollRef}
                         style={{
                             cursor,
-                            justifyContent: zoom === 1 ? "center" : "flex-start",
+                            justifyContent:
+                                zoom === 1 ? "center" : "flex-start",
                             alignItems: zoom === 1 ? "center" : "flex-start",
                         }}
                     >
