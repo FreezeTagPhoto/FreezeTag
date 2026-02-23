@@ -25,6 +25,16 @@ func InitTokenEndpoint(auth services.AuthService) TokenEndpoint {
 	}
 }
 
+// @summary     Revoke API token
+// @description Revoke an API token, preventing it from being used for authentication. Users can only revoke their own tokens
+// @tags        tokens
+// @router      /tokens/revoke/{id} [post]
+// @param       id path string true "ID of the token to revoke"
+// @success     200 {object} api.MessageResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     401 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
 func (te TokenEndpoint) RevokeUserToken(c *gin.Context) {
 
 	// parse the token ID from the URL parameter
@@ -56,7 +66,18 @@ func (te TokenEndpoint) RevokeUserToken(c *gin.Context) {
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "Token revoked successfully"})
 }
 
-
+// @summary     Create API token
+// @description Create a new API token for the authenticated user with the specified permissions and expiration time
+// @tags        tokens
+// @router      /tokens/create [post]
+// @param       label query string false "Optional label for the token"
+// @param       expiresAt query string false "Optional expiration time for the token in RFC3339 format (e.g. 2024-01-01T00:00:00Z)"
+// @param       permission query []string true "List of permissions to assign to the token" collectionFormat(multi)
+// @success     200 {object} services.ApiCreateToken
+// @failure     400 {object} api.BadRequestResponse
+// @failure     401 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
 func (te TokenEndpoint) CreateUserToken(c *gin.Context) {
 	userIDRaw, exists := c.Get("userID")
 	if !exists {
@@ -89,9 +110,17 @@ func (te TokenEndpoint) CreateUserToken(c *gin.Context) {
 	c.JSON(http.StatusOK, token)
 }
 
-
 // Admin versions of the above requests. Admins can operate on any token, not just the tokens assigned to them
 
+// @summary     Admin delete API token
+// @description Permanently delete an API token from the database. This action cannot be undone. Admins can delete any token.
+// @tags        tokens
+// @router      /tokens/admin/delete/{id} [delete]
+// @param       id path string true "ID of the token to delete"
+// @success     200 {object} api.MessageResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
 func (te TokenEndpoint) AdminDeleteUserToken(c *gin.Context) {
 	tokenIdRaw := c.Param("id")
 	tokenID, err := api.ParseParamIntoID[database.TokenID](tokenIdRaw)
@@ -108,6 +137,15 @@ func (te TokenEndpoint) AdminDeleteUserToken(c *gin.Context) {
 
 }
 
+// @summary     Admin revoke API token
+// @description Revoke an API token, preventing it from being used for authentication. This is a softer action than deleting a token. Admins can revoke any token.
+// @tags        tokens
+// @router      /tokens/admin/revoke/{id} [post]
+// @param       id path string true "ID of the token to revoke"
+// @success     200 {object} api.MessageResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
 func (te TokenEndpoint) AdminRevokeToken(c *gin.Context) {
 	tokenIdRaw := c.Param("id")
 	tokenID, err := api.ParseParamIntoID[database.TokenID](tokenIdRaw)

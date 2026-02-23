@@ -22,7 +22,7 @@ func ParseParamIntoID[T IDType](value any) (T, error) {
 	}
 	num, err := strconv.ParseUint(strValue, 10, 64)
 	if err != nil {
-		return T(0), fmt.Errorf("Could not parse value '%s' into type %T", strValue, T(0))
+		return T(0), fmt.Errorf("could not parse value '%s' into type %T", strValue, T(0))
 	}
 	return T(num), nil
 }

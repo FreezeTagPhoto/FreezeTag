@@ -29,8 +29,7 @@ func TestParseParamEmpty(t *testing.T) {
 	id, err := ParseParamIntoID[database.TokenID]("")
 	assert.Error(t, err)
 	assert.Equal(t, database.TokenID(0), id)
-}	
-
+}
 
 func TestParseParamNonString(t *testing.T) {
 	id, err := ParseParamIntoID[database.UserID](123)
@@ -165,7 +164,6 @@ func TestExtractDatabaseQueries(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 }
-
 
 func TestQueryPermissionsFromRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {

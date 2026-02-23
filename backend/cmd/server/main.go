@@ -14,6 +14,7 @@ import (
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
+	"freezetag/backend/api/tokens"
 	"freezetag/backend/api/upload"
 	"freezetag/backend/api/user"
 	"freezetag/backend/middleware"
@@ -150,6 +151,7 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 
 	initLoginEndpoints(router, deps)
 
+	initApiKeyEndpoints(authGroup, deps)
 	initPermissionsEndpoints(authGroup)
 	initLogoutEndpoints(authGroup, deps)
 	initPasswordEndpoints(authGroup, deps)
@@ -162,6 +164,18 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	initFileEndpoints(authGroup, deps)
 	initUserEndpoints(authGroup, deps)
 	initPluginEndpoints(authGroup, deps)
+}
+
+func initApiKeyEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	apiKeyGroup := baseGroup.Group("/tokens")
+	{
+		te := tokens.InitTokenEndpoint(deps.authService)
+		apiKeyGroup.POST("/revoke/:id", middleware.RequirePermission(data.WriteToken), te.RevokeUserToken)
+		apiKeyGroup.POST("/create", middleware.RequirePermission(data.WriteToken), te.CreateUserToken)
+
+		apiKeyGroup.POST("/admin/revoke/:id", middleware.RequirePermission(data.WriteAnyToken), te.AdminRevokeToken)
+		apiKeyGroup.DELETE("/admin/delete/:id", middleware.RequirePermission(data.WriteAnyToken), te.AdminDeleteUserToken)
+	}
 }
 
 func initPermissionsEndpoints(baseGroup gin.IRouter) {

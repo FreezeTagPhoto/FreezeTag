@@ -28,7 +28,6 @@ func TestRevokeUserTokenInvalidTokenID(t *testing.T) {
 	w := httptest.NewRecorder()
 	authService := mockService.NewMockAuthService(t)
 
-
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
 		c.Set("userID", "1")
@@ -175,7 +174,7 @@ func TestAdminRevokeTokenInvalidTokenID(t *testing.T) {
 
 	req, _ := http.NewRequest("POST", "/tokens/admin/revoke/sdfhb", nil)
 	router.ServeHTTP(w, req)
-	
+
 }
 
 func TestCreateTokenSuccess(t *testing.T) {
@@ -187,7 +186,7 @@ func TestCreateTokenSuccess(t *testing.T) {
 		Return(
 			services.ApiCreateToken{
 				TokenId: 1, TokenString: "plaintexttoken",
-		}, nil).
+			}, nil).
 		Once()
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
@@ -370,8 +369,7 @@ func TestAdminRevokeUserTokenDatabaseError(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, got)
-}	
-
+}
 
 func TestAdminDeleteUserTokenDatabaseError(t *testing.T) {
 	w := httptest.NewRecorder()
@@ -389,5 +387,4 @@ func TestAdminDeleteUserTokenDatabaseError(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, got)
-}	
-
+}

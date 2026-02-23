@@ -35,8 +35,8 @@ type ApiClaims struct {
 }
 
 type ApiCreateToken struct {
-	TokenId database.TokenID `json:"tokenId"`
-	TokenString        string      `json:"tokenString,omitempty"`
+	TokenId     database.TokenID `json:"tokenId"`
+	TokenString string           `json:"tokenString,omitempty"`
 }
 
 type AuthService interface {
@@ -54,7 +54,7 @@ type AuthService interface {
 	ValidateJWT(tokenString string) (JWTClaims, error)
 	// validates the userID and permissions associated with the provided API token
 	ValidateAPIToken(token string) (ApiClaims, error)
-	// creates an API token. Returns the Plaintext token. Plaintext token is not stored. A token can only have as many or fewer permissions as the user has. 
+	// creates an API token. Returns the Plaintext token. Plaintext token is not stored. A token can only have as many or fewer permissions as the user has.
 	// Returns an error if the user does not have the requested permissions.
 	CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (ApiCreateToken, error)
 	// soft delete an API token, returning an error if the token does not exist or could not be revoked
@@ -237,14 +237,14 @@ func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions 
 		return ApiCreateToken{}, err
 	}
 	return ApiCreateToken{
-		TokenId: tokenID,
+		TokenId:     tokenID,
 		TokenString: plaintextToken,
 	}, nil
 }
 
 // ** these dont need much protection, but the auth service later can add additional checks/sorting/buiness/whatever logic here if needed, and the database layer can focus on just data access**
 
-func (s *DefaultAuthService) RevokeAPIToken(userID database.UserID,tokenID database.TokenID) error {
+func (s *DefaultAuthService) RevokeAPIToken(userID database.UserID, tokenID database.TokenID) error {
 	return s.userDatabase.RevokeApiToken(userID, tokenID)
 }
 
@@ -295,4 +295,3 @@ func (s *DefaultAuthService) GetUserPermissions(userID database.UserID) (data.Pe
 func hashToken(token string) [32]byte {
 	return sha256.Sum256([]byte(token))
 }
-

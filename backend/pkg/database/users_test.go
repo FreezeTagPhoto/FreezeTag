@@ -462,7 +462,7 @@ func TestEnsureAdmin(t *testing.T) {
 
 	err = db.EnsureAdmin(user.ID)
 	require.NoError(t, err)
-	
+
 	permissions, err := db.GetUserPermissions(user.ID)
 	require.NoError(t, err)
 	assert.True(t, permissions.Contains(data.AllPermissions()))

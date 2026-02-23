@@ -44,7 +44,7 @@ type UserDatabase interface {
 	// Get User by ID, return error if not found
 	GetUserById(id UserID) (*PublicUser, error)
 	// Set a User Password, return error if user not found or issue occurs
-	SetUserPassword(userID UserID, newPasswordHash string) (error)
+	SetUserPassword(userID UserID, newPasswordHash string) error
 	// Get Password Hash for a User by ID, return error if ID is not found
 	GetPasswordHash(userID UserID) (string, error)
 	// List all users in the database
@@ -69,7 +69,7 @@ type UserDatabase interface {
 	AdminRevokeApiToken(tokenId TokenID) error
 	// delete an API token by its id from the database
 	DeleteApiToken(tokenId TokenID) error
-	// get the label for an API token by its id, return error if not found. 
+	// get the label for an API token by its id, return error if not found.
 	// revoked and expired tokens are still returned by this function, but not deleted tokens
 	GetApiTokenInfo(tokenId TokenID) (ApiTokenInfo, error)
 	// get all API token labels for a user by user ID, return error if user not found
@@ -495,7 +495,7 @@ func (s SqliteUserDatabase) GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var labels []ApiTokenInfo
 	for rows.Next() {
