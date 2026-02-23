@@ -144,7 +144,7 @@
 }
 
 .button:active {
-    transform: translateY(1px);
+    transform: scale(0.98);
 }
 
 .button:disabled {
