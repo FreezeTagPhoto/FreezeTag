@@ -29,7 +29,10 @@ async function change_password_with_handler(
     const current_password = event.get("current_password");
     const new_password = event.get("new_password");
 
-    if (typeof current_password !== "string" || typeof new_password !== "string")
+    if (
+        typeof current_password !== "string" ||
+        typeof new_password !== "string"
+    )
         return Err({ status: 400, message: "Missing password fields" });
 
     const body = new Blob(
