@@ -321,7 +321,7 @@ func TestAddPermissionsFailGrant(t *testing.T) {
 	InitUserEndpoint(mockService).RegisterEndpoints(router)
 
 	params := url.Values{}
-	params.Add("permission", "create:user")
+	params.Add("permission", "write:user")
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", reqURL, nil)
@@ -362,7 +362,7 @@ func TestRevokePermissionsSuccess(t *testing.T) {
 	InitUserEndpoint(mockService).RegisterEndpoints(router)
 
 	params := url.Values{}
-	params.Add("permission", "create:user")
+	params.Add("permission", "write:user")
 	params.Add("permission", "read:files")
 	params.Add("permission", "write:files")
 	params.Add("permission", "delete:user")
@@ -403,7 +403,7 @@ func TestRevokePermissionsFailGrant(t *testing.T) {
 	InitUserEndpoint(mockService).RegisterEndpoints(router)
 
 	params := url.Values{}
-	params.Add("permission", "create:user")
+	params.Add("permission", "write:user")
 	reqURL := "/users/permissions/1?" + params.Encode() // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("DELETE", reqURL, nil)
