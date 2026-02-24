@@ -231,7 +231,7 @@
 }
 
 .dangerButton:hover {
-    background: var(--red);
+    background: var(--maroon);
     color: var(--base);
 }
 
@@ -320,11 +320,24 @@
     background: var(--base);
 }
 
-.tagCell {
+.tagLink {
     min-width: 0;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
+
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text);
+    text-align: left;
+
+    padding: 8px 10px;
+    border-radius: var(--border-radius);
+}
+
+.tagLink:hover {
+    background: var(--base);
 }
 
 .tagName {
@@ -334,6 +347,37 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
+}
+
+.countBadge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: var(--border-info);
+    background: var(--base);
+    color: var(--subtext0);
+
+    font-family: var(--font-geist-sans);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.tagArrow {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    color: var(--subtext0);
+    margin-left: auto;
+}
+
+.tagLink:hover .tagArrow {
+    color: var(--text);
 }
 
 .actions {

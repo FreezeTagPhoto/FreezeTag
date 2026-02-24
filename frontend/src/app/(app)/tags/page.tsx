@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
 import TagGetter from "@/api/tags/taggetter";
+import TagCounter from "@/api/tags/tagcounter";
 import TagDeleter from "@/api/tags/tagdeleter";
+import { useRouter } from "next/navigation";
 import {
     AlertTriangle,
     CheckSquare,
@@ -12,6 +14,7 @@ import {
     Square,
     Trash2,
     X,
+    ArrowRight,
 } from "lucide-react";
 
 type Banner =
@@ -19,8 +22,18 @@ type Banner =
     | { kind: "error"; text: string }
     | null;
 
+function tagToGalleryQuery(tag: string): string {
+    const escaped = tag.replace(/"/g, '\\"');
+    return `"${escaped}";`;
+}
+
 export default function TagsPage() {
+    const router = useRouter();
+
     const [tags, setTags] = useState<string[]>([]);
+    const [counts, setCounts] = useState<Record<string, number>>({});
+    const [countsOk, setCountsOk] = useState<boolean>(false);
+
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [deleting, setDeleting] = useState<boolean>(false);
@@ -59,26 +72,51 @@ export default function TagsPage() {
 
         setBanner(null);
 
-        const result = await TagGetter();
-        if (!result.ok) {
+        const [listRes, countRes] = await Promise.all([
+            TagGetter(),
+            TagCounter(""),
+        ]);
+
+        const nextTagsSet = new Set<string>();
+
+        if (listRes.ok) {
+            for (const t of listRes.value) {
+                if (typeof t === "string" && t.length > 0) nextTagsSet.add(t);
+            }
+        } else {
             setBanner({
                 kind: "error",
-                text: `Failed to load tags (${result.error.status}): ${result.error.message}`,
+                text: `Failed to load tag list (${listRes.error.status}): ${listRes.error.message}`,
             });
-            if (!silent) setLoading(false);
-            else setRefreshing(false);
-            return;
         }
 
-        const list = (result.value ?? []).filter(
-            (t): t is string => typeof t === "string" && t.length > 0,
-        );
+        if (countRes.ok) {
+            const map = countRes.value ?? {};
+            const safe: Record<string, number> = {};
+            for (const [k, v] of Object.entries(map)) {
+                safe[k] = typeof v === "number" ? v : 0;
+                if (k && typeof k === "string") nextTagsSet.add(k);
+            }
+            setCounts(safe);
+            setCountsOk(true);
+        } else {
+            // Keep list usable even if counts fail.
+            setCounts({});
+            setCountsOk(false);
+            setBanner((prev) => {
+                const msg = `Failed to load tag counts (${countRes.error.status}): ${countRes.error.message}`;
+                if (!prev) return { kind: "error", text: msg };
+                // avoid duplicating errors; keep the first if it exists
+                return prev;
+            });
+        }
 
-        setTags(list);
+        const nextTags = [...nextTagsSet].sort((a, b) => a.localeCompare(b));
+
+        setTags(nextTags);
         setSelected((prev) => {
-            // keep selections that still exist
             const next = new Set<string>();
-            const existing = new Set(list);
+            const existing = new Set(nextTags);
             for (const t of prev) if (existing.has(t)) next.add(t);
             return next;
         });
@@ -89,6 +127,7 @@ export default function TagsPage() {
 
     useEffect(() => {
         void loadTags();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -157,6 +196,11 @@ export default function TagsPage() {
             for (const t of toDelete) next.delete(t);
             return next;
         });
+        setCounts((prev) => {
+            const next = { ...prev };
+            for (const t of toDelete) delete next[t];
+            return next;
+        });
 
         setBanner({
             kind: "success",
@@ -168,14 +212,26 @@ export default function TagsPage() {
         setConfirmTags([]);
     }
 
+    function goToGallery(tag: string) {
+        const q = tagToGalleryQuery(tag);
+        router.push(`/?q=${encodeURIComponent(q)}`);
+    }
+
+    const totalUsed = useMemo(() => {
+        if (!countsOk) return null;
+        let sum = 0;
+        for (const t of tags) sum += counts[t] ?? 0;
+        return sum;
+    }, [countsOk, counts, tags]);
+
     return (
         <main className={styles.main}>
             <header className={styles.header}>
                 <div className={styles.headerText}>
                     <h1 className={styles.h1}>Tags</h1>
                     {/* <p className={styles.subtitle}>
-                        View all tags in the database and delete ones you no longer
-                        want. Deleting a tag removes it everywhere it's used.
+                        View all tags in the database, jump to the Gallery by
+                        clicking a tag, or delete ones you no longer want.
                     </p> */}
                 </div>
 
@@ -188,7 +244,7 @@ export default function TagsPage() {
                 >
                     <RefreshCcw className={styles.icon} />
                     <span className={styles.iconButtonText}>
-                        {refreshing ? "Refreshing…" : "Refresh"}
+                        {refreshing ? "Refreshing..." : "Refresh"}
                     </span>
                 </button>
             </header>
@@ -290,10 +346,10 @@ export default function TagsPage() {
                     <div className={styles.listHeaderLeft}>
                         <span className={styles.listTitle}>All tags</span>
                         <span className={styles.listMeta}>
-                            {loading ? "Loading…" : `${tags.length} total`}
-                            {normalizedFilter
-                                ? ` • ${filteredTags.length} matching`
-                                : ""}
+                            {loading ? "Loading..." : `${tags.length} total`}
+                            {normalizedFilter ? ` • ${filteredTags.length} matching` : ""}
+                            {countsOk && totalUsed !== null ? ` • ${totalUsed} uses` : ""}
+                            {!countsOk && !loading ? " • counts unavailable" : ""}
                         </span>
                     </div>
                 </div>
@@ -311,12 +367,14 @@ export default function TagsPage() {
                             <p className={styles.emptySubtitle}>
                                 {normalizedFilter
                                     ? "Try a different search term."
-                                    : "Your database doesn’t have any tags yet."}
+                                    : "Your database doesn't have any tags yet."}
                             </p>
                         </div>
                     ) : (
                         filteredTags.map((tag) => {
                             const isSelected = selected.has(tag);
+                            const count = countsOk ? (counts[tag] ?? 0) : null;
+
                             return (
                                 <div
                                     key={tag}
@@ -346,9 +404,19 @@ export default function TagsPage() {
                                         )}
                                     </button>
 
-                                    <div className={styles.tagCell}>
+                                    <button
+                                        type="button"
+                                        className={styles.tagLink}
+                                        onClick={() => goToGallery(tag)}
+                                        title={`Open Gallery with ${tagToGalleryQuery(tag)}`}
+                                        aria-label={`Open Gallery filtered by ${tag}`}
+                                    >
                                         <span className={styles.tagName}>{tag}</span>
-                                    </div>
+                                        <span className={styles.countBadge}>
+                                            {count === null ? "—" : count}
+                                        </span>
+                                        <ArrowRight className={styles.tagArrow} />
+                                    </button>
 
                                     <div className={styles.actions}>
                                         <button
@@ -445,7 +513,7 @@ export default function TagsPage() {
                                 disabled={deleting}
                             >
                                 <Trash2 className={styles.icon} />
-                                <span>{deleting ? "Deleting…" : "Delete"}</span>
+                                <span>{deleting ? "Deleting..." : "Delete"}</span>
                             </button>
                         </div>
                     </div>
