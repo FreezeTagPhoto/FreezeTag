@@ -66,7 +66,8 @@ export default function TagsPage() {
     }, [filteredTags, selected, selectedCount]);
 
     const allFilteredSelected =
-        filteredTags.length > 0 && filteredSelectedCount === filteredTags.length;
+        filteredTags.length > 0 &&
+        filteredSelectedCount === filteredTags.length;
 
     async function loadTags(opts?: { silent?: boolean }) {
         const silent = opts?.silent ?? false;
@@ -216,7 +217,10 @@ export default function TagsPage() {
     );
 
     const confirmShown = sortedConfirmTags.slice(0, 12);
-    const confirmExtra = Math.max(0, sortedConfirmTags.length - confirmShown.length);
+    const confirmExtra = Math.max(
+        0,
+        sortedConfirmTags.length - confirmShown.length,
+    );
 
     return (
         <main className={styles.main}>
@@ -300,7 +304,9 @@ export default function TagsPage() {
                     <button
                         className={styles.button}
                         onClick={toggleSelectAllFiltered}
-                        disabled={loading || deleting || filteredTags.length === 0}
+                        disabled={
+                            loading || deleting || filteredTags.length === 0
+                        }
                         title={
                             allFilteredSelected
                                 ? "Unselect all (filtered)"
@@ -313,7 +319,9 @@ export default function TagsPage() {
                             <Square className={styles.icon} />
                         )}
                         <span>
-                            {allFilteredSelected ? "Unselect all" : "Select all"}
+                            {allFilteredSelected
+                                ? "Unselect all"
+                                : "Select all"}
                         </span>
                     </button>
 
@@ -329,7 +337,8 @@ export default function TagsPage() {
                     >
                         <Trash2 className={styles.icon} />
                         <span>
-                            Delete {selectedCount > 0 ? ` (${selectedCount})` : ""}
+                            Delete{" "}
+                            {selectedCount > 0 ? ` (${selectedCount})` : ""}
                         </span>
                     </button>
                 </div>
@@ -358,11 +367,10 @@ export default function TagsPage() {
                 disableClose={deleting}
             >
                 <p className={styles.dialogBody}>
-                    This will permanently delete{" "}
-                    <strong>{confirmTags.length}</strong>{" "}
+                    This will permanently delete {confirmTags.length}{" "}
                     {confirmTags.length === 1 ? "tag" : "tags"} and remove{" "}
                     {confirmTags.length === 1 ? "it" : "them"} everywhere
-                    {confirmTags.length === 1 ? " it" : " they"} appear.
+                    {confirmTags.length === 1 ? " it appears" : " they appear"}.
                 </p>
 
                 <div className={styles.dialogTags}>

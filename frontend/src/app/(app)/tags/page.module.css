@@ -260,6 +260,7 @@
 .dialogBody {
     color: var(--subtext0);
     margin-bottom: 12px;
+    font-size: 0.95em;
 }
 
 .dialogTags {
