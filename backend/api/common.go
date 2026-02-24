@@ -1,9 +1,12 @@
 package api
 
 import (
+	"bytes"
 	"fmt"
 	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/database/queries"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 
@@ -63,4 +66,20 @@ func QueryPermissionsFromRequest(c *gin.Context) (data.Permissions, error) {
 		perms = append(perms, permission)
 	}
 	return perms, nil
+}
+
+// Reads the bytes from a multipart.FileHeader
+func ReadFileBytes(fh *multipart.FileHeader) ([]byte, error) {
+	var buf bytes.Buffer
+
+	f, err := fh.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close() //nolint:errcheck
+
+	if _, err := io.Copy(&buf, f); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

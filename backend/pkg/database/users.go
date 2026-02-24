@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
 	"freezetag/backend/pkg/database/data"
@@ -23,6 +24,8 @@ type PublicUser struct {
 }
 
 type TokenStatus string
+
+type ProfilePicture []byte
 
 const (
 	TokenStatusActive  TokenStatus = "active"
@@ -80,6 +83,8 @@ type UserDatabase interface {
 	AllUsers() ([]PublicUser, error)
 	// Set user profile picture, return error if user not found or issue occurs
 	SetUserProfilePicture(userID UserID, pictureData []byte) error
+	// Get user profile picture, return error if user not found or issue occurs
+	GetUserProfilePicture(userID UserID) (ProfilePicture, error)
 }
 
 type SqliteUserDatabase struct {
@@ -132,10 +137,11 @@ func (s SqliteUserDatabase) AddUser(username string, passwordHash string) (*Publ
 
 	createdAt := time.Now().Unix()
 	result, err := s.db.Exec(
-		"INSERT INTO Users (username, passwordHash, createdAt) VALUES (?, ?, ?)",
+		"INSERT INTO Users (username, passwordHash, createdAt, profilePicture) VALUES (?, ?, ?, ?)",
 		username,
 		passwordHash,
 		createdAt,
+		bytes.Repeat([]byte{0}, 256*256),
 	)
 	if err != nil {
 		return nil, err
@@ -589,4 +595,16 @@ func (s SqliteUserDatabase) SetUserProfilePicture(userID UserID, pictureData []b
 		return errors.New("failed to update profile picture: user not found")
 	}
 	return nil
+}
+
+func (s SqliteUserDatabase) GetUserProfilePicture(userID UserID) (ProfilePicture, error) {
+	var pictureData ProfilePicture
+	err := s.db.QueryRow(
+		"SELECT profilePicture FROM Users WHERE id = ?",
+		userID,
+	).Scan(&pictureData)
+	if err != nil {
+		return nil, err
+	}
+	return pictureData, nil
 }

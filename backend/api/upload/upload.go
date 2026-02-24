@@ -1,11 +1,8 @@
 package upload
 
 import (
-	"bytes"
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/services"
-	"io"
-	"mime/multipart"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -48,7 +45,7 @@ func (ue UploadEndpoint) Upload(c *gin.Context) {
 
 	jobs := []services.FileJob{}
 	for _, file := range files {
-		bytes, err := readFileBytes(file)
+		bytes, err := api.ReadFileBytes(file)
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "error reading file bytes in file: " + file.Filename + " with error: " + err.Error()})
@@ -58,20 +55,4 @@ func (ue UploadEndpoint) Upload(c *gin.Context) {
 	}
 	id := ue.jobService.RunUploadJob(jobs)
 	c.JSON(http.StatusAccepted, id)
-}
-
-// Reads the bytes from a multipart.FileHeader
-func readFileBytes(fh *multipart.FileHeader) ([]byte, error) {
-	var buf bytes.Buffer
-
-	f, err := fh.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close() //nolint:errcheck
-
-	if _, err := io.Copy(&buf, f); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
 }

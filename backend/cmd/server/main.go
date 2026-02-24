@@ -80,13 +80,14 @@ func initParserCollection() images.Parser {
 	if err := parserCollection.RegisterParserFunc("*", formats.ParseBasic); err != nil {
 		log.Fatalf("[ERR]  failed to register default parser: %v", err)
 	}
-	// more specific parsers can be registered here
 	return parserCollection
 }
 
 func initializeDependencies() *dependencies {
+	parserCollection := initParserCollection()
+
 	jobRepo := repositories.NewDefaultJobRepository()
-	imageRepo := initDefaultImageRepository(defaultDataDir)
+	imageRepo := initDefaultImageRepository(defaultDataDir, parserCollection)
 	userRepo := initDefaultUserDatabase(defaultDataDir)
 
 	pluginService, err := services.InitDefaultPluginService("./plugins", imageRepo)
@@ -102,7 +103,7 @@ func initializeDependencies() *dependencies {
 		log.Printf("       - %s version %s%s", plug.Name, plug.Version, dis)
 	}
 	jobService := services.InitDefaultJobService(jobRepo, imageRepo, pluginService)
-	authService := services.InitDefaultAuthService(userRepo)
+	authService := services.InitDefaultAuthService(userRepo, parserCollection)
 	err = authService.EnsureLogin()
 	if err != nil {
 		log.Fatalf("[ERR]  error ensuring that the user can log in: %v", err)
@@ -129,7 +130,7 @@ func initDefaultUserDatabase(dataDir string) database.UserDatabase {
 	return db
 }
 
-func initDefaultImageRepository(dataDir string) repositories.ImageRepository {
+func initDefaultImageRepository(dataDir string, parserCollection images.Parser) repositories.ImageRepository {
 	err := os.MkdirAll(dataDir, os.ModePerm)
 	if err != nil {
 		log.Fatalf("failed to create data directory")
@@ -138,7 +139,6 @@ func initDefaultImageRepository(dataDir string) repositories.ImageRepository {
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err.Error())
 	}
-	parserCollection := initParserCollection()
 	return repositories.InitImageRepository(db, parserCollection, path.Join(dataDir, "images"))
 }
 
@@ -220,9 +220,11 @@ func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		ue := user.InitUserEndpoint(deps.authService)
 		userGroup.GET("/:id", middleware.RequirePermission(data.ReadUser), ue.GetUser)
 		userGroup.GET("/all", middleware.RequirePermission(data.ReadUser), ue.ListUsers)
+		userGroup.GET("/profile-picture/:id", middleware.RequirePermission(data.ReadUser), ue.GetProfilePicture)
 		userGroup.GET("/permissions/:id", middleware.RequirePermission(data.ReadPermissions), ue.GetPermissions)
 
 		userGroup.POST("/create", middleware.RequirePermission(data.WriteUser), ue.CreateUser)
+		userGroup.POST("/profile-picture/:id", middleware.RequirePermission(data.WriteUser), ue.UpdateProfilePicture)
 		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
 
 		userGroup.DELETE("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)

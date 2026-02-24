@@ -198,3 +198,61 @@ func (ue UserEndpoint) GetPermissions(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, perms)
 }
+
+// @Summary     Get a user's profile picture
+// @Description Retrieves the profile picture of a user by their ID.
+// @Tags        users
+// @Produce     application/json
+// @Param       id path int true "User ID"
+// @Success     200 {object} api.ProfilePictureResponse
+// @Failure     400 {object} api.BadRequestResponse
+// @Failure     500 {object} api.ServerErrorResponse
+// @Router      /users/profile-picture/{id} [get]
+func (ue UserEndpoint) GetProfilePicture(c *gin.Context) {
+	id, err := api.ParseParamIntoID[database.UserID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
+	picture, err := ue.authService.GetUserProfilePicture(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, api.ProfilePictureResponse{PictureData: picture})
+}
+
+// @Summary     Update a user's profile picture
+// @Description Updates the profile picture of a user by their ID. Accepts a multipart form with a "picture" file field.
+// @Tags        users
+// @Accept      multipart/form-data
+// @Produce     application/json
+// @Param       id   path      int  true  "User ID"
+// @Param       picture formData file true "New profile picture"
+// @Success     200 {object} api.MessageResponse
+// @Failure     400 {object} api.BadRequestResponse
+// @Failure     500 {object} api.ServerErrorResponse
+// @Router      /users/profile-picture/{id} [post]
+func (ue UserEndpoint) UpdateProfilePicture(c *gin.Context) {
+	id, err := api.ParseParamIntoID[database.UserID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
+	file, err := c.FormFile("picture")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to get picture from request: " + err.Error()})
+		return
+	}
+	bytes, err := api.ReadFileBytes(file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "failed to read picture bytes: " + err.Error()})
+		return
+	}
+	err = ue.authService.SetUserProfilePicture(id, bytes, file.Filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "failed to update profile picture: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, api.MessageResponse{Message: "profile picture updated"})
+}
