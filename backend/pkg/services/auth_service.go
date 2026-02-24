@@ -279,12 +279,12 @@ func (s *DefaultAuthService) DeleteUser(userID database.UserID) error {
 }
 
 func (s *DefaultAuthService) GrantPermissions(userID database.UserID, permissions data.Permissions) error {
-	log.Printf("[ADMIN] Granting permissions %v to user with ID %d", permissions, userID)
+	log.Printf("[INFO] Granting permissions %v to user with ID %d", permissions, userID)
 	return s.userDatabase.GrantUserPermissions(userID, permissions)
 }
 
 func (s *DefaultAuthService) RevokePermissions(userID database.UserID, permissions data.Permissions) error {
-	log.Printf("[ADMIN] Revoking permissions %v from user with ID %d", permissions, userID)
+	log.Printf("[INFO] Revoking permissions %v from user with ID %d", permissions, userID)
 	return s.userDatabase.RevokeUserPermissions(userID, permissions)
 }
 
