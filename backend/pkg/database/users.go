@@ -78,7 +78,8 @@ type UserDatabase interface {
 	EnsureAdmin(userID UserID) error
 	// Get all users in the database with their ID, username, and createdAt fields. Does not include password hashes. Return error if issue occurs
 	AllUsers() ([]PublicUser, error)
-	// Get API token info by its hash, return error if not found
+	// Set user profile picture, return error if user not found or issue occurs
+	SetUserProfilePicture(userID UserID, pictureData []byte) error
 }
 
 type SqliteUserDatabase struct {
@@ -569,4 +570,23 @@ func (s SqliteUserDatabase) AllUsers() ([]PublicUser, error) {
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+func (s SqliteUserDatabase) SetUserProfilePicture(userID UserID, pictureData []byte) error {
+	result, err := s.db.Exec(
+		"UPDATE Users SET profilePicture = ? WHERE id = ?",
+		pictureData,
+		userID,
+	)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errors.New("failed to update profile picture: user not found")
+	}
+	return nil
 }
