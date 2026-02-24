@@ -226,12 +226,12 @@
 }
 
 .dangerButton {
-    background: var(--red);
-    color: var(--base);
+    background: var(--base);
+    color: var(--red);
 }
 
 .dangerButton:hover {
-    background: var(--maroon);
+    background: var(--red);
     color: var(--base);
 }
 
@@ -242,16 +242,14 @@
 }
 
 .dangerButton:disabled {
-    background: var(--red);
-    color: var(--base);
+    background: var(--base);
+    color: var(--red);
 }
 
 .icon {
     width: 18px;
     height: 18px;
 }
-
-/* Dialog content injected into the generic Dialog component */
 
 .dialogIcon {
     width: 20px;
