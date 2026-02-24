@@ -14,6 +14,7 @@ import (
 	"freezetag/backend/api/search"
 	"freezetag/backend/api/tags"
 	"freezetag/backend/api/thumbnails"
+	"freezetag/backend/api/tokens"
 	"freezetag/backend/api/upload"
 	"freezetag/backend/api/user"
 	"freezetag/backend/middleware"
@@ -46,7 +47,6 @@ const (
 type dependencies struct {
 	imageRepository repositories.ImageRepository
 	jobRepository   repositories.JobRepository
-	userRepository  repositories.UserRepository
 
 	jobService    services.JobService
 	authService   services.AuthService
@@ -87,7 +87,7 @@ func initParserCollection() images.Parser {
 func initializeDependencies() *dependencies {
 	jobRepo := repositories.NewDefaultJobRepository()
 	imageRepo := initDefaultImageRepository(defaultDataDir)
-	userRepo := initDefaultUserRepository(defaultDataDir)
+	userRepo := initDefaultUserDatabase(defaultDataDir)
 
 	pluginService, err := services.InitDefaultPluginService("./plugins", imageRepo)
 	if err != nil {
@@ -111,14 +111,13 @@ func initializeDependencies() *dependencies {
 	return &dependencies{
 		imageRepository: imageRepo,
 		jobRepository:   jobRepo,
-		userRepository:  userRepo,
 		jobService:      jobService,
 		authService:     authService,
 		pluginService:   pluginService,
 	}
 }
 
-func initDefaultUserRepository(dataDir string) repositories.UserRepository {
+func initDefaultUserDatabase(dataDir string) database.UserDatabase {
 	err := os.MkdirAll(dataDir, os.ModePerm)
 	if err != nil {
 		log.Fatalf("failed to create data directory")
@@ -127,7 +126,7 @@ func initDefaultUserRepository(dataDir string) repositories.UserRepository {
 	if err != nil {
 		log.Fatalf("failed to initialize user database: %v", err.Error())
 	}
-	return repositories.InitDefaultUserRepository(db)
+	return db
 }
 
 func initDefaultImageRepository(dataDir string) repositories.ImageRepository {
@@ -152,6 +151,7 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 
 	initLoginEndpoints(router, deps)
 
+	initApiKeyEndpoints(authGroup, deps)
 	initPermissionsEndpoints(authGroup)
 	initLogoutEndpoints(authGroup, deps)
 	initPasswordEndpoints(authGroup, deps)
@@ -164,6 +164,18 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	initFileEndpoints(authGroup, deps)
 	initUserEndpoints(authGroup, deps)
 	initPluginEndpoints(authGroup, deps)
+}
+
+func initApiKeyEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	apiKeyGroup := baseGroup.Group("/tokens")
+	{
+		te := tokens.InitTokenEndpoint(deps.authService)
+		apiKeyGroup.POST("/revoke/:id", middleware.RequirePermission(data.WriteToken), te.RevokeUserToken)
+		apiKeyGroup.POST("/create", middleware.RequirePermission(data.WriteToken), te.CreateUserToken)
+
+		apiKeyGroup.POST("/admin/revoke/:id", middleware.RequirePermission(data.WriteAnyToken), te.AdminRevokeToken)
+		apiKeyGroup.DELETE("/admin/delete/:id", middleware.RequirePermission(data.WriteAnyToken), te.AdminDeleteUserToken)
+	}
 }
 
 func initPermissionsEndpoints(baseGroup gin.IRouter) {
@@ -205,16 +217,16 @@ func initLogoutEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	userGroup := baseGroup.Group("/users")
 	{
-		ue := user.InitUserEndpoint(deps.userRepository, deps.authService)
+		ue := user.InitUserEndpoint(deps.authService)
 		userGroup.GET("/:id", middleware.RequirePermission(data.ReadUser), ue.GetUser)
 		userGroup.GET("/all", middleware.RequirePermission(data.ReadUser), ue.ListUsers)
 		userGroup.GET("/permissions/:id", middleware.RequirePermission(data.ReadPermissions), ue.GetPermissions)
 
-		userGroup.POST("/create", middleware.RequirePermission(data.CreateUser), ue.CreateUser)
+		userGroup.POST("/create", middleware.RequirePermission(data.WriteUser), ue.CreateUser)
 		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
 
 		userGroup.DELETE("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)
-		userGroup.DELETE("/:id", middleware.RequirePermission(data.DeleteUser), ue.DeleteUser)
+		userGroup.DELETE("/:id", middleware.RequirePermission(data.WriteUser), ue.DeleteUser)
 
 	}
 }

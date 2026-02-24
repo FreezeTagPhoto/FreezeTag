@@ -124,7 +124,7 @@ func TestLoginExistingLoginCookie(t *testing.T) {
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 	NewMockAuthService.EXPECT().
 		ValidateJWT("existing_token").
-		Return(services.Claims{
+		Return(services.JWTClaims{
 			RegisteredClaims: jwt.RegisteredClaims{
 				Subject: "1",
 			},
@@ -155,7 +155,7 @@ func TestLoginExistingLoginCookieNoAuth(t *testing.T) {
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 	NewMockAuthService.EXPECT().
 		ValidateJWT("existing_token").
-		Return(services.Claims{}, errors.New("no auth")).Once()
+		Return(services.JWTClaims{}, errors.New("no auth")).Once()
 
 	router := gin.Default()
 
@@ -182,7 +182,7 @@ func TestLoginExistingLoginCookieNoSub(t *testing.T) {
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 	NewMockAuthService.EXPECT().
 		ValidateJWT("existing_token").
-		Return(services.Claims{}, nil).Once()
+		Return(services.JWTClaims{}, nil).Once()
 
 	router := gin.Default()
 
@@ -228,11 +228,11 @@ func TestLoginInfoBadId(t *testing.T) {
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 	NewMockAuthService.EXPECT().
 		ValidateJWT("existing_token").
-		Return(services.Claims{
+		Return(services.JWTClaims{
 			RegisteredClaims: jwt.RegisteredClaims{
 				Subject: "1",
 			},
-			Permissions: data.Permissions{data.CreateUser},
+			Permissions: data.Permissions{data.WriteUser},
 		}, nil).Once()
 
 	router := gin.Default()
@@ -251,6 +251,6 @@ func TestLoginInfoBadId(t *testing.T) {
 	var got api.LoginUserResponse
 	err = json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	expected := api.LoginUserResponse{UserID: 1, Permissions: data.Permissions{data.CreateUser}}
+	expected := api.LoginUserResponse{UserID: 1, Permissions: data.Permissions{data.WriteUser}}
 	assert.Equal(t, expected, got)
 }

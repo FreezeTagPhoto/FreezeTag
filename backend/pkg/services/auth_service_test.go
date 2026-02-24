@@ -2,12 +2,11 @@ package services
 
 import (
 	"fmt"
+	mockUserDatabase "freezetag/backend/mocks/UserDatabase"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/data"
 	"testing"
 	"time"
-
-	mockUserRepository "freezetag/backend/mocks/UserRepository"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
@@ -28,8 +27,8 @@ func TestAddUser(t *testing.T) {
 	}
 
 	// bcrypt automatically salts the password, so we can't predict the hash value.
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
 		AddUser("newuser", mock.AnythingOfType("string")).
 		RunAndReturn(
 			func(username string, passwordHash string) (*database.PublicUser, error) {
@@ -38,7 +37,7 @@ func TestAddUser(t *testing.T) {
 			}).
 		Once()
 
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	userGot, err := authService.AddUser("newuser", plaintextPassword)
 	require.NoError(t, err)
 	require.Equal(t, user, userGot)
@@ -49,19 +48,19 @@ func TestAddUser(t *testing.T) {
 }
 
 func TestEnsureLoginNoUsers(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().ListAllUsers().Return(nil, nil)
-	mockRepo.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(&database.PublicUser{ID: 1}, nil)
-	mockRepo.EXPECT().GrantAdminPermissions(mock.Anything).Return(nil)
-	authService := InitDefaultAuthService(mockRepo)
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().AllUsers().Return(nil, nil)
+	mockDb.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(&database.PublicUser{ID: 1}, nil)
+	mockDb.EXPECT().EnsureAdmin(mock.Anything).Return(nil)
+	authService := InitDefaultAuthService(mockDb)
 	err := authService.EnsureLogin()
 	assert.NoError(t, err)
 }
 
 func TestEnsureLoginAlreadyUser(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().ListAllUsers().Return([]*database.PublicUser{{ID: 1}}, nil)
-	authService := InitDefaultAuthService(mockRepo)
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().AllUsers().Return([]database.PublicUser{{ID: 1}}, nil)
+	authService := InitDefaultAuthService(mockDb)
 	err := authService.EnsureLogin()
 	assert.NoError(t, err)
 }
@@ -69,13 +68,13 @@ func TestEnsureLoginAlreadyUser(t *testing.T) {
 func TestAddUserFails(t *testing.T) {
 	plaintextPassword := "securepassword"
 
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
 		AddUser("domer", mock.AnythingOfType("string")).
 		Return(nil, assert.AnError).
 		Once()
 
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	userGot, err := authService.AddUser("domer", plaintextPassword)
 	require.Error(t, err)
 	assert.Nil(t, userGot)
@@ -86,8 +85,8 @@ func TestAuthenticateUser(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
 		GetUserByUsername("authuser").
 		Return(&database.PublicUser{
 			ID:           database.UserID(7),
@@ -96,12 +95,12 @@ func TestAuthenticateUser(t *testing.T) {
 			PasswordHash: string(hashedPassword),
 		}, nil).
 		Once()
-	mockRepo.EXPECT().
+	mockDb.EXPECT().
 		GetUserPermissions(database.UserID(7)).
 		Return(data.Permissions{}, nil).
 		Once()
 
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	_, err = authService.AuthenticateUser("authuser", plaintextPassword)
 	require.NoError(t, err)
 }
@@ -112,8 +111,8 @@ func TestAuthenticateUserFails(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
 		GetUserByUsername("authuser").
 		Return(&database.PublicUser{
 			ID:           database.UserID(7),
@@ -123,19 +122,19 @@ func TestAuthenticateUserFails(t *testing.T) {
 		}, nil).
 		Once()
 
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	_, err = authService.AuthenticateUser("authuser", wrongPassword)
 	require.Error(t, err)
 }
 
 func TestAuthenticateNonexistentUser(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
 		GetUserByUsername("nonexistent").
 		Return(nil, assert.AnError).
 		Once()
 
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	_, err := authService.AuthenticateUser("nonexistent", "anyPassword")
 	require.Error(t, err)
 }
@@ -157,13 +156,13 @@ func TestCreateToken(t *testing.T) {
 }
 
 func TestLoginCreatesValidJWT(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
 
 	uid := database.UserID(123)
 
 	password := "password"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 1)
-	mockRepo.EXPECT().
+	mockDb.EXPECT().
 		GetUserByUsername("testuser").
 		Return(&database.PublicUser{
 			ID:           uid,
@@ -171,17 +170,17 @@ func TestLoginCreatesValidJWT(t *testing.T) {
 			PasswordHash: string(hashedPassword),
 		}, nil).
 		Once()
-	mockRepo.EXPECT().
+	mockDb.EXPECT().
 		GetUserPermissions(uid).
 		Return(data.Permissions{data.ReadUser}, nil).
 		Once()
 
-	service := InitDefaultAuthService(mockRepo)
+	service := InitDefaultAuthService(mockDb)
 	tokenString, err := service.AuthenticateUser("testuser", password)
 	require.NoError(t, err)
 	assert.NotEmpty(t, tokenString)
 
-	claims := Claims{}
+	claims := JWTClaims{}
 	_, err = jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
 		return []byte(JwtSecretKey), nil
 	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
@@ -210,7 +209,7 @@ func TestValidateJWTinvalidToken(t *testing.T) {
 	auth := InitDefaultAuthService(nil)
 	claims, err := auth.ValidateJWT("invalid token")
 	require.Error(t, err)
-	require.Equal(t, Claims{}, claims)
+	require.Equal(t, JWTClaims{}, claims)
 }
 
 func TestValidateJWTexpiredToken(t *testing.T) {
@@ -223,14 +222,14 @@ func TestValidateJWTexpiredToken(t *testing.T) {
 	require.NoError(t, err)
 	claims, err := auth.ValidateJWT(tokenString)
 	require.Error(t, err)
-	require.Equal(t, Claims{}, claims)
+	require.Equal(t, JWTClaims{}, claims)
 }
 
 func TestCreateJWTNoPermissions(t *testing.T) {
 	userID := database.UserID(123)
 	tokenString, err := createTokenWithPermissions(userID, nil)
 	require.NoError(t, err)
-	claims := Claims{}
+	claims := JWTClaims{}
 	_, err = jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
 		return []byte(JwtSecretKey), nil
 	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
@@ -239,66 +238,70 @@ func TestCreateJWTNoPermissions(t *testing.T) {
 }
 
 func TestEnsureLoginCreatesAdmin(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().ListAllUsers().Return(nil, nil)
-	mockRepo.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(&database.PublicUser{ID: 1}, nil)
-	mockRepo.EXPECT().GrantAdminPermissions(database.UserID(1)).Return(nil)
-	authService := InitDefaultAuthService(mockRepo)
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().AllUsers().Return(nil, nil)
+	mockDb.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(&database.PublicUser{ID: 1}, nil)
+	mockDb.EXPECT().EnsureAdmin(database.UserID(1)).Return(nil)
+	authService := InitDefaultAuthService(mockDb)
 	err := authService.EnsureLogin()
 	assert.NoError(t, err)
 }
 
 func TestEnsureLoginWithUsers(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().ListAllUsers().Return([]*database.PublicUser{{ID: 1}}, nil)
-	authService := InitDefaultAuthService(mockRepo)
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().AllUsers().Return([]database.PublicUser{{ID: 1}}, nil)
+	authService := InitDefaultAuthService(mockDb)
 	err := authService.EnsureLogin()
 	assert.NoError(t, err)
 }
 
 func TestEnsureLoginFailsAddUser(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().ListAllUsers().Return(nil, nil)
-	mockRepo.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(nil, assert.AnError)
-	authService := InitDefaultAuthService(mockRepo)
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().AllUsers().Return(nil, nil)
+	mockDb.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(nil, assert.AnError)
+	authService := InitDefaultAuthService(mockDb)
 	err := authService.EnsureLogin()
 	assert.Error(t, err)
 }
 
 func TestEnsureLoginFailsGrantAdmin(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().ListAllUsers().Return(nil, nil)
-	mockRepo.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(&database.PublicUser{ID: 1}, nil)
-	mockRepo.EXPECT().GrantAdminPermissions(database.UserID(1)).Return(assert.AnError)
-	authService := InitDefaultAuthService(mockRepo)
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().AllUsers().Return(nil, nil)
+	mockDb.EXPECT().AddUser("admin", mock.AnythingOfType("string")).Return(&database.PublicUser{ID: 1}, nil)
+	mockDb.EXPECT().EnsureAdmin(database.UserID(1)).Return(assert.AnError)
+	authService := InitDefaultAuthService(mockDb)
 	err := authService.EnsureLogin()
 	assert.Error(t, err)
 }
 
 func TestValidateAPIToken(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetApiUserID(mock.Anything).
+		Return(database.UserID(1), nil).
+		Once()
+	mockDb.EXPECT().
 		GetApiPermissions(mock.Anything).
 		Return(data.Permissions{data.ReadUser}, nil).
 		Once()
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 
-	permissions, err := authService.ValidateAPIToken("token")
+	claims, err := authService.ValidateAPIToken("token")
 	require.NoError(t, err)
-	assert.ElementsMatch(t, data.Permissions{data.ReadUser}, permissions)
+	assert.ElementsMatch(t, data.Permissions{data.ReadUser}, claims.Permissions)
 }
 
 func TestValidateAPITokenInvalid(t *testing.T) {
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
-		GetApiPermissions(mock.Anything).
-		Return(nil, assert.AnError).
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetApiUserID(mock.Anything).
+		Return(database.UserID(1), assert.AnError).
 		Once()
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 
-	permissions, err := authService.ValidateAPIToken("invalid_token")
+	claims, err := authService.ValidateAPIToken("invalid_token")
 	require.Error(t, err)
-	assert.Nil(t, permissions)
+	assert.Equal(t, ApiClaims{}, claims)
 }
 
 func TestHashToken(t *testing.T) {
@@ -315,8 +318,8 @@ func TestAuthenticateUserPermissionsError(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
 		GetUserByUsername("authuser").
 		Return(&database.PublicUser{
 			ID:           database.UserID(7),
@@ -325,12 +328,12 @@ func TestAuthenticateUserPermissionsError(t *testing.T) {
 			PasswordHash: string(hashedPassword),
 		}, nil).
 		Once()
-	mockRepo.EXPECT().
+	mockDb.EXPECT().
 		GetUserPermissions(database.UserID(7)).
 		Return(nil, assert.AnError).
 		Once()
 
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	_, err = authService.AuthenticateUser("authuser", plaintextPassword)
 	assert.Error(t, err)
 }
@@ -341,20 +344,20 @@ func TestChangePasswordSuccess(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
-		GetUserPasswordHash(database.UserID(7)).
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetPasswordHash(database.UserID(7)).
 		Return(string(hashedPassword), nil).
 		Once()
-	mockRepo.EXPECT().
-		ChangePassword(database.UserID(7), mock.AnythingOfType("string")).
+	mockDb.EXPECT().
+		SetUserPassword(database.UserID(7), mock.AnythingOfType("string")).
 		Return(nil).
 		Run(func(userID database.UserID, newHash string) {
 			err := bcrypt.CompareHashAndPassword([]byte(newHash), []byte(newPassword))
 			assert.NoError(t, err, "New password hash does not match the new password")
 		}).
 		Once()
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	err = authService.ChangePassword(database.UserID(7), plaintextPassword, newPassword)
 	assert.NoError(t, err)
 }
@@ -364,60 +367,127 @@ func TestChangePasswordInvalidHash(t *testing.T) {
 	newPassword := "newsecurepassword"
 	fakeHash, err := bcrypt.GenerateFromPassword([]byte("insecurePassword"), bcrypt.DefaultCost)
 	require.NoError(t, err)
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
-		GetUserPasswordHash(database.UserID(7)).
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetPasswordHash(database.UserID(7)).
 		Return(string(fakeHash), nil).
 		Once()
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	err = authService.ChangePassword(database.UserID(7), plaintextPassword, newPassword)
 	assert.Error(t, err)
 }
 
-func TestUserRepoErrorChangePassword(t *testing.T) {	
+func TestUserRepoErrorChangePassword(t *testing.T) {
 	plaintextPassword := "securepassword"
 	newPassword := "newsecurepassword"
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
 	require.NoError(t, err)
-	
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
-		GetUserPasswordHash(database.UserID(7)).
+
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetPasswordHash(database.UserID(7)).
 		Return(string(hashedPassword), nil).
 		Once()
-	mockRepo.EXPECT().
-		ChangePassword(database.UserID(7), mock.AnythingOfType("string")).
+	mockDb.EXPECT().
+		SetUserPassword(database.UserID(7), mock.AnythingOfType("string")).
 		Return(assert.AnError).
 		Once()
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	err = authService.ChangePassword(database.UserID(7), plaintextPassword, newPassword)
 	assert.Error(t, err)
 }
 
 func TestForceChangePassword(t *testing.T) {
 	newPassword := "newsecurepassword"
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
-		ChangePassword(database.UserID(7), mock.AnythingOfType("string")).
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		SetUserPassword(database.UserID(7), mock.AnythingOfType("string")).
 		Return(nil).
 		Run(func(userID database.UserID, newHash string) {
 			err := bcrypt.CompareHashAndPassword([]byte(newHash), []byte(newPassword))
 			assert.NoError(t, err, "New password hash does not match the new password")
 		}).
 		Once()
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	err := authService.ForceChangePassword(database.UserID(7), newPassword)
 	assert.NoError(t, err)
 }
 
 func TestForceChangePasswordRepoError(t *testing.T) {
 	newPassword := "newsecurepassword"
-	mockRepo := mockUserRepository.NewMockUserRepository(t)
-	mockRepo.EXPECT().
-		ChangePassword(database.UserID(7), mock.AnythingOfType("string")).
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		SetUserPassword(database.UserID(7), mock.AnythingOfType("string")).
 		Return(assert.AnError).
 		Once()
-	authService := InitDefaultAuthService(mockRepo)
+	authService := InitDefaultAuthService(mockDb)
 	err := authService.ForceChangePassword(database.UserID(7), newPassword)
 	assert.Error(t, err)
+}
+
+func TestValidateAPITokenFailsGettingPermissions(t *testing.T) {
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetApiUserID(mock.Anything).
+		Return(database.UserID(1), nil).
+		Once()
+	mockDb.EXPECT().
+		GetApiPermissions(mock.Anything).
+		Return(nil, assert.AnError).
+		Once()
+	authService := InitDefaultAuthService(mockDb)
+
+	claims, err := authService.ValidateAPIToken("token")
+	require.Error(t, err)
+	assert.Equal(t, ApiClaims{}, claims)
+}
+
+func TestCreateApiToken(t *testing.T) {
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetUserPermissions(database.UserID(1)).
+		Return(data.Permissions{data.ReadUser}, nil).
+		Once()
+	mockDb.EXPECT().
+		SaveApiToken(database.UserID(1), mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(database.TokenID(1), nil).
+		Once()
+	authService := InitDefaultAuthService(mockDb)
+
+	token, err := authService.CreateAPIToken(database.UserID(1), data.Permissions{data.ReadUser}, nil, "test token")
+	assert.NoError(t, err)
+	assert.Equal(t, database.TokenID(1), token.TokenId)
+	assert.NotEmpty(t, token.TokenString)
+}
+
+func TestCreateApiTokenFail(t *testing.T) {
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetUserPermissions(database.UserID(1)).
+		Return(data.Permissions{data.ReadUser}, nil).
+		Once()
+	mockDb.EXPECT().
+		SaveApiToken(database.UserID(1), mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(database.TokenID(0), assert.AnError).
+		Once()
+	authService := InitDefaultAuthService(mockDb)
+
+	token, err := authService.CreateAPIToken(database.UserID(1), data.Permissions{data.ReadUser}, nil, "test token")
+	assert.Error(t, err)
+	assert.Equal(t, database.TokenID(0), token.TokenId)
+	assert.Empty(t, token.TokenString)
+}
+
+func TestCreateApiTokenInvalidPermissions(t *testing.T) {
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		GetUserPermissions(database.UserID(1)).
+		Return(data.Permissions{data.ReadUser}, nil).
+		Once()
+	authService := InitDefaultAuthService(mockDb)
+
+	token, err := authService.CreateAPIToken(database.UserID(1), data.Permissions{data.WriteUser}, nil, "test token")
+	assert.Error(t, err)
+	assert.Equal(t, database.TokenID(0), token.TokenId)
+	assert.Empty(t, token.TokenString)
 }

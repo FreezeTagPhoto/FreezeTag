@@ -18,7 +18,7 @@ func InitPermissionEndpoint() *PermissionEndpoint {
 // @tags permissions
 // @router /permissions/list [get]
 // @produce application/json
-// @success 200 {array} string "List of permission names"
+// @success 200 {array} data.Permission "List of permission names"
 func (p *PermissionEndpoint) ListPermissions(c *gin.Context) {
 	permissions := data.AllPermissions()
 	c.JSON(http.StatusOK, permissions)

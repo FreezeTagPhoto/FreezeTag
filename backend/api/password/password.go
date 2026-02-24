@@ -2,6 +2,7 @@ package password
 
 import (
 	"freezetag/backend/api"
+	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/services"
 	"net/http"
 
@@ -45,7 +46,7 @@ func (pe PasswordEndpoint) ChangePassword(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, api.BadRequestResponse{Error: "invalid user ID in JWT token"})
 		return
 	}
-	userID, err := api.GetUserIDFromString(subString)
+	userID, err := api.ParseParamIntoID[database.UserID](subString)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, api.BadRequestResponse{Error: "invalid user ID in JWT token"})
 		return

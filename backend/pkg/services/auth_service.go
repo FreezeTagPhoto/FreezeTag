@@ -4,9 +4,9 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/data"
-	"freezetag/backend/pkg/repositories"
 	"log"
 	"os"
 	"strconv"
@@ -24,26 +24,68 @@ var (
 	bcryptCost         = bcrypt.DefaultCost
 )
 
-type Claims struct {
+type JWTClaims struct {
 	Permissions data.Permissions `json:"permissions"`
 	jwt.RegisteredClaims
 }
 
+type ApiClaims struct {
+	UserID      database.UserID  `json:"userId"`
+	Permissions data.Permissions `json:"permissions"`
+}
+
+type ApiCreateToken struct {
+	TokenId     database.TokenID `json:"tokenId"`
+	TokenString string           `json:"tokenString,omitempty"`
+}
+
 type AuthService interface {
+	// add a user with the given username and password, returning the created user. The password will be hashed before being stored.
 	AddUser(username string, password string) (*database.PublicUser, error)
+	// Ensures that there is a valid login by creating a default admin user if no users exist. Should be called at server startup.
 	EnsureLogin() error
+	// ChangePassword changes the user's password after verifying the current password. Returns an error if the current password is incorrect.
 	ChangePassword(userID database.UserID, currentPassword string, newPassword string) error
+	// ForceChangePassword changes the user's password without requiring the current password. Use with caution.
 	ForceChangePassword(userID database.UserID, newPassword string) error
+	// returns a JWT token if the username and password are correct
 	AuthenticateUser(username string, password string) (string, error)
-	ValidateJWT(tokenString string) (Claims, error)
-	ValidateAPIToken(token string) (data.Permissions, error)
+	// validates the userID, permissions, and default JWT claims associated with the provided JWT token
+	ValidateJWT(tokenString string) (JWTClaims, error)
+	// validates the userID and permissions associated with the provided API token
+	ValidateAPIToken(token string) (ApiClaims, error)
+	// creates an API token. Returns the Plaintext token. Plaintext token is not stored. A token can only have as many or fewer permissions as the user has.
+	// Returns an error if the user does not have the requested permissions.
+	CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (ApiCreateToken, error)
+	// soft delete an API token, returning an error if the token does not exist or could not be revoked
+	RevokeAPIToken(userId database.UserID, tokenID database.TokenID) error
+	// permanently delete an API token, returning an error if the token does not exist or could not be deleted. Admin only operation
+	AdminRevokeAPIToken(tokenID database.TokenID) error
+	// delete an API token, returning an error if the token does not exist or could not be deleted
+	DeleteAPIToken(tokenID database.TokenID) error
+	// Get the IDs of the tokens associated with a user
+	GetUserApiTokenInfo(userID database.UserID) ([]database.ApiTokenInfo, error)
+	// GetUserById returns the public user information for a given user ID
+	GetUserById(userID database.UserID) (*database.PublicUser, error)
+	// GetPublicUser returns the public user information for a given user ID, or an error if the user does not exist
+	GetPublicUser(userID database.UserID) (*database.PublicUser, error)
+	// List all users in the system
+	AllUsers() ([]database.PublicUser, error)
+	// Delete a user by ID
+	DeleteUser(userID database.UserID) error
+	// GrantPermissions grants the specified permissions to the user with the given ID
+	GrantPermissions(userID database.UserID, permissions data.Permissions) error
+	// RevokePermissions revokes the specified permissions from the user with the given ID
+	RevokePermissions(userID database.UserID, permissions data.Permissions) error
+	// GetUserPermissions returns the permissions associated with the given user ID
+	GetUserPermissions(userID database.UserID) (data.Permissions, error)
 }
 
 type DefaultAuthService struct {
-	userRepo repositories.UserRepository
+	userDatabase database.UserDatabase
 }
 
-func InitDefaultAuthService(userRepo repositories.UserRepository) *DefaultAuthService {
+func InitDefaultAuthService(userDb database.UserDatabase) *DefaultAuthService {
 	key, exists := os.LookupEnv("JWT_SECRET_KEY")
 	if !exists || key == "" {
 		log.Printf("[WARN] JWT_SECRET_KEY in .env file was not found or was empty, defaulting to random bytes")
@@ -57,12 +99,12 @@ func InitDefaultAuthService(userRepo repositories.UserRepository) *DefaultAuthSe
 		JwtSecretKey = key
 	}
 	return &DefaultAuthService{
-		userRepo: userRepo,
+		userDatabase: userDb,
 	}
 }
 
 func (s *DefaultAuthService) EnsureLogin() error {
-	users, err := s.userRepo.ListAllUsers()
+	users, err := s.userDatabase.AllUsers()
 	if err != nil {
 		return err
 	}
@@ -72,7 +114,7 @@ func (s *DefaultAuthService) EnsureLogin() error {
 		if err != nil {
 			return err
 		}
-		err = s.userRepo.GrantAdminPermissions(user.ID)
+		err = s.userDatabase.EnsureAdmin(user.ID)
 		if err != nil {
 			return err
 		}
@@ -82,7 +124,7 @@ func (s *DefaultAuthService) EnsureLogin() error {
 
 func (s *DefaultAuthService) AuthenticateUser(username string, password string) (string, error) {
 
-	user, err := s.userRepo.GetUserByUsername(username)
+	user, err := s.userDatabase.GetUserByUsername(username)
 	if err != nil {
 		return "", err
 	}
@@ -91,7 +133,7 @@ func (s *DefaultAuthService) AuthenticateUser(username string, password string) 
 	if err != nil {
 		return "", err
 	}
-	permissions, err := s.userRepo.GetUserPermissions(user.ID)
+	permissions, err := s.userDatabase.GetUserPermissions(user.ID)
 	if err != nil {
 		return "", err
 	}
@@ -104,32 +146,39 @@ func (s *DefaultAuthService) AddUser(username string, password string) (*databas
 	if err != nil {
 		return nil, err
 	}
-	return s.userRepo.AddUser(username, string(hash))
+	return s.userDatabase.AddUser(username, string(hash))
 }
 
-func (s *DefaultAuthService) ValidateJWT(tokenString string) (Claims, error) {
-	claims := Claims{}
+func (s *DefaultAuthService) ValidateJWT(tokenString string) (JWTClaims, error) {
+	claims := JWTClaims{}
 	_, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
 		return []byte(JwtSecretKey), nil
 	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
 
 	if err != nil {
-		return Claims{}, err
+		return JWTClaims{}, err
 	}
 	return claims, nil
 }
 
-func (s *DefaultAuthService) ValidateAPIToken(token string) (data.Permissions, error) {
+func (s *DefaultAuthService) ValidateAPIToken(token string) (ApiClaims, error) {
 	tokenHash := hashToken(token)
-	permissions, err := s.userRepo.GetApiPermissions(tokenHash)
+	userID, err := s.userDatabase.GetApiUserID(tokenHash)
 	if err != nil {
-		return nil, err
+		return ApiClaims{}, err
 	}
-	return permissions, nil
+	permissions, err := s.userDatabase.GetApiPermissions(tokenHash)
+	if err != nil {
+		return ApiClaims{}, err
+	}
+	return ApiClaims{
+		UserID:      userID,
+		Permissions: permissions,
+	}, nil
 }
 
 func (s *DefaultAuthService) ChangePassword(userID database.UserID, currentPassword string, newPassword string) error {
-	hash, err := s.userRepo.GetUserPasswordHash(userID)
+	hash, err := s.userDatabase.GetPasswordHash(userID)
 	if err != nil {
 		return err
 	}
@@ -141,7 +190,7 @@ func (s *DefaultAuthService) ChangePassword(userID database.UserID, currentPassw
 	if err != nil {
 		return err
 	}
-	return s.userRepo.ChangePassword(userID, string(newHash))
+	return s.userDatabase.SetUserPassword(userID, string(newHash))
 }
 
 func (s *DefaultAuthService) ForceChangePassword(userID database.UserID, newPassword string) error {
@@ -149,11 +198,11 @@ func (s *DefaultAuthService) ForceChangePassword(userID database.UserID, newPass
 	if err != nil {
 		return err
 	}
-	return s.userRepo.ChangePassword(userID, string(newHash))
+	return s.userDatabase.SetUserPassword(userID, string(newHash))
 }
 
 func createTokenWithPermissions(userID database.UserID, permissions data.Permissions) (string, error) {
-	JWTClaims := Claims{
+	JWTClaims := JWTClaims{
 		Permissions: permissions,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   strconv.FormatInt(int64(userID), 10),
@@ -163,6 +212,84 @@ func createTokenWithPermissions(userID database.UserID, permissions data.Permiss
 	}
 	token := jwt.NewWithClaims(JwtSigningMethod, JWTClaims)
 	return token.SignedString([]byte(JwtSecretKey))
+}
+
+func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (ApiCreateToken, error) {
+	plaintextTokenBytes := make([]byte, 32)
+	_, err := rand.Read(plaintextTokenBytes)
+	if err != nil {
+		return ApiCreateToken{}, err
+	}
+	plaintextToken := base64.StdEncoding.EncodeToString(plaintextTokenBytes)
+	tokenHash := hashToken(plaintextToken)
+
+	user_permissions, err := s.userDatabase.GetUserPermissions(userID)
+	if err != nil {
+		return ApiCreateToken{}, err
+	}
+	if !user_permissions.Contains(permissions) {
+		log.Printf("[WARN] User with ID %d attempted to create an API token with permissions that exceed their own", userID)
+		return ApiCreateToken{}, fmt.Errorf("invalid permissions requested")
+	}
+
+	tokenID, err := s.userDatabase.SaveApiToken(userID, expiresAt, tokenHash, label, permissions)
+	if err != nil {
+		return ApiCreateToken{}, err
+	}
+	return ApiCreateToken{
+		TokenId:     tokenID,
+		TokenString: plaintextToken,
+	}, nil
+}
+
+// ** these dont need much protection, but the auth service later can add additional checks/sorting/buiness/whatever logic here if needed, and the database layer can focus on just data access**
+
+func (s *DefaultAuthService) RevokeAPIToken(userID database.UserID, tokenID database.TokenID) error {
+	return s.userDatabase.RevokeApiToken(userID, tokenID)
+}
+
+func (s *DefaultAuthService) AdminRevokeAPIToken(tokenID database.TokenID) error {
+	log.Printf("[INFO] revoking API token with ID %d", tokenID)
+	return s.userDatabase.AdminRevokeApiToken(tokenID)
+}
+
+func (s *DefaultAuthService) DeleteAPIToken(tokenID database.TokenID) error {
+	log.Printf("[INFO] Deleting an API token with ID %d", tokenID)
+	return s.userDatabase.DeleteApiToken(tokenID)
+}
+
+func (s *DefaultAuthService) GetUserApiTokenInfo(userID database.UserID) ([]database.ApiTokenInfo, error) {
+	return s.userDatabase.GetUserApiTokenInfo(userID)
+}
+
+func (s *DefaultAuthService) GetUserById(userID database.UserID) (*database.PublicUser, error) {
+	return s.userDatabase.GetUserById(userID)
+}
+
+func (s *DefaultAuthService) GetPublicUser(userID database.UserID) (*database.PublicUser, error) {
+	return s.userDatabase.GetUserById(userID)
+}
+
+func (s *DefaultAuthService) AllUsers() ([]database.PublicUser, error) {
+	return s.userDatabase.AllUsers()
+}
+
+func (s *DefaultAuthService) DeleteUser(userID database.UserID) error {
+	return s.userDatabase.DeleteUser(userID)
+}
+
+func (s *DefaultAuthService) GrantPermissions(userID database.UserID, permissions data.Permissions) error {
+	log.Printf("[INFO] Granting permissions %v to user with ID %d", permissions, userID)
+	return s.userDatabase.GrantUserPermissions(userID, permissions)
+}
+
+func (s *DefaultAuthService) RevokePermissions(userID database.UserID, permissions data.Permissions) error {
+	log.Printf("[INFO] Revoking permissions %v from user with ID %d", permissions, userID)
+	return s.userDatabase.RevokeUserPermissions(userID, permissions)
+}
+
+func (s *DefaultAuthService) GetUserPermissions(userID database.UserID) (data.Permissions, error) {
+	return s.userDatabase.GetUserPermissions(userID)
 }
 
 func hashToken(token string) [32]byte {

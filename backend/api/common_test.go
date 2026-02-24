@@ -13,20 +13,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetUserIdFromStringSuccess(t *testing.T) {
-	id, err := GetUserIDFromString("123")
+func TestParseParamStringSuccess(t *testing.T) {
+	id, err := ParseParamIntoID[database.UserID]("123")
 	assert.NoError(t, err)
 	assert.Equal(t, database.UserID(123), id)
 }
 
-func TestGetUserIdFromStringInvalid(t *testing.T) {
-	id, err := GetUserIDFromString("one")
+func TestParseParamStringNonNumeric(t *testing.T) {
+	id, err := ParseParamIntoID[database.UserID]("abc")
+	assert.Error(t, err)
+	assert.Equal(t, database.UserID(0), id)
+}
+
+func TestParseParamEmpty(t *testing.T) {
+	id, err := ParseParamIntoID[database.TokenID]("")
+	assert.Error(t, err)
+	assert.Equal(t, database.TokenID(0), id)
+}
+
+func TestParseParamNonString(t *testing.T) {
+	id, err := ParseParamIntoID[database.UserID](123)
+	assert.Error(t, err)
+	assert.Equal(t, database.UserID(0), id)
+}
+
+func TestParseParamStringInvalid(t *testing.T) {
+	id, err := ParseParamIntoID[database.UserID]("one")
 	assert.Error(t, err)
 	assert.Equal(t, database.UserID(0), id)
 }
 
 func TestGetUserIdFromStringNegative(t *testing.T) {
-	id, err := GetUserIDFromString("-5")
+	id, err := ParseParamIntoID[database.UserID]("-5")
 	assert.Error(t, err)
 	assert.Equal(t, database.UserID(0), id)
 }
@@ -144,5 +162,44 @@ func TestExtractDatabaseQueries(t *testing.T) {
 		dbq := GetRequestQuery(ctx)
 		assert.Nil(t, dbq)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
+func TestQueryPermissionsFromRequest(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		req, _ := http.NewRequest(http.MethodGet, "/permissions", nil)
+		q := req.URL.Query()
+		q.Add("permission", "read:user")
+		q.Add("permission", "write:user")
+		req.URL.RawQuery = q.Encode()
+		ctx.Request = req
+		perms, err := QueryPermissionsFromRequest(ctx)
+		require.NoError(t, err)
+		assert.Len(t, perms, 2)
+	})
+
+	t.Run("failNoPermissions", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		req, _ := http.NewRequest(http.MethodGet, "/permissions", nil)
+		ctx.Request = req
+		perms, err := QueryPermissionsFromRequest(ctx)
+		assert.Error(t, err)
+		assert.Nil(t, perms)
+	})
+
+	t.Run("failInvalidPermission", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		ctx, _ := gin.CreateTestContext(w)
+		req, _ := http.NewRequest(http.MethodGet, "/permissions", nil)
+		q := req.URL.Query()
+		q.Add("permission", "invalid")
+		req.URL.RawQuery = q.Encode()
+		ctx.Request = req
+		perms, err := QueryPermissionsFromRequest(ctx)
+		assert.Error(t, err)
+		assert.Nil(t, perms)
 	})
 }

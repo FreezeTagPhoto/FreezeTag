@@ -15,7 +15,7 @@ func TestPermissionsMiddleware(t *testing.T) {
 	ctx, _ := gin.CreateTestContext(w)
 	req, _ := http.NewRequest("GET", "/", nil)
 	ctx.Request = req
-	ctx.Set("permissions", data.Permissions{data.ReadFiles, data.WriteFiles, data.CreateUser})
+	ctx.Set("permissions", data.Permissions{data.ReadFiles, data.WriteFiles, data.WriteUser})
 	RequirePermission(data.ReadFiles, data.WriteFiles)(ctx)
 	if ctx.IsAborted() {
 		t.Errorf("Expected request to pass through middleware, but it was aborted")

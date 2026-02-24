@@ -99,7 +99,7 @@ export default function Home() {
             <button
                 type="button"
                 className={styles.create_user}
-                disabled={!UserHasPerm(currentUser, "create:user")}
+                disabled={!UserHasPerm(currentUser, "write:user")}
                 onClick={() => setCreatingUser(true)}
             >
                 <UserPlus

@@ -22,7 +22,6 @@ packages:
     interfaces:
       ImageRepository:
       JobRepository:
-      UserRepository:
 
   freezetag/backend/pkg/database:
     config:
