@@ -9,12 +9,14 @@ import (
 )
 
 type PluginHook struct {
-	Type      HookType      `json:"type"`
-	Signature HookSignature `json:"signature"`
+	FriendlyName *string       `json:"friendly_name,omitempty"`
+	Type         HookType      `json:"type"`
+	Signature    HookSignature `json:"signature"`
 }
 
 type PluginManifest struct {
 	Name          string                `json:"name"`
+	FriendlyName  *string               `json:"friendly_name,omitempty"`
 	Version       string                `json:"version"`
 	Hooks         map[string]PluginHook `json:"hooks"`
 	AbsPath       string                `json:"-"`
@@ -25,10 +27,11 @@ type PluginManifest struct {
 }
 
 type PluginInfo struct {
-	Name    string                `json:"name"`
-	Version string                `json:"version"`
-	Enabled bool                  `json:"enabled"`
-	Hooks   map[string]PluginHook `json:"hooks"`
+	Name         string                `json:"name"`
+	FriendlyName *string               `json:"friendly_name,omitempty"`
+	Version      string                `json:"version"`
+	Enabled      bool                  `json:"enabled"`
+	Hooks        map[string]PluginHook `json:"hooks"`
 }
 
 type HookInfo struct {
