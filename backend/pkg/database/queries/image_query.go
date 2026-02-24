@@ -121,48 +121,40 @@ func escapeLikeString(s string) string {
 }
 
 func buildTagMatcher(tags []queryTag) (string, []any) {
+	// super evil query, but it kind of has to do for now
 	// (id IN (
-	// SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE tag IN (...) OR (tag LIKE ...))
-	// GROUP BY imageId
-	// HAVING COUNT(DISTINCT imageId) = /* number of tag matchers */
+	// SELECT imageId FROM ImageTags INNER JOIN Tags ON Tags.id = ImageTags.tagId
+	// WHERE tag = ? OR tag LIKE ? ...
+	// GROUP BY imageId HAVING COUNT(DISTINCT CASE
+	// WHEN tag = ? THEN 1
+	// WHEN tag LIKE ? THEN 2
+	// ...
+	// END) = ?
 	// ))
-	var exactBuilder strings.Builder
-	var exactArgs []any
-	var exactCount = 0
-	var fuzzyBuilder strings.Builder
-	var fuzzyArgs []any
-	var fuzzyCount = 0
+	var args []any
+	var caseBuilder strings.Builder
+	var orBuilder strings.Builder
+	var totalCount = 0
 	for _, tag := range tags {
+		if totalCount > 0 {
+			caseBuilder.WriteString(" ")
+			orBuilder.WriteString(" OR ")
+		}
 		if tag.exact {
-			if exactCount > 0 {
-				exactBuilder.WriteString(", ")
-			}
-			exactBuilder.WriteRune('?')
-			exactArgs = append(exactArgs, tag.tag)
-			exactCount++
+			caseBuilder.WriteString(fmt.Sprintf("WHEN tag = ? THEN %d", totalCount))
+			orBuilder.WriteString("tag = ?")
+			args = append(args, tag.tag)
 		} else {
-			if fuzzyCount > 0 {
-				fuzzyBuilder.WriteString(" OR ")
-			}
-			fuzzyBuilder.WriteString("tag LIKE ? ESCAPE '!'")
-			fuzzyArgs = append(fuzzyArgs, "%"+escapeLikeString(tag.tag)+"%")
-			fuzzyCount++
+			caseBuilder.WriteString(fmt.Sprintf("WHEN tag LIKE ? ESCAPE '!' THEN %d", totalCount))
+			orBuilder.WriteString("tag LIKE ? ESCAPE '!'")
+			args = append(args, "%"+escapeLikeString(tag.tag)+"%")
 		}
+		totalCount++
 	}
-	var matcher = ""
-	if exactCount > 0 {
-		matcher += fmt.Sprintf("tag IN (%s)", exactBuilder.String())
-	}
-	if fuzzyCount > 0 {
-		if exactCount > 0 {
-			matcher += " OR "
-		}
-		matcher += fmt.Sprintf("(%s)", fuzzyBuilder.String())
-	}
-	return fmt.Sprintf(
-		`(id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE %s) GROUP BY imageId HAVING COUNT(DISTINCT tagId) = ?))`,
-		matcher,
-	), append(append(exactArgs, fuzzyArgs...), len(tags))
+	args = append(args, args...)
+	args = append(args, totalCount)
+	query := fmt.Sprintf("(id IN (SELECT imageId FROM ImageTags INNER JOIN Tags ON Tags.id = ImageTags.tagId WHERE %s GROUP BY imageId HAVING COUNT(DISTINCT CASE %s ELSE NULL END) = ?))", orBuilder.String(), caseBuilder.String())
+	return query, args
 }
 
 func (q *ImageQuery) WithTag(tag string) *ImageQuery {
