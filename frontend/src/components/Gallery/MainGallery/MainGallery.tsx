@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+    useMemo,
+    useState,
+    useRef,
+    KeyboardEvent as ReactKeyboardEvent,
+} from "react";
+import { useRouter } from "next/navigation";
 import styles from "./MainGallery.module.css";
 import GalleryImage from "../GalleryImage/GalleryImage";
 import PreviewWindow from "../PreviewWindow/PreviewWindow";
@@ -11,15 +17,23 @@ export type GalleryProps = {
 };
 
 export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
+    const router = useRouter();
+
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+    const [deletedIds, setDeletedIds] = useState<Set<number>>(() => new Set());
+
+    const visibleIds = useMemo(
+        () => image_ids.filter((id) => !deletedIds.has(id)),
+        [image_ids, deletedIds],
+    );
 
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     const handleGridKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
         if (selectedId !== null) return;
 
-        const count = image_ids.length;
+        const count = visibleIds.length;
         if (count === 0) return;
 
         switch (event.key) {
@@ -57,6 +71,16 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
         }
     };
 
+    const handleDeleted = (deletedId: number) => {
+        setDeletedIds((prev) => {
+            const next = new Set(prev);
+            next.add(deletedId);
+            return next;
+        });
+        setSelectedId(null);
+        router.refresh();
+    };
+
     return (
         <>
             {/* thumbnails */}
@@ -66,7 +90,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                 onKeyDown={handleGridKeyDown}
                 aria-label="Photo gallery"
             >
-                {image_ids.map((id, index) => (
+                {visibleIds.map((id, index) => (
                     <GalleryImage
                         key={id}
                         id={id}
@@ -87,7 +111,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
             {/* fullscreen preview */}
             {selectedId !== null && (
                 <PreviewWindow
-                    imageIds={image_ids}
+                    imageIds={visibleIds}
                     selectedId={selectedId}
                     onClose={() => setSelectedId(null)}
                     onNavigate={(nextId, nextIndex) => {
@@ -98,6 +122,7 @@ export default function MainGallery({ image_ids, onSearchTag }: GalleryProps) {
                         onSearchTag?.(t);
                         setSelectedId(null);
                     }}
+                    onDeleted={handleDeleted}
                 />
             )}
         </>
