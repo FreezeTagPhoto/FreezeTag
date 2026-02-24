@@ -7,7 +7,6 @@ import { ArrowRight, CheckSquare, Square, Trash2 } from "lucide-react";
 export type TagTableProps = {
     loading: boolean;
 
-    // Full list (for header meta), and filtered list (for rows)
     tags: string[];
     filteredTags: string[];
     filterActive: boolean;
@@ -25,7 +24,7 @@ export type TagTableProps = {
 
 export default function TagTable({
     loading,
-    tags,
+    // tags,
     filteredTags,
     filterActive,
     countsOk,
@@ -53,8 +52,12 @@ export default function TagTable({
                 <div className={styles.listHeaderLeft}>
                     <span className={styles.listTitle}>All tags</span>
                     <span className={styles.listMeta}>
-                        {loading ? "Loading..." : `${filteredTags.length} results`}
-                        {selectedCount > 0 ? ` • ${selectedCount} selected` : ""}
+                        {loading
+                            ? "Loading..."
+                            : `${filteredTags.length} results`}
+                        {selectedCount > 0
+                            ? ` • ${selectedCount} selected`
+                            : ""}
                         {selectedCount > 0 && countsOk && selectedUses !== null
                             ? ` • ${selectedUses} uses`
                             : ""}
@@ -103,7 +106,9 @@ export default function TagTable({
                                             : `Select ${tag}`
                                     }
                                     title={
-                                        isSelected ? `Unselect ${tag}` : `Select ${tag}`
+                                        isSelected
+                                            ? `Unselect ${tag}`
+                                            : `Select ${tag}`
                                     }
                                 >
                                     {isSelected ? (
@@ -120,7 +125,9 @@ export default function TagTable({
                                     aria-label={`Open Gallery filtered by ${tag}`}
                                     title={`Open Gallery filtered by ${tag}`}
                                 >
-                                    <span className={styles.tagName}>{tag}</span>
+                                    <span className={styles.tagName}>
+                                        {tag}
+                                    </span>
                                     <span className={styles.countBadge}>
                                         {count === null ? "—" : count}
                                     </span>

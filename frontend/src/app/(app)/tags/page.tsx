@@ -129,7 +129,6 @@ export default function TagsPage() {
 
     useEffect(() => {
         void loadTags();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     function toggleSelected(tag: string) {
