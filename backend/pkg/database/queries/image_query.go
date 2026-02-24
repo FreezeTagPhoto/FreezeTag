@@ -141,11 +141,11 @@ func buildTagMatcher(tags []queryTag) (string, []any) {
 			orBuilder.WriteString(" OR ")
 		}
 		if tag.exact {
-			caseBuilder.WriteString(fmt.Sprintf("WHEN tag = ? THEN %d", totalCount))
+			fmt.Fprintf(&caseBuilder, "WHEN tag = ? THEN %d", totalCount)
 			orBuilder.WriteString("tag = ?")
 			args = append(args, tag.tag)
 		} else {
-			caseBuilder.WriteString(fmt.Sprintf("WHEN tag LIKE ? ESCAPE '!' THEN %d", totalCount))
+			fmt.Fprintf(&caseBuilder, "WHEN tag LIKE ? ESCAPE '!' THEN %d", totalCount)
 			orBuilder.WriteString("tag LIKE ? ESCAPE '!'")
 			args = append(args, "%"+escapeLikeString(tag.tag)+"%")
 		}
