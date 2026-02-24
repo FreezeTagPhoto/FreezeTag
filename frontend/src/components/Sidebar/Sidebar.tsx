@@ -73,7 +73,7 @@ function AccountInfo({
             <span className={styles.itemInner}>
                 {/* Avatar placeholder */}
                 <span
-                    className={styles.itemIcon}
+                    className={`${styles.itemIcon} ${styles.avatarIcon}`}
                     aria-hidden="true"
                     style={{
                         display: "grid",
@@ -83,7 +83,6 @@ function AccountInfo({
                         background: "var(--mantle)",
                         color: "var(--text)",
                         fontWeight: 800,
-                        fontSize: "0.85em",
                         lineHeight: 1,
                         userSelect: "none",
                     }}
@@ -231,24 +230,24 @@ export default function Sidebar() {
                     <div className={styles.sectionLine} />
                 </div>
 
-                <AccountInfo username={username} userId={user.user_id} />
-
-                {/* Logout as a div (keyboard accessible) */}
-                <div
-                    role="button"
-                    tabIndex={0}
-                    className={`${styles.item} ${styles.logoutItem}`}
-                    onClick={onLogout}
-                    onKeyDown={onLogoutKeyDown}
-                    aria-label="Log out"
-                >
-                    <span className={styles.itemInner}>
-                        <LogOut
-                            className={styles.itemIcon}
-                            aria-hidden="true"
-                        />
-                        <span className={styles.itemLabel}>Log out</span>
-                    </span>
+                <div className={styles.bottomDock}>
+                    <AccountInfo username={username} userId={user.user_id} />
+                    <div
+                        role="button"
+                        tabIndex={0}
+                        className={`${styles.item} ${styles.logoutItem}`}
+                        onClick={onLogout}
+                        onKeyDown={onLogoutKeyDown}
+                        aria-label="Log out"
+                    >
+                        <span className={styles.itemInner}>
+                            <LogOut
+                                className={styles.itemIcon}
+                                aria-hidden="true"
+                            />
+                            <span className={styles.itemLabel}>Log out</span>
+                        </span>
+                    </div>
                 </div>
             </nav>
         </div>
