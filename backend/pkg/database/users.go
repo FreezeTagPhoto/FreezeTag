@@ -1,10 +1,10 @@
 package database
 
 import (
-	"bytes"
 	"database/sql"
 	"errors"
 	"freezetag/backend/pkg/database/data"
+	"freezetag/backend/pkg/images"
 
 	_ "embed"
 	"time"
@@ -136,12 +136,16 @@ func (s SqliteUserDatabase) seedPermissions() error {
 func (s SqliteUserDatabase) AddUser(username string, passwordHash string) (*PublicUser, error) {
 
 	createdAt := time.Now().Unix()
+	defaultPicture, err := images.DefaultProfilePicture(username)
+	if err != nil {
+		return nil, err
+	}
 	result, err := s.db.Exec(
 		"INSERT INTO Users (username, passwordHash, createdAt, profilePicture) VALUES (?, ?, ?, ?)",
 		username,
 		passwordHash,
 		createdAt,
-		bytes.Repeat([]byte{0}, 256*256),
+		defaultPicture,
 	)
 	if err != nil {
 		return nil, err
