@@ -14,8 +14,10 @@ import {
     Square,
     Trash2,
     X,
-    ArrowRight,
 } from "lucide-react";
+
+import TagTable from "@/components/Tags/TagTable/TagTable";
+import Dialog from "@/components/UI/Dialog/Dialog";
 
 type Banner =
     | { kind: "success"; text: string }
@@ -46,6 +48,7 @@ export default function TagsPage() {
     const [confirmTags, setConfirmTags] = useState<string[]>([]);
 
     const normalizedFilter = filter.trim().toLowerCase();
+    const filterActive = normalizedFilter.length > 0;
 
     const filteredTags = useMemo(() => {
         const base = [...tags].sort((a, b) => a.localeCompare(b));
@@ -100,13 +103,11 @@ export default function TagsPage() {
             setCounts(safe);
             setCountsOk(true);
         } else {
-            // Keep list usable even if counts fail.
             setCounts({});
             setCountsOk(false);
             setBanner((prev) => {
                 const msg = `Failed to load tag counts (${countRes.error.status}): ${countRes.error.message}`;
                 if (!prev) return { kind: "error", text: msg };
-                // avoid duplicating errors; keep the first if it exists
                 return prev;
             });
         }
@@ -129,20 +130,6 @@ export default function TagsPage() {
         void loadTags();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    useEffect(() => {
-        if (!confirmOpen) return;
-
-        const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                setConfirmOpen(false);
-                setConfirmTags([]);
-            }
-        };
-
-        window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
-    }, [confirmOpen]);
 
     function toggleSelected(tag: string) {
         setSelected((prev) => {
@@ -171,6 +158,12 @@ export default function TagsPage() {
         setConfirmTags(tagsToDelete);
         setConfirmOpen(true);
     }
+
+    const closeConfirm = () => {
+        if (deleting) return;
+        setConfirmOpen(false);
+        setConfirmTags([]);
+    };
 
     async function performDelete() {
         if (confirmTags.length === 0) return;
@@ -217,12 +210,13 @@ export default function TagsPage() {
         router.push(`/?q=${encodeURIComponent(q)}`);
     }
 
-    const totalUsed = useMemo(() => {
-        if (!countsOk) return null;
-        let sum = 0;
-        for (const t of tags) sum += counts[t] ?? 0;
-        return sum;
-    }, [countsOk, counts, tags]);
+    const sortedConfirmTags = useMemo(
+        () => [...confirmTags].sort((a, b) => a.localeCompare(b)),
+        [confirmTags],
+    );
+
+    const confirmShown = sortedConfirmTags.slice(0, 12);
+    const confirmExtra = Math.max(0, sortedConfirmTags.length - confirmShown.length);
 
     return (
         <main className={styles.main}>
@@ -341,184 +335,68 @@ export default function TagsPage() {
                 </div>
             </section>
 
-            <section className={styles.listSection} aria-label="Tag list">
-                <div className={styles.listHeader}>
-                    <div className={styles.listHeaderLeft}>
-                        <span className={styles.listTitle}>All tags</span>
-                        <span className={styles.listMeta}>
-                            {loading ? "Loading..." : `${tags.length} total`}
-                            {normalizedFilter ? ` • ${filteredTags.length} matching` : ""}
-                            {countsOk && totalUsed !== null ? ` • ${totalUsed} uses` : ""}
-                            {!countsOk && !loading ? " • counts unavailable" : ""}
+            <TagTable
+                loading={loading}
+                tags={tags}
+                filteredTags={filteredTags}
+                filterActive={filterActive}
+                countsOk={countsOk}
+                counts={counts}
+                selected={selected}
+                deleting={deleting}
+                onToggleSelected={toggleSelected}
+                onOpenGallery={goToGallery}
+                onRequestDelete={requestDelete}
+            />
+
+            <Dialog
+                open={confirmOpen}
+                onClose={closeConfirm}
+                ariaLabel="Confirm delete tags"
+                title="Delete tag(s)?"
+                icon={<AlertTriangle className={styles.dialogIcon} />}
+                disableClose={deleting}
+            >
+                <p className={styles.dialogBody}>
+                    This will permanently delete{" "}
+                    <strong>{confirmTags.length}</strong>{" "}
+                    {confirmTags.length === 1 ? "tag" : "tags"} and remove{" "}
+                    {confirmTags.length === 1 ? "it" : "them"} everywhere
+                    {confirmTags.length === 1 ? " it" : " they"} appear.
+                </p>
+
+                <div className={styles.dialogTags}>
+                    {confirmShown.map((t) => (
+                        <span key={t} className={styles.dialogTagPill}>
+                            {t}
                         </span>
-                    </div>
-                </div>
-
-                <div className={styles.list} role="list">
-                    {loading ? (
-                        <div className={styles.skeletonWrap}>
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <div key={i} className={styles.skeletonRow} />
-                            ))}
-                        </div>
-                    ) : filteredTags.length === 0 ? (
-                        <div className={styles.emptyState}>
-                            <p className={styles.emptyTitle}>No tags found</p>
-                            <p className={styles.emptySubtitle}>
-                                {normalizedFilter
-                                    ? "Try a different search term."
-                                    : "Your database doesn't have any tags yet."}
-                            </p>
-                        </div>
-                    ) : (
-                        filteredTags.map((tag) => {
-                            const isSelected = selected.has(tag);
-                            const count = countsOk ? (counts[tag] ?? 0) : null;
-
-                            return (
-                                <div
-                                    key={tag}
-                                    className={`${styles.row} ${
-                                        isSelected ? styles.rowSelected : ""
-                                    }`}
-                                    role="listitem"
-                                >
-                                    <button
-                                        className={styles.checkbox}
-                                        onClick={() => toggleSelected(tag)}
-                                        aria-label={
-                                            isSelected
-                                                ? `Unselect ${tag}`
-                                                : `Select ${tag}`
-                                        }
-                                        title={
-                                            isSelected
-                                                ? `Unselect ${tag}`
-                                                : `Select ${tag}`
-                                        }
-                                    >
-                                        {isSelected ? (
-                                            <CheckSquare className={styles.icon} />
-                                        ) : (
-                                            <Square className={styles.icon} />
-                                        )}
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        className={styles.tagLink}
-                                        onClick={() => goToGallery(tag)}
-                                        title={`Open Gallery with ${tagToGalleryQuery(tag)}`}
-                                        aria-label={`Open Gallery filtered by ${tag}`}
-                                    >
-                                        <span className={styles.tagName}>{tag}</span>
-                                        <span className={styles.countBadge}>
-                                            {count === null ? "—" : count}
-                                        </span>
-                                        <ArrowRight className={styles.tagArrow} />
-                                    </button>
-
-                                    <div className={styles.actions}>
-                                        <button
-                                            className={styles.rowDelete}
-                                            onClick={() => requestDelete([tag])}
-                                            disabled={deleting}
-                                            aria-label={`Delete ${tag}`}
-                                            title={`Delete ${tag}`}
-                                        >
-                                            <Trash2 className={styles.icon} />
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })
+                    ))}
+                    {confirmExtra > 0 && (
+                        <span className={styles.dialogMore}>
+                            +{confirmExtra} more
+                        </span>
                     )}
                 </div>
-            </section>
 
-            {confirmOpen && (
-                <div
-                    className={styles.modalOverlay}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Confirm delete tags"
-                    onMouseDown={(e) => {
-                        // click outside to close
-                        if (e.target === e.currentTarget) {
-                            setConfirmOpen(false);
-                            setConfirmTags([]);
-                        }
-                    }}
-                >
-                    <div className={styles.modal}>
-                        <div className={styles.modalHeader}>
-                            <div className={styles.modalTitleRow}>
-                                <AlertTriangle className={styles.modalIcon} />
-                                <h2 className={styles.modalTitle}>Delete tag(s)?</h2>
-                            </div>
-                            <button
-                                className={styles.modalClose}
-                                onClick={() => {
-                                    setConfirmOpen(false);
-                                    setConfirmTags([]);
-                                }}
-                                aria-label="Close"
-                                title="Close"
-                                disabled={deleting}
-                            >
-                                <X className={styles.icon} />
-                            </button>
-                        </div>
+                <div className={styles.dialogActions}>
+                    <button
+                        className={styles.button}
+                        onClick={closeConfirm}
+                        disabled={deleting}
+                    >
+                        Cancel
+                    </button>
 
-                        <p className={styles.modalBody}>
-                            This will permanently delete{" "}
-                            <strong>{confirmTags.length}</strong>{" "}
-                            {confirmTags.length === 1 ? "tag" : "tags"} and remove{" "}
-                            {confirmTags.length === 1 ? "it" : "them"} everywhere
-                            {confirmTags.length === 1 ? " it" : " they"} appear.
-                        </p>
-
-                        <div className={styles.modalTags}>
-                            {confirmTags
-                                .slice()
-                                .sort((a, b) => a.localeCompare(b))
-                                .slice(0, 12)
-                                .map((t) => (
-                                    <span key={t} className={styles.modalTagPill}>
-                                        {t}
-                                    </span>
-                                ))}
-                            {confirmTags.length > 12 && (
-                                <span className={styles.modalMore}>
-                                    +{confirmTags.length - 12} more
-                                </span>
-                            )}
-                        </div>
-
-                        <div className={styles.modalActions}>
-                            <button
-                                className={styles.button}
-                                onClick={() => {
-                                    setConfirmOpen(false);
-                                    setConfirmTags([]);
-                                }}
-                                disabled={deleting}
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                className={styles.dangerButton}
-                                onClick={() => void performDelete()}
-                                disabled={deleting}
-                            >
-                                <Trash2 className={styles.icon} />
-                                <span>{deleting ? "Deleting..." : "Delete"}</span>
-                            </button>
-                        </div>
-                    </div>
+                    <button
+                        className={styles.dangerButton}
+                        onClick={() => void performDelete()}
+                        disabled={deleting}
+                    >
+                        <Trash2 className={styles.icon} />
+                        <span>{deleting ? "Deleting..." : "Delete"}</span>
+                    </button>
                 </div>
-            )}
+            </Dialog>
         </main>
     );
 }

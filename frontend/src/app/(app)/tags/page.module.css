@@ -246,291 +246,31 @@
     color: var(--base);
 }
 
-.listSection {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.listHeader {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.listHeaderLeft {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-}
-
-.listTitle {
-    font-family: var(--font-geist-sans);
-    font-weight: 700;
-    font-size: 18px;
-}
-
-.listMeta {
-    color: var(--subtext0);
-    font-size: 16px;
-}
-
-.list {
-    background: var(--mantle);
-    border: var(--border-info);
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    filter: var(--dropshadow);
-}
-
-.row {
-    display: grid;
-    grid-template-columns: 44px 1fr 54px;
-    align-items: center;
-
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.row:last-child {
-    border-bottom: none;
-}
-
-.rowSelected {
-    background: var(--selected-overlay);
-}
-
-.checkbox {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 34px;
-    height: 34px;
-    border-radius: var(--border-radius);
-    border: none;
-    cursor: pointer;
-
-    background: transparent;
-    color: var(--text);
-}
-
-.checkbox:hover {
-    background: var(--base);
-}
-
-.tagLink {
-    min-width: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: var(--text);
-    text-align: left;
-
-    padding: 8px 10px;
-    border-radius: var(--border-radius);
-}
-
-.tagLink:hover {
-    background: var(--base);
-}
-
-.tagName {
-    font-family: var(--font-geist-sans);
-    font-weight: 600;
-    color: var(--text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
-}
-
-.countBadge {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: var(--border-info);
-    background: var(--base);
-    color: var(--subtext0);
-
-    font-family: var(--font-geist-sans);
-    font-weight: 700;
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-.tagArrow {
-    flex: 0 0 auto;
-    width: 16px;
-    height: 16px;
-    color: var(--subtext0);
-    margin-left: auto;
-}
-
-.tagLink:hover .tagArrow {
-    color: var(--text);
-}
-
-.actions {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.rowDelete {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 38px;
-    height: 38px;
-    border-radius: var(--border-radius);
-
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: var(--subtext0);
-}
-
-.rowDelete:hover {
-    background: var(--base);
-    color: var(--red);
-}
-
-.rowDelete:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
 .icon {
     width: 18px;
     height: 18px;
 }
 
-.skeletonWrap {
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+/* Dialog content injected into the generic Dialog component */
 
-.skeletonRow {
-    height: 48px;
-    border-radius: var(--border-radius);
-    background: var(--base);
-    border: var(--border-info);
-}
-
-.emptyState {
-    padding: 28px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: flex-start;
-}
-
-.emptyTitle {
-    font-family: var(--font-geist-sans);
-    font-weight: 700;
-    font-size: 18px;
-}
-
-.emptySubtitle {
-    color: var(--subtext0);
-}
-
-/* Modal */
-.modalOverlay {
-    position: fixed;
-    inset: 0;
-    background: var(--backdrop);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-    z-index: 50;
-}
-
-.modal {
-    width: min(640px, 100%);
-    background: var(--mantle);
-    border: var(--border-info);
-    border-radius: var(--border-radius);
-    filter: var(--dropshadow);
-    padding: 14px;
-}
-
-.modalHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.modalTitleRow {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.modalIcon {
+.dialogIcon {
     width: 20px;
     height: 20px;
     color: var(--yellow);
 }
 
-.modalTitle {
-    font-family: var(--font-geist-sans);
-    font-weight: 800;
-    font-size: 20px;
-}
-
-.modalClose {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    width: 38px;
-    height: 38px;
-    border-radius: var(--border-radius);
-
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: var(--text);
-}
-
-.modalClose:hover {
-    background: var(--base);
-}
-
-.modalClose:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.modalBody {
+.dialogBody {
     color: var(--subtext0);
     margin-bottom: 12px;
 }
 
-.modalTags {
+.dialogTags {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 14px;
 }
 
-.modalTagPill {
+.dialogTagPill {
     display: inline-flex;
     align-items: center;
 
@@ -545,14 +285,15 @@
     font-size: 14px;
 }
 
-.modalMore {
+.dialogMore {
     color: var(--subtext0);
     font-size: 14px;
     align-self: center;
 }
 
-.modalActions {
+.dialogActions {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    margin-top: 14px;
 }
