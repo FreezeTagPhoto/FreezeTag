@@ -18,9 +18,11 @@ import {
     Users,
     LogOut,
 } from "lucide-react";
-import { useContext } from "react";
+
+import { useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "../Auth/AuthGate";
-import { ExtractPermsList } from "@/api/permissions/permshelpers";
+import { ExtractPermsList, UserHasPerm } from "@/api/permissions/permshelpers";
+import UserLister from "@/api/users/userlister";
 
 type NavItem = {
     label: string;
@@ -54,18 +56,117 @@ const navItems: NavItem[] = [
     { label: "Settings", href: "/settings", icon: Settings },
 ];
 
+function AccountInfo({
+    username,
+    userId,
+}: {
+    username: string;
+    userId: number;
+}) {
+    const initial =
+        username && username.trim().length > 0
+            ? username.trim()[0]!.toUpperCase()
+            : (userId.toString()[0] ?? "?");
+
+    return (
+        <div className={styles.accountInfo} aria-label="Signed in user">
+            <span className={styles.itemInner}>
+                {/* Avatar placeholder */}
+                <span
+                    className={styles.itemIcon}
+                    aria-hidden="true"
+                    style={{
+                        display: "grid",
+                        placeItems: "center",
+                        borderRadius: 9999,
+                        border: "var(--border-info)",
+                        background: "var(--mantle)",
+                        color: "var(--text)",
+                        fontWeight: 800,
+                        fontSize: "0.85em",
+                        lineHeight: 1,
+                        userSelect: "none",
+                    }}
+                >
+                    {initial}
+                </span>
+
+                <span className={styles.itemLabel} style={{ lineHeight: 1.15 }}>
+                    <span
+                        style={{
+                            display: "block",
+                            fontWeight: 700,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: "100%",
+                        }}
+                        title={username}
+                    >
+                        {username}
+                    </span>
+                    <span
+                        style={{
+                            display: "block",
+                            opacity: 0.8,
+                            fontSize: "0.85em",
+                        }}
+                    >
+                        ID {userId}
+                    </span>
+                </span>
+            </span>
+        </div>
+    );
+}
+
 export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
 
     const user = useContext(UserContext);
-    const userPerms = ExtractPermsList(user);
+    const userPerms = useMemo(() => ExtractPermsList(user) ?? [], [user]);
 
-    const onLogout = () => {
-        LogoutHandler();
+    const [username, setUsername] = useState<string>("");
+
+    useEffect(() => {
+        if (!user) return;
+
+        // Always have a reasonable fallback (works even without read:user)
+        const fallback = `User ${user.user_id.toString().padStart(4, "0")}`;
+        setUsername(fallback);
+
+        // If we’re allowed, resolve the real username via UserLister
+        if (!UserHasPerm(user, "read:user")) return;
+
+        (async () => {
+            const result = await UserLister();
+            if (!result.ok) {
+                console.error(`User Lister Error! ${result.error.message}`);
+                return;
+            }
+
+            const match = result.value.find((u) => u.id === user.user_id);
+            if (match?.username) {
+                setUsername(match.username);
+            }
+        })();
+    }, [user]);
+
+    const onLogout = async () => {
+        await LogoutHandler();
         router.replace("/login");
         router.refresh();
     };
+
+    const onLogoutKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onLogout();
+        }
+    };
+
+    if (!user) return null;
 
     return (
         <div className={styles.wrap}>
@@ -91,14 +192,12 @@ export default function Sidebar() {
                               pathname.startsWith(item.href + "/");
 
                     const Icon = item.icon;
-                    let hasPermission = true;
-                    if (item.permissions) {
-                        item.permissions.forEach((perm) => {
-                            if (!userPerms?.includes(perm)) {
-                                hasPermission = false;
-                            }
-                        });
-                    }
+
+                    const hasPermission = item.permissions
+                        ? item.permissions.every((perm) =>
+                              userPerms.includes(perm),
+                          )
+                        : true;
 
                     if (!hasPermission) {
                         return (
@@ -132,10 +231,16 @@ export default function Sidebar() {
                     <div className={styles.sectionLine} />
                 </div>
 
-                <button
-                    type="button"
+                <AccountInfo username={username} userId={user.user_id} />
+
+                {/* Logout as a div (keyboard accessible) */}
+                <div
+                    role="button"
+                    tabIndex={0}
                     className={`${styles.item} ${styles.logoutItem}`}
                     onClick={onLogout}
+                    onKeyDown={onLogoutKeyDown}
+                    aria-label="Log out"
                 >
                     <span className={styles.itemInner}>
                         <LogOut
@@ -144,7 +249,7 @@ export default function Sidebar() {
                         />
                         <span className={styles.itemLabel}>Log out</span>
                     </span>
-                </button>
+                </div>
             </nav>
         </div>
     );
