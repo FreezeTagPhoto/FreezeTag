@@ -38,12 +38,14 @@ export default function TagTable({
 }: TagTableProps) {
     const selectedCount = selected.size;
 
-    const totalUsed = useMemo(() => {
+    const selectedUses = useMemo(() => {
+        if (selectedCount === 0) return null;
         if (!countsOk) return null;
+
         let sum = 0;
-        for (const t of tags) sum += counts[t] ?? 0;
+        for (const t of selected) sum += counts[t] ?? 0;
         return sum;
-    }, [countsOk, counts, tags]);
+    }, [selected, selectedCount, countsOk, counts]);
 
     return (
         <section className={styles.listSection} aria-label="Tag list">
@@ -51,11 +53,14 @@ export default function TagTable({
                 <div className={styles.listHeaderLeft}>
                     <span className={styles.listTitle}>All tags</span>
                     <span className={styles.listMeta}>
-                        {loading ? "Loading..." : `${tags.length} total`}
-                        {filterActive ? ` • ${filteredTags.length} matching` : ""}
-                        {countsOk && totalUsed !== null ? ` • ${totalUsed} uses` : ""}
-                        {!countsOk && !loading ? " • counts unavailable" : ""}
+                        {loading ? "Loading..." : `${filteredTags.length} results`}
                         {selectedCount > 0 ? ` • ${selectedCount} selected` : ""}
+                        {selectedCount > 0 && countsOk && selectedUses !== null
+                            ? ` • ${selectedUses} uses`
+                            : ""}
+                        {selectedCount > 0 && !countsOk && !loading
+                            ? " • counts unavailable"
+                            : ""}
                     </span>
                 </div>
             </div>
@@ -93,9 +98,13 @@ export default function TagTable({
                                     className={styles.checkbox}
                                     onClick={() => onToggleSelected(tag)}
                                     aria-label={
+                                        isSelected
+                                            ? `Unselect ${tag}`
+                                            : `Select ${tag}`
+                                    }
+                                    title={
                                         isSelected ? `Unselect ${tag}` : `Select ${tag}`
                                     }
-                                    title={isSelected ? `Unselect ${tag}` : `Select ${tag}`}
                                 >
                                     {isSelected ? (
                                         <CheckSquare className={styles.icon} />

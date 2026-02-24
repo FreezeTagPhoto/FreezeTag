@@ -149,12 +149,12 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    color: var(--subtext0);
+    color: var(--red);
 }
 
 .rowDelete:hover {
-    background: var(--base);
-    color: var(--red);
+    background: var(--red);
+    color: var(--base);
 }
 
 .rowDelete:disabled {
