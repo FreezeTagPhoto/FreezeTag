@@ -23,6 +23,7 @@ export type PreviewWindowProps = {
 
     onNavigate: (nextId: number, nextIndex: number) => void;
     onSearchTag?: (tag: string) => void;
+    onDeleted?: (deletedId: number) => void;
 };
 
 export default function PreviewWindow({
@@ -31,6 +32,7 @@ export default function PreviewWindow({
     onClose,
     onNavigate,
     onSearchTag,
+    onDeleted,
 }: PreviewWindowProps) {
     const viewerRef = useRef<HTMLDivElement | null>(null);
     const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -305,6 +307,7 @@ export default function PreviewWindow({
                     selectedId={selectedId}
                     onSearchTag={onSearchTag}
                     viewerRef={viewerRef}
+                    onDeleted={() => onDeleted?.(selectedId)}
                 />
             </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import SearchHandler from "@/api/query/searchhandler";
 import TagGetter from "@/api/tags/taggetter";
 import styles from "../page.module.css";
@@ -31,6 +32,9 @@ function buildQuery(
 }
 
 export default function Home() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
     const [imageIds, setImageIds] = useState<number[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [sortBy, setSortBy] = useState("DateAdded");
@@ -38,6 +42,19 @@ export default function Home() {
 
     const [allTags, setAllTags] = useState<string[]>([]);
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
+    const lastAppliedQRef = useRef<string | null>(null);
+
+    useEffect(() => {
+        const q = searchParams.get("q");
+        if (!q) return;
+
+        if (lastAppliedQRef.current === q) return;
+        lastAppliedQRef.current = q;
+
+        setSearchTerm(q);
+
+        router.replace("/", { scroll: false });
+    }, [searchParams, router]);
 
     const query = useMemo(
         () => buildQuery(sortBy, sortOrder, searchTerm),

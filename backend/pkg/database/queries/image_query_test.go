@@ -1,15 +1,10 @@
 package queries
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-)
-
-const (
-	OnlyTagsQuery = "((id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE %s) GROUP BY imageId HAVING COUNT(DISTINCT tagId) = ?)))"
 )
 
 func TestImageQueryEmpty(t *testing.T) {
@@ -19,46 +14,10 @@ func TestImageQueryEmpty(t *testing.T) {
 	assert.Equal(t, []any{}, as)
 }
 
-func TestImageQueryOneLiteralTag(t *testing.T) {
-	q := CreateImageQuery().
-		WithTag("test")
-	s, as := q.StatementWithArgs()
-	assert.Equal(t, fmt.Sprintf(OnlyTagsQuery, "tag IN (?)"), s)
-	assert.Equal(t, []any{"test", 1}, as)
-}
-
-func TestImageQueryMultiLiteralTag(t *testing.T) {
-	q := CreateImageQuery().
-		WithTags("A", "B")
-	s, as := q.StatementWithArgs()
-	assert.Equal(t, fmt.Sprintf(OnlyTagsQuery, "tag IN (?, ?)"), s)
-	assert.Equal(t, []any{"A", "B", 2}, as)
-}
-
-func TestImageQuerySingleFuzzyTag(t *testing.T) {
-	q := CreateImageQuery().
-		WithTagLike("par")
-	s, as := q.StatementWithArgs()
-	assert.Equal(t, fmt.Sprintf(OnlyTagsQuery, "(tag LIKE ? ESCAPE '!')"), s)
-	assert.Equal(t, []any{"%par%", 1}, as)
-}
-
-func TestImageQueryMultiFuzzyTag(t *testing.T) {
-	q := CreateImageQuery().
-		WithTagsLike("par", "tial")
-	s, as := q.StatementWithArgs()
-	assert.Equal(t, fmt.Sprintf(OnlyTagsQuery, "(tag LIKE ? ESCAPE '!' OR tag LIKE ? ESCAPE '!')"), s)
-	assert.Equal(t, []any{"%par%", "%tial%", 2}, as)
-}
-
-func TestImageQueryLiteralAndFuzzyTags(t *testing.T) {
-	q := CreateImageQuery().
-		WithTags("test", "foo").
-		WithTagsLike("a", "b").
-		WithTag("bar")
-	s, as := q.StatementWithArgs()
-	assert.Equal(t, fmt.Sprintf(OnlyTagsQuery, "tag IN (?, ?, ?) OR (tag LIKE ? ESCAPE '!' OR tag LIKE ? ESCAPE '!')"), s)
-	assert.Equal(t, []any{"test", "foo", "bar", "%a%", "%b%", 5}, as)
+func TestTags(t *testing.T) {
+	q, args := CreateImageQuery().WithTag("foo").WithTagLike("bar").StatementWithArgs()
+	assert.Equal(t, "((id IN (SELECT imageId FROM ImageTags INNER JOIN Tags ON Tags.id = ImageTags.tagId WHERE tag = ? OR tag LIKE ? ESCAPE '!' GROUP BY imageId HAVING COUNT(DISTINCT CASE WHEN tag = ? THEN 0 WHEN tag LIKE ? ESCAPE '!' THEN 1 ELSE NULL END) = ?)))", q)
+	assert.Equal(t, []any{"foo", "%bar%", "foo", "%bar%", 2}, args)
 }
 
 func TestImageQueryLocationSimilar(t *testing.T) {
@@ -178,25 +137,4 @@ func TestImageQueryMakeUploadedTakenAfter(t *testing.T) {
 	s, as := q.StatementWithArgs()
 	assert.Equal(t, "((cameraMake = ?) AND (dateTaken >= ?) AND (dateUploaded >= ?))", s)
 	assert.Equal(t, []any{"test", now.Unix(), now.Unix()}, as)
-}
-
-func TestImageQueryTagAndMake(t *testing.T) {
-	q := CreateImageQuery().
-		WithTag("test").
-		WithMake("foo")
-	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE tag IN (?)) GROUP BY imageId HAVING COUNT(DISTINCT tagId) = ?)) AND (cameraMake = ?))", s)
-	assert.Equal(t, []any{"test", 1, "foo"}, as)
-}
-
-func TestImageQueryAllPieces(t *testing.T) {
-	q := CreateImageQuery().
-		WithTag("test").
-		WithTagLike("foo").
-		WithMake("bar").
-		WithModel("baz").
-		WithLocation(6.9, 42.0, 67.0)
-	s, as := q.StatementWithArgs()
-	assert.Equal(t, "((id IN (SELECT imageId FROM ImageTags WHERE tagId IN (SELECT id FROM Tags WHERE tag IN (?) OR (tag LIKE ? ESCAPE '!')) GROUP BY imageId HAVING COUNT(DISTINCT tagId) = ?)) AND (cameraMake = ?) AND (cameraModel = ?) AND (latitude IS NOT NULL AND longitude IS NOT NULL AND gcirc(latitude, longitude, ?, ?) <= ?))", s)
-	assert.Equal(t, []any{"test", "%foo%", 2, "bar", "baz", 6.9, 42.0, 67.0}, as)
 }

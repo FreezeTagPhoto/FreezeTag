@@ -36,6 +36,7 @@
     overflow: hidden;
     padding: 18px;
     scroll-margin-top: 18px;
+    filter: var(--dropshadow);
 }
 
 .sectionHeader {
@@ -112,6 +113,7 @@
     background: var(--base);
     color: var(--text);
     outline: none;
+    filter: var(--dropshadow);
 }
 
 .select:hover,
@@ -166,11 +168,15 @@
 
 .segmented {
     width: 100%;
+    height: 44px;
     display: flex;
+
     background: var(--base);
     border: var(--border-info);
     border-radius: var(--border-radius);
-    overflow: hidden;
+    filter: none;
+    overflow: visible;
+
     -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -198,25 +204,51 @@
 }
 
 .segmentText {
-    display: block;
-    padding: 10px 12px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 12px;
     text-align: center;
     font-size: 15px;
     font-weight: 650;
     line-height: 1;
     color: var(--text);
-    background: transparent;
-    -webkit-user-select: none;
-    user-select: none;
+    background: var(--base);
+
+    transition:
+        background 120ms ease,
+        color 120ms ease,
+        filter 120ms ease;
 }
 
-.segment:hover .segmentText {
+.segment:first-of-type .segmentText {
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+}
+
+.segment:last-of-type .segmentText {
+    border-top-right-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+}
+
+.segment:hover input:not(:checked) + .segmentText {
     background: var(--surface0);
+}
+
+.segment input:not(:checked) + .segmentText {
+    filter: var(--dropshadow);
+    position: relative;
+    /* z-index: 2; */
 }
 
 .segment input:checked + .segmentText {
     background: var(--accent1);
-    color: var(--base);
+    color: var(--text);
+    filter: none;
+    position: relative;
+    /* z-index: 1; */
 }
 
 .passwordForm {
