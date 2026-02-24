@@ -1,3 +1,4 @@
+// src/api/tags/tagdeleter.ts
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err, Ok } from "@/common/result";
@@ -36,23 +37,17 @@ async function delete_tag_with_handler(
     if (!result.ok) {
         const status = result.error.status_code;
 
-        // Most of your endpoints appear to return { error: string } for 4xx,
-        // but fall back to plain text if JSON parsing fails.
+        const text = await result.error.response.text();
         try {
-            const body = (await result.error.response.json()) as {
-                error?: string;
-            };
-            if (body?.error) {
+            const body = JSON.parse(text) as { error?: unknown };
+            if (typeof body?.error === "string") {
                 return Err({ status, message: body.error });
             }
         } catch {
-            // ignore and fall back to text
+            // ignore JSON parse errors (for now?)
         }
 
-        return Err({
-            status,
-            message: await result.error.response.text(),
-        });
+        return Err({ status, message: text });
     }
 
     return Ok(result.value.deleted);
