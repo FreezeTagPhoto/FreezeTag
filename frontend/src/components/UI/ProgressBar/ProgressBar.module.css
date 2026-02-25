@@ -29,3 +29,19 @@
     visibility: hidden;
     display: none;
 }
+
+.progressBarGreen::-moz-progress-bar {
+    background: var(--green);
+}
+
+.progressBarGreen::-webkit-progress-value {
+    background: var(--green);
+}
+
+.progressBarRed::-moz-progress-bar {
+    background: var(--red);
+}
+
+.progressBarRed::-webkit-progress-value {
+    background: var(--red);
+}
