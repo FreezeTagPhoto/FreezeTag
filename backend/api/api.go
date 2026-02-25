@@ -93,10 +93,6 @@ type PasswordChangeRequest struct {
 	NewPassword     string `form:"new_password" json:"new_password" binding:"required"`
 }
 
-type ProfilePictureResponse struct {
-	PictureData database.ProfilePicture `json:"picture_data"`
-}
-
 type innerFileJob struct {
 	services.FileJob
 	id int `json:"-"`

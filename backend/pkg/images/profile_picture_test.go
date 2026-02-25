@@ -2,14 +2,13 @@ package images
 
 import (
 	"freezetag/backend/pkg/images/imagedata"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func checkValidWebPHeader(data []byte) bool {
-	return reflect.ValueOf(data).Len() > 12 && string(data[:4]) == "RIFF" && string(data[8:12]) == "WEBP"
+	return len(data) > 12 && string(data[:4]) == "RIFF" && string(data[8:12]) == "WEBP"
 }
 
 func TestCreateProfilePicture(t *testing.T) {

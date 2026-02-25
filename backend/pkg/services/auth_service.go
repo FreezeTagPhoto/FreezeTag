@@ -81,7 +81,9 @@ type AuthService interface {
 	// GetUserPermissions returns the permissions associated with the given user ID
 	GetUserPermissions(userID database.UserID) (data.Permissions, error)
 	// SetUserProfilePicture sets the profile picture for a user, given the user ID and picture data. Returns an error if the user does not exist or the picture data is invalid.
-	SetUserProfilePicture(userID database.UserID, pictureData []byte, filename string) error
+	SetUserProfilePicture(userID database.UserID, requestID database.UserID, pictureData []byte, filename string) error
+	// AdminSetUserProfilePicture sets the profile picture for a user, given the user ID and picture data. Returns an error if the user does not exist or the picture data is invalid.
+	AdminSetUserProfilePicture(userID database.UserID, pictureData []byte, filename string) error
 	// GetUserProfilePicture returns the profile picture for a user, given the user ID. Returns an error if the user does not exist or does not have a profile picture.
 	GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error)
 }
@@ -299,7 +301,20 @@ func (s *DefaultAuthService) GetUserPermissions(userID database.UserID) (data.Pe
 	return s.userDatabase.GetUserPermissions(userID)
 }
 
-func (s *DefaultAuthService) SetUserProfilePicture(userID database.UserID, pictureData []byte, filename string) error {
+func (s *DefaultAuthService) AdminSetUserProfilePicture(userID database.UserID, pictureData []byte, filename string) error {
+	log.Printf("[INFO] Admin setting profile picture for user with ID %d", userID)
+	return s.setProfilePicture(userID, pictureData, filename)
+}
+
+func (s *DefaultAuthService) SetUserProfilePicture(userID database.UserID, requestID database.UserID, pictureData []byte, filename string) error {
+	if userID != requestID {
+		log.Printf("[WARN] User with ID %d attempted to set profile picture for user with ID %d", requestID, userID)
+		return fmt.Errorf("users can only set their own profile picture")
+	}
+	return s.setProfilePicture(userID, pictureData, filename)
+}
+
+func (s *DefaultAuthService) setProfilePicture(userID database.UserID, pictureData []byte, filename string) error {
 	// validate picture data by attempting to parse it
 	data, err := s.imageParser.ParseImage(filename, pictureData)
 
@@ -311,7 +326,6 @@ func (s *DefaultAuthService) SetUserProfilePicture(userID database.UserID, pictu
 		return fmt.Errorf("could not create profile picture: %w", err)
 	}
 	return s.userDatabase.SetUserProfilePicture(userID, profilePicture)
-
 }
 
 func (s *DefaultAuthService) GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error) {

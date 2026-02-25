@@ -15,6 +15,8 @@ type UserEndpoint struct {
 	authService services.AuthService
 }
 
+type setFunc func(database.UserID, []byte, string) error
+
 func InitUserEndpoint(authService services.AuthService) UserEndpoint {
 	return UserEndpoint{authService: authService}
 }
@@ -223,7 +225,7 @@ func (ue UserEndpoint) GetProfilePicture(c *gin.Context) {
 }
 
 // @Summary     Update a user's profile picture
-// @Description Updates the profile picture of a user by their ID. Accepts a multipart form with a "picture" file field.
+// @Description Updates the profile picture of a user by their ID. Accepts a multipart form with a "picture" file field. a user can only update their own profile picture
 // @Tags        users
 // @Accept      multipart/form-data
 // @Produce     application/json
@@ -233,24 +235,57 @@ func (ue UserEndpoint) GetProfilePicture(c *gin.Context) {
 // @Failure     400 {object} api.BadRequestResponse
 // @Failure     500 {object} api.ServerErrorResponse
 // @Router      /users/profile-picture/{id} [post]
-func (ue UserEndpoint) UpdateProfilePicture(c *gin.Context) {
-	id, err := api.ParseParamIntoID[database.UserID](c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+func (ue UserEndpoint) SetProfilePicture(c *gin.Context) {
+	requesterIDRaw, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "requester user ID not found"})
 		return
 	}
+	requesterID, err := api.ParseParamIntoID[database.UserID](requesterIDRaw)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid requester user ID"})
+		return
+	}
+
+	ue.setProfilePicture(c, func(targetID database.UserID, picture []byte, filename string) error {
+		return ue.authService.SetUserProfilePicture(targetID, requesterID, picture, filename)
+	})
+}
+
+// @Summary     Update a user's profile picture
+// @Description Updates the profile picture of a user by their ID. Accepts a multipart form with a "picture" file field. a user with write:user permissions is the only one who should be able to utilize this endpoint
+// @Tags        users
+// @Accept      multipart/form-data
+// @Produce     application/json
+// @Param       id   path      int  true  "User ID"
+// @Param       picture formData file true "New profile picture"
+// @Success     200 {object} api.MessageResponse
+// @Failure     400 {object} api.BadRequestResponse
+// @Failure     500 {object} api.ServerErrorResponse
+// @Router      /users/profile-picture/{id} [post]
+func (ue UserEndpoint) AdminSetProfilePicture(c *gin.Context) {
+	ue.setProfilePicture(c, ue.authService.AdminSetUserProfilePicture)
+}
+
+// the actual thing that does the work
+func (ue UserEndpoint) setProfilePicture(c *gin.Context, set setFunc) {
+	targetID, err := api.ParseParamIntoID[database.UserID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid target id"})
+		return
+	}
+
 	file, err := c.FormFile("picture")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to get picture from request: " + err.Error()})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to get picture from form data: " + err.Error()})
 		return
 	}
 	bytes, err := api.ReadFileBytes(file)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "failed to read picture bytes: " + err.Error()})
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to read picture bytes: " + err.Error()})
 		return
 	}
-	err = ue.authService.SetUserProfilePicture(id, bytes, file.Filename)
-	if err != nil {
+	if err := set(targetID, bytes, file.Filename); err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "failed to update profile picture: " + err.Error()})
 		return
 	}

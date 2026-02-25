@@ -223,8 +223,10 @@ func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		userGroup.GET("/profile-picture/:id", middleware.RequirePermission(data.ReadUser), ue.GetProfilePicture)
 		userGroup.GET("/permissions/:id", middleware.RequirePermission(data.ReadPermissions), ue.GetPermissions)
 
+		userGroup.POST("/profile-picture/:id", ue.SetProfilePicture)
+		userGroup.POST("/admin/profile-picture/:id", middleware.RequirePermission(data.WriteUser), ue.SetProfilePicture)
+
 		userGroup.POST("/create", middleware.RequirePermission(data.WriteUser), ue.CreateUser)
-		userGroup.POST("/profile-picture/:id", middleware.RequirePermission(data.WriteUser), ue.UpdateProfilePicture)
 		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
 
 		userGroup.DELETE("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)

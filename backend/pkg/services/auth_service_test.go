@@ -497,7 +497,7 @@ func TestCreateApiTokenInvalidPermissions(t *testing.T) {
 	assert.Empty(t, token.TokenString)
 }
 
-func TestSetUserProfilePicture(t *testing.T) {
+func TestAdminSetUserProfilePicture(t *testing.T) {
 	err := defaultParser.RegisterParserFunc("*", formats.ParseBasic)
 	require.NoError(t, err)
 	bytes, err := os.ReadFile("test_resources/gopher.webp")
@@ -509,22 +509,22 @@ func TestSetUserProfilePicture(t *testing.T) {
 		Return(nil).
 		Once()
 	authService := InitDefaultAuthService(mockDb, defaultParser)
-	err = authService.SetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
+	err = authService.AdminSetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
 	assert.NoError(t, err)
 }
 
-func TestSetUserProfilePictureInvalidImage(t *testing.T) {
+func TestAdminSetUserProfilePictureInvalidImage(t *testing.T) {
 	err := defaultParser.RegisterParserFunc("*", formats.ParseBasic)
 	require.NoError(t, err)
 	invalidBytes := []byte("not an image")
 
 	mockDb := mockUserDatabase.NewMockUserDatabase(t)
 	authService := InitDefaultAuthService(mockDb, defaultParser)
-	err = authService.SetUserProfilePicture(database.UserID(7), invalidBytes, "invalid.webp")
+	err = authService.AdminSetUserProfilePicture(database.UserID(7), invalidBytes, "invalid.webp")
 	assert.Error(t, err)
 }
 
-func TestSetUserProfilePictureRepoError(t *testing.T) {
+func TestAdminSetUserProfilePictureRepoError(t *testing.T) {
 	err := defaultParser.RegisterParserFunc("*", formats.ParseBasic)
 	require.NoError(t, err)
 	bytes, err := os.ReadFile("test_resources/gopher.webp")
@@ -536,11 +536,11 @@ func TestSetUserProfilePictureRepoError(t *testing.T) {
 		Return(assert.AnError).
 		Once()
 	authService := InitDefaultAuthService(mockDb, defaultParser)
-	err = authService.SetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
+	err = authService.AdminSetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
 	assert.Error(t, err)
 }
 
-func TestSetUserProfilePictureSuccess(t *testing.T) {
+func TestAdminSetUserProfilePictureSuccess(t *testing.T) {
 	err := defaultParser.RegisterParserFunc("*", formats.ParseBasic)
 	require.NoError(t, err)
 	bytes, err := os.ReadFile("test_resources/gopher.webp")
@@ -552,8 +552,18 @@ func TestSetUserProfilePictureSuccess(t *testing.T) {
 		Return(nil).
 		Once()
 	authService := InitDefaultAuthService(mockDb, defaultParser)
-	err = authService.SetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
+	err = authService.AdminSetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
 	assert.NoError(t, err)
+}
+
+func TestSetUserProfilePictureNonEqualTargetAndRequester(t *testing.T) {
+	err := defaultParser.RegisterParserFunc("*", formats.ParseBasic)
+	require.NoError(t, err)
+
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	authService := InitDefaultAuthService(mockDb, defaultParser)
+	err = authService.SetUserProfilePicture(database.UserID(7), database.UserID(8), []byte{}, "gopher.webp")
+	assert.Error(t, err)
 }
 
 // test wrapper functions
