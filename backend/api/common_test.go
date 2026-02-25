@@ -206,8 +206,6 @@ func TestQueryPermissionsFromRequest(t *testing.T) {
 	})
 }
 
-
-
 func writeTestFile(writer *multipart.Writer, fieldname string, filename string, content []byte) error {
 	part, err := writer.CreateFormFile(fieldname, filename)
 	if err != nil {
@@ -216,7 +214,6 @@ func writeTestFile(writer *multipart.Writer, fieldname string, filename string, 
 	_, err = part.Write(content)
 	return err
 }
-
 
 func TestReadFileBytes(t *testing.T) {
 	router := gin.Default()
@@ -240,6 +237,7 @@ func TestReadFileBytes(t *testing.T) {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	router.ServeHTTP(w, req)
 
-	writer.Close()
+	err = writer.Close()
+	require.NoError(t, err)
 
 }

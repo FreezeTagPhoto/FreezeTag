@@ -569,7 +569,7 @@ func TestSetUserProfilePictureNonexistentUser(t *testing.T) {
 
 	err := db.SetUserProfilePicture(999, []byte("fake image bytes"))
 	require.Error(t, err)
-}	
+}
 
 func TestGetUserProfilePictureNonexistentUser(t *testing.T) {
 	db := createTempUserDatabase(t)

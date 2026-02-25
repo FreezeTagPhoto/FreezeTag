@@ -12,15 +12,14 @@ func checkValidWebPHeader(data []byte) bool {
 	return reflect.ValueOf(data).Len() > 12 && string(data[:4]) == "RIFF" && string(data[8:12]) == "WEBP"
 }
 
-
 func TestCreateProfilePicture(t *testing.T) {
 	// Create a simple 2x2 RGBA image (red, green, blue, white)
 	width, height := 2, 2
 	pixels := []byte{
-		0, 0, 0, 0,   
-		0, 0, 0, 0,   
-		0, 0, 0, 0,   
-		0, 0, 0, 0, 
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
 	}
 	data := imagedata.Data{
 		PixelsRGBA: pixels,
@@ -40,27 +39,27 @@ func TestCreateProfilePictureNonSquare(t *testing.T) {
 	// Create a simple 4x2 RGBA image (red, green, blue, white)
 	width, height := 4, 2
 	pixels := []byte{
-		0, 0, 0, 0,  
-		0, 0, 0, 0,   
-		0, 0, 0, 0,   
-		0, 0, 0, 0, 
-		0, 0, 0, 0,   
-		0, 0, 0, 0,   
-		0, 0, 0, 0,   
-		0, 0, 0, 0, 
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
 	}
 	data := imagedata.Data{
 		PixelsRGBA: pixels,
 		Width:      width,
-		Height:	 height,
+		Height:     height,
 	}
 	result, err := CreateProfilePicture(data)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, result)
 
-	// Check that the result is a valid WEBP image by checking the header. 
+	// Check that the result is a valid WEBP image by checking the header.
 	// I had AI make this check since I dont know the webp header off rip
-	assert.True(t, checkValidWebPHeader(result)	)
+	assert.True(t, checkValidWebPHeader(result))
 }
 
 func TestCreateProfilePictureInvalidData(t *testing.T) {

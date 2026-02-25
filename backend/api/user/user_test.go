@@ -36,7 +36,6 @@ func (ue UserEndpoint) RegisterEndpoints(router gin.IRoutes) {
 	router.GET("/users/profile-picture/:id", ue.GetProfilePicture)
 	router.POST("/users/profile-picture/:id", ue.UpdateProfilePicture)
 
-
 }
 
 func TestGetUserOK(t *testing.T) {
@@ -508,7 +507,7 @@ func TestGetProfilePicture(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", reqURL, nil)
 	router.ServeHTTP(w, req)
-	
+
 	expected := api.ProfilePictureResponse{PictureData: []byte("fake image bytes")}
 	got := api.ProfilePictureResponse{}
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
@@ -566,7 +565,6 @@ func TestSetUserProfilePictureSuccess(t *testing.T) {
 	writer := multipart.NewWriter(body)
 	require.NoError(t, writeTestFile(writer, "picture", "testfile.png", []byte("new fake image bytes")))
 	require.NoError(t, writer.Close())
-
 
 	mockService := mockService.NewMockAuthService(t)
 	mockService.EXPECT().
