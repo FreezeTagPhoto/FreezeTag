@@ -33,3 +33,20 @@
     flex-direction: row;
     height: 96%;
 }
+
+.viewerBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.progress_bar {
+    height: 50px;
+    width: 250px;
+}

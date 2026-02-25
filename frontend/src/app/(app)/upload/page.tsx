@@ -63,7 +63,14 @@ export default function Home() {
                 />
             </div>
 
-            {progress > 0 && <ProgressBar progress={progress} />}
+            {progress > 0 && (
+                <div className={styles.viewerBackdrop}>
+                    <ProgressBar
+                        progress={progress}
+                        className={styles.progress_bar}
+                    />
+                </div>
+            )}
 
             {ids.length > 0 && (
                 <div className={styles.gallery_tags_container}>

@@ -1,18 +1,19 @@
 import styles from "./ProgressBar.module.css";
 export type ProgressBarProps = {
     progress: number;
+    className?: string;
 };
 
 export default function ProgressBar(props: ProgressBarProps) {
     return (
-        <div className={styles.viewerBackdrop}>
-            <label htmlFor="upload-progress" className={styles.hidden}>
-                Upload Progress:
+        <div>
+            <label htmlFor="job-progress" className={styles.hidden}>
+                Job Progress:
             </label>
             <progress
-                id="upload-progress"
+                id="job-progress"
                 value={props.progress}
-                className={styles.progressBar}
+                className={`${styles.progressBar} ${props.className ?? ""}`}
             >
                 {props.progress * 100}%
             </progress>
