@@ -2,6 +2,7 @@ import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err, Ok } from "@/common/result";
 import JobsSummarizer from "./jobssummarizer";
+import { JobDetails } from "./jobshelpers";
 
 // The outer result is Ok() if the request worked, and Err() if the request failed
 // The inner result in Ok() is Ok() if the job is complete, and Err() if not. Err() is a fraction indicating progress
@@ -11,32 +12,15 @@ export type JobsResult = Result<
     { status: number; message: string }
 >;
 
-type JobResponse = {
-    in_progress?: {
-        name: string;
-        status: string;
-    }[];
-    completed?: {
-        filename: string;
-        id: number;
-    }[];
-    failed?: {
-        filename: string;
-        reason: string;
-    }[];
-    uuid: string;
-    cancelled: boolean;
-};
-
 export default async function JobsHandler(event: string): Promise<JobsResult> {
     return job_query_with_handler(
-        ApiHandler<JobResponse>(SERVER_ADDRESS + "jobs/details/")(Method.GET),
+        ApiHandler<JobDetails>(SERVER_ADDRESS + "jobs/details/")(Method.GET),
         event,
     );
 }
 
 async function job_query_with_handler(
-    handler: (data: BodyInit) => Promise<Result<JobResponse, RequestError>>,
+    handler: (data: BodyInit) => Promise<Result<JobDetails, RequestError>>,
     job_code: string,
 ): Promise<JobsResult> {
     const summary_request_result = await JobsSummarizer(job_code);
