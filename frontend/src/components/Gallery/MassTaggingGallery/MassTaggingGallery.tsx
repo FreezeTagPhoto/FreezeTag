@@ -1,39 +1,22 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import styles from "./MassTaggingGallery.module.css";
 import GalleryImage from "../GalleryImage/GalleryImage";
 
 export type MassTaggingGalleryProps = {
     image_ids: number[];
-    onChange: (ids: Set<number>) => void;
+    selectedIds: Set<number>;
+    onChange: (id: number) => void;
 };
 
 export default function MassTaggingGallery({
     image_ids,
+    selectedIds,
     onChange,
 }: MassTaggingGalleryProps) {
     const gridRef = useRef<HTMLDivElement | null>(null);
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
-
-    // Selectable Images Handling
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-
-    const handleImageSelectionChange = (id: number) => {
-        const newIds = new Set<number>().union(selectedIds);
-
-        if (newIds.has(id)) {
-            newIds.delete(id);
-        } else {
-            newIds.add(id);
-        }
-
-        setSelectedIds(newIds);
-
-        if (onChange) {
-            onChange(newIds);
-        }
-    };
 
     return (
         <>
@@ -47,10 +30,7 @@ export default function MassTaggingGallery({
                     <GalleryImage
                         key={id}
                         id={id}
-                        onClick={() => {
-                            handleImageSelectionChange(id);
-                        }}
-                        onFocus={() => {}}
+                        onClick={() => onChange(id)}
                         buttonRef={(el) => {
                             itemRefs.current[index] = el;
                         }}
