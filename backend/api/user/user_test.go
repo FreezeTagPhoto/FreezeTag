@@ -35,7 +35,6 @@ func (ue UserEndpoint) RegisterEndpoints(router gin.IRoutes) {
 	router.DELETE("/users/permissions/:id", ue.RevokePermissions)
 
 	router.GET("/users/profile-picture/:id", ue.GetProfilePicture)
-	router.POST("/users/admin/profile-picture/:id", ue.AdminSetProfilePicture)
 	router.POST("/users/profile-picture/:id", ue.SetProfilePicture)
 
 }
@@ -568,11 +567,11 @@ func TestSetUserProfilePictureSuccess(t *testing.T) {
 
 	mockService := mockService.NewMockAuthService(t)
 	mockService.EXPECT().
-		AdminSetUserProfilePicture(database.UserID(1), []byte("new fake image bytes"), mock.Anything).
+		SetUserProfilePicture(database.UserID(1), []byte("new fake image bytes"), mock.Anything).
 		Return(nil)
 	InitUserEndpoint(mockService).RegisterEndpoints(router)
 
-	reqURL := "/users/admin/profile-picture/1" // properly encodes & joins parameters
+	reqURL := "/users/profile-picture/1" // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", reqURL, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -590,7 +589,7 @@ func TestSetUserProfilePictureBadId(t *testing.T) {
 	router := gin.Default()
 	InitUserEndpoint(mockService.NewMockAuthService(t)).RegisterEndpoints(router)
 
-	reqURL := "/users/admin/profile-picture/foo" // properly encodes & joins parameters
+	reqURL := "/users/profile-picture/foo" // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
@@ -609,11 +608,11 @@ func TestSetUserProfilePictureInternalError(t *testing.T) {
 
 	mockService := mockService.NewMockAuthService(t)
 	mockService.EXPECT().
-		AdminSetUserProfilePicture(database.UserID(1), []byte("new fake image bytes"), mock.Anything).
+		SetUserProfilePicture(database.UserID(1), []byte("new fake image bytes"), mock.Anything).
 		Return(errors.New("database error"))
 	InitUserEndpoint(mockService).RegisterEndpoints(router)
 
-	reqURL := "/users/admin/profile-picture/1" // properly encodes & joins parameters
+	reqURL := "/users/profile-picture/1" // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", reqURL, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -628,26 +627,6 @@ func TestSetUserProfilePictureNoPictureField(t *testing.T) {
 	router := gin.Default()
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	require.NoError(t, writer.Close())
-
-	InitUserEndpoint(mockService.NewMockAuthService(t)).RegisterEndpoints(router)
-
-	reqURL := "/users/admin/profile-picture/1" // properly encodes & joins parameters
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", reqURL, body)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var got api.BadRequestResponse
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-	assert.NotEmpty(t, got)
-}
-
-func TestSetUserNoRequesterID(t *testing.T) {
-	router := gin.Default()
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	require.NoError(t, writeTestFile(writer, "picture", "testfile.png", []byte("new fake image bytes")))
 	require.NoError(t, writer.Close())
 
 	InitUserEndpoint(mockService.NewMockAuthService(t)).RegisterEndpoints(router)

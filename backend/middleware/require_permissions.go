@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/database/data"
 	"net/http"
@@ -10,22 +11,77 @@ import (
 
 func RequirePermission(required ...data.Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		JWTpermissions, exists := c.Get("permissions")
-		if !exists || JWTpermissions == nil {
-			c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: "No permissions found"})
+		if err := hasPermissions(c, required...); err != nil {
+			c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: err.Error()})
 			return
-		}
-		for _, r := range required {
-			perms, ok := JWTpermissions.(data.Permissions)
-			if !ok {
-				c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: "Invalid permission type"})
-				return
-			}
-			if !perms.HasPermission(r) {
-				c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: "Insufficient permissions"})
-				return
-			}
 		}
 		c.Next()
 	}
+}
+
+func RequirePermissionOrSelf(required ...data.Permission) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if isSelf(c) { 
+			c.Next()
+			return
+		}
+		
+		if err := hasPermissions(c, required...); err != nil {
+			c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: err.Error()})
+			return
+		}
+		c.Next()
+	}
+}
+
+func RequireSelfPermissionsOrHigherPermissions(requiredSelf data.Permissions, requiredHigher ...data.Permission) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if isSelf(c) {
+			if err := hasPermissions(c, requiredSelf...); err != nil {
+				c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: err.Error()})
+				return
+			}		
+			c.Next()
+			return
+		}
+		if err := hasPermissions(c, requiredHigher...); err != nil {
+			c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: err.Error()})
+			return
+		}
+		c.Next()
+	}
+}
+
+func isSelf(c *gin.Context) bool {
+	rawID, idExists := c.Get("userID")
+	if !idExists {
+		return false
+	}
+	requesterID, ok := rawID.(string)
+	if !ok || requesterID == "" {
+		return false
+	}
+	if c.Param("id") == requesterID {
+		return true
+	}
+	return false
+}
+
+func hasPermissions(c *gin.Context, required ...data.Permission) error {
+	rawPerms, exists := c.Get("permissions")
+	if !exists || rawPerms == nil {
+		return fmt.Errorf("no permissions found")
+	}
+
+	perms, ok := rawPerms.(data.Permissions)
+	if !ok {
+		return fmt.Errorf("invalid permission type")
+	}
+
+	for _, r := range required {
+		if !perms.HasPermission(r) {
+			return fmt.Errorf("insufficient permissions")
+		}
+	}
+	return nil
 }

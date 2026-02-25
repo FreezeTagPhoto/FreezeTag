@@ -199,7 +199,7 @@ func initPasswordEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	passwordGroup := baseGroup.Group("/password")
 	{
 		pe := password.InitPasswordEndpoint(deps.authService)
-		passwordGroup.POST("/change", pe.ChangePassword)
+		passwordGroup.POST("/change", middleware.RequirePermissionOrSelf(data.WriteUser), pe.ChangePassword)
 	}
 }
 
@@ -218,19 +218,18 @@ func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	userGroup := baseGroup.Group("/users")
 	{
 		ue := user.InitUserEndpoint(deps.authService)
+		userGroup.GET("/profile-picture/:id", middleware.RequirePermissionOrSelf(data.ReadUser), ue.GetProfilePicture)
+		userGroup.POST("/profile-picture/:id", middleware.RequirePermissionOrSelf(data.WriteUser), ue.SetProfilePicture)
+
 		userGroup.GET("/:id", middleware.RequirePermission(data.ReadUser), ue.GetUser)
-		userGroup.GET("/all", middleware.RequirePermission(data.ReadUser), ue.ListUsers)
-		userGroup.GET("/profile-picture/:id", middleware.RequirePermission(data.ReadUser), ue.GetProfilePicture)
-		userGroup.GET("/permissions/:id", middleware.RequirePermission(data.ReadPermissions), ue.GetPermissions)
-
-		userGroup.POST("/profile-picture/:id", ue.SetProfilePicture)
-		userGroup.POST("/admin/profile-picture/:id", middleware.RequirePermission(data.WriteUser), ue.SetProfilePicture)
-
-		userGroup.POST("/create", middleware.RequirePermission(data.WriteUser), ue.CreateUser)
-		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
-
-		userGroup.DELETE("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)
 		userGroup.DELETE("/:id", middleware.RequirePermission(data.WriteUser), ue.DeleteUser)
+
+		userGroup.GET("/all", middleware.RequirePermission(data.ReadUser), ue.ListUsers)
+		userGroup.POST("/create", middleware.RequirePermission(data.WriteUser), ue.CreateUser)
+
+		userGroup.GET("/permissions/:id", middleware.RequirePermission(data.ReadPermissions), ue.GetPermissions)
+		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
+		userGroup.DELETE("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)
 
 	}
 }

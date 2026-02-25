@@ -509,7 +509,7 @@ func TestAdminSetUserProfilePicture(t *testing.T) {
 		Return(nil).
 		Once()
 	authService := InitDefaultAuthService(mockDb, defaultParser)
-	err = authService.AdminSetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
+	err = authService.SetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
 	assert.NoError(t, err)
 }
 
@@ -520,7 +520,7 @@ func TestAdminSetUserProfilePictureInvalidImage(t *testing.T) {
 
 	mockDb := mockUserDatabase.NewMockUserDatabase(t)
 	authService := InitDefaultAuthService(mockDb, defaultParser)
-	err = authService.AdminSetUserProfilePicture(database.UserID(7), invalidBytes, "invalid.webp")
+	err = authService.SetUserProfilePicture(database.UserID(7), invalidBytes, "invalid.webp")
 	assert.Error(t, err)
 }
 
@@ -536,7 +536,7 @@ func TestAdminSetUserProfilePictureRepoError(t *testing.T) {
 		Return(assert.AnError).
 		Once()
 	authService := InitDefaultAuthService(mockDb, defaultParser)
-	err = authService.AdminSetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
+	err = authService.SetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
 	assert.Error(t, err)
 }
 
@@ -552,7 +552,7 @@ func TestAdminSetUserProfilePictureSuccess(t *testing.T) {
 		Return(nil).
 		Once()
 	authService := InitDefaultAuthService(mockDb, defaultParser)
-	err = authService.AdminSetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
+	err = authService.SetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
 	assert.NoError(t, err)
 }
 
@@ -562,7 +562,7 @@ func TestSetUserProfilePictureNonEqualTargetAndRequester(t *testing.T) {
 
 	mockDb := mockUserDatabase.NewMockUserDatabase(t)
 	authService := InitDefaultAuthService(mockDb, defaultParser)
-	err = authService.SetUserProfilePicture(database.UserID(7), database.UserID(8), []byte{}, "gopher.webp")
+	err = authService.SetUserProfilePicture(database.UserID(7), []byte{}, "gopher.webp")
 	assert.Error(t, err)
 }
 
