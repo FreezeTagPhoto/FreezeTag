@@ -364,8 +364,6 @@ export default function TopBar({
                         </div>
                     )}
                 </div>
-
-                <Pill label="Export" caret variant="menu" />
             </div>
         </div>
     );
