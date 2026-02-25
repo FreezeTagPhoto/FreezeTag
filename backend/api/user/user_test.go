@@ -2,11 +2,13 @@ package user
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"freezetag/backend/api"
 	mockService "freezetag/backend/mocks/AuthService"
+	"mime/multipart"
 
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/data"
@@ -31,6 +33,10 @@ func (ue UserEndpoint) RegisterEndpoints(router gin.IRoutes) {
 
 	router.DELETE("/users/:id", ue.DeleteUser)
 	router.DELETE("/users/permissions/:id", ue.RevokePermissions)
+
+	router.GET("/users/profile-picture/:id", ue.GetProfilePicture)
+	router.POST("/users/profile-picture/:id", ue.SetProfilePicture)
+
 }
 
 func TestGetUserOK(t *testing.T) {
@@ -482,6 +488,153 @@ func TestGetPermissionsBadId(t *testing.T) {
 	reqURL := "/users/permissions/foo" // properly encodes & joins parameters
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.BadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.NotEmpty(t, got)
+}
+
+func TestGetProfilePicture(t *testing.T) {
+	mockService := mockService.NewMockAuthService(t)
+	mockService.EXPECT().
+		GetUserProfilePicture(database.UserID(1)).
+		Return([]byte("fake image bytes"), nil)
+
+	router := gin.Default()
+	InitUserEndpoint(mockService).RegisterEndpoints(router)
+
+	reqURL := "/users/profile-picture/1" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+
+	expected := []byte("fake image bytes")
+	assert.Equal(t, expected, w.Body.Bytes())
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestGetProfilePictureBadId(t *testing.T) {
+	mockService := mockService.NewMockAuthService(t)
+
+	router := gin.Default()
+	InitUserEndpoint(mockService).RegisterEndpoints(router)
+
+	reqURL := "/users/profile-picture/foo" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.BadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.NotEmpty(t, got)
+}
+
+func TestGetProfilePictureInternalError(t *testing.T) {
+	mockService := mockService.NewMockAuthService(t)
+	mockService.EXPECT().
+		GetUserProfilePicture(database.UserID(1)).
+		Return(nil, errors.New("database error"))
+
+	router := gin.Default()
+	InitUserEndpoint(mockService).RegisterEndpoints(router)
+
+	reqURL := "/users/profile-picture/1" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	var got api.ServerErrorResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.NotEmpty(t, got)
+}
+
+func writeTestFile(writer *multipart.Writer, fieldname string, filename string, content []byte) error {
+	part, err := writer.CreateFormFile(fieldname, filename)
+	if err != nil {
+		return err
+	}
+	_, err = part.Write(content)
+	return err
+}
+
+func TestSetUserProfilePictureSuccess(t *testing.T) {
+	router := gin.Default()
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	require.NoError(t, writeTestFile(writer, "picture", "testfile.png", []byte("new fake image bytes")))
+	require.NoError(t, writer.Close())
+
+	mockService := mockService.NewMockAuthService(t)
+	mockService.EXPECT().
+		SetUserProfilePicture(database.UserID(1), []byte("new fake image bytes"), mock.Anything).
+		Return(nil)
+	InitUserEndpoint(mockService).RegisterEndpoints(router)
+
+	reqURL := "/users/profile-picture/1" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", reqURL, body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	var got api.MessageResponse
+	err := json.Unmarshal(w.Body.Bytes(), &got)
+	assert.NoError(t, err)
+	expectedMessage := "profile picture updated"
+	t.Logf("got: %+v", got)
+	assert.Equal(t, api.MessageResponse{Message: expectedMessage}, got)
+}
+
+func TestSetUserProfilePictureBadId(t *testing.T) {
+	router := gin.Default()
+	InitUserEndpoint(mockService.NewMockAuthService(t)).RegisterEndpoints(router)
+
+	reqURL := "/users/profile-picture/foo" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", reqURL, nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	var got api.BadRequestResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.NotEmpty(t, got)
+}
+
+func TestSetUserProfilePictureInternalError(t *testing.T) {
+	router := gin.Default()
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	require.NoError(t, writeTestFile(writer, "picture", "testfile.png", []byte("new fake image bytes")))
+	require.NoError(t, writer.Close())
+
+	mockService := mockService.NewMockAuthService(t)
+	mockService.EXPECT().
+		SetUserProfilePicture(database.UserID(1), []byte("new fake image bytes"), mock.Anything).
+		Return(errors.New("database error"))
+	InitUserEndpoint(mockService).RegisterEndpoints(router)
+
+	reqURL := "/users/profile-picture/1" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", reqURL, body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	var got api.ServerErrorResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.NotEmpty(t, got)
+}
+
+func TestSetUserProfilePictureNoPictureField(t *testing.T) {
+	router := gin.Default()
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	require.NoError(t, writer.Close())
+
+	InitUserEndpoint(mockService.NewMockAuthService(t)).RegisterEndpoints(router)
+
+	reqURL := "/users/profile-picture/1" // properly encodes & joins parameters
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", reqURL, body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	var got api.BadRequestResponse

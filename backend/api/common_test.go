@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bytes"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/queries"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -202,4 +204,40 @@ func TestQueryPermissionsFromRequest(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, perms)
 	})
+}
+
+func writeTestFile(writer *multipart.Writer, fieldname string, filename string, content []byte) error {
+	part, err := writer.CreateFormFile(fieldname, filename)
+	if err != nil {
+		return err
+	}
+	_, err = part.Write(content)
+	return err
+}
+
+func TestReadFileBytes(t *testing.T) {
+	router := gin.Default()
+	router.POST("/testEndpoint", func(ctx *gin.Context) {
+		form, err := ctx.FormFile("file")
+		require.NoError(t, err)
+		fileBytes, err := ReadFileBytes(form)
+		require.NoError(t, err)
+		assert.Equal(t, []byte("test content"), fileBytes)
+	})
+
+	w := httptest.NewRecorder()
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	require.NoError(t, writeTestFile(writer, "file", "testfile.txt", []byte("test content")))
+
+	require.NoError(t, writer.Close())
+
+	req, err := http.NewRequest("POST", "/testEndpoint", body)
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	router.ServeHTTP(w, req)
+
+	err = writer.Close()
+	require.NoError(t, err)
+
 }

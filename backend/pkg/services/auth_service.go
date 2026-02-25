@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/data"
+	"freezetag/backend/pkg/images"
 	"log"
 	"os"
 	"strconv"
@@ -79,13 +80,18 @@ type AuthService interface {
 	RevokePermissions(userID database.UserID, permissions data.Permissions) error
 	// GetUserPermissions returns the permissions associated with the given user ID
 	GetUserPermissions(userID database.UserID) (data.Permissions, error)
+	// SetUserProfilePicture sets the profile picture for a user, given the user ID and picture data. Returns an error if the user does not exist or the picture data is invalid.
+	SetUserProfilePicture(userID database.UserID, pictureData []byte, filename string) error
+	// GetUserProfilePicture returns the profile picture for a user, given the user ID. Returns an error if the user does not exist or does not have a profile picture.
+	GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error)
 }
 
 type DefaultAuthService struct {
 	userDatabase database.UserDatabase
+	imageParser  images.Parser
 }
 
-func InitDefaultAuthService(userDb database.UserDatabase) *DefaultAuthService {
+func InitDefaultAuthService(userDb database.UserDatabase, imageParser images.Parser) *DefaultAuthService {
 	key, exists := os.LookupEnv("JWT_SECRET_KEY")
 	if !exists || key == "" {
 		log.Printf("[WARN] JWT_SECRET_KEY in .env file was not found or was empty, defaulting to random bytes")
@@ -100,6 +106,7 @@ func InitDefaultAuthService(userDb database.UserDatabase) *DefaultAuthService {
 	}
 	return &DefaultAuthService{
 		userDatabase: userDb,
+		imageParser:  imageParser,
 	}
 }
 
@@ -290,6 +297,23 @@ func (s *DefaultAuthService) RevokePermissions(userID database.UserID, permissio
 
 func (s *DefaultAuthService) GetUserPermissions(userID database.UserID) (data.Permissions, error) {
 	return s.userDatabase.GetUserPermissions(userID)
+}
+
+func (s *DefaultAuthService) SetUserProfilePicture(userID database.UserID, pictureData []byte, filename string) error {
+	data, err := s.imageParser.ParseImage(filename, pictureData)
+
+	if err != nil {
+		return fmt.Errorf("invalid picture data: %w", err)
+	}
+	profilePicture, err := images.CreateProfilePicture(data)
+	if err != nil {
+		return fmt.Errorf("could not create profile picture: %w", err)
+	}
+	return s.userDatabase.SetUserProfilePicture(userID, profilePicture)
+}
+
+func (s *DefaultAuthService) GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error) {
+	return s.userDatabase.GetUserProfilePicture(userID)
 }
 
 func hashToken(token string) [32]byte {
