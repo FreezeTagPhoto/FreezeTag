@@ -8,13 +8,16 @@ export type TagChangeProps = {
 };
 
 export default function TagChangeButton(props: TagChangeProps) {
-    const [tags, setTags] = useState<string[]>([]);
+    const [allTags, setAllTags] = useState<string[]>([]);
 
-    const updateTags = () => {
+    const [filteredTags, setFilteredTags] = useState<string[]>([]);
+
+    const updateAllTags = () => {
         TagGetter()
             .then((result: TagGetResult) => {
                 if (result.ok) {
-                    setTags(result.value);
+                    setAllTags(result.value);
+                    setFilteredTags(result.value);
                 } else {
                     console.error("Error retrieving tags:", result.error);
                     // TODO: show error to user
@@ -28,6 +31,11 @@ export default function TagChangeButton(props: TagChangeProps) {
                     ),
                 // TODO: Show error to user
             );
+    };
+
+    const filterTags = (query: string) => {
+        const arr = allTags.filter((tag) => tag.includes(query));
+        setFilteredTags(arr);
     };
 
     const handleSubmit = async (event: FormData, image_ids: Set<number>) => {
@@ -47,10 +55,10 @@ export default function TagChangeButton(props: TagChangeProps) {
                 // TODO: show error to user
             }
         }
-        updateTags();
+        updateAllTags();
     };
 
-    useEffect(updateTags, []);
+    useEffect(updateAllTags, []);
 
     return (
         <form
@@ -58,7 +66,7 @@ export default function TagChangeButton(props: TagChangeProps) {
             className={styles.form}
         >
             <select multiple name="tag_menu" className={styles.tag_menu}>
-                {tags.map((tag) => (
+                {filteredTags.map((tag) => (
                     <option value={tag} key={tag}>
                         {tag}
                     </option>
@@ -69,10 +77,11 @@ export default function TagChangeButton(props: TagChangeProps) {
                 type="text"
                 placeholder="New tag..."
                 className={styles.new_tag}
+                onChange={(event) => filterTags(event.target.value)}
+                autoComplete="off"
             ></input>
             <label htmlFor="tags-submit" className={styles.label}>
-                {" "}
-                Submit Tags!{" "}
+                Submit Tags!
             </label>
             <input type="submit" id="tags-submit" className={styles.button} />
         </form>

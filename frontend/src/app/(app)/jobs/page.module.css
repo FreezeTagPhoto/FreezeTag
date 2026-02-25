@@ -12,3 +12,171 @@
     font-weight: 700;
     letter-spacing: 0.01em;
 }
+
+.job_container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.job_row {
+    background-color: var(--mantle);
+    border-radius: var(--border-radius);
+    border: var(--border-info);
+    filter: var(--dropshadow);
+
+    padding: 0.25rem;
+
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    width: max-content;
+}
+
+.job_item {
+    background-color: var(--base);
+    border-radius: var(--border-radius);
+    border: var(--border-info);
+    filter: var(--dropshadow);
+
+    padding: 0.75rem 1rem;
+
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.job_name {
+    width: 300px;
+}
+
+.job_status {
+    width: 180px;
+}
+
+.job_preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    color: var(--text);
+}
+
+@media screen and (max-width: 1010px) {
+    .job_item_label {
+        display: none;
+    }
+}
+
+.job_item_label {
+    font: inherit;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.job_item_button {
+    cursor: pointer;
+}
+
+.job_item_button:hover {
+    background-color: var(--surface0);
+}
+
+.job_progress {
+    height: 1rem;
+}
+
+.job_status_cancelled {
+    color: var(--red);
+}
+
+.job_item_delete * {
+    color: var(--red);
+}
+
+.job_item_delete:hover {
+    background-color: var(--red);
+}
+
+.job_item_delete:hover * {
+    color: var(--base);
+}
+
+.job_item_button:disabled {
+    background-color: var(--crust);
+    cursor: default;
+}
+
+.job_item_button:disabled * {
+    color: var(--subtext0);
+}
+
+.dialogIcon {
+    width: 20px;
+    height: 20px;
+}
+
+.dialog_header {
+    font-weight: bold;
+}
+
+.dialog_titles {
+    margin: 12px 0px;
+}
+
+.dialog_scrollable {
+    overflow: auto;
+    max-height: 400px;
+}
+
+.dialogTagPill {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: var(--border-info);
+    background: var(--base);
+    color: var(--text);
+
+    font-family: var(--font-geist-sans);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.dialogActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    font-family: var(--font-geist-sans);
+    font-size: 16px;
+    font-weight: 600;
+
+    cursor: pointer;
+    border: var(--border-info);
+}
+
+.button {
+    background: var(--base);
+    color: var(--text);
+}
+
+.button:hover {
+    background: var(--surface0);
+}

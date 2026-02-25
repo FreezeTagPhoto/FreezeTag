@@ -6,7 +6,6 @@ body {
     --border-radius: 12px;
     --border-info: 1px solid var(--border-color);
     --selected-overlay: rgba(255, 255, 255, 0.1);
-    --border-color: rgba(0, 0, 0, 0.1);
     max-width: 100vw;
     overflow-x: hidden;
     font-size: 18px;
@@ -19,6 +18,7 @@ body {
     --accent2: #579dd7;
     --accent3: #ffffff;
     --backdrop: rgba(0, 0, 0, 0.15);
+    --border-color: rgba(0, 0, 0, 0.1);
 }
 
 [data-theme-type="dark"] {
@@ -27,6 +27,7 @@ body {
     --accent2: #aedbf0;
     --accent3: #ffffff;
     --backdrop: rgba(255, 255, 255, 0.15);
+    --border-color: rgba(150, 150, 150, 0.1);
 }
 
 body {

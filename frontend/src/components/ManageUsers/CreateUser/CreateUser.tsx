@@ -3,6 +3,7 @@ import styles from "./CreateUser.module.css";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import UserCreator from "@/api/users/usercreator";
 import { normalizeErrorMessage } from "@/components/Login/LoginView";
+import PermsAdder from "@/api/permissions/permsadder";
 
 export type CreateUserProps = {
     onClose: () => void;
@@ -72,6 +73,11 @@ export default function CreateUser({ onClose }: CreateUserProps) {
                 );
                 return;
             } else {
+                PermsAdder(res.value.id, [
+                    "read:files",
+                    "read:tags",
+                    "read:plugins",
+                ]);
                 onClose();
             }
         } finally {

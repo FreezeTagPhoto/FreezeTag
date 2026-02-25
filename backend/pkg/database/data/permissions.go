@@ -25,6 +25,8 @@ var (
 	WriteToken Permission = register("write:tokens", "Write API Tokens", "Allows creating and revoking API tokens.")
 	ReadToken  Permission = register("read:tokens", "Read API Tokens", "Allows viewing existing API token information.")
 
+	WriteJobs Permission = register("write:jobs", "Write/Cancel Jobs", "Allows modifying or cancelling running jobs (uploads, plugins, etc...)")
+
 	// More powerful permissions for admin users
 	WriteAnyToken    Permission = register("write:any_token", "Write Any API Token", "Allows revoking and deleting any API token, including those not owned by the user.")
 	ReadAnyToken     Permission = register("read:any_token", "Read Any API Token", "Allows viewing any API token, including those not owned by the user.")

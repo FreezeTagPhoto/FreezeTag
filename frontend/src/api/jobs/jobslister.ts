@@ -1,20 +1,14 @@
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
+import { JobSummary } from "./jobshelpers";
 
 export type JobListResult = Result<
-    JobListResponse,
+    JobSummary[],
     { status: number; message: string }
 >;
 
-type JobListResponse = {
-    in_progress: number;
-    complete: number;
-    errors: number;
-    uuid: string;
-    status: string;
-    title: string;
-}[];
+type JobListResponse = JobSummary[];
 
 export default async function JobsLister(): Promise<JobListResult> {
     return job_query_with_handler(

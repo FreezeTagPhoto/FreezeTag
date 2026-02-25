@@ -1,36 +1,24 @@
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
+import { JobSummary } from "./jobshelpers";
 
 export type JobSummaryResult = Result<
-    JobSummaryResponse,
+    JobSummary,
     { status: number; message: string }
 >;
-
-type JobSummaryResponse = {
-    in_progress: number;
-    complete: number;
-    errors: number;
-    uuid: string;
-    status: string;
-    title: string;
-};
 
 export default async function JobsSummarizer(
     event: string,
 ): Promise<JobSummaryResult> {
     return job_query_with_handler(
-        ApiHandler<JobSummaryResponse>(SERVER_ADDRESS + "jobs/summary/")(
-            Method.GET,
-        ),
+        ApiHandler<JobSummary>(SERVER_ADDRESS + "jobs/summary/")(Method.GET),
         event,
     );
 }
 
 async function job_query_with_handler(
-    handler: (
-        data: BodyInit,
-    ) => Promise<Result<JobSummaryResponse, RequestError>>,
+    handler: (data: BodyInit) => Promise<Result<JobSummary, RequestError>>,
     job_code: string,
 ): Promise<JobSummaryResult> {
     const summary_request_result = await handler(job_code);
