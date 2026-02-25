@@ -21,30 +21,12 @@ func RequirePermission(required ...data.Permission) gin.HandlerFunc {
 
 func RequirePermissionOrSelf(required ...data.Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if isSelf(c) { 
-			c.Next()
-			return
-		}
-		
-		if err := hasPermissions(c, required...); err != nil {
-			c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: err.Error()})
-			return
-		}
-		c.Next()
-	}
-}
-
-func RequireSelfPermissionsOrHigherPermissions(requiredSelf data.Permissions, requiredHigher ...data.Permission) gin.HandlerFunc {
-	return func(c *gin.Context) {
 		if isSelf(c) {
-			if err := hasPermissions(c, requiredSelf...); err != nil {
-				c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: err.Error()})
-				return
-			}		
 			c.Next()
 			return
 		}
-		if err := hasPermissions(c, requiredHigher...); err != nil {
+
+		if err := hasPermissions(c, required...); err != nil {
 			c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: err.Error()})
 			return
 		}

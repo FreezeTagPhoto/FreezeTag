@@ -15,8 +15,6 @@ type UserEndpoint struct {
 	authService services.AuthService
 }
 
-type setFunc func(database.UserID, []byte, string) error
-
 func InitUserEndpoint(authService services.AuthService) UserEndpoint {
 	return UserEndpoint{authService: authService}
 }
@@ -202,7 +200,8 @@ func (ue UserEndpoint) GetPermissions(c *gin.Context) {
 }
 
 // @Summary     Get a user's profile picture
-// @Description Retrieves the profile picture of a user by their ID.
+// @Description Retrieves the profile picture of a user by their ID. 
+// a user can only access their own profile picture, but an admin with the appropriate permissions can access any user's profile picture.
 // @Tags        users
 // @Produce     image/webp
 // @Param       id path int true "User ID"
@@ -225,7 +224,8 @@ func (ue UserEndpoint) GetProfilePicture(c *gin.Context) {
 }
 
 // @Summary     Update a user's profile picture
-// @Description Updates the profile picture of a user by their ID. Accepts a multipart form with a "picture" file field. a user can only update their own profile picture
+// @Description Updates the profile picture of a user by their ID. Accepts a multipart form with a "picture" file field. a user can only update their own profile picture, 
+// but an admin with the appropriate permissions can update any user's profile picture. The picture will be converted to webp format if it is not already in that format.
 // @Tags        users
 // @Accept      multipart/form-data
 // @Produce     application/json
