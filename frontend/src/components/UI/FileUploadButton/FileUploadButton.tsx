@@ -35,9 +35,9 @@ export default function FileUploadButton(props: FileUploadProps) {
         <form action={(e) => handleSubmit(e, props.job_id_callback)}>
             <div
                 {...getRootProps({
-                    className: props.disabled
-                        ? styles.label_disabled
-                        : styles.label,
+                    className: `${styles.label} ${
+                        props.disabled ? styles.label_disabled : ""
+                    }`,
                 })}
             >
                 {" "}
