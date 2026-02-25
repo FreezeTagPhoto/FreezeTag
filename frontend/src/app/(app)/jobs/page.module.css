@@ -116,3 +116,67 @@
 .job_item_button:disabled * {
     color: var(--subtext0);
 }
+
+.dialogIcon {
+    width: 20px;
+    height: 20px;
+}
+
+.dialog_header {
+    font-weight: bold;
+}
+
+.dialog_titles {
+    margin: 12px 0px;
+}
+
+.dialog_scrollable {
+    overflow: auto;
+    max-height: 400px;
+}
+
+.dialogTagPill {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: var(--border-info);
+    background: var(--base);
+    color: var(--text);
+
+    font-family: var(--font-geist-sans);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.dialogActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px 12px;
+    border-radius: var(--border-radius);
+    font-family: var(--font-geist-sans);
+    font-size: 16px;
+    font-weight: 600;
+
+    cursor: pointer;
+    border: var(--border-info);
+}
+
+.button {
+    background: var(--base);
+    color: var(--text);
+}
+
+.button:hover {
+    background: var(--surface0);
+}

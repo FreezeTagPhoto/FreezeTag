@@ -3,11 +3,13 @@ import { useContext, useEffect, useState } from "react";
 import styles from "./page.module.css";
 import { UserContext } from "@/components/Auth/AuthGate";
 import { UserHasPerm } from "@/api/permissions/permshelpers";
-import { Ban, Clipboard, Info } from "lucide-react";
+import { Ban, Clipboard, Info, ReceiptText } from "lucide-react";
 import { JobDetails, JobSummary } from "@/api/jobs/jobshelpers";
 import JobsLister from "@/api/jobs/jobslister";
 import ProgressBar from "@/components/UI/ProgressBar/ProgressBar";
 import JobsCanceller from "@/api/jobs/jobscanceller";
+import JobsDetailer from "@/api/jobs/jobsdetailer";
+import Dialog from "@/components/UI/Dialog/Dialog";
 
 const POLLING_FREQUENCY = 500; // milliseconds
 
@@ -126,6 +128,25 @@ export default function Home() {
                             </div>
                             <button
                                 type="button"
+                                className={`${styles.job_item} ${styles.job_item_button}`}
+                                onClick={() =>
+                                    JobsDetailer(job.uuid).then((details) => {
+                                        if (details.ok) {
+                                            setJobDetails(details.value);
+                                        } else {
+                                            console.error(
+                                                "Issue with jobs detailer!",
+                                            );
+                                        }
+                                    })
+                                }
+                                title="Job Details"
+                            >
+                                <ReceiptText className={styles.icon} />
+                                <p className={styles.job_item_label}>Details</p>
+                            </button>
+                            <button
+                                type="button"
                                 className={`${styles.job_item} ${styles.job_item_button} ${styles.job_item_delete}`}
                                 onClick={() => JobsCanceller(job.uuid)}
                                 disabled={
@@ -141,6 +162,54 @@ export default function Home() {
                     ))}
                 </div>
             )}
+            <Dialog
+                open={jobDetails !== undefined}
+                onClose={() => setJobDetails(undefined)}
+                ariaLabel="Viewing Job Details"
+                title={`Viewing Job Details for ${jobDetails?.uuid}`}
+                icon={<ReceiptText className={styles.dialogIcon} />}
+                disableClose={false}
+                size="lg"
+            >
+                <p className={styles.dialog_titles}>
+                    Cancelled: {jobDetails?.cancelled ? "true" : "false"}
+                </p>
+                <h2 className={styles.dialog_header}>Job Components:</h2>
+                <div className={styles.dialog_scrollable}>
+                    <h3 className={styles.dialog_titles}>In-Progress</h3>
+                    {jobDetails?.in_progress &&
+                        jobDetails.in_progress.map((val, idx) => (
+                            <p key={idx} className={styles.dialogTagPill}>
+                                {JSON.stringify(val)}
+                            </p>
+                        ))}
+
+                    <h3 className={styles.dialog_titles}>Completed</h3>
+                    {jobDetails?.completed &&
+                        jobDetails.completed.map((val, idx) => (
+                            <p key={idx} className={styles.dialogTagPill}>
+                                {JSON.stringify(val)}
+                            </p>
+                        ))}
+                    <h3 className={styles.dialog_titles}>Failed</h3>
+                    {jobDetails?.failed &&
+                        jobDetails.failed.map((val, idx) => (
+                            <p key={idx} className={styles.dialogTagPill}>
+                                {JSON.stringify(val)}
+                            </p>
+                        ))}
+                </div>
+
+                <div className={styles.dialogActions}>
+                    <button
+                        className={styles.button}
+                        onClick={() => setJobDetails(undefined)}
+                        disabled={false}
+                    >
+                        Close
+                    </button>
+                </div>
+            </Dialog>
         </main>
     );
 }
