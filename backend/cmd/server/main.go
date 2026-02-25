@@ -247,7 +247,7 @@ func initJobsEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		jobGroup.GET("/details/:id", je.Details)
 		jobGroup.GET("/summary/:id", je.Summary)
 		jobGroup.GET("/list", je.List)
-		jobGroup.POST("/cancel/:id", je.Cancel)
+		jobGroup.POST("/cancel/:id", middleware.RequirePermission(data.WriteJobs), je.Cancel)
 	}
 }
 
