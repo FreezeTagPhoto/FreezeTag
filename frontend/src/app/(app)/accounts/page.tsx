@@ -82,7 +82,7 @@ export default function Home() {
                             type="button"
                             className={`${styles.account_item} ${styles.account_item_button} ${styles.account_item_delete}`}
                             disabled={
-                                !UserHasPerm(currentUser, "delete:user") ||
+                                !UserHasPerm(currentUser, "write:user") ||
                                 isCurrent(user.id)
                             }
                             onClick={() => {
