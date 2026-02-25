@@ -1,8 +1,10 @@
 {
     "name": "ml-tagger",
+    "friendly_name": "ML Tagger",
     "main_file": "main.py",
     "hooks": {
         "tag_image": {
+            "friendly_name": "Tag Image",
             "type": "post_upload",
             "signature": "single_image"
         }

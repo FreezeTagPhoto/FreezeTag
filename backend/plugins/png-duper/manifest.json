@@ -1,8 +1,10 @@
 {
     "name": "png-duper",
+    "friendly_name": "PNG Duplicator (test)",
     "main_file": "main.py",
     "hooks": {
         "dupe_image": {
+            "friendly_name": "Create PNG Duplicate",
             "type": "post_upload",
             "signature": "single_image"
         }
