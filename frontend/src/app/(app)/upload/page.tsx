@@ -74,11 +74,38 @@ export default function Home() {
 
             {ids.length > 0 && (
                 <div className={styles.gallery_tags_container}>
-                    <div className={styles.gallery}>
-                        <MassTaggingGallery
-                            image_ids={ids}
-                            onChange={(ids) => setSelectedIds(ids)}
-                        />
+                    <div className={styles.gallery_select_container}>
+                        <div className={styles.select_container}>
+                            <button
+                                type="button"
+                                className={styles.select_button}
+                                onClick={() => setSelectedIds(new Set(ids))}
+                            >
+                                Select All
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.select_button}
+                                onClick={() => setSelectedIds(new Set())}
+                            >
+                                Deselect All
+                            </button>
+                        </div>
+                        <div className={styles.gallery}>
+                            <MassTaggingGallery
+                                image_ids={ids}
+                                selectedIds={selectedIds}
+                                onChange={(id) => {
+                                    const set = new Set(selectedIds.values());
+                                    if (set.has(id)) {
+                                        set.delete(id);
+                                    } else {
+                                        set.add(id);
+                                    }
+                                    setSelectedIds(set);
+                                }}
+                            />
+                        </div>
                     </div>
                     <TagChangeButton image_ids={selectedIds} />
                 </div>
