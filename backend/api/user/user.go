@@ -202,9 +202,9 @@ func (ue UserEndpoint) GetPermissions(c *gin.Context) {
 // @Summary     Get a user's profile picture
 // @Description Retrieves the profile picture of a user by their ID.
 // @Tags        users
-// @Produce     application/json
+// @Produce     image/webp
 // @Param       id path int true "User ID"
-// @Success     200 {object} api.ProfilePictureResponse
+// @Success     200 {file} string "profile picture file data"
 // @Failure     400 {object} api.BadRequestResponse
 // @Failure     500 {object} api.ServerErrorResponse
 // @Router      /users/profile-picture/{id} [get]
@@ -219,7 +219,7 @@ func (ue UserEndpoint) GetProfilePicture(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, api.ProfilePictureResponse{PictureData: picture})
+	c.Data(http.StatusOK, "image/webp", picture)
 }
 
 // @Summary     Update a user's profile picture

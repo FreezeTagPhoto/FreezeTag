@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS Users (
     username TEXT NOT NULL UNIQUE,
     passwordHash TEXT NOT NULL,
     createdAt INTEGER NOT NULL,
-    profilePicture BLO
+    profilePicture BLOB
 );
 
 CREATE TABLE IF NOT EXISTS API_Token (
