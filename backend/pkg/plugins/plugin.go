@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"freezetag/backend/pkg/repositories"
 	"log"
 	"os"
 	"os/exec"
@@ -61,7 +62,7 @@ var launch_plugin string
 // Initialize a plugin from a loaded manifest file and a context (for cancel)
 // This function will initialize the virtual environment if it doesn't already exist, install requirements, and launch the plugin,
 // returning a hook-compatible fully initialized plugin.
-func PluginFromManifest(manifest PluginManifest, ctx context.Context) (HookedPlugin, error) {
+func PluginFromManifest(manifest PluginManifest, ctx context.Context, repo repositories.ImageRepository) (HookedPlugin, error) {
 	// initialize venv (if it doesn't exist)
 	if err := createVenv(manifest.AbsPath, manifest.Requirements, manifest.PythonVersion); err != nil {
 		return HookedPlugin{}, fmt.Errorf("failed to load plugin: %w", err)
@@ -78,7 +79,7 @@ func PluginFromManifest(manifest PluginManifest, ctx context.Context) (HookedPlu
 	ctx2, cancel := context.WithCancel(ctx)
 	cmd := exec.CommandContext(ctx2, "sh", launchScript.Name(), manifest.AbsPath, manifest.MainFile)
 	// cmd := exec.CommandContext(ctx2, path.Join(manifest.AbsPath, ".venv", "bin", "python"), path.Join(manifest.AbsPath, manifest.MainFile))
-	plugin, err := PluginFromProcess(manifest.Name, cmd, cancel)
+	plugin, err := PluginFromProcess(manifest.Name, cmd, cancel, repo)
 	if err != nil {
 		return HookedPlugin{}, err
 	}
@@ -95,7 +96,7 @@ type pythonPlugin struct {
 
 // Initialize a plugin from a command that has not run yet.
 // This function will run the command and capture I/O.
-func PluginFromProcess(name string, process *exec.Cmd, cancel context.CancelFunc) (Plugin, error) {
+func PluginFromProcess(name string, process *exec.Cmd, cancel context.CancelFunc, repo repositories.ImageRepository) (Plugin, error) {
 	in, err := process.StdinPipe()
 	if err != nil {
 		return nil, err
@@ -110,32 +111,16 @@ func PluginFromProcess(name string, process *exec.Cmd, cancel context.CancelFunc
 	if err != nil {
 		return nil, err
 	}
-	io.In <- PluginMessage{READY, nil}
-readyLoop:
-	for {
-		msg, ok := <-io.Out
-		if !ok {
-			log.Printf("[ERR]  %s: failed to read from stdout during plugin init", name)
-			goto initProblem
-		}
-		switch msg.Type {
-		case ERR:
-			log.Printf("[ERR]  %s: %s", name, string(msg.Contents.([]byte)))
-			goto initProblem
-		case LOG:
-			log.Printf("[PLUG] %s: %s", name, string(msg.Contents.([]byte)))
-		case READY:
-			break readyLoop
-		default:
-			log.Printf("[ERR]  %s: bad init message from plugin", name)
-			goto initProblem
-		}
+	plugin := pythonPlugin{name, process, io, ioCloser, cancel}
+	plugin.IO().In <- PluginMessage{READY, nil}
+	_, err = handlePluginRequests(plugin, repo, READY)
+	if err != nil {
+		log.Printf("[ERR]  %s: failed to launch plugin: %s", name, err.Error())
+		ioCloser()
+		cancel()
+		return nil, fmt.Errorf("plugin failed to initialize: %s", err.Error())
 	}
-	return pythonPlugin{name, process, io, ioCloser, cancel}, nil
-initProblem:
-	ioCloser()
-	cancel()
-	return nil, fmt.Errorf("plugin failed to initialize")
+	return plugin, nil
 }
 
 func (pp pythonPlugin) Shutdown() error {

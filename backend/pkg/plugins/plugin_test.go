@@ -17,21 +17,29 @@ import (
 	"freezetag/backend/pkg/repositories"
 )
 
+func makeEmptyImageRepository(t *testing.T) repositories.ImageRepository {
+	t.Helper()
+	repo := mocks.NewMockImageRepository(t)
+	return repo
+}
+
 func TestEchoedPluginInitializes(t *testing.T) {
 	// this works because cat echoes stdin
 	// and the simplest protocol that succeeds is READY -> READY -> SHUTDOWN -> SHUTDOWN
+	repo := makeEmptyImageRepository(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	cmd := exec.CommandContext(ctx, "cat")
-	plugin, err := PluginFromProcess("cat", cmd, cancel)
+	plugin, err := PluginFromProcess("cat", cmd, cancel, repo)
 	assert.NoError(t, err)
 	err = plugin.Shutdown()
 	assert.NoError(t, err)
 }
 
 func TestEchoedPluginEchoes(t *testing.T) {
+	repo := makeEmptyImageRepository(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	cmd := exec.CommandContext(ctx, "cat")
-	plugin, err := PluginFromProcess("cat", cmd, cancel)
+	plugin, err := PluginFromProcess("cat", cmd, cancel, repo)
 	assert.NoError(t, err)
 	assert.Equal(t, "cat", plugin.Name())
 	plugin.IO().In <- PluginMessage{BIN, []byte{1, 2, 3}}
@@ -46,23 +54,25 @@ func TestEchoedPluginEchoes(t *testing.T) {
 }
 
 func TestPluginWithBadInitHook(t *testing.T) {
+	repo := makeEmptyImageRepository(t)
 	t.Cleanup(func() {
 		os.RemoveAll("test_resources/badinit/.venv") //nolint:errcheck
 	})
 	manifest, err := ReadManifest("test_resources/badinit")
 	require.NoError(t, err)
-	plugin, err := PluginFromManifest(manifest, t.Context())
+	plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 	assert.Error(t, err)
 	assert.Zero(t, plugin)
 }
 
 func TestPluginWithBadTeardownHook(t *testing.T) {
+	repo := makeEmptyImageRepository(t)
 	t.Cleanup(func() {
 		os.RemoveAll("test_resources/badteardown/.venv") //nolint:errcheck
 	})
 	manifest, err := ReadManifest("test_resources/badteardown")
 	require.NoError(t, err)
-	plugin, err := PluginFromManifest(manifest, t.Context())
+	plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 	require.NoError(t, err)
 	err = plugin.Shutdown()
 	assert.Error(t, err)
@@ -84,7 +94,7 @@ func TestTaggingPluginWithManifest(t *testing.T) {
 	repo.EXPECT().AddImageTags(database.ImageId(42), []string{"foo", "bar"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 42, Count: 2}})
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
-	plugin, err := PluginFromManifest(manifest, t.Context())
+	plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 	require.NoError(t, err)
 	for _, hook := range plugin.GetHooks(PostUpload, ProcessOneImage) {
 		res, err := plugin.processOneImage(hook, database.ImageId(42), repo)
@@ -103,7 +113,7 @@ func TestTaggingPluginWithManifestAndRequirements(t *testing.T) {
 	repo.EXPECT().AddImageTags(database.ImageId(42), []string{"2", "3", "4", "5", "6"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 42, Count: 5}})
 	manifest, err := ReadManifest("test_resources/tagger_numpy")
 	require.NoError(t, err)
-	plugin, err := PluginFromManifest(manifest, t.Context())
+	plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 	require.NoError(t, err)
 	for _, hook := range plugin.GetHooks(PostUpload, ProcessOneImage) {
 		res, err := plugin.processOneImage(hook, database.ImageId(42), repo)
@@ -124,7 +134,7 @@ func TestReuseSameVenv(t *testing.T) {
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
 	for i := 1; i <= 2; i++ {
-		plugin, err := PluginFromManifest(manifest, t.Context())
+		plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 		require.NoError(t, err)
 		for _, hook := range plugin.GetHooks(PostUpload, ProcessOneImage) {
 			res, err := plugin.RunHook(hook, repositories.ImageUploadSuccess{Id: database.ImageId(i)}, repo)
@@ -146,7 +156,7 @@ func TestMultipleActionsOnePlugin(t *testing.T) {
 	}
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
-	plugin, err := PluginFromManifest(manifest, t.Context())
+	plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 	require.NoError(t, err)
 	for i := 1; i <= 4; i++ {
 		res, err := plugin.RunHook(plugin.GetHooks(PostUpload, ProcessOneImage)[0], repositories.ImageUploadSuccess{Id: database.ImageId(i)}, repo)
@@ -164,7 +174,7 @@ func TestPluginProcessError(t *testing.T) {
 	repo := createMockRepo(t)
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
-	plugin, err := PluginFromManifest(manifest, t.Context())
+	plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 	require.NoError(t, err)
 	_, err = plugin.RunHook(plugin.GetHooks(PostUpload, ProcessOneImage)[0], repositories.ImageUploadSuccess{Id: 67}, repo)
 	assert.Error(t, err)
@@ -182,7 +192,7 @@ func TestPluginMetadataRequest(t *testing.T) {
 	repo.EXPECT().AddImageTags(database.ImageId(76), []string{"abc.png"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 76, Count: 1}})
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
-	plugin, err := PluginFromManifest(manifest, t.Context())
+	plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 	require.NoError(t, err)
 	res, err := plugin.RunHook(plugin.GetHooks(PostUpload, ProcessOneImage)[0], repositories.ImageUploadSuccess{Id: 76}, repo)
 	assert.NoError(t, err)
@@ -203,7 +213,7 @@ func TestImageBatchPlugin(t *testing.T) {
 	}
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
-	plugin, err := PluginFromManifest(manifest, t.Context())
+	plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 	require.NoError(t, err)
 	res, err := plugin.RunHook("tag_batch", in, repo)
 	assert.NoError(t, err)
@@ -231,7 +241,7 @@ func TestEveryHook(t *testing.T) {
 	repo.EXPECT().GetQueryTagCounts(mock.Anything).Return(map[string]int64{"foo": 1, "bar": 2}, nil)
 	manifest, err := ReadManifest("test_resources/every_hook")
 	require.NoError(t, err)
-	plugin, err := PluginFromManifest(manifest, t.Context())
+	plugin, err := PluginFromManifest(manifest, t.Context(), repo)
 	require.NoError(t, err)
 	for _, input := range in {
 		res, err := plugin.RunHook("every", input, repo)
