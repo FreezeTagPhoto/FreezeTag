@@ -511,3 +511,137 @@ func TestSetUserProfilePicture(t *testing.T) {
 	err = authService.SetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
 	assert.NoError(t, err)
 }
+
+func TestSetUserProfilePictureInvalidImage(t *testing.T) {
+	defaultParser.RegisterParserFunc("*", formats.ParseBasic)
+	invalidBytes := []byte("not an image")
+
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	authService := InitDefaultAuthService(mockDb, defaultParser)
+	err := authService.SetUserProfilePicture(database.UserID(7), invalidBytes, "invalid.webp")
+	assert.Error(t, err)
+}
+
+func TestSetUserProfilePictureRepoError(t *testing.T) {
+	defaultParser.RegisterParserFunc("*", formats.ParseBasic)
+	bytes, err := os.ReadFile("test_resources/gopher.webp")
+	require.NoError(t, err)
+
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		SetUserProfilePicture(database.UserID(7), mock.Anything).
+		Return(assert.AnError).
+		Once()
+	authService := InitDefaultAuthService(mockDb, defaultParser)
+	err = authService.SetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
+	assert.Error(t, err)
+}
+
+func TestSetUserProfilePictureSuccess(t *testing.T) {	
+	defaultParser.RegisterParserFunc("*", formats.ParseBasic)
+	bytes, err := os.ReadFile("test_resources/gopher.webp")
+	require.NoError(t, err)
+
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		SetUserProfilePicture(database.UserID(7), mock.Anything).
+		Return(nil).
+		Once()
+	authService := InitDefaultAuthService(mockDb, defaultParser)
+	err = authService.SetUserProfilePicture(database.UserID(7), bytes, "gopher.webp")
+	assert.NoError(t, err)
+}
+
+
+// test wrapper functions
+
+func TestWrappers(t *testing.T) {
+	mockDb := mockUserDatabase.NewMockUserDatabase(t)
+	mockDb.EXPECT().
+		RevokeApiToken(mock.Anything, mock.Anything).
+		Return(nil)
+	mockDb.EXPECT().
+		AdminRevokeApiToken(mock.Anything).
+		Return(nil)
+	mockDb.EXPECT().
+		DeleteApiToken(mock.Anything).
+		Return(nil)
+	mockDb.EXPECT().
+		GetUserApiTokenInfo(mock.Anything).
+		Return([]database.ApiTokenInfo{}, nil)
+	mockDb.EXPECT().
+		GetUserById(mock.Anything).
+		Return(&database.PublicUser{}, nil)
+	mockDb.EXPECT().
+		AllUsers().
+		Return([]database.PublicUser{}, nil)
+	mockDb.EXPECT().
+		DeleteUser(mock.Anything).
+		Return(nil)
+	mockDb.EXPECT().
+		GetUserPermissions(mock.Anything).
+		Return(data.Permissions{}, nil)
+	mockDb.EXPECT().
+		GrantUserPermissions(mock.Anything, mock.Anything).
+		Return(nil)
+	mockDb.EXPECT().
+		RevokeUserPermissions(mock.Anything, mock.Anything).
+		Return(nil)
+
+	mockDb.EXPECT().
+		GetUserProfilePicture(mock.Anything).
+		Return(nil, nil)
+
+
+	authService := InitDefaultAuthService(mockDb, defaultParser)
+
+	t.Run("RevokeAPIToken", func(t *testing.T) {
+		err := authService.RevokeAPIToken(database.UserID(1), database.TokenID(1))
+		assert.NoError(t, err)
+	})
+	t.Run("AdminRevokeAPIToken", func(t *testing.T) {
+		err := authService.AdminRevokeAPIToken(database.TokenID(1))
+		assert.NoError(t, err)
+	})
+	t.Run("DeleteAPIToken", func(t *testing.T) {
+		err := authService.DeleteAPIToken(database.TokenID(1))
+		assert.NoError(t, err)
+	})
+	t.Run("GetUserApiTokenInfo", func(t *testing.T) {
+		info, err := authService.GetUserApiTokenInfo(database.UserID(1))
+		assert.NoError(t, err)
+		assert.Empty(t, info)
+	})
+	t.Run("GetUserById", func(t *testing.T) {
+		user, err := authService.GetUserById(database.UserID(1))
+		assert.NoError(t, err)
+		assert.Equal(t, &database.PublicUser{}, user)
+	})
+	t.Run("AllUsers", func(t *testing.T) {
+		users, err := authService.AllUsers()
+		assert.NoError(t, err)
+		assert.Empty(t, users)
+	})
+	t.Run("DeleteUser", func(t *testing.T) {
+		err := authService.DeleteUser(database.UserID(1))
+		assert.NoError(t, err)
+	})
+	t.Run("GetUserPermissions", func(t *testing.T) {
+		perms, err := authService.GetUserPermissions(database.UserID(1))
+		assert.NoError(t, err)
+		assert.Equal(t, data.Permissions{}, perms)
+	})
+	t.Run("GrantUserPermissions", func(t *testing.T) {
+		err := authService.GrantPermissions(database.UserID(1), data.Permissions{data.ReadUser})
+		assert.NoError(t, err)
+	})
+	t.Run("RevokeUserPermissions", func(t *testing.T) {
+		err := authService.RevokePermissions(database.UserID(1), data.Permissions{data.ReadUser})
+		assert.NoError(t, err)
+	})	
+	t.Run("GetUserProfilePicture", func(t *testing.T) { 
+		picture, err := authService.GetUserProfilePicture(1)
+		assert.NoError(t, err)
+		assert.Empty(t, picture)
+	})
+}

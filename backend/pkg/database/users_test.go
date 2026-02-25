@@ -548,3 +548,43 @@ func TestGetApiPermissionsSuccess(t *testing.T) {
 	t.Logf("Expected permissions: %v, Retrieved permissions: %v", permissions, retrievedPermissions)
 	assert.ElementsMatch(t, permissions, retrievedPermissions)
 }
+
+func TestSetUserProfilePictureSuccess(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("profilepicuser", "hash")
+	require.NoError(t, err)
+
+	err = db.SetUserProfilePicture(user.ID, []byte("fake image bytes"))
+	require.NoError(t, err)
+
+	picData, err := db.GetUserProfilePicture(user.ID)
+	require.NoError(t, err)
+	// image is now a webp so cant do byte comparison
+	assert.NotEmpty(t, picData)
+}
+
+func TestSetUserProfilePictureNonexistentUser(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	err := db.SetUserProfilePicture(999, []byte("fake image bytes"))
+	require.Error(t, err)
+}	
+
+func TestGetUserProfilePictureNonexistentUser(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	_, err := db.GetUserProfilePicture(999)
+	require.Error(t, err)
+}
+
+func TestGetUserProfilePictureDefaultPicture(t *testing.T) {
+	db := createTempUserDatabase(t)
+
+	user, err := db.AddUser("nopictureuser", "hash")
+	require.NoError(t, err)
+
+	b, err := db.GetUserProfilePicture(user.ID)
+	require.NoError(t, err)
+	assert.NotEmpty(t, b) // should return default picture, which is not empty
+}
