@@ -26,6 +26,7 @@ compress_zip:
   artifacts:
     paths:
       - $CI_PROJECT_DIR/FreezeTag.zip
+    expire_in: 1 day
   when: manual
 
 # ------------ Catch-all MR job that always passes ------------ #
