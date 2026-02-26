@@ -21,8 +21,7 @@ import {
 
 import { useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "../Auth/AuthGate";
-import { ExtractPermsList, UserHasPerm } from "@/api/permissions/permshelpers";
-import UserLister from "@/api/users/userlister";
+import { ExtractPermsList } from "@/api/permissions/permshelpers";
 import UserGetter from "@/api/users/usergetter";
 
 type NavItem = {
