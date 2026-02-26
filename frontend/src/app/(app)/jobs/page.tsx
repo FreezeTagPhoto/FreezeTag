@@ -35,22 +35,19 @@ export default function Home() {
         const a_done = a_finished || a_cancelled;
         const b_done = b_finished || b_cancelled;
 
-        const xnor = (a: boolean, b: boolean) => !(a !== b);
-
-        if (xnor(a_done, b_done)) {
-            if (xnor(a_finished, b_cancelled)) {
-                if (a_finished) {
-                    return 1;
-                } else {
-                    return -1;
-                }
+        if (a_done && b_done) {
+            if (a_finished && b_cancelled) {
+                return 1;
+            } else if (a_cancelled && b_finished) {
+                return -1;
             }
-            return a.uuid.localeCompare(b.uuid);
         } else if (a_done) {
             return 1;
-        } else {
+        } else if (b_done) {
             return -1;
         }
+
+        return a.uuid.localeCompare(b.uuid);
     };
 
     useEffect(() => {
