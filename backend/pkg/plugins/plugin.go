@@ -56,6 +56,18 @@ func (h *HookedPlugin) Shutdown() error {
 	return err
 }
 
+// cancel func for hooked plugins to release resources without causing race conditions
+func (h *HookedPlugin) raceShutdown() {
+	if h.stopped {
+		return
+	}
+	h.stopped = true
+	for _, sub := range h.subs {
+		sub <- struct{}{}
+		close(sub)
+	}
+}
+
 //go:embed scripts/launch_plugin.sh
 var launch_plugin string
 
@@ -83,7 +95,11 @@ func PluginFromManifest(manifest PluginManifest, ctx context.Context, repo repos
 	if err != nil {
 		return HookedPlugin{}, err
 	}
-	return HookedPlugin{plugin, manifest, false, nil}, nil
+	hookedPlugin := HookedPlugin{plugin, manifest, false, nil}
+	context.AfterFunc(ctx2, func() {
+		hookedPlugin.raceShutdown()
+	})
+	return hookedPlugin, nil
 }
 
 type pythonPlugin struct {
