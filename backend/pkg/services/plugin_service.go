@@ -98,7 +98,7 @@ func (ps defaultPluginService) LaunchPlugin(plugin string, ctx context.Context) 
 	if !exists {
 		return nil, fmt.Errorf("plugin %v doesn't exist", plugin)
 	}
-	process, err := plugins.PluginFromManifest(*manifest, ctx)
+	process, err := plugins.PluginFromManifest(*manifest, ctx, ps.imgRepo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize plugin: %w", err)
 	}

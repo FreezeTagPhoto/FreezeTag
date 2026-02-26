@@ -31,6 +31,8 @@ def tag_image(img: Image.Image, id: int) -> AddTagsAction:
     log(f"sentence = {sentence}")
     doc = nlp(sentence)
     nouns = [token.text for token in doc if token.pos_ == "NOUN" or token.pos_ == "PROPN"]
+    # filter out unwanted words (arafe is a hallucination from BLIP-2)
+    nouns = [noun for noun in nouns if noun not in ["arafe", "arafed", "araffe", "s"]]
     log(f"nouns = {nouns}")
     return AddTagsAction(id, nouns)
 

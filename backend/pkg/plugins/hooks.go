@@ -8,6 +8,7 @@ import (
 	"freezetag/backend/pkg/repositories"
 	"log"
 	"reflect"
+	"strings"
 )
 
 type PluginResult map[string]any
@@ -80,26 +81,37 @@ func (h *HookedPlugin) processImageBatch(hookName string, ids []database.ImageId
 // loop and handle plugin GETs until the next plugin PUT, then return it
 // errors marked with FATAL should stop further processing (the plugin is in an unworkable state)
 func (h *HookedPlugin) handleRequests(repo repositories.ImageRepository) (PluginMessage, error) {
-	for {
-		msg, ok := <-h.IO().Out
-		if !ok {
+	res, err := handlePluginRequests(h, repo, PUT)
+	if err != nil {
+		if strings.Contains(err.Error(), "FATAL") {
 			h.Shutdown() //nolint:errcheck
+		}
+		return PluginMessage{}, err
+	}
+	return res, nil
+}
+
+func handlePluginRequests(pl Plugin, repo repositories.ImageRepository, ty MessageType) (PluginMessage, error) {
+	for {
+		msg, ok := <-pl.IO().Out
+		if !ok {
 			return PluginMessage{}, fmt.Errorf("FATAL: plugin stdout closed while processing")
 		}
 		switch msg.Type {
+		case ty:
+			return msg, nil
 		case ERR:
 			return PluginMessage{}, fmt.Errorf("%s", string(msg.Contents.([]byte)))
 		case LOG:
-			log.Printf("[PLUG] %s: %s", h.Name(), string(msg.Contents.([]byte)))
-		case PUT:
-			return msg, nil
+			log.Printf("[PLUG] %s: %s", pl.Name(), string(msg.Contents.([]byte)))
 		case GET:
-			err := h.handleGet(repo, msg)
+			err := handlePluginGet(pl, repo, msg)
 			if err != nil {
-				h.IO().In <- PluginMessage{ERR, []byte(err.Error())}
+				pl.IO().In <- PluginMessage{ERR, []byte(err.Error())}
 			}
 		default:
-			h.IO().In <- PluginMessage{ERR, []byte("invalid message type")}
+			pl.IO().In <- PluginMessage{ERR, []byte("unexpected message type")}
+			return PluginMessage{}, fmt.Errorf("unexpected message type from plugin")
 		}
 	}
 }
@@ -197,7 +209,7 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 	return nil, fmt.Errorf("unrecognized message action")
 }
 
-func (h *HookedPlugin) handleGet(repo repositories.ImageRepository, m PluginMessage) error {
+func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessage) error {
 	msg, ok := m.Contents.(map[string]any)
 	if !ok {
 		return fmt.Errorf("failed to deserialize request contents")
@@ -212,7 +224,7 @@ func (h *HookedPlugin) handleGet(repo repositories.ImageRepository, m PluginMess
 		if err != nil {
 			return err
 		}
-		h.IO().In <- PluginMessage{
+		pl.IO().In <- PluginMessage{
 			PUT,
 			map[string]any{"action": "metadata", "data": meta},
 		}
@@ -221,7 +233,7 @@ func (h *HookedPlugin) handleGet(repo repositories.ImageRepository, m PluginMess
 		if err != nil {
 			return err
 		}
-		h.IO().In <- PluginMessage{
+		pl.IO().In <- PluginMessage{
 			PUT,
 			map[string]any{"action": "search", "results": res},
 		}
@@ -234,11 +246,11 @@ func (h *HookedPlugin) handleGet(repo repositories.ImageRepository, m PluginMess
 		if err != nil {
 			return err
 		}
-		h.IO().In <- PluginMessage{
+		pl.IO().In <- PluginMessage{
 			PUT,
 			map[string]any{"action": "image"},
 		}
-		h.IO().In <- PluginMessage{BIN, webp}
+		pl.IO().In <- PluginMessage{BIN, webp}
 	case "tags":
 		id, err := intoId(msg["id"])
 		if err != nil {
@@ -248,7 +260,7 @@ func (h *HookedPlugin) handleGet(repo repositories.ImageRepository, m PluginMess
 		if err != nil {
 			return err
 		}
-		h.IO().In <- PluginMessage{
+		pl.IO().In <- PluginMessage{
 			PUT,
 			map[string]any{"action": "tags", "tags": tags},
 		}
@@ -257,7 +269,7 @@ func (h *HookedPlugin) handleGet(repo repositories.ImageRepository, m PluginMess
 		if err != nil {
 			return err
 		}
-		h.IO().In <- PluginMessage{
+		pl.IO().In <- PluginMessage{
 			PUT,
 			map[string]any{"action": "all_tags", "tags": tags},
 		}
@@ -266,7 +278,7 @@ func (h *HookedPlugin) handleGet(repo repositories.ImageRepository, m PluginMess
 		if err != nil {
 			return err
 		}
-		h.IO().In <- PluginMessage{
+		pl.IO().In <- PluginMessage{
 			PUT,
 			map[string]any{"action": "tags_query", "tags": res},
 		}

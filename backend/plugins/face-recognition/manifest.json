@@ -1,0 +1,15 @@
+{
+    "name": "face-recognition",
+    "friendly_name": "Face Recognition",
+    "main_file": "main.py",
+    "hooks": {
+        "detect_faces": {
+            "friendly_name": "Detect Faces",
+            "type": "post_upload",
+            "signature": "single_image"
+        }
+    },
+    "version": "1.0.0",
+    "python_version": "3.12",
+    "requirements": "requirements.txt"
+}
