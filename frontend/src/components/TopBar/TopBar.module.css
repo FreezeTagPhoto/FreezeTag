@@ -33,6 +33,7 @@
     position: absolute;
     top: 100%;
     margin-top: -1px;
+    margin-right: 120px;
 
     padding: 10px;
     background: var(--base);

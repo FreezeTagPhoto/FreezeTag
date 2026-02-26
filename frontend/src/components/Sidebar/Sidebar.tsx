@@ -21,8 +21,8 @@ import {
 
 import { useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "../Auth/AuthGate";
-import { ExtractPermsList, UserHasPerm } from "@/api/permissions/permshelpers";
-import UserLister from "@/api/users/userlister";
+import { ExtractPermsList } from "@/api/permissions/permshelpers";
+import UserGetter from "@/api/users/usergetter";
 
 type NavItem = {
     label: string;
@@ -131,24 +131,13 @@ export default function Sidebar() {
     useEffect(() => {
         if (!user) return;
 
-        // Always have a reasonable fallback (works even without read:user)
-        const fallback = `User ${user.user_id.toString().padStart(4, "0")}`;
-        setUsername(fallback);
-
-        // If we’re allowed, resolve the real username via UserLister
-        if (!UserHasPerm(user, "read:user")) return;
-
         (async () => {
-            const result = await UserLister();
+            const result = await UserGetter(user.user_id);
             if (!result.ok) {
                 console.error(`User Lister Error! ${result.error.message}`);
                 return;
             }
-
-            const match = result.value.find((u) => u.id === user.user_id);
-            if (match?.username) {
-                setUsername(match.username);
-            }
+            setUsername(result.value.username);
         })();
     }, [user]);
 
