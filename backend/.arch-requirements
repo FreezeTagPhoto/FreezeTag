@@ -9,3 +9,4 @@ libheif
 libde265
 libtiff
 wget
+cmake
