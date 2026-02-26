@@ -69,7 +69,10 @@ export default function Home() {
                 console.error(`Jobs Lister Error! ${result.error.message}`);
             }
         };
-        setInterval(fetchJobs, POLLING_FREQUENCY);
+        const interval_id = setInterval(fetchJobs, POLLING_FREQUENCY);
+        return () => {
+            clearInterval(interval_id);
+        };
     }, []);
 
     return (
