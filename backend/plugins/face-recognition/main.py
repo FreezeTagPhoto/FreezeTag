@@ -50,7 +50,7 @@ def detect_faces(img, id):
             names.append(known_names[matches.index(True)])
     if len(names) == 0:
         log("no known faces in image")
-        return SkipAction()
+        return NoAction()
     log(f"tagging image with names {names}")
     return AddTagsAction(id, names)
 
