@@ -5,6 +5,9 @@
 # NOTE: this script only works if a .venv exists in the folder already (create_venv should have run)
 set -e
 
+export PATH="$HOME/.local/bin:$PATH"
+export UV_LINK_MODE=copy
+
 cd "$1"
-source .venv/bin/activate
+. .venv/bin/activate
 uv run "$2"
