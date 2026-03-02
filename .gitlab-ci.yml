@@ -2,10 +2,32 @@ stages:
   - check-formatting
   - lint
   - test
+  - deploy
 
 variables:
   BACK_DIR: $CI_PROJECT_DIR/backend
   FRONT_DIR: $CI_PROJECT_DIR/frontend
+
+# ------------ Deployment Manual Job ------------ #
+
+compress_zip:
+  stage: deploy
+  image: alpine:latest
+  variables:
+    GIT_STRATEGY: clone
+  before_script:
+    - apk add zip make go
+  script:
+    - cd $BACK_DIR
+    - make docs # pre-build docs so that the build works fine later
+    - make tidy # pre-tidy the repo so that it doesn't complain during build
+    - cd $CI_PROJECT_DIR/../
+    - zip -Xr ./freezetag/FreezeTag.zip ./freezetag -x "*.git*"
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/FreezeTag.zip
+    expire_in: 1 day
+  when: manual
 
 # ------------ Catch-all MR job that always passes ------------ #
 

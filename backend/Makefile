@@ -20,7 +20,7 @@ export CGO_CFLAGS=-w
 tidy:
 	go mod tidy
 
-docs: tidy
+docs:
 	go tool swag init -q -g cmd/server/main.go -o cmd/docs
 
 test: mocks

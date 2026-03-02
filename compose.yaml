@@ -3,7 +3,7 @@ services:
     build:
       context: ./frontend
       args:
-        FREEZETAG_BACKEND_ADDRESS=backend
+        - FREEZETAG_BACKEND_ADDRESS=backend
     image: freezetag/frontend
     ports:
       - "3000:3000"

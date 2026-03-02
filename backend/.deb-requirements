@@ -1,0 +1,13 @@
+build-essential
+libmagickwand-7.q16-dev
+wget
+cmake
+pkg-config
+ffmpeg
+libraw-bin
+libraw-dev
+libheif-dev
+libheif1
+libheif-plugin-libde265
+libtiff-dev
+curl

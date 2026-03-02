@@ -6,9 +6,12 @@
 # $4 is the requirements path according to the manifest
 set -e
 
+export PATH="$HOME/.local/bin:$PATH"
+export UV_LINK_MODE=copy
+
 cd "$1"
 uv venv --managed-python --seed --allow-existing $2
-source .venv/bin/activate
+. .venv/bin/activate
 cd "$3"
 uv pip install .
 cd "$1"
