@@ -8,4 +8,4 @@ Pillow
 scipy
 clip @ git+https://github.com/openai/CLIP.git
 huggingface_hub
--e .
+ram @ git+https://github.com/xinyu1205/recognize-anything.git

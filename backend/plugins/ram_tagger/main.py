@@ -22,6 +22,7 @@ def init():
     
     try:
         # this uses a pretty large model, so it needs to be downloaded from huggingface
+        log("RAM++: Downloading pretrained weights from Hugging Face...")
         model_path = hf_hub_download(
             repo_id="xinyu1205/recognize-anything-plus-model",
             filename="ram_plus_swin_large_14m.pth",
@@ -50,12 +51,11 @@ def tag_image(img: Image.Image, id: int) -> AddTagsAction:
     try:
         input_image = img.convert("RGB")
         image_tensor = transform(input_image).unsqueeze(0).to(device)
-        tags_list = inference(image_tensor, model)
+        all_tags = inference(image_tensor, model)
+        tags = [tag.strip() for tag in all_tags[0].split("|")]
     
-        
-
-        log(f"Found tags for image {id}: {tags_list}")
-        return AddTagsAction(id, tags_list)
+        log(f"Found these tags for image {id}: {tags}")
+        return AddTagsAction(id, tags)
 
     except Exception as e:
         log(f"Error processing image {id}: {e}")

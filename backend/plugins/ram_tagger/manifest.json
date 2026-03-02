@@ -1,7 +1,7 @@
 {
     "name": "ram-tagger",
     "friendly_name": "RAM Tagger",
-    "main_file": "tag.py",
+    "main_file": "main.py",
     "hooks": {
         "tag_image": {
             "friendly_name": "Tag Image",
