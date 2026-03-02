@@ -4,22 +4,28 @@
     height: 100svh;
     color: var(--text);
     background: var(--crust);
+    overflow: hidden;
+    min-height: 0;
 }
 
 .nav {
     border-right: var(--border-info);
     background: var(--mantle);
+    overflow: hidden;
+    min-height: 0;
 }
 
 .content {
-    display: grid;
+    display: block;
     grid-template-rows: auto 1fr;
-    overflow: hidden;
+    overflow: auto;
+    min-height: 0;
+    min-width: 0;
 }
 
 .main {
     padding: 24px 28px;
-    overflow: auto;
+    overflow: visible;
 }
 
 .headerRow {
