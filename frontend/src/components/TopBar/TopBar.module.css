@@ -12,10 +12,16 @@
     background: var(--base);
 }
 
+.bar > * {
+  min-width: 0;
+}
+
 .pills {
     display: flex;
     gap: 10px;
     padding-top: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .menuContainer {
@@ -297,4 +303,15 @@
 
 .sortCellActive:hover {
     background: var(--surface2);
+}
+
+@media (max-width: 780px) {
+  .bar {
+    grid-template-columns: 1fr;
+  }
+
+  .pills {
+    padding-top: 8px;
+    justify-content: flex-start;
+  }
 }

@@ -254,6 +254,11 @@
 }
 
 .hintRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-width: 0;
     font-size: 13px;
     color: var(--subtext0);
     line-height: 1.35;
@@ -274,4 +279,6 @@
     border: var(--border-info);
     border-color: var(--crust);
     color: var(--text);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
 }
