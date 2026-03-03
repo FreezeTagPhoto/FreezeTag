@@ -7,7 +7,6 @@
     justify-content: center;
     align-items: center;
     z-index: 50;
-
     padding: 24px;
     box-sizing: border-box;
 }
@@ -15,17 +14,13 @@
 .panel {
     width: min(800px, 100%);
     max-height: min(520px, 100%);
-    background: var(--base);
+    background: var(--mantle);
     border: var(--border-info);
     border-radius: var(--border-radius);
-    box-shadow: 0 0 0 1px var(--border-color);
     filter: var(--dropshadow);
-
-    padding: 24px 28px;
     overflow: auto;
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
     gap: 1rem;
 }
 
@@ -44,7 +39,7 @@
 .subtle {
     margin-top: 6px;
     font-size: 0.85rem;
-    color: var(--subtext0);
+    opacity: 0.72;
     line-height: 1.35;
 }
 
@@ -81,14 +76,15 @@
     padding: 0 14px;
     border-radius: var(--border-radius);
     border: var(--border-info);
-    background: var(--mantle);
-    color: var(--text);
+    background: var(--base);
+    color: var(--subtext1);
     font-size: 0.75rem;
     letter-spacing: 0.01em;
     outline: none;
     transition:
         border-color 120ms ease,
         box-shadow 120ms ease;
+    filter: var(--dropshadow);
 }
 
 .input::placeholder {
@@ -97,7 +93,6 @@
 
 .input:focus {
     border-color: var(--accent1);
-    box-shadow: 0 0 0 3px var(--selected-overlay);
 }
 
 .inlineRow .input {
@@ -105,13 +100,12 @@
     min-width: 0;
 }
 
-/* modify size - height, width */
 .iconBtn {
     height: 2.5rem;
     width: 2.5rem;
     border-radius: var(--border-radius);
     border: var(--border-info);
-    background: var(--mantle);
+    background: var(--base);
     color: var(--subtext0);
     display: grid;
     place-items: center;
@@ -119,6 +113,7 @@
     user-select: none;
     font-size: 1rem;
     line-height: 1;
+    filter: var(--dropshadow);
     transition:
         background 120ms ease,
         opacity 120ms ease,
@@ -137,7 +132,6 @@
 
 .iconBtn:focus-visible {
     border-color: var(--accent1);
-    box-shadow: 0 0 0 3px var(--selected-overlay);
 }
 
 .iconBtnActive {
@@ -156,8 +150,6 @@
     border: var(--border-info);
     padding: 10px 12px;
     line-height: 1.35;
-    background: var(--mantle);
-    color: var(--text);
 }
 
 .calloutTitle {
@@ -173,10 +165,14 @@
 
 .calloutError {
     border-color: var(--red);
+    background: var(--red);
+    color: var(--crust);
 }
 
 .calloutOk {
     border-color: var(--green);
+    background: var(--green);
+    color: var(--crust);
 }
 
 /* modify size - height, font-size */
@@ -185,15 +181,16 @@
     border-radius: var(--border-radius);
     border: var(--border-info);
     margin-top: 10px;
-    background: var(--mantle);
+    background: var(--base);
     color: var(--text);
     font-size: 1rem;
+    font-weight: 800;
     letter-spacing: 0.01em;
     cursor: pointer;
     user-select: none;
+    filter: var(--dropshadow);
     transition:
         background 120ms ease,
-        transform 120ms ease,
         opacity 120ms ease;
 }
 
@@ -203,16 +200,11 @@
 
 .primary:focus-visible {
     border-color: var(--accent1);
-    box-shadow: 0 0 0 3px var(--selected-overlay);
-}
-
-.primary:active {
-    transform: translateY(1px);
 }
 
 .primary:disabled {
-    opacity: 0.6;
     cursor: default;
+    opacity: 0.6;
 }
 
 .primaryInner {
@@ -226,5 +218,4 @@
     width: 18px;
     height: 18px;
     flex: 0 0 auto;
-    opacity: 0.95;
 }
