@@ -8,10 +8,12 @@ export const enum CheckboxState {
 
 export type IndeterminateCheckboxProps = {
     value: CheckboxState;
+    afterChange: (new_value: CheckboxState) => void;
 };
 
 export default function IndeterminateCheckbox({
     value,
+    afterChange,
     ...otherProps
 }: IndeterminateCheckboxProps) {
     const checkRef = useRef<HTMLInputElement | null>(null);
@@ -25,5 +27,18 @@ export default function IndeterminateCheckbox({
         checkRef.current.indeterminate = value === CheckboxState.Indeterminate;
     }, [value]);
 
-    return <input type="checkbox" ref={checkRef} {...otherProps} />;
+    return (
+        <input
+            type="checkbox"
+            ref={checkRef}
+            onClick={() =>
+                afterChange(
+                    value === CheckboxState.Checked
+                        ? CheckboxState.Unchecked
+                        : CheckboxState.Checked,
+                )
+            }
+            {...otherProps}
+        />
+    );
 }
