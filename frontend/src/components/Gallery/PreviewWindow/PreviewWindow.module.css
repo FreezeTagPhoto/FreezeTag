@@ -185,3 +185,58 @@
     width: 18px;
     height: 18px;
 }
+
+@media (max-width: 1100px) {
+    .viewerBackdrop {
+        padding: 16px;
+    }
+
+    .viewer {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 34vw);
+        height: min(90svh, 100%);
+    }
+}
+
+@media (max-width: 900px) {
+    .viewer {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) minmax(220px, 40svh);
+        width: 100%;
+        height: min(94svh, 100%);
+    }
+}
+
+@media (max-width: 640px) {
+    .viewerBackdrop {
+        padding: 8px;
+    }
+
+    .navButton,
+    .closeButton,
+    .zoomButton {
+        width: 28px;
+        height: 28px;
+    }
+
+    .closeButton,
+    .zoomButton {
+        top: 10px;
+    }
+
+    .closeButton {
+        left: 10px;
+    }
+
+    .zoomButton {
+        right: 10px;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .navButton,
+    .closeButton,
+    .zoomButton {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}

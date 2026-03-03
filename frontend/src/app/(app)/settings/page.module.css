@@ -1,6 +1,7 @@
 .main {
     padding: var(--page-pad-y, 24px) var(--page-pad-x, 28px);
-    overflow: auto;
+    overflow: visible;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -33,10 +34,12 @@
     border: var(--border-info);
     border-radius: var(--border-radius);
     background: var(--mantle);
-    overflow: hidden;
+    /* overflow: auto; */
     padding: 18px;
     scroll-margin-top: 18px;
     filter: var(--dropshadow);
+    flex: 0 0 auto;
+    container-type: inline-size;
 }
 
 .sectionHeader {
@@ -66,7 +69,7 @@
 
 .fieldRow {
     display: grid;
-    grid-template-columns: 1fr minmax(420px, 560px);
+    grid-template-columns: minmax(240px, 1fr) minmax(360px, 560px);
     align-items: center;
     gap: 18px;
     padding: 12px 0;
@@ -117,10 +120,19 @@
 }
 
 .select:hover,
-.button:hover,
-.input:hover,
-.iconBtn:hover {
+.button:hover {
     background: var(--surface0);
+}
+
+.passwordField .input:hover,
+.passwordField .iconBtn:hover {
+    background: var(--surface0);
+}
+.passwordField:hover .input:not(:hover):not(:focus) {
+    background: var(--base);
+}
+.passwordField:hover .iconBtn:not(:hover):not(:focus) {
+    background: var(--base);
 }
 
 .select {
@@ -156,14 +168,18 @@
 
 .primaryButton {
     background: var(--accent1);
-    color: var(--base);
+    color: var(--text);
     border-color: var(--accent1);
 }
 
 .primaryButton:hover {
     background: var(--accent1);
     border-color: var(--accent1);
-    color: var(--base);
+    color: var(--text);
+}
+
+.primaryButton:disabled {
+    color: var(--text);
 }
 
 .segmented {
@@ -408,6 +424,26 @@
     .passwordGrid {
         grid-template-columns: 1fr;
         align-items: stretch;
+    }
+}
+
+@container (max-width: 760px) {
+    .fieldRow {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .control {
+        justify-content: stretch;
+    }
+
+    .buttonInline {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .passwordActions {
+        justify-content: stretch;
     }
 }
 

@@ -330,7 +330,9 @@ export default function SearchBar({
                 </div>
             ) : (
                 <div className={styles.hintRow}>
-                    Try: <code>make=&quot;Toyota&quot;; model=Camry;</code>
+                    <span>Try:</span>
+                    <code>make=&quot;Toyota&quot;;</code>
+                    <code>model=Camry;</code>
                 </div>
             )}
         </div>

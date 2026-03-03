@@ -12,10 +12,16 @@
     background: var(--base);
 }
 
+.bar > * {
+    min-width: 0;
+}
+
 .pills {
     display: flex;
     gap: 10px;
     padding-top: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .menuContainer {
@@ -297,4 +303,60 @@
 
 .sortCellActive:hover {
     background: var(--surface2);
+}
+
+@media (max-width: 780px) {
+    .bar {
+        grid-template-columns: 1fr;
+    }
+
+    .pills {
+        padding-top: 8px;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 960px) {
+    .bar {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 10px var(--page-pad-x);
+    }
+
+    .pills {
+        flex-wrap: wrap;
+        padding-top: 0;
+    }
+
+    .menuContainer {
+        align-items: flex-start;
+    }
+
+    .menuDropdown {
+        margin-right: 0;
+        max-width: calc(100vw - (2 * var(--page-pad-x)));
+    }
+
+    .sortGridDropdown {
+        grid-template-columns: 1fr;
+    }
+
+    .sortCell {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .bar {
+        padding: 8px var(--page-pad-x);
+    }
+
+    .menuDropdown {
+        width: min(320px, calc(100vw - (2 * var(--page-pad-x))));
+    }
+
+    .pillMosaicWrap {
+        width: 100%;
+        max-width: calc(100vw - (2 * var(--page-pad-x)));
+    }
 }

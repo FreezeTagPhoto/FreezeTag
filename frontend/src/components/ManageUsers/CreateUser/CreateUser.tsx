@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./CreateUser.module.css";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import UserCreator from "@/api/users/usercreator";
@@ -23,10 +23,27 @@ export default function CreateUser({ onClose }: CreateUserProps) {
     );
     const [success, setSuccess] = useState<string | null>(null);
 
+    const usernameRef = useRef<HTMLInputElement | null>(null);
+
     const title = "Create account";
     const subtitle = "Create a new FreezeTag user.";
     const primaryLabel = "Create User";
     const PrimaryIcon = UserPlus;
+
+    useEffect(() => {
+        usernameRef.current?.focus();
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+            }
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [onClose]);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -86,18 +103,26 @@ export default function CreateUser({ onClose }: CreateUserProps) {
     }
 
     return (
-        <div className={styles.viewerBackdrop} onClick={() => onClose()}>
+        <div
+            className={styles.viewerBackdrop}
+            onClick={() => onClose()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+        >
             <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
                 <header className={styles.header}>
                     <h1 className={styles.h1}>{title}</h1>
                     <p className={styles.subtle}>{subtitle}</p>
                 </header>
+
                 <form className={styles.form} onSubmit={onSubmit}>
                     <div className={styles.field}>
                         <label className={styles.label} htmlFor="username">
                             Username
                         </label>
                         <input
+                            ref={usernameRef}
                             id="username"
                             className={styles.input}
                             value={username}

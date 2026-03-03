@@ -1,30 +1,26 @@
 .viewerBackdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--backdrop);
     backdrop-filter: blur(2px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 50;
-
     padding: 24px;
     box-sizing: border-box;
 }
 
 .panel {
     width: min(800px, 100%);
-    height: min(500px, 100%);
+    max-height: min(520px, 100%);
     background: var(--mantle);
     border: var(--border-info);
     border-radius: var(--border-radius);
     filter: var(--dropshadow);
-
-    padding: 24px 28px;
     overflow: auto;
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
     gap: 1rem;
 }
 
@@ -38,6 +34,7 @@
     font-size: 1.65rem;
     font-weight: 800;
     letter-spacing: 0.01em;
+    color: var(--text);
 }
 
 .subtle {
@@ -64,7 +61,6 @@
 .label {
     font-size: 15px;
     color: var(--subtext0);
-    opacity: 0.92;
 }
 
 .inlineRow {
@@ -88,6 +84,7 @@
     transition:
         border-color 120ms ease,
         box-shadow 120ms ease;
+    filter: var(--dropshadow);
 }
 
 .input::placeholder {
@@ -96,7 +93,6 @@
 
 .input:focus {
     border-color: var(--accent1);
-    box-shadow: 0 0 0 4px rgba(120, 140, 255, 0.14);
 }
 
 .inlineRow .input {
@@ -104,7 +100,6 @@
     min-width: 0;
 }
 
-/* modify size - height, width */
 .iconBtn {
     height: 2.5rem;
     width: 2.5rem;
@@ -118,10 +113,11 @@
     user-select: none;
     font-size: 1rem;
     line-height: 1;
+    filter: var(--dropshadow);
     transition:
         background 120ms ease,
-        opacity 120ms ease,
-        border-color 120ms ease;
+        border-color 120ms ease,
+        color 120ms ease;
 }
 
 .iconBtnIcon {
@@ -134,18 +130,20 @@
     background: var(--surface0);
 }
 
+.iconBtn:focus-visible {
+    border-color: var(--accent1);
+}
+
+.iconBtnActive {
+    background: var(--surface0);
+    border-color: var(--accent1);
+    color: var(--text);
+}
+
 .iconBtn:disabled {
-    opacity: 0.6;
     cursor: default;
-}
-
-.iconBtnOff * {
-    opacity: 0.55;
-}
-
-.iconBtnOn * {
-    opacity: 1;
-    /* border-color: rgba(255, 255, 255, 0.22); */
+    background: var(--surface0);
+    color: var(--subtext0);
 }
 
 .callout {
@@ -163,7 +161,7 @@
 
 .calloutBody {
     font-size: 14px;
-    opacity: 0.95;
+    color: inherit;
 }
 
 .calloutError {
@@ -187,26 +185,29 @@
     background: var(--base);
     color: var(--text);
     font-size: 1rem;
+    font-weight: 800;
     letter-spacing: 0.01em;
     cursor: pointer;
     user-select: none;
+    filter: var(--dropshadow);
     transition:
         background 120ms ease,
-        transform 120ms ease,
-        opacity 120ms ease;
+        border-color 120ms ease,
+        color 120ms ease;
 }
 
 .primary:hover {
     background: var(--surface0);
 }
 
-.primary:active {
-    transform: translateY(1px);
+.primary:focus-visible {
+    border-color: var(--accent1);
 }
 
 .primary:disabled {
-    opacity: 0.6;
     cursor: default;
+    background: var(--surface0);
+    color: var(--subtext0);
 }
 
 .primaryInner {
@@ -220,5 +221,4 @@
     width: 18px;
     height: 18px;
     flex: 0 0 auto;
-    opacity: 0.95;
 }
