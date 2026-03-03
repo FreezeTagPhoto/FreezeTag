@@ -520,3 +520,31 @@
     flex: 0 0 14px;
     display: block;
 }
+
+@media (max-width: 900px) {
+    .viewerSidebar {
+        border-left: none;
+        border-top: var(--border-info);
+        padding: 14px;
+    }
+
+    .tagSuggestDropdown {
+        min-width: 0;
+        width: min(100%, 320px);
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .viewerSidebar {
+        padding: 12px;
+    }
+
+    .detailsHeaderRow {
+        gap: 8px;
+    }
+
+    .sidebarTitle {
+        margin-bottom: 10px;
+    }
+}

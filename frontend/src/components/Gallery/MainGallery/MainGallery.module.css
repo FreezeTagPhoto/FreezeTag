@@ -21,3 +21,11 @@
 .grid button {
     flex: 0 0 auto;
 }
+
+@media (max-width: 640px) {
+    .grid {
+        gap: 6px;
+        padding-top: 8px;
+        justify-content: flex-start;
+    }
+}
