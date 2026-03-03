@@ -13,7 +13,7 @@
 }
 
 .bar > * {
-  min-width: 0;
+    min-width: 0;
 }
 
 .pills {
@@ -306,14 +306,14 @@
 }
 
 @media (max-width: 780px) {
-  .bar {
-    grid-template-columns: 1fr;
-  }
+    .bar {
+        grid-template-columns: 1fr;
+    }
 
-  .pills {
-    padding-top: 8px;
-    justify-content: flex-start;
-  }
+    .pills {
+        padding-top: 8px;
+        justify-content: flex-start;
+    }
 }
 
 @media (max-width: 960px) {
