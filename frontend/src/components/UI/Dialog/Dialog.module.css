@@ -94,3 +94,22 @@
     width: 18px;
     height: 18px;
 }
+
+@media (max-width: 640px) {
+    .overlay {
+        padding: 12px;
+    }
+
+    .modal {
+        padding: 12px;
+    }
+
+    .title {
+        font-size: 18px;
+    }
+
+    .close {
+        width: 34px;
+        height: 34px;
+    }
+}
