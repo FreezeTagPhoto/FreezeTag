@@ -9,6 +9,7 @@ import MainGallery from "@/components/Gallery/MainGallery/MainGallery";
 import TopBar from "@/components/TopBar/TopBar";
 import { addTagToQuery } from "@/common/search/addtagtoquery";
 import TagCounter from "@/api/tags/tagcounter";
+import MassTaggingGallery from "@/components/Gallery/MassTaggingGallery/MassTaggingGallery";
 
 type TagInfo = { name: string; count?: number };
 
@@ -43,6 +44,9 @@ export default function Home() {
     const [allTags, setAllTags] = useState<string[]>([]);
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
     const lastAppliedQRef = useRef<string | null>(null);
+
+    const [multiSelect, setMultiSelect] = useState<boolean>(false);
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
     useEffect(() => {
         const q = searchParams.get("q");
@@ -142,13 +146,20 @@ export default function Home() {
                 onSortByChange={setSortBy}
                 sortOrder={sortOrder}
                 onSortOrderChange={setSortOrder}
+                multiSelect={multiSelect}
+                onMultiSelectChange={(value) => {
+                    setMultiSelect(value);
+                    setSelectedIds(new Set());
+                }}
                 tags={tagsForTopBar}
             />
 
             <main className={styles.main}>
                 <header className={styles.headerRow}>
                     <div>
-                        <h1 className={styles.h1}>Gallery</h1>
+                        <h1 className={styles.h1}>
+                            {multiSelect ? "Selecting Images" : "Gallery"}
+                        </h1>
                         <p className={styles.subtle}>
                             {imageIds.length}{" "}
                             {imageIds.length !== 1 ? "images" : "image"}
@@ -157,12 +168,28 @@ export default function Home() {
                     <div className={styles.pillsRow} />
                 </header>
 
-                <MainGallery
-                    image_ids={imageIds}
-                    onSearchTag={(tag) =>
-                        setSearchTerm((prev) => addTagToQuery(prev, tag))
-                    }
-                />
+                {multiSelect ? (
+                    <MassTaggingGallery
+                        image_ids={imageIds}
+                        selectedIds={selectedIds}
+                        onChange={(id) => {
+                            const set = new Set(selectedIds.values());
+                            if (set.has(id)) {
+                                set.delete(id);
+                            } else {
+                                set.add(id);
+                            }
+                            setSelectedIds(set);
+                        }}
+                    />
+                ) : (
+                    <MainGallery
+                        image_ids={imageIds}
+                        onSearchTag={(tag) =>
+                            setSearchTerm((prev) => addTagToQuery(prev, tag))
+                        }
+                    />
+                )}
             </main>
         </>
     );
