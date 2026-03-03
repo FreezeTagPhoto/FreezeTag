@@ -34,12 +34,13 @@
     font-size: 1.65rem;
     font-weight: 800;
     letter-spacing: 0.01em;
+    color: var(--text);
 }
 
 .subtle {
     margin-top: 6px;
     font-size: 0.85rem;
-    opacity: 0.72;
+    color: var(--subtext0);
     line-height: 1.35;
 }
 
@@ -60,7 +61,6 @@
 .label {
     font-size: 15px;
     color: var(--subtext0);
-    opacity: 0.92;
 }
 
 .inlineRow {
@@ -116,8 +116,8 @@
     filter: var(--dropshadow);
     transition:
         background 120ms ease,
-        opacity 120ms ease,
-        border-color 120ms ease;
+        border-color 120ms ease,
+        color 120ms ease;
 }
 
 .iconBtnIcon {
@@ -141,8 +141,9 @@
 }
 
 .iconBtn:disabled {
-    opacity: 0.6;
     cursor: default;
+    background: var(--surface0);
+    color: var(--subtext0);
 }
 
 .callout {
@@ -160,7 +161,7 @@
 
 .calloutBody {
     font-size: 14px;
-    opacity: 0.95;
+    color: inherit;
 }
 
 .calloutError {
@@ -191,7 +192,8 @@
     filter: var(--dropshadow);
     transition:
         background 120ms ease,
-        opacity 120ms ease;
+        border-color 120ms ease,
+        color 120ms ease;
 }
 
 .primary:hover {
@@ -204,7 +206,8 @@
 
 .primary:disabled {
     cursor: default;
-    opacity: 0.6;
+    background: var(--surface0);
+    color: var(--subtext0);
 }
 
 .primaryInner {
