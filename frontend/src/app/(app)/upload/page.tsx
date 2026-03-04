@@ -3,7 +3,9 @@ import MassTaggingGallery from "@/components/Gallery/MassTaggingGallery/MassTagg
 import FileUploadButton from "@/components/UI/FileUploadButton/FileUploadButton";
 import { useState, useEffect } from "react";
 import styles from "./page.module.css";
-import TagChangeButton from "@/components/UI/TagChangeButton/TagChangeButton";
+import TagChangeButton, {
+    TagChangeEmptySet,
+} from "@/components/UI/TagChangeButton/TagChangeButton";
 import JobsHandler from "@/api/jobs/jobshandler";
 import ProgressBar from "@/components/UI/ProgressBar/ProgressBar";
 
@@ -52,7 +54,8 @@ export default function Home() {
         }, POLLING_DELAY);
     }, [jobId]);
 
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [selectedIds, setSelectedIds] =
+        useState<Set<number>>(TagChangeEmptySet());
 
     return (
         <div className={ids.length > 0 ? styles.page : styles.pageEmpty}>
@@ -86,7 +89,9 @@ export default function Home() {
                             <button
                                 type="button"
                                 className={styles.select_button}
-                                onClick={() => setSelectedIds(new Set())}
+                                onClick={() =>
+                                    setSelectedIds(TagChangeEmptySet)
+                                }
                             >
                                 Deselect All
                             </button>
@@ -102,12 +107,16 @@ export default function Home() {
                                     } else {
                                         set.add(id);
                                     }
-                                    setSelectedIds(set);
+                                    if (set.size === 0)
+                                        setSelectedIds(TagChangeEmptySet());
+                                    else setSelectedIds(set);
                                 }}
                             />
                         </div>
                     </div>
-                    <TagChangeButton image_ids={selectedIds} />
+                    <div className={styles.tag_change_container}>
+                        <TagChangeButton image_ids={selectedIds} />
+                    </div>
                 </div>
             )}
         </div>

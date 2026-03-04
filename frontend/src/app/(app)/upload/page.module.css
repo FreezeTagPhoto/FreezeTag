@@ -21,8 +21,10 @@
 }
 
 .gallery {
-    height: 100%;
-    min-height: 100%;
+    /* I have no idea why we need this */
+    height: 90%;
+    min-height: 90%;
+    
     overflow-y: auto;
     margin-right: 28px;
     padding: 0px 6px;
@@ -46,6 +48,11 @@
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
+}
+
+.tag_change_container {
+    /* I have no idea why we need this */
+    height: 96%;
 }
 
 .select_button {

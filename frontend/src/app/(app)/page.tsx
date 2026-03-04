@@ -10,6 +10,9 @@ import TopBar from "@/components/TopBar/TopBar";
 import { addTagToQuery } from "@/common/search/addtagtoquery";
 import TagCounter from "@/api/tags/tagcounter";
 import MassTaggingGallery from "@/components/Gallery/MassTaggingGallery/MassTaggingGallery";
+import TagChangeButton, {
+    TagChangeEmptySet,
+} from "@/components/UI/TagChangeButton/TagChangeButton";
 
 type TagInfo = { name: string; count?: number };
 
@@ -46,7 +49,8 @@ export default function Home() {
     const lastAppliedQRef = useRef<string | null>(null);
 
     const [multiSelect, setMultiSelect] = useState<boolean>(false);
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [selectedIds, setSelectedIds] =
+        useState<Set<number>>(TagChangeEmptySet());
 
     useEffect(() => {
         const q = searchParams.get("q");
@@ -149,12 +153,14 @@ export default function Home() {
                 multiSelect={multiSelect}
                 onMultiSelectChange={(value) => {
                     setMultiSelect(value);
-                    setSelectedIds(new Set());
+                    setSelectedIds(TagChangeEmptySet());
                 }}
                 tags={tagsForTopBar}
             />
 
-            <main className={styles.main}>
+            <main
+                className={`${styles.main} ${multiSelect ? styles.main_select_mode : ""}`}
+            >
                 <header className={styles.headerRow}>
                     <div>
                         <h1 className={styles.h1}>
@@ -169,19 +175,55 @@ export default function Home() {
                 </header>
 
                 {multiSelect ? (
-                    <MassTaggingGallery
-                        image_ids={imageIds}
-                        selectedIds={selectedIds}
-                        onChange={(id) => {
-                            const set = new Set(selectedIds.values());
-                            if (set.has(id)) {
-                                set.delete(id);
-                            } else {
-                                set.add(id);
-                            }
-                            setSelectedIds(set);
-                        }}
-                    />
+                    <div className={styles.gallery_tags_container}>
+                        <div className={styles.gallery_select_container}>
+                            <div className={styles.select_container}>
+                                <button
+                                    type="button"
+                                    className={styles.select_button}
+                                    onClick={() =>
+                                        setSelectedIds(new Set(imageIds))
+                                    }
+                                >
+                                    Select All
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.select_button}
+                                    onClick={() =>
+                                        setSelectedIds(TagChangeEmptySet)
+                                    }
+                                >
+                                    Deselect All
+                                </button>
+                            </div>
+                            <div className={styles.gallery}>
+                                <MassTaggingGallery
+                                    image_ids={imageIds}
+                                    selectedIds={selectedIds}
+                                    onChange={(id) => {
+                                        const set = new Set(
+                                            selectedIds.values(),
+                                        );
+                                        if (set.has(id)) {
+                                            set.delete(id);
+                                        } else {
+                                            set.add(id);
+                                        }
+                                        if (set.size === 0)
+                                            setSelectedIds(TagChangeEmptySet());
+                                        else setSelectedIds(set);
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <div className={styles.tag_change_container}>
+                            <TagChangeButton
+                                image_ids={selectedIds}
+                                do_seeding={true}
+                            />
+                        </div>
+                    </div>
                 ) : (
                     <MainGallery
                         image_ids={imageIds}

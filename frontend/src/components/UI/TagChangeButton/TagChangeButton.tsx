@@ -14,7 +14,15 @@ export type TagChangeProps = {
     do_seeding?: boolean;
 };
 
-export default function TagChangeButton(props: TagChangeProps) {
+// This makes a fake empty set because react hates empty set states for some reason
+export function TagChangeEmptySet(): Set<number> {
+    return new Set([0]);
+}
+
+export default function TagChangeButton({
+    image_ids,
+    do_seeding,
+}: TagChangeProps) {
     const [allTags, setAllTags] = useState<string[]>([]);
     const [filteredTags, setFilteredTags] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>("");
@@ -31,7 +39,7 @@ export default function TagChangeButton(props: TagChangeProps) {
     };
 
     const handleSubmit = async () => {
-        const image_ids_array = props.image_ids.values().toArray();
+        const image_ids_array = image_ids.values().toArray();
         const added_tags: string[] = [];
         const removed_tags: string[] = [];
 
@@ -81,17 +89,19 @@ export default function TagChangeButton(props: TagChangeProps) {
     >(new Map());
 
     useEffect(() => {
-        if (props.image_ids.size === 0) {
+        if (image_ids.size === 0) {
             return;
         }
-        if (!props.do_seeding) {
+        if (!do_seeding) {
             return;
         }
-        TagIdCounter(props.image_ids.values().toArray()).then((result) => {
+        TagIdCounter(image_ids.values().toArray()).then((result) => {
             if (result.ok) {
                 const newSeeds = new Map();
+                // This way we don't count the 0 no-op
+                const image_count = image_ids.size - (image_ids.has(0) ? 1 : 0);
                 Object.entries(result.value).forEach(([tag, count]) => {
-                    if (count === props.image_ids.size) {
+                    if (count === image_count) {
                         newSeeds.set(tag, CheckboxState.Checked);
                     } else if (count === 0) {
                         newSeeds.set(tag, CheckboxState.Unchecked);
@@ -104,7 +114,7 @@ export default function TagChangeButton(props: TagChangeProps) {
                 console.error("tag id count error");
             }
         });
-    }, [props.image_ids, props.do_seeding]);
+    }, [image_ids, do_seeding]);
 
     return (
         <div className={styles.form}>
