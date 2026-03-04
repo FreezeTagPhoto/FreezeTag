@@ -218,10 +218,10 @@ export default function Home() {
                                                     ),
                                             )
                                         ).forEach(async (prom) => {
-                                            const result = await prom;
+                                            const result = prom;
                                             if (!result.ok)
                                                 console.error(
-                                                    `Could not delete file! ${result.error.response.text()}`,
+                                                    `Could not delete file! ${await result.error.response.text()}`,
                                                 );
                                         });
 

@@ -57,6 +57,8 @@ export default function TagChangeButton({
         if (removed_tags.length !== 0) {
             await TagRemover(image_ids_array, removed_tags);
         }
+
+        setChangedCheckboxes(new Map());
     };
 
     const searchTagRef = useRef<HTMLInputElement | null>(null);
