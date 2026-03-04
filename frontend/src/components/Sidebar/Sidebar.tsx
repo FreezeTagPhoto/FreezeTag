@@ -74,7 +74,6 @@ function AccountInfo({
     return (
         <div className={styles.accountInfo} aria-label="Signed in user">
             <span className={styles.itemInner}>
-                {/* Avatar */}
                 {profilePictureUrl ? (
                     <span
                         className={`${styles.itemIcon} ${styles.avatarIcon}`}
@@ -184,8 +183,7 @@ export default function Sidebar() {
             if (!alive) return;
 
             if (!result.ok) {
-                // Not fatal; just show fallback initial.
-                // Helpful during backend setup (your screenshot shows 500 right now).
+                // initial profile picture is backup
                 console.warn(
                     `Profile picture fetch failed (${result.error.status}): ${result.error.message}`,
                 );
