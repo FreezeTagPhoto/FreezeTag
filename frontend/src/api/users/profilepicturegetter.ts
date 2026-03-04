@@ -46,7 +46,10 @@ export default async function ProfilePictureGetter(
                     message: data.error ?? "Failed to fetch profile picture",
                 });
             } catch {
-                return Err({ status, message: "Failed to fetch profile picture" });
+                return Err({
+                    status,
+                    message: "Failed to fetch profile picture",
+                });
             }
         }
 
