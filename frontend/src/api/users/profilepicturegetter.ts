@@ -35,8 +35,6 @@ export default async function ProfilePictureGetter(
     if (!resp.ok) {
         const status = resp.status;
 
-        // If your backend returns JSON { error: string } on failures (like other endpoints),
-        // try to parse it; otherwise fallback to text.
         const contentType = resp.headers.get("content-type") ?? "";
         if (contentType.includes("application/json")) {
             try {
