@@ -313,7 +313,7 @@ func (db SqliteImageDatabase) RemoveTags(tags []string) (int, error) {
 }
 
 func (db SqliteImageDatabase) GetAllTags() (map[string]int64, error) {
-	rows, err := db.db.Query("SELECT tag, COUNT(Tags.id) as count FROM Tags LEFT JOIN ImageTags ON Tags.id = ImageTags.tagId GROUP BY tag")
+	rows, err := db.db.Query("SELECT tag, COUNT(ImageTags.tagId) as count FROM Tags LEFT JOIN ImageTags ON Tags.id = ImageTags.tagId GROUP BY tag")
 	if err != nil {
 		return map[string]int64{}, err
 	}

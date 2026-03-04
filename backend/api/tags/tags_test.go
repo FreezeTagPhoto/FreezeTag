@@ -195,7 +195,7 @@ func TestHandlePostComplex(t *testing.T) {
 
 	expected := api.TagAddResponse{
 		Added:  []repositories.ImageTagSuccess{{Id: 1, Count: 3}, {Id: 2, Count: 3}, {Id: 3, Count: 3}},
-		Errors: []repositories.ImageTagFail{{Reason: "unknown id c", Id: -1}},
+		Errors: []repositories.ImageTagFail{{Reason: "unknown id c"}},
 	}
 	var got api.TagAddResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
@@ -206,6 +206,7 @@ func TestHandlePostComplex(t *testing.T) {
 
 func TestHandlePostNoIds(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().AddTags([]string{"tagtest"}).Return(repositories.TagResult{Success: true})
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
 	params := url.Values{}
@@ -216,9 +217,9 @@ func TestHandlePostNoIds(t *testing.T) {
 	//max signed int64 type
 	req, _ := http.NewRequest("POST", reqURL, nil)
 	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	expected := api.BadRequestResponse{Error: "no ids to add tags to"}
-	var got api.BadRequestResponse
+	assert.Equal(t, http.StatusOK, w.Code)
+	expected := api.TagAddResponse{Added: []repositories.ImageTagSuccess{{Count: 1}}, Errors: []repositories.ImageTagFail{}}
+	var got api.TagAddResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -250,7 +251,7 @@ func TestHandlePostBadId(t *testing.T) {
 	params := url.Values{}
 	params.Add("tag", "1")
 	params.Add("id", "a")
-	params.Add("id", "9223372036854775808")
+	params.Add("id", "124912481509128491718251935710248712971029285912729012754")
 	reqURL := "/tag/add?" + params.Encode() // properly encodes & joins parameters
 
 	w := httptest.NewRecorder()
@@ -260,7 +261,7 @@ func TestHandlePostBadId(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	expected := api.TagAddResponse{
 		Added:  []repositories.ImageTagSuccess{},
-		Errors: []repositories.ImageTagFail{{Reason: "unknown id a", Id: -1}, {Reason: "unknown id 9223372036854775808", Id: -1}},
+		Errors: []repositories.ImageTagFail{{Reason: "unknown id a"}, {Reason: "unknown id 124912481509128491718251935710248712971029285912729012754"}},
 	}
 	var got api.TagAddResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
@@ -336,7 +337,7 @@ func TestHandleDeleteComplex(t *testing.T) {
 
 	expected := api.TagRemoveResponse{
 		Deleted: []repositories.ImageTagSuccess{{Id: 1, Count: 3}, {Id: 2, Count: 3}, {Id: 3, Count: 3}},
-		Errors:  []repositories.ImageTagFail{{Reason: "unknown id c", Id: -1}},
+		Errors:  []repositories.ImageTagFail{{Reason: "unknown id c"}},
 	}
 	var got api.TagRemoveResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
@@ -391,7 +392,7 @@ func TestHandleDeleteBadId(t *testing.T) {
 	params := url.Values{}
 	params.Add("tag", "1")
 	params.Add("id", "a")
-	params.Add("id", "9223372036854775808")
+	params.Add("id", "124912481509128491718251935710248712971029285912729012754")
 	reqURL := "/tag/remove?" + params.Encode() // properly encodes & joins parameters
 
 	w := httptest.NewRecorder()
@@ -401,7 +402,7 @@ func TestHandleDeleteBadId(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	expected := api.TagRemoveResponse{
 		Deleted: []repositories.ImageTagSuccess{},
-		Errors:  []repositories.ImageTagFail{{Reason: "unknown id a", Id: -1}, {Reason: "unknown id 9223372036854775808", Id: -1}},
+		Errors:  []repositories.ImageTagFail{{Reason: "unknown id a"}, {Reason: "unknown id 124912481509128491718251935710248712971029285912729012754"}},
 	}
 	var got api.TagRemoveResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
