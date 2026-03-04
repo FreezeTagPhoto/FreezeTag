@@ -23,6 +23,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "../Auth/AuthGate";
 import { ExtractPermsList } from "@/api/permissions/permshelpers";
 import UserGetter from "@/api/users/usergetter";
+import ProfilePictureGetter from "@/api/users/profilepicturegetter";
 
 type NavItem = {
     label: string;
@@ -59,9 +60,11 @@ const navItems: NavItem[] = [
 function AccountInfo({
     username,
     userId,
+    profilePictureUrl,
 }: {
     username: string;
     userId: number;
+    profilePictureUrl: string | null;
 }) {
     const initial =
         username && username.trim().length > 0
@@ -71,24 +74,50 @@ function AccountInfo({
     return (
         <div className={styles.accountInfo} aria-label="Signed in user">
             <span className={styles.itemInner}>
-                {/* Avatar placeholder */}
-                <span
-                    className={`${styles.itemIcon} ${styles.avatarIcon}`}
-                    aria-hidden="true"
-                    style={{
-                        display: "grid",
-                        placeItems: "center",
-                        borderRadius: 9999,
-                        border: "var(--border-info)",
-                        background: "var(--mantle)",
-                        color: "var(--text)",
-                        fontWeight: 800,
-                        lineHeight: 1,
-                        userSelect: "none",
-                    }}
-                >
-                    {initial}
-                </span>
+                {/* Avatar */}
+                {profilePictureUrl ? (
+                    <span
+                        className={`${styles.itemIcon} ${styles.avatarIcon}`}
+                        aria-hidden="true"
+                        style={{
+                            position: "relative",
+                            overflow: "hidden",
+                            borderRadius: 9999,
+                            border: "var(--border-info)",
+                            background: "var(--mantle)",
+                        }}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={profilePictureUrl}
+                            alt=""
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                            }}
+                        />
+                    </span>
+                ) : (
+                    <span
+                        className={`${styles.itemIcon} ${styles.avatarIcon}`}
+                        aria-hidden="true"
+                        style={{
+                            display: "grid",
+                            placeItems: "center",
+                            borderRadius: 9999,
+                            border: "var(--border-info)",
+                            background: "var(--mantle)",
+                            color: "var(--text)",
+                            fontWeight: 800,
+                            lineHeight: 1,
+                            userSelect: "none",
+                        }}
+                    >
+                        {initial}
+                    </span>
+                )}
 
                 <span className={styles.itemLabel} style={{ lineHeight: 1.15 }}>
                     <span
@@ -127,6 +156,9 @@ export default function Sidebar() {
     const userPerms = useMemo(() => ExtractPermsList(user) ?? [], [user]);
 
     const [username, setUsername] = useState<string>("");
+    const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+        null,
+    );
 
     useEffect(() => {
         if (!user) return;
@@ -134,11 +166,42 @@ export default function Sidebar() {
         (async () => {
             const result = await UserGetter(user.user_id);
             if (!result.ok) {
-                console.error(`User Lister Error! ${result.error.message}`);
+                console.error(`User Getter Error! ${result.error.message}`);
                 return;
             }
             setUsername(result.value.username);
         })();
+    }, [user]);
+
+    useEffect(() => {
+        if (!user) return;
+
+        let alive = true;
+        let urlToRevoke: string | null = null;
+
+        (async () => {
+            const result = await ProfilePictureGetter(user.user_id);
+
+            if (!alive) return;
+
+            if (!result.ok) {
+                // Not fatal; just show fallback initial.
+                // Helpful during backend setup (your screenshot shows 500 right now).
+                console.warn(
+                    `Profile picture fetch failed (${result.error.status}): ${result.error.message}`,
+                );
+                setProfilePictureUrl(null);
+                return;
+            }
+
+            urlToRevoke = URL.createObjectURL(result.value);
+            setProfilePictureUrl(urlToRevoke);
+        })();
+
+        return () => {
+            alive = false;
+            if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
+        };
     }, [user]);
 
     const onLogout = async () => {
@@ -188,9 +251,7 @@ export default function Sidebar() {
                         : true;
 
                     if (!hasPermission) {
-                        return (
-                            <div key={item.label} className={styles.noop}></div>
-                        );
+                        return <div key={item.label} className={styles.noop} />;
                     }
 
                     return (
@@ -220,7 +281,11 @@ export default function Sidebar() {
                 </div>
 
                 <div className={styles.bottomDock}>
-                    <AccountInfo username={username} userId={user.user_id} />
+                    <AccountInfo
+                        username={username}
+                        userId={user.user_id}
+                        profilePictureUrl={profilePictureUrl}
+                    />
                     <div
                         role="button"
                         tabIndex={0}
