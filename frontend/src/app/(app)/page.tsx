@@ -13,6 +13,7 @@ import MassTaggingGallery from "@/components/Gallery/MassTaggingGallery/MassTagg
 import TagChangeButton, {
     TagChangeEmptySet,
 } from "@/components/UI/TagChangeButton/TagChangeButton";
+import FileDeleter from "@/api/files/filedeleter";
 
 type TagInfo = { name: string; count?: number };
 
@@ -195,6 +196,44 @@ export default function Home() {
                                     }
                                 >
                                     Deselect All
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.select_button}
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+
+                                        const confirmed = window.confirm(
+                                            "Delete these image? This cannot be undone.",
+                                        );
+                                        if (!confirmed) return;
+
+                                        (
+                                            await Promise.all(
+                                                selectedIds
+                                                    .values()
+                                                    .filter((val) => val !== 0)
+                                                    .map((val) =>
+                                                        FileDeleter(val)(),
+                                                    ),
+                                            )
+                                        ).forEach(async (prom) => {
+                                            const result = await prom;
+                                            if (!result.ok)
+                                                console.error(
+                                                    `Could not delete file! ${result.error.response.text()}`,
+                                                );
+                                        });
+
+                                        setImageIds(
+                                            imageIds.filter(
+                                                (val) => !selectedIds.has(val),
+                                            ),
+                                        );
+                                        setSelectedIds(TagChangeEmptySet);
+                                    }}
+                                >
+                                    Delete Images
                                 </button>
                             </div>
                             <div className={styles.gallery}>
