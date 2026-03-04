@@ -16,8 +16,8 @@ export type TagChangeProps = {
 
 export default function TagChangeButton(props: TagChangeProps) {
     const [allTags, setAllTags] = useState<string[]>([]);
-
     const [filteredTags, setFilteredTags] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState<string>("");
 
     const updateAllTags = async () => {
         const result = await TagGetter();
@@ -28,11 +28,6 @@ export default function TagChangeButton(props: TagChangeProps) {
             console.error("Error retrieving tags:", result.error);
             // TODO: show error to user
         }
-    };
-
-    const filterTags = (query: string) => {
-        const arr = allTags.filter((tag) => tag.includes(query));
-        setFilteredTags(arr);
     };
 
     const handleSubmit = async () => {
@@ -66,9 +61,13 @@ export default function TagChangeButton(props: TagChangeProps) {
 
         await TagAdder([], [tag]);
         await updateAllTags();
-        filterTags(tag);
         setCheckboxSeeds(checkboxSeeds.set(tag, CheckboxState.Unchecked));
     };
+
+    useEffect(() => {
+        const arr = allTags.filter((tag) => tag.includes(searchQuery));
+        setFilteredTags(arr);
+    }, [searchQuery, allTags]);
 
     useEffect(() => {
         updateAllTags();
@@ -137,7 +136,7 @@ export default function TagChangeButton(props: TagChangeProps) {
                         type="text"
                         placeholder="Search tags..."
                         className={styles.new_tag}
-                        onChange={(event) => filterTags(event.target.value)}
+                        onChange={(event) => setSearchQuery(event.target.value)}
                         autoComplete="off"
                         ref={searchTagRef}
                     ></input>
