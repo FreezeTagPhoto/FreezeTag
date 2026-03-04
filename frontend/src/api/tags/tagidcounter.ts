@@ -13,7 +13,9 @@ export default async function TagIdCounter(
     image_ids: number[],
 ): Promise<TagCountResult> {
     return count_tags_with_handler(
-        ApiHandler<TagCountResponse>(SERVER_ADDRESS + "tag/count?")(Method.GET),
+        ApiHandler<TagCountResponse>(SERVER_ADDRESS + "tag/counts?")(
+            Method.GET,
+        ),
         image_ids,
     );
 }
