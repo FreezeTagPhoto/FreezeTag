@@ -7,17 +7,13 @@ import IndeterminateCheckbox, {
 } from "../IndeterminateCheckbox/IndeterminateCheckbox";
 import TagIdCounter from "@/api/tags/tagidcounter";
 import TagRemover from "@/api/tags/tagremover";
+import FreezeTagSet from "@/common/freezetag/freezetagset";
 
 export type TagChangeProps = {
-    image_ids: Set<number>;
+    image_ids: FreezeTagSet<number>;
     // set to false for new images, because they always have no seed other than unchecked
     do_seeding?: boolean;
 };
-
-// This makes a fake empty set because react hates empty set states for some reason
-export function TagChangeEmptySet(): Set<number> {
-    return new Set([0]);
-}
 
 export default function TagChangeButton({
     image_ids,
@@ -39,7 +35,7 @@ export default function TagChangeButton({
     };
 
     const handleSubmit = async () => {
-        const image_ids_array = image_ids.values().toArray();
+        const image_ids_array = image_ids.toArray();
         const added_tags: string[] = [];
         const removed_tags: string[] = [];
 
@@ -91,17 +87,18 @@ export default function TagChangeButton({
     >(new Map());
 
     useEffect(() => {
-        if (image_ids.size === 0) {
-            return;
-        }
         if (!do_seeding) {
             return;
         }
-        TagIdCounter(image_ids.values().toArray()).then((result) => {
+        if (image_ids.size() === 0) {
+            setCheckboxSeeds(new Map());
+            return;
+        }
+        TagIdCounter(image_ids.toArray()).then((result) => {
             if (result.ok) {
                 const newSeeds = new Map();
-                // This way we don't count the 0 no-op
-                const image_count = image_ids.size - (image_ids.has(0) ? 1 : 0);
+
+                const image_count = image_ids.size();
                 Object.entries(result.value).forEach(([tag, count]) => {
                     if (count === image_count) {
                         newSeeds.set(tag, CheckboxState.Checked);

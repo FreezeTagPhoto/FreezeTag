@@ -10,10 +10,9 @@ import TopBar from "@/components/TopBar/TopBar";
 import { addTagToQuery } from "@/common/search/addtagtoquery";
 import TagCounter from "@/api/tags/tagcounter";
 import MassTaggingGallery from "@/components/Gallery/MassTaggingGallery/MassTaggingGallery";
-import TagChangeButton, {
-    TagChangeEmptySet,
-} from "@/components/UI/TagChangeButton/TagChangeButton";
+import TagChangeButton from "@/components/UI/TagChangeButton/TagChangeButton";
 import FileDeleter from "@/api/files/filedeleter";
+import FreezeTagSet from "@/common/freezetag/freezetagset";
 
 type TagInfo = { name: string; count?: number };
 
@@ -50,8 +49,9 @@ export default function Home() {
     const lastAppliedQRef = useRef<string | null>(null);
 
     const [multiSelect, setMultiSelect] = useState<boolean>(false);
-    const [selectedIds, setSelectedIds] =
-        useState<Set<number>>(TagChangeEmptySet());
+    const [selectedIds, setSelectedIds] = useState<FreezeTagSet<number>>(
+        new FreezeTagSet(),
+    );
 
     useEffect(() => {
         const q = searchParams.get("q");
@@ -154,7 +154,7 @@ export default function Home() {
                 multiSelect={multiSelect}
                 onMultiSelectChange={(value) => {
                     setMultiSelect(value);
-                    setSelectedIds(TagChangeEmptySet());
+                    setSelectedIds(new FreezeTagSet());
                 }}
                 tags={tagsForTopBar}
             />
@@ -183,7 +183,9 @@ export default function Home() {
                                     type="button"
                                     className={styles.select_button}
                                     onClick={() =>
-                                        setSelectedIds(new Set(imageIds))
+                                        setSelectedIds(
+                                            new FreezeTagSet(imageIds),
+                                        )
                                     }
                                 >
                                     Select All
@@ -192,7 +194,7 @@ export default function Home() {
                                     type="button"
                                     className={styles.select_button}
                                     onClick={() =>
-                                        setSelectedIds(TagChangeEmptySet)
+                                        setSelectedIds(selectedIds.clear())
                                     }
                                 >
                                     Deselect All
@@ -204,14 +206,14 @@ export default function Home() {
                                         e.stopPropagation();
 
                                         const confirmed = window.confirm(
-                                            "Delete these image? This cannot be undone.",
+                                            "Delete these images? This cannot be undone.",
                                         );
                                         if (!confirmed) return;
 
                                         (
                                             await Promise.all(
                                                 selectedIds
-                                                    .values()
+                                                    .toArray()
                                                     .filter((val) => val !== 0)
                                                     .map((val) =>
                                                         FileDeleter(val)(),
@@ -230,7 +232,7 @@ export default function Home() {
                                                 (val) => !selectedIds.has(val),
                                             ),
                                         );
-                                        setSelectedIds(TagChangeEmptySet);
+                                        setSelectedIds(new FreezeTagSet());
                                     }}
                                 >
                                     Delete Images
@@ -241,17 +243,7 @@ export default function Home() {
                                     image_ids={imageIds}
                                     selectedIds={selectedIds}
                                     onChange={(id) => {
-                                        const set = new Set(
-                                            selectedIds.values(),
-                                        );
-                                        if (set.has(id)) {
-                                            set.delete(id);
-                                        } else {
-                                            set.add(id);
-                                        }
-                                        if (set.size === 0)
-                                            setSelectedIds(TagChangeEmptySet());
-                                        else setSelectedIds(set);
+                                        setSelectedIds(selectedIds.toggle(id));
                                     }}
                                 />
                             </div>

@@ -3,11 +3,10 @@ import MassTaggingGallery from "@/components/Gallery/MassTaggingGallery/MassTagg
 import FileUploadButton from "@/components/UI/FileUploadButton/FileUploadButton";
 import { useState, useEffect } from "react";
 import styles from "./page.module.css";
-import TagChangeButton, {
-    TagChangeEmptySet,
-} from "@/components/UI/TagChangeButton/TagChangeButton";
+import TagChangeButton from "@/components/UI/TagChangeButton/TagChangeButton";
 import JobsHandler from "@/api/jobs/jobshandler";
 import ProgressBar from "@/components/UI/ProgressBar/ProgressBar";
+import FreezeTagSet from "@/common/freezetag/freezetagset";
 
 const POLLING_DELAY = 500; // 0.5 seconds, in milliseconds
 
@@ -54,8 +53,9 @@ export default function Home() {
         }, POLLING_DELAY);
     }, [jobId]);
 
-    const [selectedIds, setSelectedIds] =
-        useState<Set<number>>(TagChangeEmptySet());
+    const [selectedIds, setSelectedIds] = useState<FreezeTagSet<number>>(
+        new FreezeTagSet(),
+    );
 
     return (
         <div className={ids.length > 0 ? styles.page : styles.pageEmpty}>
@@ -82,7 +82,9 @@ export default function Home() {
                             <button
                                 type="button"
                                 className={styles.select_button}
-                                onClick={() => setSelectedIds(new Set(ids))}
+                                onClick={() =>
+                                    setSelectedIds(new FreezeTagSet(ids))
+                                }
                             >
                                 Select All
                             </button>
@@ -90,7 +92,7 @@ export default function Home() {
                                 type="button"
                                 className={styles.select_button}
                                 onClick={() =>
-                                    setSelectedIds(TagChangeEmptySet)
+                                    setSelectedIds(new FreezeTagSet())
                                 }
                             >
                                 Deselect All
@@ -101,15 +103,7 @@ export default function Home() {
                                 image_ids={ids}
                                 selectedIds={selectedIds}
                                 onChange={(id) => {
-                                    const set = new Set(selectedIds.values());
-                                    if (set.has(id)) {
-                                        set.delete(id);
-                                    } else {
-                                        set.add(id);
-                                    }
-                                    if (set.size === 0)
-                                        setSelectedIds(TagChangeEmptySet());
-                                    else setSelectedIds(set);
+                                    setSelectedIds(selectedIds.toggle(id));
                                 }}
                             />
                         </div>
