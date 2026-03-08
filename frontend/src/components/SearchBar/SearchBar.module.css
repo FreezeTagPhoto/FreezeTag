@@ -58,8 +58,13 @@
 }
 
 .iconDisabled {
-    opacity: 0.45;
     color: var(--subtext0);
+}
+
+.searchIconBtn:disabled {
+    background: var(--surface0);
+    color: var(--subtext0);
+    cursor: default;
 }
 
 .search {
@@ -69,7 +74,7 @@
     padding: 0 56px 0 56px;
 
     border-radius: calc(var(--border-radius) + 6px);
-    border: 1px solid var(--surface2);
+    border: var(--border-info);
     background: var(--crust);
     color: var(--text);
 
@@ -81,6 +86,11 @@
         border-color 120ms ease,
         box-shadow 120ms ease,
         background 120ms ease;
+}
+
+.search:disabled {
+    background: var(--surface0);
+    color: var(--subtext0);
 }
 
 .search::placeholder {

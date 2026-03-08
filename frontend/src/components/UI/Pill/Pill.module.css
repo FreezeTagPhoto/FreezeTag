@@ -3,7 +3,7 @@
     padding: 0 12px;
     border-radius: var(--border-radius);
 
-    border: 1px solid var(--surface2);
+    border: var(--border-info);
     background: var(--base);
 
     color: var(--text);
@@ -47,6 +47,12 @@
 
 .pill.open:hover {
     background: var(--surface2);
+}
+
+.pill:disabled {
+    background: var(--surface0);
+    color: var(--subtext0);
+    cursor: default;
 }
 
 .label {

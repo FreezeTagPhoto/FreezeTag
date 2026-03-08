@@ -206,7 +206,11 @@ export default function TopBar({
 
     return (
         <div className={styles.bar}>
-            <SearchBar value={searchTerm} onChange={onSearchTermChange} />
+            <SearchBar
+                enabled={!multiSelect}
+                value={searchTerm}
+                onChange={onSearchTermChange}
+            />
 
             <div className={styles.pills}>
                 <div className={styles.menuContainer} ref={tagsWrapRef}>
@@ -218,6 +222,7 @@ export default function TopBar({
                         onClick={() =>
                             setOpen((v) => (v === "tags" ? null : "tags"))
                         }
+                        enabled={!multiSelect}
                     />
 
                     {open === "tags" && (
@@ -303,6 +308,7 @@ export default function TopBar({
                         onClick={() =>
                             setOpen((v) => (v === "sort" ? null : "sort"))
                         }
+                        enabled={!multiSelect}
                     />
 
                     {open === "sort" && (
@@ -371,7 +377,7 @@ export default function TopBar({
                 </div>
                 <div className={styles.menuContainer}>
                     <Pill
-                        label={multiSelect ? "Return" : "Select..."}
+                        label={multiSelect ? "Return" : "Select"}
                         variant="menu"
                         onClick={() => onMultiSelectChange(!multiSelect)}
                     />
