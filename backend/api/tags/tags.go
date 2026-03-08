@@ -126,6 +126,14 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 			})
 			continue
 		}
+		// TODO: I think to truly fix the bug, this needs to check for image id validation in general.
+		// TODO: Or we need to fix the foreign key locking everything
+		if id == 0 {
+			failed = append(failed, repositories.ImageTagFail{
+				Reason: fmt.Sprintf("bad image id: %d", id),
+			})
+			continue
+		}
 		res := te.imageRepository.AddImageTags(database.ImageId(id), tags)
 		if res.Success != nil {
 			added = append(added, repositories.ImageTagSuccess{
