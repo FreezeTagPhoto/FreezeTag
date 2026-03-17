@@ -39,17 +39,22 @@ type UploadResult struct {
 
 type ImageTagFail struct {
 	Reason string           `json:"reason"`
-	Id     database.ImageId `json:"id"`
+	Id     database.ImageId `json:"id,omitempty"`
 }
 
 type ImageTagSuccess struct {
-	Id    database.ImageId `json:"id"`
+	Id    database.ImageId `json:"id,omitempty"`
 	Count int              `json:"count"`
 }
 
 type ImageTagResult struct {
 	Success *ImageTagSuccess `json:"success"`
 	Err     *ImageTagFail    `json:"error"`
+}
+
+type TagResult struct {
+	Success bool   `json:"success"`
+	Err     string `json:"reason,omitempty"`
 }
 
 type ImageRepository interface {
@@ -60,6 +65,7 @@ type ImageRepository interface {
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
 	RetrieveAllTags() (map[string]int64, error)
 	RetrieveImageTags(id database.ImageId) ([]string, error)
+	AddTags(tags []string) TagResult
 	AddImageTags(id database.ImageId, tags []string) ImageTagResult
 	RemoveImageTags(id database.ImageId, tags []string) ImageTagResult
 	DeleteTags(tags []string) (int, error)
@@ -180,6 +186,20 @@ func (repo *DefaultImageRepository) RetrieveAllTags() (map[string]int64, error) 
 
 func (repo *DefaultImageRepository) RetrieveImageTags(id database.ImageId) ([]string, error) {
 	return repo.db.GetImageTags(id)
+}
+
+func (repo *DefaultImageRepository) AddTags(tags []string) TagResult {
+	_, err := repo.db.AddTags(tags)
+	if err != nil {
+		return TagResult{
+			Success: false,
+			Err:     err.Error(),
+		}
+	}
+	return TagResult{
+		Success: true,
+		Err:     "",
+	}
 }
 
 func (repo *DefaultImageRepository) AddImageTags(id database.ImageId, tags []string) ImageTagResult {

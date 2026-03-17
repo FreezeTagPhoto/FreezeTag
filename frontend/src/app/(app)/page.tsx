@@ -9,6 +9,10 @@ import MainGallery from "@/components/Gallery/MainGallery/MainGallery";
 import TopBar from "@/components/TopBar/TopBar";
 import { addTagToQuery } from "@/common/search/addtagtoquery";
 import TagCounter from "@/api/tags/tagcounter";
+import MassTaggingGallery from "@/components/Gallery/MassTaggingGallery/MassTaggingGallery";
+import TagChangeButton from "@/components/UI/TagChangeButton/TagChangeButton";
+import FileDeleter from "@/api/files/filedeleter";
+import FreezeTagSet from "@/common/freezetag/freezetagset";
 
 type TagInfo = { name: string; count?: number };
 
@@ -43,6 +47,11 @@ export default function Home() {
     const [allTags, setAllTags] = useState<string[]>([]);
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
     const lastAppliedQRef = useRef<string | null>(null);
+
+    const [multiSelect, setMultiSelect] = useState<boolean>(false);
+    const [selectedIds, setSelectedIds] = useState<FreezeTagSet<number>>(
+        new FreezeTagSet(),
+    );
 
     useEffect(() => {
         const q = searchParams.get("q");
@@ -142,13 +151,22 @@ export default function Home() {
                 onSortByChange={setSortBy}
                 sortOrder={sortOrder}
                 onSortOrderChange={setSortOrder}
+                multiSelect={multiSelect}
+                onMultiSelectChange={(value) => {
+                    setMultiSelect(value);
+                    setSelectedIds(new FreezeTagSet());
+                }}
                 tags={tagsForTopBar}
             />
 
-            <main className={styles.main}>
+            <main
+                className={`${styles.main} ${multiSelect ? styles.main_select_mode : ""}`}
+            >
                 <header className={styles.headerRow}>
                     <div>
-                        <h1 className={styles.h1}>Gallery</h1>
+                        <h1 className={styles.h1}>
+                            {multiSelect ? "Selecting Images" : "Gallery"}
+                        </h1>
                         <p className={styles.subtle}>
                             {imageIds.length}{" "}
                             {imageIds.length !== 1 ? "images" : "image"}
@@ -157,12 +175,94 @@ export default function Home() {
                     <div className={styles.pillsRow} />
                 </header>
 
-                <MainGallery
-                    image_ids={imageIds}
-                    onSearchTag={(tag) =>
-                        setSearchTerm((prev) => addTagToQuery(prev, tag))
-                    }
-                />
+                {multiSelect ? (
+                    <div className={styles.gallery_tags_container}>
+                        <div className={styles.gallery_select_container}>
+                            <div className={styles.select_container}>
+                                <button
+                                    type="button"
+                                    className={styles.select_button}
+                                    onClick={() =>
+                                        setSelectedIds(
+                                            new FreezeTagSet(imageIds),
+                                        )
+                                    }
+                                >
+                                    Select All
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.select_button}
+                                    onClick={() =>
+                                        setSelectedIds(selectedIds.clear())
+                                    }
+                                >
+                                    Deselect All
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.select_button}
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+
+                                        const confirmed = window.confirm(
+                                            "Delete these images? This cannot be undone.",
+                                        );
+                                        if (!confirmed) return;
+
+                                        (
+                                            await Promise.all(
+                                                selectedIds
+                                                    .toArray()
+                                                    .filter((val) => val !== 0)
+                                                    .map((val) =>
+                                                        FileDeleter(val)(),
+                                                    ),
+                                            )
+                                        ).forEach(async (prom) => {
+                                            const result = prom;
+                                            if (!result.ok)
+                                                console.error(
+                                                    `Could not delete file! ${await result.error.response.text()}`,
+                                                );
+                                        });
+
+                                        setImageIds(
+                                            imageIds.filter(
+                                                (val) => !selectedIds.has(val),
+                                            ),
+                                        );
+                                        setSelectedIds(new FreezeTagSet());
+                                    }}
+                                >
+                                    Delete Images
+                                </button>
+                            </div>
+                            <div className={styles.gallery}>
+                                <MassTaggingGallery
+                                    image_ids={imageIds}
+                                    selectedIds={selectedIds}
+                                    onChange={(id) => {
+                                        setSelectedIds(selectedIds.toggle(id));
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <div className={styles.tag_change_container}>
+                            <TagChangeButton
+                                image_ids={selectedIds}
+                                do_seeding={true}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <MainGallery
+                        image_ids={imageIds}
+                        onSearchTag={(tag) =>
+                            setSearchTerm((prev) => addTagToQuery(prev, tag))
+                        }
+                    />
+                )}
             </main>
         </>
     );

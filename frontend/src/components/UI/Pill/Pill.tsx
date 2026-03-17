@@ -12,6 +12,7 @@ export default function Pill({
     className = "",
     type = "button",
     invertCaret,
+    enabled = true,
 }: {
     label: React.ReactNode;
     caret?: boolean;
@@ -20,6 +21,7 @@ export default function Pill({
     className?: string;
     type?: "button" | "submit" | "reset";
     invertCaret?: boolean;
+    enabled?: boolean;
 }) {
     const variantClass =
         variant === "menu"
@@ -37,6 +39,7 @@ export default function Pill({
                 invertCaret ? styles.open : ""
             }`}
             onClick={onClick}
+            disabled={!enabled}
         >
             <span className={styles.label}>{label}</span>
 

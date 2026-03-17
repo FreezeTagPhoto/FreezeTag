@@ -6,6 +6,7 @@ import styles from "./page.module.css";
 import TagChangeButton from "@/components/UI/TagChangeButton/TagChangeButton";
 import JobsHandler from "@/api/jobs/jobshandler";
 import ProgressBar from "@/components/UI/ProgressBar/ProgressBar";
+import FreezeTagSet from "@/common/freezetag/freezetagset";
 
 const POLLING_DELAY = 500; // 0.5 seconds, in milliseconds
 
@@ -52,7 +53,9 @@ export default function Home() {
         }, POLLING_DELAY);
     }, [jobId]);
 
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [selectedIds, setSelectedIds] = useState<FreezeTagSet<number>>(
+        new FreezeTagSet(),
+    );
 
     return (
         <div className={ids.length > 0 ? styles.page : styles.pageEmpty}>
@@ -79,14 +82,18 @@ export default function Home() {
                             <button
                                 type="button"
                                 className={styles.select_button}
-                                onClick={() => setSelectedIds(new Set(ids))}
+                                onClick={() =>
+                                    setSelectedIds(new FreezeTagSet(ids))
+                                }
                             >
                                 Select All
                             </button>
                             <button
                                 type="button"
                                 className={styles.select_button}
-                                onClick={() => setSelectedIds(new Set())}
+                                onClick={() =>
+                                    setSelectedIds(new FreezeTagSet())
+                                }
                             >
                                 Deselect All
                             </button>
@@ -96,18 +103,14 @@ export default function Home() {
                                 image_ids={ids}
                                 selectedIds={selectedIds}
                                 onChange={(id) => {
-                                    const set = new Set(selectedIds.values());
-                                    if (set.has(id)) {
-                                        set.delete(id);
-                                    } else {
-                                        set.add(id);
-                                    }
-                                    setSelectedIds(set);
+                                    setSelectedIds(selectedIds.toggle(id));
                                 }}
                             />
                         </div>
                     </div>
-                    <TagChangeButton image_ids={selectedIds} />
+                    <div className={styles.tag_change_container}>
+                        <TagChangeButton image_ids={selectedIds} />
+                    </div>
                 </div>
             )}
         </div>

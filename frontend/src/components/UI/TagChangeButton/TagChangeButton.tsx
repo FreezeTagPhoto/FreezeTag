@@ -1,89 +1,167 @@
 import styles from "./TagChangeButton.module.css";
-import { useEffect, useState } from "react";
-import TagGetter, { TagGetResult } from "@/api/tags/taggetter";
+import { useEffect, useRef, useState } from "react";
+import TagGetter from "@/api/tags/taggetter";
 import TagAdder from "@/api/tags/tagadder";
+import IndeterminateCheckbox, {
+    CheckboxState,
+} from "../IndeterminateCheckbox/IndeterminateCheckbox";
+import TagIdCounter from "@/api/tags/tagidcounter";
+import TagRemover from "@/api/tags/tagremover";
+import FreezeTagSet from "@/common/freezetag/freezetagset";
 
 export type TagChangeProps = {
-    image_ids: Set<number>;
+    image_ids: FreezeTagSet<number>;
+    // set to false for new images, because they always have no seed other than unchecked
+    do_seeding?: boolean;
 };
 
-export default function TagChangeButton(props: TagChangeProps) {
+export default function TagChangeButton({
+    image_ids,
+    do_seeding,
+}: TagChangeProps) {
     const [allTags, setAllTags] = useState<string[]>([]);
-
     const [filteredTags, setFilteredTags] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState<string>("");
 
-    const updateAllTags = () => {
-        TagGetter()
-            .then((result: TagGetResult) => {
-                if (result.ok) {
-                    setAllTags(result.value);
-                    setFilteredTags(result.value);
-                } else {
-                    console.error("Error retrieving tags:", result.error);
-                    // TODO: show error to user
-                }
-            })
-            .catch(
-                (error) =>
-                    console.error(
-                        "Error retrieving tags (is the backend running?):",
-                        error,
-                    ),
-                // TODO: Show error to user
-            );
-    };
-
-    const filterTags = (query: string) => {
-        const arr = allTags.filter((tag) => tag.includes(query));
-        setFilteredTags(arr);
-    };
-
-    const handleSubmit = async (event: FormData, image_ids: Set<number>) => {
-        const tags = event.getAll("tag_menu").map((entry) => entry.toString());
-        const new_tag = event.get("new_tag")?.toString();
-        if ((tags.length === 0 && !new_tag) || image_ids.size === 0) {
-            console.error(
-                "Must have at least some tags and some images selected!",
-            );
+    const updateAllTags = async () => {
+        const result = await TagGetter();
+        if (result.ok) {
+            setAllTags(result.value);
+            setFilteredTags(result.value);
         } else {
-            if (new_tag) tags.push(new_tag);
-            const image_id_array = image_ids.values().toArray();
-            const result = await TagAdder(image_id_array, tags);
-
-            if (!result.ok) {
-                console.error("Error adding tags!", result.error);
-                // TODO: show error to user
-            }
+            console.error("Error retrieving tags:", result.error);
+            // TODO: show error to user
         }
-        updateAllTags();
     };
 
-    useEffect(updateAllTags, []);
+    const handleSubmit = async () => {
+        const image_ids_array = image_ids.toArray();
+        const added_tags: string[] = [];
+        const removed_tags: string[] = [];
+
+        changedCheckboxes.forEach((val, key) => {
+            if (val === CheckboxState.Checked) {
+                added_tags.push(key);
+            } else {
+                removed_tags.push(key);
+            }
+        });
+
+        if (added_tags.length !== 0) {
+            await TagAdder(image_ids_array, added_tags);
+        }
+        if (removed_tags.length !== 0) {
+            await TagRemover(image_ids_array, removed_tags);
+        }
+
+        setChangedCheckboxes(new Map());
+    };
+
+    const searchTagRef = useRef<HTMLInputElement | null>(null);
+
+    const addNewTag = async () => {
+        const tag = searchTagRef.current?.value;
+        if (!tag || tag === "") {
+            return;
+        }
+
+        await TagAdder([], [tag]);
+        await updateAllTags();
+        setCheckboxSeeds(checkboxSeeds.set(tag, CheckboxState.Unchecked));
+    };
+
+    useEffect(() => {
+        const arr = allTags.filter((tag) => tag.includes(searchQuery));
+        setFilteredTags(arr);
+    }, [searchQuery, allTags]);
+
+    useEffect(() => {
+        updateAllTags();
+    }, []);
+
+    const [changedCheckboxes, setChangedCheckboxes] = useState<
+        Map<string, CheckboxState>
+    >(new Map());
+    const [checkboxSeeds, setCheckboxSeeds] = useState<
+        Map<string, CheckboxState>
+    >(new Map());
+
+    useEffect(() => {
+        if (!do_seeding) {
+            return;
+        }
+        if (image_ids.size() === 0) {
+            setCheckboxSeeds(new Map());
+            return;
+        }
+        TagIdCounter(image_ids.toArray()).then((result) => {
+            if (result.ok) {
+                const newSeeds = new Map();
+
+                const image_count = image_ids.size();
+                Object.entries(result.value).forEach(([tag, count]) => {
+                    if (count === image_count) {
+                        newSeeds.set(tag, CheckboxState.Checked);
+                    } else if (count === 0) {
+                        newSeeds.set(tag, CheckboxState.Unchecked);
+                    } else {
+                        newSeeds.set(tag, CheckboxState.Indeterminate);
+                    }
+                });
+                setCheckboxSeeds(newSeeds);
+            } else {
+                console.error("tag id count error");
+            }
+        });
+    }, [image_ids, do_seeding]);
 
     return (
-        <form
-            action={(e) => handleSubmit(e, props.image_ids)}
-            className={styles.form}
-        >
-            <select multiple name="tag_menu" className={styles.tag_menu}>
+        <div className={styles.form}>
+            <div className={styles.tag_menu}>
                 {filteredTags.map((tag) => (
-                    <option value={tag} key={tag}>
-                        {tag}
-                    </option>
+                    <label key={tag} title={tag}>
+                        <IndeterminateCheckbox
+                            value={
+                                (changedCheckboxes.has(tag)
+                                    ? changedCheckboxes.get(tag)
+                                    : checkboxSeeds.get(tag)) ??
+                                CheckboxState.Unchecked
+                            }
+                            afterChange={(val) =>
+                                setChangedCheckboxes(
+                                    changedCheckboxes.set(tag, val),
+                                )
+                            }
+                        />
+                        <p>{tag}</p>
+                    </label>
                 ))}
-            </select>
-            <input
-                name="new_tag"
-                type="text"
-                placeholder="New tag..."
-                className={styles.new_tag}
-                onChange={(event) => filterTags(event.target.value)}
-                autoComplete="off"
-            ></input>
-            <label htmlFor="tags-submit" className={styles.label}>
-                Submit Tags!
-            </label>
-            <input type="submit" id="tags-submit" className={styles.button} />
-        </form>
+            </div>
+
+            <div className={styles.bottom_container}>
+                <div className={styles.new_tag_container}>
+                    <input
+                        name="new_tag"
+                        type="text"
+                        placeholder="Search tags..."
+                        className={styles.new_tag}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        autoComplete="off"
+                        ref={searchTagRef}
+                    ></input>
+                    <button onClick={addNewTag}>New</button>
+                </div>
+
+                <label htmlFor="tags-submit" className={styles.label}>
+                    Add Tags!
+                </label>
+                <input
+                    type="submit"
+                    id="tags-submit"
+                    onClick={handleSubmit}
+                    className={styles.button}
+                />
+            </div>
+        </div>
     );
 }

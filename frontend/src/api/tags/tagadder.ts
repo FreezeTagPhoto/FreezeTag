@@ -10,8 +10,8 @@ export type TagAddResult = Result<
     { status: number; message: string }
 >;
 type TagAddResponse = {
-    added: string[];
-    errors: string[];
+    added: { count: number; id: number }[];
+    errors: { id: number; reason: string }[];
 };
 
 export default async function TagAdder(
@@ -56,7 +56,9 @@ async function add_tag_with_handler(
         }
     }
 
-    return Ok(result.value.errors);
+    return Ok(
+        result.value.errors.map((err) => `Image Id ${err.id}: ${err.reason}`),
+    );
 }
 
 export const testing_TagAdder = add_tag_with_handler;

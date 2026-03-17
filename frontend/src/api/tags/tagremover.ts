@@ -10,8 +10,8 @@ export type TagRemoveResult = Result<
     { status: number; message: string }
 >;
 type TagRemoveResponse = {
-    deleted: string[];
-    errors: string[];
+    deleted: { count: number; id: number }[];
+    errors: { id: number; reason: string }[];
 };
 
 export default async function TagRemover(
@@ -57,7 +57,9 @@ async function remove_tag_with_handler(
         }
     }
 
-    return Ok(result.value.errors);
+    return Ok(
+        result.value.errors.map((err) => `Image Id ${err.id}: ${err.reason}`),
+    );
 }
 
 export const testing_TagRemover = remove_tag_with_handler;

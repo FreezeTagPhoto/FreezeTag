@@ -3,10 +3,11 @@
 import { useRef } from "react";
 import styles from "./MassTaggingGallery.module.css";
 import GalleryImage from "../GalleryImage/GalleryImage";
+import FreezeTagSet from "@/common/freezetag/freezetagset";
 
 export type MassTaggingGalleryProps = {
     image_ids: number[];
-    selectedIds: Set<number>;
+    selectedIds: FreezeTagSet<number>;
     onChange: (id: number) => void;
 };
 

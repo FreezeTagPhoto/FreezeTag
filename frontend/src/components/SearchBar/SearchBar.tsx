@@ -10,6 +10,7 @@ import { Search, X } from "lucide-react";
 type Props = {
     value: string;
     onChange: (v: string) => void;
+    enabled: boolean;
     placeholder?: string;
 };
 
@@ -87,6 +88,7 @@ function removeTokenFromQuery(
 export default function SearchBar({
     value,
     onChange,
+    enabled,
     placeholder = "Search...",
 }: Props) {
     const wrapRef = useRef<HTMLDivElement>(null);
@@ -177,6 +179,7 @@ export default function SearchBar({
                     className={`${styles.searchIconBtn} ${
                         suggestionsEnabled ? styles.iconOn : styles.iconDisabled
                     }`}
+                    disabled={!enabled}
                     type="button"
                     aria-label={
                         suggestionsEnabled
@@ -206,6 +209,7 @@ export default function SearchBar({
                     placeholder={placeholder}
                     aria-label="Search"
                     value={value}
+                    disabled={!enabled}
                     onChange={(e) => {
                         onChange(e.target.value);
                         setManualClosed(false);
@@ -232,7 +236,7 @@ export default function SearchBar({
                     aria-label="Clear"
                     onClick={() => onChange("")}
                     type="button"
-                    disabled={value.length === 0}
+                    disabled={value.length === 0 || !enabled}
                     title={value.length === 0 ? "Nothing to clear" : "Clear"}
                 >
                     <X className={styles.btnIcon} aria-hidden="true" />

@@ -19,6 +19,9 @@ type TopBarProps = {
     sortOrder: string;
     onSortOrderChange: (value: string) => void;
 
+    multiSelect: boolean;
+    onMultiSelectChange: (value: boolean) => void;
+
     tags: TagInfo[];
 };
 
@@ -84,6 +87,8 @@ export default function TopBar({
     onSortByChange,
     sortOrder,
     onSortOrderChange,
+    multiSelect,
+    onMultiSelectChange,
     tags,
 }: TopBarProps) {
     const [open, setOpen] = useState<null | "tags" | "sort">(null);
@@ -201,7 +206,11 @@ export default function TopBar({
 
     return (
         <div className={styles.bar}>
-            <SearchBar value={searchTerm} onChange={onSearchTermChange} />
+            <SearchBar
+                enabled={!multiSelect}
+                value={searchTerm}
+                onChange={onSearchTermChange}
+            />
 
             <div className={styles.pills}>
                 <div className={styles.menuContainer} ref={tagsWrapRef}>
@@ -213,6 +222,7 @@ export default function TopBar({
                         onClick={() =>
                             setOpen((v) => (v === "tags" ? null : "tags"))
                         }
+                        enabled={!multiSelect}
                     />
 
                     {open === "tags" && (
@@ -298,6 +308,7 @@ export default function TopBar({
                         onClick={() =>
                             setOpen((v) => (v === "sort" ? null : "sort"))
                         }
+                        enabled={!multiSelect}
                     />
 
                     {open === "sort" && (
@@ -363,6 +374,13 @@ export default function TopBar({
                             </div>
                         </div>
                     )}
+                </div>
+                <div className={styles.menuContainer}>
+                    <Pill
+                        label={multiSelect ? "Return" : "Select"}
+                        variant="menu"
+                        onClick={() => onMultiSelectChange(!multiSelect)}
+                    />
                 </div>
             </div>
         </div>

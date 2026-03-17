@@ -4,35 +4,26 @@
 
 import { RequestError } from "@/api/common/apihandler";
 import {
-    testing_TagRemoveResponse,
-    testing_TagRemover,
-} from "@/api/tags/tagremover";
+    testing_TagCountResponse,
+    testing_TagCounter,
+} from "@/api/tags/tagidcounter";
 
-import TagRemover from "@/api/tags/tagremover";
+import TagIdCounter from "@/api/tags/tagidcounter";
 
 import { Result, Ok, Err } from "@/common/result";
 
 type HandlerReturnType = Promise<
-    Result<testing_TagRemoveResponse, RequestError>
+    Result<testing_TagCountResponse, RequestError>
 >;
 
-describe("Tag Adder", () => {
-    it("should print out query string correctly", () => {
+describe("Tag Counter", () => {
+    it("should correctly form query string", () => {
         const handler = async (query: BodyInit): HandlerReturnType => {
-            expect(typeof query === "string").toBeTruthy();
-            if (typeof query === "string") {
-                const components = query.split("&");
-                expect(components.includes("id=1")).toBeTruthy();
-                expect(components.includes("id=2")).toBeTruthy();
-                expect(components.includes("id=3")).toBeTruthy();
-                expect(components.includes("tag=sus")).toBeTruthy();
-                expect(components.includes("tag=wedding")).toBeTruthy();
-                expect(components.includes("tag=67")).toBeTruthy();
-            }
-            return Ok({ deleted: [], errors: [] });
+            expect(query).toBe("id=1&id=10");
+            return Ok({});
         };
 
-        testing_TagRemover(handler, [1, 2, 3], ["sus", "wedding", "67"]);
+        testing_TagCounter(handler, [1, 10]);
     });
 
     it("should get message on 400", async () => {
@@ -44,7 +35,7 @@ describe("Tag Adder", () => {
             });
         };
 
-        const result = await testing_TagRemover(handler, [], []);
+        const result = await testing_TagCounter(handler, []);
         expect(result).toStrictEqual(Err({ status: 400, message: "true" }));
     });
 
@@ -53,10 +44,19 @@ describe("Tag Adder", () => {
             return Err({ status_code: 404, response: new Response() });
         };
 
-        const result = await testing_TagRemover(handler, [], []);
+        const result = await testing_TagCounter(handler, [1, 23]);
         expect(result).toStrictEqual(
             Err({ status: 404, message: await new Response().text() }),
         );
+    });
+
+    it("should receive tags", async () => {
+        const handler = async (_: BodyInit): HandlerReturnType => {
+            return Ok({ arches: 1, wedding: 5, banquet: 3 });
+        };
+
+        const result = await testing_TagCounter(handler, [1, 2, 3, 4, 5, 6]);
+        expect(result).toStrictEqual(Ok({ arches: 1, wedding: 5, banquet: 3 }));
     });
 
     it("should pass integration tests", async () => {
@@ -65,12 +65,12 @@ describe("Tag Adder", () => {
                 status: 200,
                 ok: true,
                 json: () => {
-                    return { errors: [] };
+                    return { sus: 1 };
                 },
             });
         }) as jest.Mock;
 
-        const result = await TagRemover([], []);
-        expect(result).toStrictEqual(Ok([]));
+        const result = await TagIdCounter([1, 2, 3, 4, 5]);
+        expect(result).toStrictEqual(Ok({ sus: 1 }));
     });
 });

@@ -60,12 +60,12 @@ describe("Tag Adder", () => {
                 status: 200,
                 ok: true,
                 json: () => {
-                    return { errors: {} };
+                    return { errors: [] };
                 },
             });
         }) as jest.Mock;
 
         const result = await TagAdder([], []);
-        expect(result).toStrictEqual(Ok({}));
+        expect(result).toStrictEqual(Ok([]));
     });
 });

@@ -53,110 +53,122 @@ func (te TagEndpoint) HandleDeleteFull(c *gin.Context) {
 // @success     200 {object} api.TagRemoveResponse
 // @failure     400 {object} api.BadRequestResponse
 func (te TagEndpoint) HandleDelete(c *gin.Context) {
-	if len(c.QueryArray("tag")) == 0 {
+	tags := c.QueryArray("tag")
+	ids := c.QueryArray("id")
+	if len(tags) == 0 {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no tags to remove"})
 		return
 	}
-	if len(c.QueryArray("id")) == 0 {
+	if len(ids) == 0 {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no ids to remove tags from"})
 		return
 	}
 
-	tags := c.QueryArray("tag")
-	idlen := len(c.QueryArray("id"))
-	results := make(chan repositories.ImageTagResult, idlen)
-	for _, id := range c.QueryArray("id") {
-		idstr, err := strconv.ParseInt(id, 10, 64)
-
-		if err != nil {
-			results <- repositories.ImageTagResult{
-				Success: nil,
-				Err: &repositories.ImageTagFail{
-					Id:     -1,
-					Reason: fmt.Sprintf("unknown id %s", id),
-				},
-			}
-		} else {
-			go func(id database.ImageId, tags []string) {
-				results <- te.imageRepository.RemoveImageTags(id, tags)
-			}(database.ImageId(idstr), tags)
-		}
-	}
-
 	deleted := make([]repositories.ImageTagSuccess, 0)
-	errors := make([]repositories.ImageTagFail, 0)
-	for range idlen {
-		result := <-results
-		if result.Err != nil {
-			errors = append(errors, *result.Err)
-		} else {
-			deleted = append(deleted, *result.Success)
+	failed := make([]repositories.ImageTagFail, 0)
+
+	for _, idStr := range c.QueryArray("id") {
+		id, err := api.ParseParamIntoID[uint64](idStr)
+		if err != nil {
+			failed = append(failed, repositories.ImageTagFail{Reason: fmt.Sprintf("unknown id %s", idStr)})
+			continue
+		}
+		res := te.imageRepository.RemoveImageTags(database.ImageId(id), tags)
+		if res.Success != nil {
+			deleted = append(deleted, repositories.ImageTagSuccess{
+				Id:    res.Success.Id,
+				Count: res.Success.Count,
+			})
+		}
+		if res.Err != nil {
+			failed = append(failed, repositories.ImageTagFail{
+				Id:     res.Err.Id,
+				Reason: res.Err.Reason,
+			})
 		}
 	}
 
 	response := api.TagRemoveResponse{
 		Deleted: deleted,
-		Errors:  errors,
+		Errors:  failed,
 	}
 	c.JSON(http.StatusOK, response)
 }
 
 // @summary     Add tags
-// @description Add tags to images
+// @description Add tags to images (or to the database if no images are specified)
 // @tags        tags, upload
 // @produce     application/json
 // @router      /tag/add [post]
 // @param       tag query []string true "tags to add"         collectionFormat(multi)
-// @param       id  query []int    true "image IDs to add to" collectionFormat(multi)
+// @param       id  query []int    false "image IDs to add to (optional)" collectionFormat(multi)
 // @success     200 {object} api.TagAddResponse
 // @failure     400 {object} api.BadRequestResponse
 func (te TagEndpoint) HandlePost(c *gin.Context) {
-	if len(c.QueryArray("tag")) == 0 {
+	tags := c.QueryArray("tag")
+	ids := c.QueryArray("id")
+	if len(tags) == 0 {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no tags to add"})
 		return
 	}
-	if len(c.QueryArray("id")) == 0 {
-		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no ids to add tags to"})
+	if len(ids) == 0 {
+		te.addTagsOnly(tags, c)
 		return
 	}
 
-	tags := c.QueryArray("tag")
-	idlen := len(c.QueryArray("id"))
-	results := make(chan repositories.ImageTagResult, idlen)
-	for _, id := range c.QueryArray("id") {
-		idstr, err := strconv.ParseInt(id, 10, 64)
+	added := make([]repositories.ImageTagSuccess, 0)
+	failed := make([]repositories.ImageTagFail, 0)
+	for _, idStr := range ids {
+		id, err := api.ParseParamIntoID[uint64](idStr)
 		if err != nil {
-			results <- repositories.ImageTagResult{
-				Success: nil,
-				Err: &repositories.ImageTagFail{
-					Id:     -1,
-					Reason: fmt.Sprintf("unknown id %s", id),
-				},
-			}
-		} else {
-			go func(id database.ImageId, tags []string) {
-				results <- te.imageRepository.AddImageTags(id, tags)
-			}(database.ImageId(idstr), tags)
+			failed = append(failed, repositories.ImageTagFail{
+				Reason: fmt.Sprintf("unknown id %s", idStr),
+			})
+			continue
 		}
-
-	}
-
-	deleted := make([]repositories.ImageTagSuccess, 0)
-	errors := make([]repositories.ImageTagFail, 0)
-	for range idlen {
-		result := <-results
-		if result.Err != nil {
-			errors = append(errors, *result.Err)
-		} else {
-			deleted = append(deleted, *result.Success)
+		// TODO: I think to truly fix the bug, this needs to check for image id validation in general.
+		// TODO: Or we need to fix the foreign key locking everything
+		if id == 0 {
+			failed = append(failed, repositories.ImageTagFail{
+				Reason: fmt.Sprintf("bad image id: %d", id),
+			})
+			continue
+		}
+		res := te.imageRepository.AddImageTags(database.ImageId(id), tags)
+		if res.Success != nil {
+			added = append(added, repositories.ImageTagSuccess{
+				Id:    res.Success.Id,
+				Count: res.Success.Count,
+			})
+		}
+		if res.Err != nil {
+			failed = append(failed, repositories.ImageTagFail{
+				Id:     res.Err.Id,
+				Reason: res.Err.Reason,
+			})
 		}
 	}
 
 	response := api.TagAddResponse{
-		Added:  deleted,
-		Errors: errors,
+		Added:  added,
+		Errors: failed,
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+func (te TagEndpoint) addTagsOnly(tags []string, c *gin.Context) {
+	res := te.imageRepository.AddTags(tags)
+	if res.Success {
+		c.JSON(http.StatusOK, api.TagAddResponse{
+			Added:  []repositories.ImageTagSuccess{{Count: len(tags)}},
+			Errors: []repositories.ImageTagFail{},
+		})
+	} else {
+		c.JSON(http.StatusOK, api.TagAddResponse{
+			Added:  []repositories.ImageTagSuccess{},
+			Errors: []repositories.ImageTagFail{{Reason: res.Err}},
+		})
+	}
 }
 
 // @summary     List all tags
