@@ -76,13 +76,28 @@
 .viewerBackdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(1px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 50;
     pointer-events: none;
+}
+
+.progress_bar_modal {
+    border: var(--border-info);
+    border-radius: var(--border-radius);
+    filter: var(--dropshadow);
+    background: var(--base);
+    padding: 2rem;
+}
+
+.progress_label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
 }
 
 .progress_bar {
