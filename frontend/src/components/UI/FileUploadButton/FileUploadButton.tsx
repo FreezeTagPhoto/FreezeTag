@@ -2,6 +2,7 @@ import ImageUploader, { UploadResult } from "@/api/upload/imageuploader";
 import styles from "./FileUploadButton.module.css";
 import { useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { useNavigationGuard } from "next-navigation-guard";
 
 export type FileUploadProps = {
     job_id_callback: (id: string) => void;
@@ -23,6 +24,13 @@ export default function FileUploadButton(props: FileUploadProps) {
     const hiddenInputRef = useRef<HTMLInputElement>(null);
 
     const [uploading, setUploading] = useState<boolean>(false);
+    useNavigationGuard({
+        enabled: uploading,
+        confirm: () =>
+            window.confirm(
+                "The image upload will be cancelled if you leave the page.",
+            ),
+    });
     const handleSubmit = (
         event: FormData,
         job_id_callback: (id: string) => void,
