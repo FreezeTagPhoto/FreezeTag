@@ -1,0 +1,15 @@
+{
+    "name": "gemini-tagger",
+    "friendly_name": "Gemini Flash Light Tagger",
+    "main_file": "main.py",
+    "hooks": {
+        "tag_image": {
+            "friendly_name": "Tag Image",
+            "type": "post_upload",
+            "signature": "single_image"
+        }
+    },
+    "version": "1.0.0",
+    "requirements": "requirements.txt",
+    "python_version": "3.10"
+}
