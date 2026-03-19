@@ -1,6 +1,6 @@
 {
-    "name": "ml-tagger",
-    "friendly_name": "ML Tagger",
+    "name": "ram-tagger",
+    "friendly_name": "RAM Tagger",
     "main_file": "main.py",
     "hooks": {
         "tag_image": {
@@ -11,6 +11,5 @@
     },
     "version": "1.0.0",
     "requirements": "requirements.txt",
-    "python_version": "3.13",
-    "default_disabled": true
+    "python_version": "3.10"
 }
