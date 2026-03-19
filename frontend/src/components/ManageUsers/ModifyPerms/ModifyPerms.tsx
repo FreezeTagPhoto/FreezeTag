@@ -176,7 +176,7 @@ export default function ModifyPerms({
                         className={styles.submit_perms}
                         onClick={() => onSubmit()}
                     >
-                        Submit Changes!
+                        Submit Changes
                     </button>
                 )}
             </div>

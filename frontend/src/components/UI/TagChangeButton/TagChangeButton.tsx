@@ -8,6 +8,7 @@ import IndeterminateCheckbox, {
 import TagIdCounter from "@/api/tags/tagidcounter";
 import TagRemover from "@/api/tags/tagremover";
 import FreezeTagSet from "@/common/freezetag/freezetagset";
+import { CirclePlus } from "lucide-react";
 
 export type TagChangeProps = {
     image_ids: FreezeTagSet<number>;
@@ -74,6 +75,9 @@ export default function TagChangeButton({
         const arr = allTags.filter((tag) => tag.includes(searchQuery));
         setFilteredTags(arr);
     }, [searchQuery, allTags]);
+
+    const isButtonDisabled = () =>
+        searchQuery === "" || !!filteredTags.find((tag) => tag === searchQuery);
 
     useEffect(() => {
         updateAllTags();
@@ -148,12 +152,23 @@ export default function TagChangeButton({
                         onChange={(event) => setSearchQuery(event.target.value)}
                         autoComplete="off"
                         ref={searchTagRef}
+                        title="Searches for a tag, or allows you to create a new tag if there is no match"
                     ></input>
-                    <button onClick={addNewTag}>New</button>
+                    <button
+                        onClick={addNewTag}
+                        title="Creates the tag typed into the search bar"
+                        disabled={isButtonDisabled()}
+                    >
+                        <CirclePlus className={styles.iconBtnIcon} />
+                    </button>
                 </div>
 
-                <label htmlFor="tags-submit" className={styles.label}>
-                    Add Tags!
+                <label
+                    htmlFor="tags-submit"
+                    className={styles.label}
+                    title="Adds selected tags to the selected images"
+                >
+                    Add Selected Tags
                 </label>
                 <input
                     type="submit"

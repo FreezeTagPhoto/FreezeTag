@@ -117,6 +117,16 @@
     justify-content: center;
 }
 
+.new_tag_container button:disabled {
+    border-color: transparent;
+    filter: none;
+
+    color: var(--subtext0);
+    background-color: var(--surface0);
+
+    cursor: default;
+}
+
 .iconBtnIcon {
     width: 18px;
     height: 18px;
