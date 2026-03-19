@@ -4,6 +4,7 @@ import "./globals.css";
 
 import favicon from "@/icons/favicon.ico";
 import InnerLayout from "./inner_layout";
+import { NavigationGuardProvider } from "next-navigation-guard";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -30,8 +31,12 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <InnerLayout className={`${geistSans.variable} ${geistMono.variable}`}>
-            {children}
-        </InnerLayout>
+        <NavigationGuardProvider>
+            <InnerLayout
+                className={`${geistSans.variable} ${geistMono.variable}`}
+            >
+                {children}
+            </InnerLayout>
+        </NavigationGuardProvider>
     );
 }

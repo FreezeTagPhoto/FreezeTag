@@ -1,16 +1,61 @@
-import ImageUploader from "@/api/upload/imageuploader";
-import FileChangeHandler from "@/api/upload/filechangehandler";
+import ImageUploader, { UploadResult } from "@/api/upload/imageuploader";
 import styles from "./FileUploadButton.module.css";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { useNavigationGuard } from "next-navigation-guard";
 
 export type FileUploadProps = {
     job_id_callback: (id: string) => void;
     disabled?: boolean;
 };
 
+const FileChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Make sure that we have at least one file so it doesn't completely snafu
+    if (event.target.files && event.target.files[0]) {
+        if (event.target.form) {
+            event.target.form.requestSubmit();
+        } else {
+            console.error("Form was null for some reason!");
+        }
+    }
+};
+
 export default function FileUploadButton(props: FileUploadProps) {
     const hiddenInputRef = useRef<HTMLInputElement>(null);
+
+    const [uploading, setUploading] = useState<boolean>(false);
+    useNavigationGuard({
+        enabled: uploading,
+        confirm: () =>
+            window.confirm(
+                "The image upload will be cancelled if you leave the page.",
+            ),
+    });
+    const handleSubmit = (
+        event: FormData,
+        job_id_callback: (id: string) => void,
+    ) => {
+        setUploading(true);
+        ImageUploader(event).then((result) =>
+            handleResult(job_id_callback, result),
+        );
+    };
+
+    const handleResult = (
+        job_id_callback: (id: string) => void,
+        result: UploadResult,
+    ) => {
+        setUploading(false);
+        if (result.ok) {
+            job_id_callback(result.value);
+        } else {
+            console.error(
+                "Error uploading images (is the backend running?):",
+                result.error,
+            );
+            // TODO: show error to user
+        }
+    };
 
     const { getRootProps, getInputProps } = useDropzone({
         onDrop: (incomingFiles) => {
@@ -36,12 +81,11 @@ export default function FileUploadButton(props: FileUploadProps) {
             <div
                 {...getRootProps({
                     className: `${styles.label} ${
-                        props.disabled ? styles.label_disabled : ""
+                        props.disabled || uploading ? styles.label_disabled : ""
                     }`,
                 })}
             >
-                {" "}
-                Upload images{" "}
+                {uploading ? "Images Uploading..." : "Upload Images"}
                 <input
                     type="file"
                     onChange={FileChangeHandler}
@@ -51,31 +95,14 @@ export default function FileUploadButton(props: FileUploadProps) {
                     className={styles.button}
                     id="file-upload"
                     ref={hiddenInputRef}
-                    disabled={props.disabled}
+                    disabled={props.disabled || uploading}
                 />
                 <input
                     {...getInputProps()}
                     className={styles.button}
-                    disabled={props.disabled}
+                    disabled={props.disabled || uploading}
                 />
             </div>
         </form>
     );
 }
-
-const handleSubmit = async (
-    event: FormData,
-    job_id_callback: (id: string) => void,
-) => {
-    const result = await ImageUploader(event);
-
-    if (result.ok) {
-        job_id_callback(result.value);
-    } else {
-        console.error(
-            "Error uploading images (is the backend running?):",
-            result.error,
-        );
-        // TODO: show error to user
-    }
-};

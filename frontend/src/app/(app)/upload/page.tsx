@@ -68,10 +68,16 @@ export default function Home() {
 
             {progress > 0 && (
                 <div className={styles.viewerBackdrop}>
-                    <ProgressBar
-                        progress={progress}
-                        className={styles.progress_bar}
-                    />
+                    <div className={styles.progress_bar_modal}>
+                        <label className={styles.progress_label}>
+                            <p>Upload Processing</p>
+                            <ProgressBar
+                                progress={progress}
+                                className={styles.progress_bar}
+                            />
+                            <p>It is safe to leave the page</p>
+                        </label>
+                    </div>
                 </div>
             )}
 
