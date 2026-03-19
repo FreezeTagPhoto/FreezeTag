@@ -10,6 +10,9 @@
     padding: 10px 24px;
     border-bottom: var(--border-info);
     background: var(--base);
+    z-index: 20;
+    position: absolute;
+    width: 100%;
 }
 
 .bar > * {

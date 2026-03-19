@@ -176,92 +176,103 @@ export default function Home() {
                 </header>
 
                 {multiSelect ? (
-                    <div className={styles.gallery_tags_container}>
-                        <div className={styles.gallery_select_container}>
-                            <div className={styles.select_container}>
-                                <button
-                                    type="button"
-                                    className={styles.select_button}
-                                    onClick={() =>
-                                        setSelectedIds(
-                                            new FreezeTagSet(imageIds),
-                                        )
-                                    }
-                                >
-                                    Select All
-                                </button>
-                                <button
-                                    type="button"
-                                    className={styles.select_button}
-                                    onClick={() =>
-                                        setSelectedIds(selectedIds.clear())
-                                    }
-                                >
-                                    Deselect All
-                                </button>
-                                <button
-                                    type="button"
-                                    className={styles.select_button}
-                                    onClick={async (e) => {
-                                        e.stopPropagation();
-
-                                        const confirmed = window.confirm(
-                                            "Delete these images? This cannot be undone.",
-                                        );
-                                        if (!confirmed) return;
-
-                                        (
-                                            await Promise.all(
-                                                selectedIds
-                                                    .toArray()
-                                                    .filter((val) => val !== 0)
-                                                    .map((val) =>
-                                                        FileDeleter(val)(),
-                                                    ),
+                    <div className={styles.page}>
+                        <div className={styles.gallery_tags_container}>
+                            <div className={styles.gallery_select_container}>
+                                <div className={styles.select_container}>
+                                    <button
+                                        type="button"
+                                        className={styles.select_button}
+                                        onClick={() =>
+                                            setSelectedIds(
+                                                new FreezeTagSet(imageIds),
                                             )
-                                        ).forEach(async (prom) => {
-                                            const result = prom;
-                                            if (!result.ok)
-                                                console.error(
-                                                    `Could not delete file! ${await result.error.response.text()}`,
-                                                );
-                                        });
+                                        }
+                                    >
+                                        Select All
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.select_button}
+                                        onClick={() =>
+                                            setSelectedIds(selectedIds.clear())
+                                        }
+                                    >
+                                        Deselect All
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.select_button}
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
 
-                                        setImageIds(
-                                            imageIds.filter(
-                                                (val) => !selectedIds.has(val),
-                                            ),
-                                        );
-                                        setSelectedIds(new FreezeTagSet());
-                                    }}
-                                >
-                                    Delete Images
-                                </button>
+                                            const confirmed = window.confirm(
+                                                "Delete these images? This cannot be undone.",
+                                            );
+                                            if (!confirmed) return;
+
+                                            (
+                                                await Promise.all(
+                                                    selectedIds
+                                                        .toArray()
+                                                        .filter(
+                                                            (val) => val !== 0,
+                                                        )
+                                                        .map((val) =>
+                                                            FileDeleter(val)(),
+                                                        ),
+                                                )
+                                            ).forEach(async (prom) => {
+                                                const result = prom;
+                                                if (!result.ok)
+                                                    console.error(
+                                                        `Could not delete file! ${await result.error.response.text()}`,
+                                                    );
+                                            });
+
+                                            setImageIds(
+                                                imageIds.filter(
+                                                    (val) =>
+                                                        !selectedIds.has(val),
+                                                ),
+                                            );
+                                            setSelectedIds(new FreezeTagSet());
+                                        }}
+                                    >
+                                        Delete Images
+                                    </button>
+                                </div>
+                                <div className={styles.gallery}>
+                                    <MassTaggingGallery
+                                        image_ids={imageIds}
+                                        selectedIds={selectedIds}
+                                        onChange={(id) => {
+                                            setSelectedIds(
+                                                selectedIds.toggle(id),
+                                            );
+                                        }}
+                                    />
+                                </div>
                             </div>
-                            <div className={styles.gallery}>
-                                <MassTaggingGallery
-                                    image_ids={imageIds}
-                                    selectedIds={selectedIds}
-                                    onChange={(id) => {
-                                        setSelectedIds(selectedIds.toggle(id));
-                                    }}
+                            <div className={styles.tag_change_container}>
+                                <TagChangeButton
+                                    image_ids={selectedIds}
+                                    do_seeding={true}
                                 />
                             </div>
                         </div>
-                        <div className={styles.tag_change_container}>
-                            <TagChangeButton
-                                image_ids={selectedIds}
-                                do_seeding={true}
-                            />
-                        </div>
                     </div>
                 ) : (
-                    <MainGallery
-                        image_ids={imageIds}
-                        onSearchTag={(tag) =>
-                            setSearchTerm((prev) => addTagToQuery(prev, tag))
-                        }
-                    />
+                    <div className={styles.main_parent}>
+                        <MainGallery
+                            image_ids={imageIds}
+                            onSearchTag={(tag) =>
+                                setSearchTerm((prev) =>
+                                    addTagToQuery(prev, tag),
+                                )
+                            }
+                        />
+                    </div>
                 )}
             </main>
         </>

@@ -23,7 +23,6 @@
     gap: 0.5rem;
 
     height: 100%;
-    padding-bottom: 1rem;
 
     width: 200px;
     min-width: 200px;
@@ -109,9 +108,17 @@
     filter: var(--dropshadow);
     border-radius: var(--border-radius);
 
-    padding: 6px 12px;
+    padding: 8px 8px;
     cursor: pointer;
 
     color: var(--text);
     background-color: var(--base);
+    display: flex;
+    justify-content: center;
+}
+
+.iconBtnIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
 }
