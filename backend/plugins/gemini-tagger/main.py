@@ -1,4 +1,5 @@
 import os
+import time
 from PIL import Image
 
 import freezetag
@@ -9,6 +10,12 @@ from dotenv import load_dotenv, find_dotenv
 from google.genai import types
 
 client = None
+image_count = 0
+
+prompt = """
+Provide a comma-separated list of descriptive tags for this image.
+create tags that a human would reasonably use to describe the content of the image to another human. 
+Output only the tags"""
 
 @init_func
 def init():
@@ -29,10 +36,14 @@ def init():
 
 @single_image
 def tag_image(img: Image.Image, id: int) -> AddTagsAction:
-    global client
+    global client, image_count
+    image_count += 1
+    if image_count % 15 == 0:
+        log("Sleeping for a bit to avoid hitting Gemini API rate limits...")
+        time.sleep(60)
     assert client is not None, "Gemini client not initialized"
     try:
-        prompt = "Provide a comma-separated list of descriptive tags for this image. Output only the tags, with no additional text."
+        
         img = _compress_image(img)
 
         response = client.models.generate_content(
@@ -40,11 +51,7 @@ def tag_image(img: Image.Image, id: int) -> AddTagsAction:
             contents=[prompt, img],
             config=types.GenerateContentConfig(
                 temperature=0,
-                candidate_count=1,
-                thinking_config=types.ThinkingConfig(
-                    thinking_level="LOW",
-                    include_thoughts=False
-                )
+                candidate_count=1
             ),
         )
         
