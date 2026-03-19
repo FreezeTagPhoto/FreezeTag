@@ -48,7 +48,6 @@ def tag_image(img: Image.Image, id: int) -> AddTagsAction:
             ),
         )
         
-        # Parse the string response into a clean Python list
         raw_text = response.text.strip()
         tags_list = [tag.strip() for tag in raw_text.split(",") if tag.strip()]
         
