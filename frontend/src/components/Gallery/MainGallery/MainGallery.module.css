@@ -14,11 +14,11 @@
     max-height: 10%;
 }
 
-/* .grid::after {
+.grid::after {
     content: "";
     flex: 999999 0 0px;
     pointer-events: none;
-} */
+}
 
 .grid button {
     flex: 0 0 auto;
