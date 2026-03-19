@@ -189,6 +189,7 @@ func TestPluginMetadataRequest(t *testing.T) {
 	repo := createMockRepo(t)
 	filename := "abc.png"
 	repo.EXPECT().GetImageMetadata(database.ImageId(76)).Return(imagedata.Metadata{FileName: &filename}, nil)
+	repo.EXPECT().GetImageResolution(database.ImageId(76)).Return(69, 420, nil)
 	repo.EXPECT().AddImageTags(database.ImageId(76), []string{"abc.png"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 76, Count: 1}})
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)

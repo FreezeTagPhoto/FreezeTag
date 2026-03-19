@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/queries"
+	"freezetag/backend/pkg/images/imagedata"
 	"freezetag/backend/pkg/repositories"
 	"log"
 	"reflect"
@@ -209,6 +210,12 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 	return nil, fmt.Errorf("unrecognized message action")
 }
 
+type pluginMetadataResponse struct {
+	imagedata.Metadata
+	Width  int `json:"width"`
+	Height int `json:"height"`
+}
+
 func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessage) error {
 	msg, ok := m.Contents.(map[string]any)
 	if !ok {
@@ -224,9 +231,17 @@ func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessa
 		if err != nil {
 			return err
 		}
+		width, height, err := repo.GetImageResolution(id)
+		if err != nil {
+			return err
+		}
 		pl.IO().In <- PluginMessage{
 			PUT,
-			map[string]any{"action": "metadata", "data": meta},
+			map[string]any{"action": "metadata", "data": pluginMetadataResponse{
+				Metadata: meta,
+				Width:    width,
+				Height:   height,
+			}},
 		}
 	case "search":
 		res, err := pluginSearchRequest(msg, repo)
