@@ -16,10 +16,10 @@ import (
 
 const (
 	max_height = 512
-	quality    = float32(0)
+	quality    = float32(0.5)
 
-	max_height_large = 0
-	quality_large    = float32(1)
+	max_height_large = 2160
+	quality_large    = float32(0.8)
 )
 
 type ImageUploadSuccess struct {
