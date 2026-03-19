@@ -24,9 +24,9 @@ def init():
     log("Initializing Gemini Tagger plugin...")
     try:
         load_dotenv(find_dotenv())
-        api_token = os.getenv("GEMINI-API-KEY")
+        api_token = os.getenv("GEMINI_API_KEY")
         if not api_token:
-            log("GEMINI-API-KEY not found in environment variables.")
+            log("GEMINI_API_KEY not found in environment variables.")
             return
         client = genai.Client(api_key=api_token)
     except Exception as e:
