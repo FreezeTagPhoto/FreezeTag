@@ -271,6 +271,7 @@ export default function Home() {
                                     addTagToQuery(prev, tag),
                                 )
                             }
+                            onDelete={(_deletedId) => setSearchTerm("" + query)} // Forces the query to recompute and fetch new IDs
                         />
                     </div>
                 )}
