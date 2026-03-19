@@ -266,6 +266,20 @@ func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessa
 			map[string]any{"action": "image"},
 		}
 		pl.IO().In <- PluginMessage{BIN, webp}
+	case "image_file":
+		id, err := intoId(msg["id"])
+		if err != nil {
+			return err
+		}
+		file, err := repo.RetrieveImageFile(id)
+		if err != nil {
+			return err
+		}
+		pl.IO().In <- PluginMessage{
+			PUT,
+			map[string]any{"action": "image_file"},
+		}
+		pl.IO().In <- PluginMessage{BIN, file}
 	case "tags":
 		id, err := intoId(msg["id"])
 		if err != nil {

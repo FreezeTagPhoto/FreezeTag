@@ -22,6 +22,19 @@ def get_image(id: int) -> Image.Image:
         return img
     return None
 
+def get_image_file(id: int) -> bytes:
+    """
+    Get the raw image file associated with the id.
+    You probably don't want to use this one except for super power user stuff!
+    """
+    write_message(Message(MessageType.GET, {"action": "image_file", "id": id}))
+    response = read_message()
+    if isinstance(response.contents, dict) and response.contents["action"] == "image_file":
+        response = read_message()
+        if isinstance(response.contents, bytes):
+            return response.contents
+    return None
+
 def get_image_tags(id: int) -> list[str]:
     write_message(Message(MessageType.GET, {"action": "tags", "id": id}))
     response = read_message()
