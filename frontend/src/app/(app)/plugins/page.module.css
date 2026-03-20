@@ -68,8 +68,10 @@
 }
 
 .plugin_item_button:disabled {
-    background-color: var(--crust);
+    background-color: var(--mantle);
     cursor: default;
+    border-color: transparent;
+    filter: none;
 }
 
 .version {

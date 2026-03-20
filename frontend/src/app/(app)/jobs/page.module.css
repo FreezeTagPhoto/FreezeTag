@@ -111,10 +111,12 @@
 .job_item_button:disabled {
     background-color: var(--crust);
     cursor: default;
+    border-color: transparent;
+    filter: none;
 }
 
 .job_item_button:disabled * {
-    color: var(--subtext0);
+    color: var(--surface2);
 }
 
 .dialogIcon {

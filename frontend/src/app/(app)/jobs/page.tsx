@@ -76,7 +76,7 @@ export default function Home() {
         <main className={styles.main}>
             <h1 className={styles.h1}>Job Management</h1>
             {jobs.length === 0 ? (
-                <p>No jobs running!</p>
+                <p>No jobs running</p>
             ) : (
                 <div className={styles.job_container}>
                     {jobs.map((job, idx) => (

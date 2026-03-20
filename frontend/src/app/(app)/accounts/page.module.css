@@ -88,10 +88,12 @@
 .account_item_button:disabled {
     background-color: var(--crust);
     cursor: default;
+    border-color: transparent;
+    filter: none;
 }
 
 .account_item_button:disabled * {
-    color: var(--subtext0);
+    color: var(--surface2);
 }
 
 .date {

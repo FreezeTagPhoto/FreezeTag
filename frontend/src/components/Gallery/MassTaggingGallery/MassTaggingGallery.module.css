@@ -7,6 +7,7 @@
     flex-wrap: wrap;
     gap: 8px;
     padding-top: 12px;
+    padding-left: 4px;
     justify-content: space-between;
 }
 

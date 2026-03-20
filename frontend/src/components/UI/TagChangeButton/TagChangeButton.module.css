@@ -23,7 +23,6 @@
     gap: 0.5rem;
 
     height: 100%;
-    padding-bottom: 1rem;
 
     width: 200px;
     min-width: 200px;
@@ -109,9 +108,27 @@
     filter: var(--dropshadow);
     border-radius: var(--border-radius);
 
-    padding: 6px 12px;
+    padding: 8px 8px;
     cursor: pointer;
 
     color: var(--text);
     background-color: var(--base);
+    display: flex;
+    justify-content: center;
+}
+
+.new_tag_container button:disabled {
+    border-color: transparent;
+    filter: none;
+
+    color: var(--subtext0);
+    background-color: var(--surface0);
+
+    cursor: default;
+}
+
+.iconBtnIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
 }
