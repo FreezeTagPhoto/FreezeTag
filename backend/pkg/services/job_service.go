@@ -165,6 +165,14 @@ func (s *defaultJobService) SchedulePluginHook(plugin string, hook string, input
 		repositories.Job(func(in pluginRun, c context.Context, _ func(string)) (plugins.PluginResult, error) {
 			log.Printf("[INFO] launching plugin %s", in.Name)
 			p, err := s.plugins.LaunchPlugin(in.Name, c)
+			defer func() {
+				log.Printf("[INFO] shutting down plugin %s", in.Name)
+				err := p.Shutdown()
+				if err != nil {
+					log.Printf("[WARN] plugin failed to shut down gracefully: %v", err)
+				}
+				log.Printf("[INFO] shut down plugin %s", in.Name)
+			}()
 			if err != nil {
 				log.Printf("[ERR]  failed to launch plugin %s", in.Name)
 				return nil, fmt.Errorf("plugin failed to launch: %w", err)
