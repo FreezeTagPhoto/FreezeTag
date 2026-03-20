@@ -10,6 +10,10 @@
         "tag_all": {
             "type": "post_upload",
             "signature": "image_batch"
+        },
+        "foo_image": {
+            "type": "manual_trigger",
+            "signature": "single_image"
         }
     }
 }

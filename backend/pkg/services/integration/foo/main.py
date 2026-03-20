@@ -17,5 +17,10 @@ def tag_all(ids):
         actions.append(AddTagsAction(id, ["foo"]))
     return MultipartAction(*actions)
 
+@single_image
+def foo_image(img, id):
+    log(f"fooing image ID {id} on function 3")
+    return AddTagsAction(id, ["foo"])
+
 if __name__ == "__main__":
     freezetag.run()

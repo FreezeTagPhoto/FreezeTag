@@ -69,6 +69,6 @@ func TestLaunchNoPlugin(t *testing.T) {
 	imgRepo := mocks.NewMockImageRepository(t)
 	serv, err := InitDefaultPluginService("./test_resources", imgRepo)
 	assert.NoError(t, err)
-	_, err = serv.LaunchPlugin("bar", t.Context())
+	_, err = serv.LaunchPlugin("baz", t.Context())
 	assert.Error(t, err)
 }
