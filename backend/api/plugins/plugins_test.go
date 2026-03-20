@@ -7,12 +7,20 @@ import (
 	"testing"
 
 	"freezetag/backend/api"
+	jsMocks "freezetag/backend/mocks/JobService"
 	mocks "freezetag/backend/mocks/PluginService"
+	"freezetag/backend/pkg/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func emptyMockJobService(t *testing.T) services.JobService {
+	t.Helper()
+	js := jsMocks.NewMockJobService(t)
+	return js
+}
 
 func TestGetAllPlugins(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -22,7 +30,7 @@ func TestGetAllPlugins(t *testing.T) {
 	ctx.Request = req
 	m := mocks.NewMockPluginService(t)
 	m.EXPECT().Plugins().Return(nil)
-	pe := InitPluginEndpoint(m)
+	pe := InitPluginEndpoint(m, emptyMockJobService(t))
 	pe.ListAll(ctx)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
@@ -35,7 +43,7 @@ func TestDisablePlugin(t *testing.T) {
 	ctx.Request = req
 	m := mocks.NewMockPluginService(t)
 	m.EXPECT().SetEnabled("foo", false)
-	pe := InitPluginEndpoint(m)
+	pe := InitPluginEndpoint(m, emptyMockJobService(t))
 	pe.SetEnabled(ctx)
 	assert.Equal(t, http.StatusOK, w.Code)
 	var got api.PluginDisabledResponse
@@ -51,7 +59,7 @@ func TestEnablePlugin(t *testing.T) {
 	ctx.Request = req
 	m := mocks.NewMockPluginService(t)
 	m.EXPECT().SetEnabled("foo", true)
-	pe := InitPluginEndpoint(m)
+	pe := InitPluginEndpoint(m, emptyMockJobService(t))
 	pe.SetEnabled(ctx)
 	assert.Equal(t, http.StatusOK, w.Code)
 	var got api.PluginDisabledResponse
@@ -66,7 +74,7 @@ func TestDisablePluginNoName(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodPost, "/plugins?enabled=false", nil)
 	ctx.Request = req
 	m := mocks.NewMockPluginService(t)
-	pe := InitPluginEndpoint(m)
+	pe := InitPluginEndpoint(m, emptyMockJobService(t))
 	pe.SetEnabled(ctx)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
@@ -78,7 +86,7 @@ func TestDisablePluginBadEnabled(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodPost, "/plugins?plugin=foo&enabled=bar", nil)
 	ctx.Request = req
 	m := mocks.NewMockPluginService(t)
-	pe := InitPluginEndpoint(m)
+	pe := InitPluginEndpoint(m, emptyMockJobService(t))
 	pe.SetEnabled(ctx)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }

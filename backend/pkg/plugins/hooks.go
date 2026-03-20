@@ -38,6 +38,21 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 			}
 			return h.processImageBatch(hookName, ids, repo)
 		}
+	case ManualTrigger:
+		switch s {
+		case ProcessOneImage:
+			resolved, ok := in.(database.ImageId)
+			if !ok {
+				return nil, fmt.Errorf("invalid input type for manual_trigger,single_image")
+			}
+			return h.processOneImage(hookName, resolved, repo)
+		case ProcessImageBatch:
+			resolved, ok := in.([]database.ImageId)
+			if !ok {
+				return nil, fmt.Errorf("invalid input type for manual_trigger,image_batch")
+			}
+			return h.processImageBatch(hookName, resolved, repo)
+		}
 	}
 	return nil, fmt.Errorf("unknown hook type: %v,%v", t, s)
 }
