@@ -189,6 +189,7 @@ func TestPluginMetadataRequest(t *testing.T) {
 	repo := createMockRepo(t)
 	filename := "abc.png"
 	repo.EXPECT().GetImageMetadata(database.ImageId(76)).Return(imagedata.Metadata{FileName: &filename}, nil)
+	repo.EXPECT().GetImageResolution(database.ImageId(76)).Return(69, 420, nil)
 	repo.EXPECT().AddImageTags(database.ImageId(76), []string{"abc.png"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 76, Count: 1}})
 	manifest, err := ReadManifest("test_resources/tagger")
 	require.NoError(t, err)
@@ -227,7 +228,7 @@ func TestEveryHook(t *testing.T) {
 	})
 	repo := createMockRepo(t)
 	var in []repositories.ImageUploadSuccess
-	for i := range 11 {
+	for i := range 12 {
 		in = append(in, repositories.ImageUploadSuccess{Id: database.ImageId(i)})
 	}
 	repo.EXPECT().AddImageTags(database.ImageId(1), []string{"foo"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 1, Count: 1}})
@@ -239,6 +240,7 @@ func TestEveryHook(t *testing.T) {
 	repo.EXPECT().RetrieveImageTags(database.ImageId(1)).Return([]string{"foo"}, nil)
 	repo.EXPECT().RetrieveAllTags().Return(map[string]int64{"foo": 1, "bar": 2}, nil)
 	repo.EXPECT().GetQueryTagCounts(mock.Anything).Return(map[string]int64{"foo": 1, "bar": 2}, nil)
+	repo.EXPECT().RetrieveImageFile(database.ImageId(1)).Return([]byte("abcdefg"), nil)
 	manifest, err := ReadManifest("test_resources/every_hook")
 	require.NoError(t, err)
 	plugin, err := PluginFromManifest(manifest, t.Context(), repo)

@@ -118,3 +118,22 @@ func TestPostUploadPlugin(t *testing.T) {
 	<-job1.WaitFinished()
 	assert.Empty(t, job1.Failed)
 }
+
+func TestManualPlugin(t *testing.T) {
+	t.Cleanup(func() {
+		os.RemoveAll("integration/foo/.venv") //nolint:errcheck
+	})
+	i := mockImageRepo.NewMockImageRepository(t)
+	data, err := os.ReadFile("test_resources/gopher.webp")
+	require.NoError(t, err)
+	i.EXPECT().RetrieveThumbnail(mock.Anything, mock.Anything).Return(data, nil)
+	i.EXPECT().AddImageTags(database.ImageId(42), []string{"foo"}).Return(repositories.ImageTagResult{Success: &repositories.ImageTagSuccess{Id: 42, Count: 1}})
+	p, err := InitDefaultPluginService("integration", i)
+	require.NoError(t, err)
+	j := repositories.NewDefaultJobRepository()
+	jobService := InitDefaultJobService(j, i, p)
+	jobId := jobService.SchedulePluginHook("foo", "foo_image", database.ImageId(42))
+	job := jobService.GetBatch(jobId)
+	require.NotNil(t, job)
+	<-job.WaitFinished()
+}

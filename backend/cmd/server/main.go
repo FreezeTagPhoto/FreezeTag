@@ -189,9 +189,10 @@ func initPermissionsEndpoints(baseGroup gin.IRouter) {
 func initPluginEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	pluginGroup := baseGroup.Group("/plugins")
 	{
-		pe := plugins.InitPluginEndpoint(deps.pluginService)
+		pe := plugins.InitPluginEndpoint(deps.pluginService, deps.jobService)
 		pluginGroup.GET("/list", middleware.RequirePermission(data.ReadPlugins), pe.ListAll)
 		pluginGroup.POST("/enable", middleware.RequirePermission(data.WritePlugins), pe.SetEnabled)
+		pluginGroup.POST("/run", middleware.RequirePermission(data.WritePlugins), pe.RunManual)
 	}
 }
 

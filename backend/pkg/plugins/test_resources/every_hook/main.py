@@ -40,6 +40,11 @@ def every(image, id) -> HookAction:
             if res is None:
                 return Error("couldn't query tags")
             return NoAction()
+        case 11:
+            res = get_image_file(1)
+            if res is None:
+                return Error("couldn't get image bytes")
+            return NoAction()
     return NoAction()
 
 if __name__ == "__main__":

@@ -16,10 +16,10 @@ import (
 
 const (
 	max_height = 512
-	quality    = float32(0)
+	quality    = float32(0.5)
 
-	max_height_large = 0
-	quality_large    = float32(1)
+	max_height_large = 2160
+	quality_large    = float32(0.8)
 )
 
 type ImageUploadSuccess struct {
@@ -63,6 +63,8 @@ type ImageRepository interface {
 	SearchImageOrderedPaged(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, pageSize uint, page uint) ([]database.ImageId, error)
 	StoreImageBytes(data []byte, filename string) (database.ImageId, error)
 	RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error)
+	// Return the bytes of the entire image file referenced by id
+	RetrieveImageFile(id database.ImageId) ([]byte, error)
 	RetrieveAllTags() (map[string]int64, error)
 	RetrieveImageTags(id database.ImageId) ([]string, error)
 	AddTags(tags []string) TagResult
@@ -166,6 +168,18 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 
 func (repo *DefaultImageRepository) RetrieveThumbnail(id database.ImageId, quality uint) ([]byte, error) {
 	return repo.db.GetImageThumbnail(id, quality)
+}
+
+func (repo *DefaultImageRepository) RetrieveImageFile(id database.ImageId) ([]byte, error) {
+	filepath, err := repo.GetImageFilepath(id)
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (repo *DefaultImageRepository) SearchImage(query queries.DatabaseQuery) ([]database.ImageId, error) {

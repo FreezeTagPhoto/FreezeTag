@@ -57,6 +57,7 @@ type JobService interface {
 	AllJobs() []JobSummary
 	RunUploadJob(files []FileJob) uuid.UUID
 	SchedulePostUploads(upload uuid.UUID)
+	SchedulePluginHook(plugin string, hook string, input any) uuid.UUID
 }
 
 type defaultJobService struct {
@@ -149,6 +150,38 @@ func (d dummy) ID() int {
 	return d.id
 }
 
+// manual hooks run outside the "one plugin at a time" system
+// since they only run one job, and they should run when the user wants
+func (s *defaultJobService) SchedulePluginHook(plugin string, hook string, input any) uuid.UUID {
+	return s.jobRepository.Create(
+		"Manual plugin run "+plugin+":"+hook,
+		context.Background(),
+		[]repositories.JobInput{pluginRun{
+			Name:  plugin,
+			Hook:  hook,
+			Input: input,
+			id:    1,
+		}},
+		repositories.Job(func(in pluginRun, c context.Context, _ func(string)) (plugins.PluginResult, error) {
+			log.Printf("[INFO] launching plugin %s", in.Name)
+			p, err := s.plugins.LaunchPlugin(in.Name, c)
+			defer func() {
+				log.Printf("[INFO] shutting down plugin %s", in.Name)
+				err := p.Shutdown()
+				if err != nil {
+					log.Printf("[WARN] plugin failed to shut down gracefully: %v", err)
+				}
+				log.Printf("[INFO] shut down plugin %s", in.Name)
+			}()
+			if err != nil {
+				log.Printf("[ERR]  failed to launch plugin %s", in.Name)
+				return nil, fmt.Errorf("plugin failed to launch: %w", err)
+			}
+			return p.RunHook(in.Hook, in.Input, s.imageRepository)
+		}),
+	)
+}
+
 func (s *defaultJobService) SchedulePostUploads(upload uuid.UUID) {
 	batch := s.GetBatch(upload)
 	s.jobRepository.Create(
@@ -217,6 +250,7 @@ func (s *defaultJobService) SchedulePostUploads(upload uuid.UUID) {
 							status("Waiting")
 							pluginLock.Lock()
 							if c.Err() != nil {
+								pluginLock.Unlock()
 								return nil, fmt.Errorf("cancelled")
 							}
 							log.Printf("[INFO] launching plugin %s", in.Name)
