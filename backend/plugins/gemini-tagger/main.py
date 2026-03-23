@@ -3,8 +3,8 @@ import time
 from PIL import Image
 
 import freezetag
-from freezetag.hooks import single_image, init_func, AddTagsAction
-from freezetag.message import log
+from freezetag.hooks import single_image, init_func, AddTagsAction, Error
+from freezetag.message import log, message
 from google import genai
 from dotenv import load_dotenv, find_dotenv
 from google.genai import types
@@ -26,16 +26,15 @@ def init():
         load_dotenv(find_dotenv())
         api_token = os.getenv("GEMINI_API_KEY")
         if not api_token:
-            log("GEMINI_API_KEY not found in environment variables.")
-            return
+            return Error("GEMINI_API_KEY not found in environment variables.")
         client = genai.Client(api_key=api_token)
     except Exception as e:
-        log(f"Error initializing Gemini Tagger plugin: {e}")
-        return
+        return Error(f"Error initializing Gemini client: {e}")
+    log("Gemini Tagger plugin initialized successfully.")
         
 
 @single_image
-def tag_image(img: Image.Image, id: int) -> AddTagsAction:
+def tag_image(img: Image.Image, id: int):
     global client, image_count
     image_count += 1
     if image_count % 15 == 0:
@@ -43,9 +42,7 @@ def tag_image(img: Image.Image, id: int) -> AddTagsAction:
         time.sleep(60)
     assert client is not None, "Gemini client not initialized"
     try:
-        
         img = _compress_image(img)
-
         response = client.models.generate_content(
             model="gemini-3.1-flash-lite-preview", 
             contents=[prompt, img],
@@ -54,15 +51,12 @@ def tag_image(img: Image.Image, id: int) -> AddTagsAction:
                 candidate_count=1
             ),
         )
-        
         raw_text = response.text.strip()
         tags_list = [tag.strip() for tag in raw_text.split(",") if tag.strip()]
-        
         log(f"Generated {len(tags_list)} tags for image {id}")
         return AddTagsAction(id, tags_list)
     except Exception as e:
-        log(f"Error processing image {id}: {e}")
-        return AddTagsAction(id, [])
+        return Error(f"Error processing image {id}: {e}")
 
 def _compress_image(img: Image.Image) -> types.Part:
     img.thumbnail((512, 512))
