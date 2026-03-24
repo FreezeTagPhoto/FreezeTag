@@ -224,15 +224,81 @@
 
 .tagWrap {
     display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.tagPillsFadeWrap {
+    position: relative;
+}
+
+.tagPillsFadeWrap::before,
+.tagPillsFadeWrap::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 24px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    z-index: 2;
+}
+
+.tagPillsFadeWrap::before {
+    top: 0;
+    background: linear-gradient(
+        to bottom,
+        var(--mantle) 0%,
+        rgba(0, 0, 0, 0) 100%
+    );
+}
+
+.tagPillsFadeWrap::after {
+    bottom: 0;
+    background: linear-gradient(
+        to top,
+        var(--mantle) 0%,
+        rgba(0, 0, 0, 0) 100%
+    );
+}
+
+.tagPillsFadeWrap[data-fade-top="1"]::before {
+    opacity: 1;
+}
+
+.tagPillsFadeWrap[data-fade-bottom="1"]::after {
+    opacity: 1;
+}
+
+.tagPillsWrap {
+    display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+    padding-top: 10px;
+    /* margin-top: -5px; */
+    margin-top: 0px;
+    max-height: calc(10px + 50px + 15px + 35px);
+    overflow: hidden auto;
 
     word-break: normal;
     overflow-wrap: normal;
-
     min-width: 0;
     max-width: 100%;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface1) var(--mantle);
+}
+
+.tagPillsWrap::-webkit-scrollbar {
+    height: 6px;
+}
+.tagPillsWrap::-webkit-scrollbar-thumb {
+    background: var(--surface1);
+    border-radius: 999px;
 }
 
 .tagPill {

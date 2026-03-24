@@ -1,6 +1,7 @@
 "use client";
 
 import {
+    useEffect,
     useLayoutEffect,
     useRef,
     useState,
@@ -180,6 +181,45 @@ export default function MetadataSidebar({
         window.addEventListener("resize", compute);
         return () => window.removeEventListener("resize", compute);
     }, [showTagDropdown, viewerRef]);
+
+    const tagPillsScrollRef = useRef<HTMLDivElement>(null);
+    const [tagPillsFade, setTagPillsFade] = useState({
+        top: false,
+        bottom: false,
+    });
+
+    const syncTagPillsFade = () => {
+        const el = tagPillsScrollRef.current;
+        if (!el) {
+            setTagPillsFade({ top: false, bottom: false });
+            return;
+        }
+        const overflow = el.scrollHeight > el.clientHeight + 1;
+        if (!overflow) {
+            setTagPillsFade({ top: false, bottom: false });
+            return;
+        }
+        const atTop = el.scrollTop <= 1;
+        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+        setTagPillsFade((prev) => {
+            const next = { top: !atTop, bottom: !atBottom };
+            return prev.top === next.top && prev.bottom === next.bottom
+                ? prev
+                : next;
+        });
+    };
+
+    useEffect(() => {
+        const el = tagPillsScrollRef.current;
+        if (!el) return;
+        const raf = requestAnimationFrame(syncTagPillsFade);
+        const ro = new ResizeObserver(() => syncTagPillsFade());
+        ro.observe(el);
+        return () => {
+            cancelAnimationFrame(raf);
+            ro.disconnect();
+        };
+    }, [currentTags]);
 
     const stopClick = (e: ReactMouseEvent<HTMLElement>) => e.stopPropagation();
 
@@ -389,40 +429,66 @@ export default function MetadataSidebar({
                                 )}
 
                                 <div className={styles.tagWrap}>
-                                    {(currentTags ?? []).map((t) => (
-                                        <span
-                                            key={t}
-                                            className={styles.tagTokenWrap}
+                                    <div
+                                        className={styles.tagPillsFadeWrap}
+                                        data-fade-top={
+                                            tagPillsFade.top ? "1" : "0"
+                                        }
+                                        data-fade-bottom={
+                                            tagPillsFade.bottom ? "1" : "0"
+                                        }
+                                    >
+                                        <div
+                                            ref={tagPillsScrollRef}
+                                            className={styles.tagPillsWrap}
+                                            onScroll={syncTagPillsFade}
                                         >
-                                            <Pill
-                                                label={t}
-                                                variant="token"
-                                                className={styles.tagPill}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onSearchTag?.(t);
-                                                }}
-                                            />
-                                            <button
-                                                className={styles.tagTokenClose}
-                                                type="button"
-                                                aria-label={`Remove tag ${t}`}
-                                                title="Remove"
-                                                disabled={tagMutating}
-                                                onMouseDown={(e) =>
-                                                    e.preventDefault()
-                                                }
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    void removeTagFromSelected(
-                                                        t,
-                                                    );
-                                                }}
-                                            >
-                                                <X className={styles.iconSm} />
-                                            </button>
-                                        </span>
-                                    ))}
+                                            {(currentTags ?? []).map((t) => (
+                                                <span
+                                                    key={t}
+                                                    className={
+                                                        styles.tagTokenWrap
+                                                    }
+                                                >
+                                                    <Pill
+                                                        label={t}
+                                                        variant="token"
+                                                        className={
+                                                            styles.tagPill
+                                                        }
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onSearchTag?.(t);
+                                                        }}
+                                                    />
+                                                    <button
+                                                        className={
+                                                            styles.tagTokenClose
+                                                        }
+                                                        type="button"
+                                                        aria-label={`Remove tag ${t}`}
+                                                        title="Remove"
+                                                        disabled={tagMutating}
+                                                        onMouseDown={(e) =>
+                                                            e.preventDefault()
+                                                        }
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            void removeTagFromSelected(
+                                                                t,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <X
+                                                            className={
+                                                                styles.iconSm
+                                                            }
+                                                        />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
 
                                     {!addOpen ? (
                                         <button
