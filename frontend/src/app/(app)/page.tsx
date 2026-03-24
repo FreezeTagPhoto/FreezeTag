@@ -13,6 +13,8 @@ import MassTaggingGallery from "@/components/Gallery/MassTaggingGallery/MassTagg
 import TagChangeButton from "@/components/UI/TagChangeButton/TagChangeButton";
 import FileDeleter from "@/api/files/filedeleter";
 import FreezeTagSet from "@/common/freezetag/freezetagset";
+import PluginRunner from "@/api/plugins/pluginrunner";
+import ManualRunMenu from "@/components/Plugins/ManualRunMenu/ManualRunMenu";
 
 type TagInfo = { name: string; count?: number };
 
@@ -52,6 +54,7 @@ export default function Home() {
     const [selectedIds, setSelectedIds] = useState<FreezeTagSet<number>>(
         new FreezeTagSet(),
     );
+    const [selectingPlugin, setSelectingPlugin] = useState<boolean>(false);
 
     useEffect(() => {
         const q = searchParams.get("q");
@@ -241,6 +244,15 @@ export default function Home() {
                                     >
                                         Delete Images
                                     </button>
+                                    <button
+                                        type="button"
+                                        className={styles.select_button}
+                                        onClick={async () => {
+                                            setSelectingPlugin(true);
+                                        }}
+                                    >
+                                        Run Plugins
+                                    </button>
                                 </div>
                                 <div className={styles.gallery}>
                                     <MassTaggingGallery
@@ -274,6 +286,21 @@ export default function Home() {
                             onDelete={(_deletedId) => setSearchTerm("" + query)} // Forces the query to recompute and fetch new IDs
                         />
                     </div>
+                )}
+
+                {selectingPlugin && (
+                    <ManualRunMenu
+                        onClose={() => setSelectingPlugin(false)}
+                        onPluginChosen={(plugin_name, hook_name) => {
+                            PluginRunner(
+                                plugin_name,
+                                hook_name,
+                                selectedIds.toArray(),
+                            );
+                            router.replace("/jobs");
+                        }}
+                        hookSignature="image_batch"
+                    />
                 )}
             </main>
         </>
