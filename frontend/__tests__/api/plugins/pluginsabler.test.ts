@@ -5,7 +5,7 @@
 import { Ok, Err } from "@/common/result";
 import PluginsAbler from "@/api/plugins/pluginsabler";
 
-describe("Plugins Lister", () => {
+describe("Plugins Abler", () => {
     it("should pass full integration test", async () => {
         global.fetch = jest.fn((url) => {
             expect(url).toStrictEqual(
