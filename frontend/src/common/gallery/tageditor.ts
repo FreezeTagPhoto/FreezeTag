@@ -180,6 +180,15 @@ export function useTagEditor({
                 return prev.includes(tag) ? prev : [...prev, tag];
             });
 
+            // notify the rest of the app that a new tag was created
+            if (typeof window !== "undefined") {
+                window.dispatchEvent(
+                    new CustomEvent("freezetag:tag-created", {
+                        detail: { tag },
+                    }),
+                );
+            }
+
             if (res.value.length > 0) setTagMutateInfo(res.value.join(" • "));
 
             closeAddEditor();
