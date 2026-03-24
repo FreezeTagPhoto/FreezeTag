@@ -323,7 +323,7 @@
     .bar {
         grid-template-columns: 1fr;
         gap: 12px;
-        padding: 10px var(--page-pad-x);
+        padding: 10px 16px;
     }
 
     .pills {
@@ -337,7 +337,7 @@
 
     .menuDropdown {
         margin-right: 0;
-        max-width: calc(100vw - (2 * var(--page-pad-x)));
+        max-width: calc(100vw - (2 * 16px));
     }
 
     .sortGridDropdown {
@@ -351,16 +351,16 @@
 
 @media (max-width: 640px) {
     .bar {
-        padding: 8px var(--page-pad-x);
+        padding: 8px 16px 14px;
     }
 
     .menuDropdown {
-        width: min(320px, calc(100vw - (2 * var(--page-pad-x))));
+        width: min(320px, calc(100vw - (2 * 16px)));
     }
 
     .pillMosaicWrap {
         width: 100%;
-        max-width: calc(100vw - (2 * var(--page-pad-x)));
+        max-width: calc(100vw - (2 * 16px));
     }
 }
 
