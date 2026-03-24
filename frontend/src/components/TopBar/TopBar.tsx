@@ -210,6 +210,7 @@ export default function TopBar({
                 enabled={!multiSelect}
                 value={searchTerm}
                 onChange={onSearchTermChange}
+                allTags={tags.map((t) => t.name)}
             />
 
             <div className={styles.pills}>

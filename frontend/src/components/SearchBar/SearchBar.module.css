@@ -276,6 +276,12 @@
     padding-top: 10px;
 }
 
+@media (max-width: 768px) {
+    .hintRow {
+        display: none;
+    }
+}
+
 .hintRow code {
     font-family:
         ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,

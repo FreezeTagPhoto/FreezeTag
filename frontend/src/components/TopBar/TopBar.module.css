@@ -363,3 +363,10 @@
         max-width: calc(100vw - (2 * var(--page-pad-x)));
     }
 }
+
+@media (max-width: 768px) {
+    .pills {
+        flex-wrap: nowrap;
+        justify-content: center;
+    }
+}
