@@ -73,10 +73,10 @@ export default function Home() {
                         </button>
                         <div
                             className={`${styles.plugin_item} ${styles.plugin_name}`}
-                            title={plugin.name}
+                            title={plugin.friendly_name}
                         >
                             <p className={styles.plugin_name_preview}>
-                                {plugin.name}
+                                {plugin.friendly_name}
                             </p>
                         </div>
                         <p
