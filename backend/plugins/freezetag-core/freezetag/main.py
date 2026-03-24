@@ -1,5 +1,6 @@
 
 from .protocol import read_message, write_message, MessageType, Message
+from .hooks import NoAction
 from .message import log
 from . import hooks
 
@@ -43,7 +44,10 @@ def run():
                         except Exception as error:
                             write_message(Message(MessageType.ERR, f'exception during hook: {error}'))
                             continue
-                        write_message(action)
+                        if action is not None:
+                            write_message(action)
+                        else:
+                            write_message(NoAction())
                     case "image_batch":
                         hook = msg.contents["hook"]
                         ids = msg.contents["ids"]
@@ -57,7 +61,10 @@ def run():
                         except Exception as error:
                             write_message(Message(MessageType.ERR, f'exception during hook: {error}'))
                             continue
-                        write_message(action)
+                        if action is not None:
+                            write_message(action)
+                        else:
+                            write_message(NoAction())
                     case _:
                         write_message(Message(MessageType.ERR, f'unsupported hook signature'))
             case _:

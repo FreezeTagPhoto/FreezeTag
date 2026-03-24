@@ -59,6 +59,9 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 
 func (h *HookedPlugin) processOneImage(hookName string, id database.ImageId, repo repositories.ImageRepository) (PluginResult, error) {
 	webp, err := repo.RetrieveThumbnail(id, 2)
+	if webp == nil {
+		return map[string]any{"skipped": true}, nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving image for plugin: %w", err)
 	}
@@ -275,6 +278,9 @@ func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessa
 		webp, err := repo.RetrieveThumbnail(id, 2)
 		if err != nil {
 			return err
+		}
+		if webp == nil {
+			return fmt.Errorf("no image")
 		}
 		pl.IO().In <- PluginMessage{
 			PUT,

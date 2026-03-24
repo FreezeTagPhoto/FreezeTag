@@ -271,6 +271,7 @@ func insertTestImage(t *testing.T, db ImageDatabase) ImageId {
 }
 
 func insertTestImageNamed(t *testing.T, db ImageDatabase, name string) ImageId {
+	t.Helper()
 	id, err := db.AddImage(name, imagedata.Data{
 		PixelsRGBA:  []byte{},
 		Width:       1280,
