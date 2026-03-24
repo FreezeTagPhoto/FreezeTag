@@ -12,6 +12,7 @@ type Props = {
     onChange: (v: string) => void;
     enabled: boolean;
     placeholder?: string;
+    allTags?: string[];
 };
 
 type Suggestion =
@@ -34,7 +35,11 @@ function getActiveSegment(input: string, caret: number) {
     return { segStart, segEnd, trimmedStart, raw, trimmed };
 }
 
-function buildSuggestions(input: string, caret: number): Suggestion[] {
+function buildSuggestions(
+    input: string,
+    caret: number,
+    allTags: string[] = [],
+): Suggestion[] {
     const { trimmed } = getActiveSegment(input, caret);
 
     if (!trimmed) return [];
@@ -51,10 +56,32 @@ function buildSuggestions(input: string, caret: number): Suggestion[] {
         insert: `${k}=`,
     }));
 
-    return [
-        ...keyMatches,
-        { kind: "tag", label: `tag: ${trimmed}`, insert: trimmed },
-    ];
+    const prefixMatches = allTags.filter((t) =>
+        t.toLowerCase().startsWith(needle),
+    );
+    const substringMatches = allTags.filter(
+        (t) =>
+            !t.toLowerCase().startsWith(needle) &&
+            t.toLowerCase().includes(needle),
+    );
+    const tagMatches = [...prefixMatches, ...substringMatches]
+        .slice(0, Math.max(0, 8 - keyMatches.length))
+        .map((t) => ({
+            kind: "tag" as const,
+            label: t,
+            insert: t,
+        }));
+
+    // const hasExactMatch = tagMatches.some(
+    //     (t) => t.insert.toLowerCase() === needle,
+    // );
+    // const freeTextSuggestion =
+    //     allTags.length === 0 || !hasExactMatch
+    //         ? [{ kind: "tag" as const, label: `tag: ${trimmed}`, insert: trimmed }]
+    //         : [];
+
+    // return [...keyMatches, ...tagMatches, ...freeTextSuggestion];
+    return [...keyMatches, ...tagMatches];
 }
 
 function removeTokenFromQuery(
@@ -90,6 +117,7 @@ export default function SearchBar({
     onChange,
     enabled,
     placeholder = "Search...",
+    allTags = [],
 }: Props) {
     const wrapRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -107,8 +135,8 @@ export default function SearchBar({
     const rawSuggestions = useMemo(() => {
         if (!suggestionsEnabled) return [];
         if (manualClosed) return [];
-        return buildSuggestions(value, caret);
-    }, [suggestionsEnabled, manualClosed, value, caret]);
+        return buildSuggestions(value, caret, allTags);
+    }, [suggestionsEnabled, manualClosed, value, caret, allTags]);
 
     const suggestions = dropdownOpen ? rawSuggestions : [];
 
@@ -260,7 +288,7 @@ export default function SearchBar({
                                     {s.label}
                                 </span>
                                 <span className={styles.dropdownMeta}>
-                                    {s.kind === "key" ? "filter" : "text"}
+                                    {s.kind === "key" ? "filter" : "tag"}
                                 </span>
                             </button>
                         ))}
