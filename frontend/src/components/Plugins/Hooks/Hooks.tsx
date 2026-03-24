@@ -19,10 +19,12 @@ export default function Hooks({ onClose, plugin }: HooksProps) {
                         <div key={name} className={`${styles.hooks_row}`}>
                             <div
                                 className={`${styles.hooks_item} ${styles.text}`}
-                                title={name}
+                                title={hook.friendly_name}
                             >
                                 <FishingHook className={styles.icon} />
-                                <p className={styles.text_preview}>{name}</p>
+                                <p className={styles.text_preview}>
+                                    {hook.friendly_name}
+                                </p>
                             </div>
                             <div
                                 className={`${styles.hooks_item} ${styles.text}`}
