@@ -119,6 +119,23 @@ export default function Home() {
         };
     }, []);
 
+    useEffect(() => {
+        const onTagCreated = (e: Event) => {
+            const tag = (e as CustomEvent<{ tag: string }>).detail?.tag;
+            if (!tag) return;
+            setAllTags((prev) =>
+                prev.includes(tag) ? prev : [...prev, tag],
+            );
+            setTagCounts((prev) => ({
+                ...prev,
+                [tag]: (prev[tag] ?? 0) + 1,
+            }));
+        };
+        window.addEventListener("freezetag:tag-created", onTagCreated);
+        return () =>
+            window.removeEventListener("freezetag:tag-created", onTagCreated);
+    }, []);
+
     // Load tag counts for the currently visible images
     useEffect(() => {
         let cancelled = false;
