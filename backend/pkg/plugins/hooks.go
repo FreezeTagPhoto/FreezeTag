@@ -37,8 +37,10 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 				ids[i] = res.Id
 			}
 			return h.processImageBatch(hookName, ids, repo)
+		case ProcessFormData:
+			return nil, fmt.Errorf("form_data not legal for post_upload")
 		}
-	case ManualTrigger:
+	case ManualTrigger, GenerateForm:
 		switch s {
 		case ProcessOneImage:
 			resolved, ok := in.(database.ImageId)
@@ -52,6 +54,9 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 				return nil, fmt.Errorf("invalid input type for manual_trigger,image_batch")
 			}
 			return h.processImageBatch(hookName, resolved, repo)
+		case ProcessFormData:
+			// TODO: Fill this in 
+			return nil, fmt.Errorf("manual_trigger,form_data not implemented")
 		}
 	}
 	return nil, fmt.Errorf("unknown hook type: %v,%v", t, s)
@@ -96,6 +101,8 @@ func (h *HookedPlugin) processImageBatch(hookName string, ids []database.ImageId
 	}
 	return res, nil
 }
+
+// TODO: Add processFormData
 
 // loop and handle plugin GETs until the next plugin PUT, then return it
 // errors marked with FATAL should stop further processing (the plugin is in an unworkable state)

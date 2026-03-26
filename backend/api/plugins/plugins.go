@@ -73,6 +73,7 @@ func (pe PluginEndpoint) SetEnabled(c *gin.Context) {
 // @success     202 {object} string "the UUID of the created job for the plugin run"
 // @failure     400 {object} api.BadRequestResponse
 func (pe PluginEndpoint) RunManual(c *gin.Context) {
+	// TODO: This has to be extended to support FormData signatures as well as GenerateForm hook types
 	plug := c.Query("plugin")
 	hook := c.Query("hook")
 	info := pe.service.PluginInfo(plug)

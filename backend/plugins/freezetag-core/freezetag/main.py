@@ -65,6 +65,21 @@ def run():
                             write_message(action)
                         else:
                             write_message(NoAction())
+                    case "form_data":
+                        # TODO: this is for taking in form data from the server
+                        write_message(Message(MessageType.ERR, f'unimplemented form_data hook'))
+                        continue
+
+                        # postlude
+                        try:
+                            action = hook_func(ids)
+                        except Exception as error:
+                            write_message(Message(MessageType.ERR, f'exception during hook: {error}'))
+                            continue
+                        if action is not None:
+                            write_message(action)
+                        else:
+                            write_message(NoAction())
                     case _:
                         write_message(Message(MessageType.ERR, f'unsupported hook signature'))
             case _:
