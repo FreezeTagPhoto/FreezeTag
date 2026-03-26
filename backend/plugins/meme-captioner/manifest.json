@@ -1,0 +1,18 @@
+{
+  "name": "meme-captioner",
+  "friendly_name": "Meme Captioner (Test Form Plugins)",
+  "main_file": "main.py",
+  "hooks": {
+    "make_caption_form": {
+      "friendly_name": "Make Form for Captioning",
+      "type": "generate_form",
+      "signature": "single_image"
+    },
+    "process_caption_form": {
+      "friendly_name": "Add Caption To Image",
+      "type": "manual_trigger",
+      "signature": "form_data"
+    }
+  },
+  "version": "0.1.0"
+}
