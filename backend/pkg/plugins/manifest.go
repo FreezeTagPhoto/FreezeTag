@@ -14,6 +14,10 @@ type PluginHook struct {
 	Signature    HookSignature `json:"signature"`
 }
 
+type PluginConfig struct {
+	File string `json:"file"`
+}
+
 type PluginManifest struct {
 	Name          string                `json:"name"`
 	FriendlyName  *string               `json:"friendly_name,omitempty"`
@@ -23,6 +27,7 @@ type PluginManifest struct {
 	MainFile      string                `json:"main_file"`
 	Requirements  *string               `json:"requirements"`
 	PythonVersion *string               `json:"python_version"`
+	ConfigFile    *string               `json:"config_file"`
 	Disabled      bool                  `json:"default_disabled"`
 }
 

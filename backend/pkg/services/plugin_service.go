@@ -9,12 +9,16 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+
+	toml "github.com/pelletier/go-toml/v2"
 )
 
 type PluginService interface {
 	Plugins() []plugins.PluginInfo
 	PluginInfo(plugin string) *plugins.PluginInfo
 	SetEnabled(plugin string, enabled bool)
+	ReadConfiguration(plugin string) (map[string]any, error)
+	ChangeConfiguration(plugin string, changes map[string]any) error
 	LaunchPlugin(plugin string, ctx context.Context) (*plugins.HookedPlugin, error)
 }
 
@@ -91,6 +95,98 @@ func (ps defaultPluginService) SetEnabled(plugin string, enabled bool) {
 		return
 	}
 	man.Disabled = !enabled
+}
+
+func (ps defaultPluginService) getConfigFile(plugin string) (string, error) {
+	manifest, exists := ps.plugins[plugin]
+	if !exists {
+		return "", fmt.Errorf("plugin %v doesn't exist", plugin)
+	}
+	if manifest.ConfigFile == nil {
+		return "", nil
+	}
+	return path.Join(manifest.AbsPath, *manifest.ConfigFile), nil
+}
+
+func readConfig(file string) (map[string]any, error) {
+	configContents, err := os.ReadFile(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read plugin config: %w", err)
+	}
+	var config map[string]any
+	err = toml.Unmarshal(configContents, &config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize plugin config: %w", err)
+	}
+	return config, nil
+}
+
+func writeConfig(file string, config map[string]any) error {
+	configContents, err := toml.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("failed to serialize plugin config: %w", err)
+	}
+	err = os.WriteFile(file, configContents, 0666)
+	if err != nil {
+		return fmt.Errorf("failed to write plugin config: %w", err)
+	}
+	return nil
+}
+
+func (ps defaultPluginService) ChangeConfiguration(plugin string, changes map[string]any) error {
+	configFile, err := ps.getConfigFile(plugin)
+	if err != nil {
+		return err
+	}
+	if configFile == "" {
+		return fmt.Errorf("plugin doesn't have any config fields")
+	}
+	config, err := readConfig(configFile)
+	if err != nil {
+		return err
+	}
+	for field, value := range changes {
+		_, exists := config[field]
+		if !exists {
+			return fmt.Errorf("plugin %v doesn't have config field %v", plugin, field)
+		}
+		config[field] = value
+	}
+	err = writeConfig(configFile, config)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ps defaultPluginService) ReadConfiguration(plugin string) (map[string]any, error) {
+	configFile, err := ps.getConfigFile(plugin)
+	if err != nil {
+		return nil, err
+	}
+	if configFile == "" {
+		return nil, nil
+	}
+	config, err := readConfig(configFile)
+	if err != nil {
+		return nil, err
+	}
+	// put protection on fields
+	protection, exists := config["protected_fields"]
+	if exists {
+		fields, ok := protection.([]any)
+		if !ok {
+			return nil, fmt.Errorf("protected fields wasn't a list")
+		}
+		for _, field := range fields {
+			protected_field, ok := field.(string)
+			if !ok {
+				return nil, fmt.Errorf("protected field wasn't a string")
+			}
+			delete(config, protected_field)
+		}
+	}
+	return config, nil
 }
 
 func (ps defaultPluginService) LaunchPlugin(plugin string, ctx context.Context) (*plugins.HookedPlugin, error) {

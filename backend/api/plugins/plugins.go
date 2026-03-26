@@ -120,3 +120,61 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 	id := pe.jobs.SchedulePluginHook(plug, hook, input)
 	c.JSON(http.StatusAccepted, id)
 }
+
+// @summary     Get Plugin Configuration
+// @description Get the configuration fields of a plugin
+// @tags        plugins
+// @produce     application/json
+// @router      /plugins/config [get]
+// @param       plugin query string true "plugin to read configuration from"
+// @success     200 {object} map[string]any "plugin configuration"
+// @failure     404 {object} api.NotFoundResponse
+// @failure     500 {object} api.ServerErrorResponse
+func (pe PluginEndpoint) ReadConfig(c *gin.Context) {
+	plug := c.Query("plugin")
+	plugin := pe.service.PluginInfo(plug)
+	if plugin == nil {
+		c.JSON(http.StatusNotFound, api.NotFoundResponse{Error: fmt.Sprintf("plugin %v doesn't exist", plug)})
+		return
+	}
+	config, err := pe.service.ReadConfiguration(plug)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	if config == nil {
+		config = map[string]any{}
+	}
+	c.JSON(http.StatusOK, config)
+}
+
+// @summary     Change Plugin Config
+// @description Change a map of plugin config values
+// @tags        plugins
+// @produce     application/json
+// @router      /plugins/config [post]
+// @param       plugin query string true "plugin to change"
+// @param       updates body map[string]any true "field updates"
+// @success     200 {object} string
+// @failure     404 {object} api.NotFoundResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+func (pe PluginEndpoint) ChangeConfig(c *gin.Context) {
+	plug := c.Query("plugin")
+	plugin := pe.service.PluginInfo(plug)
+	if plugin == nil {
+		c.JSON(http.StatusNotFound, api.NotFoundResponse{Error: fmt.Sprintf("plugin %v doesn't exist", plug)})
+		return
+	}
+	var changes map[string]any
+	if err := c.BindJSON(&changes); err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("failed to parse changes, expected a map of new values")})
+		return
+	}
+	err := pe.service.ChangeConfiguration(plug, changes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, "changed configuration")
+}

@@ -1,7 +1,12 @@
 
 from PIL import Image
-import datetime, io
+import datetime, io, tomli
 from .protocol import read_message, write_message, Message, MessageType
+
+def read_config(file: str) -> dict[str, object]:
+    with open(file, "rb") as f:
+        config = tomli.load(f)
+        return config
 
 def log(msg: str):
     write_message(Message(MessageType.LOG, msg.encode("utf-8")))
