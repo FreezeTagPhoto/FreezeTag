@@ -25,9 +25,9 @@ type PluginManifest struct {
 	Hooks         map[string]PluginHook `json:"hooks"`
 	AbsPath       string                `json:"-"`
 	MainFile      string                `json:"main_file"`
-	Requirements  *string               `json:"requirements"`
-	PythonVersion *string               `json:"python_version"`
-	ConfigFile    *string               `json:"config_file"`
+	Requirements  *string               `json:"requirements,omitempty"`
+	PythonVersion *string               `json:"python_version,omitempty"`
+	ConfigFile    *string               `json:"config_file,omitempty"`
 	Disabled      bool                  `json:"default_disabled"`
 }
 
@@ -37,6 +37,7 @@ type PluginInfo struct {
 	Version      string                `json:"version"`
 	Enabled      bool                  `json:"enabled"`
 	Hooks        map[string]PluginHook `json:"hooks"`
+	Configurable bool                  `json:"configurable"`
 }
 
 type HookInfo struct {

@@ -6,13 +6,15 @@ import { Plugin } from "@/api/plugins/pluginshelpers";
 import PluginsLister from "@/api/plugins/pluginslister";
 import { UserHasPerm } from "@/api/permissions/permshelpers";
 import PluginsAbler from "@/api/plugins/pluginsabler";
-import { FishingHook, History, Power } from "lucide-react";
+import { FishingHook, History, Power, Settings } from "lucide-react";
 import Hooks from "@/components/Plugins/Hooks/Hooks";
+import Config from "@/components/Plugins/Configuration/Configuration"
 
 export default function Home() {
     const [plugins, setPlugins] = useState<Plugin[]>([]);
 
     const [viewingHooks, setViewingHooks] = useState<Plugin | undefined>();
+    const [viewingConfig, setViewingConfig] = useState<Plugin | undefined>();
 
     const currentUser = useContext(UserContext);
     const userCanChangePlugins = UserHasPerm(currentUser, "write:plugins");
@@ -94,6 +96,17 @@ export default function Home() {
                             <FishingHook className={styles.icon} />
                             <p className={styles.plugin_item_label}>Hooks</p>
                         </button>
+                        {
+                            plugin.configurable &&
+                            <button
+                                type="button"
+                                className={`${styles.plugin_item} ${styles.plugin_item_button}`}
+                                onClick={() => setViewingConfig(plugin)}
+                            >
+                                <Settings className={styles.icon} />
+                                <p className={styles.plugin_item_label}>Configure</p>
+                            </button>
+                        }
                     </div>
                 ))}
             </div>
@@ -101,6 +114,12 @@ export default function Home() {
                 <Hooks
                     onClose={() => setViewingHooks(undefined)}
                     plugin={viewingHooks}
+                />
+            )}
+            {viewingConfig && (
+                <Config
+                    onClose={() => setViewingConfig(undefined)}
+                    plugin={viewingConfig}
                 />
             )}
         </main>

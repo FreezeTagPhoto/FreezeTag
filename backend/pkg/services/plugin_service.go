@@ -70,6 +70,7 @@ func (ps defaultPluginService) Plugins() []plugins.PluginInfo {
 			Version:      v.Version,
 			Enabled:      !v.Disabled,
 			Hooks:        v.Hooks,
+			Configurable: v.ConfigFile != nil,
 		})
 	}
 	return info

@@ -1,0 +1,3 @@
+message = 'Hello, World!'
+super_secret_password = 'bleh'
+protected_fields = ['super_secret_password']

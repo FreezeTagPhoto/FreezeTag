@@ -30,7 +30,7 @@ export async function GetPluginConfig(
 
 export async function SetPluginConfig(
     plugin: string,
-    changes: Map<string, any>
+    changes: Object
 ): Promise<PluginSetConfigResult> {
     return set_plugin_config_with_handler(
         ApiHandler<PluginSetConfigResponse>(
@@ -58,6 +58,7 @@ async function get_plugin_config_with_handler(
                     }).error
         })
     }
+    request_result.value = new Map(Object.entries(request_result.value))
     return request_result
 }
 
@@ -65,7 +66,7 @@ async function set_plugin_config_with_handler(
     handler: (
         data: BodyInit
     ) => Promise<Result<PluginSetConfigResponse, RequestError>>,
-    changes: Map<string, any>,
+    changes: Object,
 ): Promise<PluginSetConfigResult> {
     const request_result = await handler(
         `${JSON.stringify(changes)}`
