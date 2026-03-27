@@ -59,7 +59,7 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 			if !ok {
 				return nil, fmt.Errorf("invalid input type for manual_trigger,form_data")
 			}
-			return h.processFormData(hookName, resolved, repo);
+			return h.processFormData(hookName, resolved, repo)
 		}
 	}
 	return nil, fmt.Errorf("unknown hook type: %v,%v", t, s)
@@ -238,7 +238,7 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 		if err != nil {
 			return nil, err
 		}
-		if !(strings.HasPrefix(form, "<form>") && strings.HasSuffix(form, "</form>")){
+		if !strings.HasPrefix(form, "<form>") || !strings.HasSuffix(form, "</form>") {
 			return nil, fmt.Errorf("form has bad syntax, expected to start with <form> and end with </form>, got %s", form)
 		}
 		return map[string]any{"form": form}, nil

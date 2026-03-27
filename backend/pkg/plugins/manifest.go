@@ -110,14 +110,14 @@ const (
 var stringHookMap map[string]HookType = map[string]HookType{
 	"post_upload":    PostUpload,
 	"manual_trigger": ManualTrigger,
-	"generate_form": GenerateForm,
+	"generate_form":  GenerateForm,
 }
 var hookStringMap map[HookType]string
 
 var stringSignatureMap map[string]HookSignature = map[string]HookSignature{
 	"single_image": ProcessOneImage,
 	"image_batch":  ProcessImageBatch,
-	"form_data": ProcessFormData,
+	"form_data":    ProcessFormData,
 }
 var signatureStringMap map[HookSignature]string
 
