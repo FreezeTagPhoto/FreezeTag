@@ -9,11 +9,10 @@ export type ProfilePictureContextValue = {
     refreshProfilePicture: () => void;
 };
 
-export const ProfilePictureContext =
-    createContext<ProfilePictureContextValue>({
-        profilePictureVersion: 0,
-        refreshProfilePicture: () => {},
-    });
+export const ProfilePictureContext = createContext<ProfilePictureContextValue>({
+    profilePictureVersion: 0,
+    refreshProfilePicture: () => {},
+});
 
 /**
  * Provides a lightweight version counter so that any component that displays

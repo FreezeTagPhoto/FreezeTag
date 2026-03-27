@@ -42,9 +42,9 @@ export default async function ProfilePictureSetter(
             return Err({
                 status,
                 message:
-                    (await request_result.error.response.text().catch(
-                        () => "",
-                    )) || "Failed to update profile picture",
+                    (await request_result.error.response
+                        .text()
+                        .catch(() => "")) || "Failed to update profile picture",
             });
         }
     }

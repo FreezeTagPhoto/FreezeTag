@@ -109,10 +109,12 @@ export default function SettingsPage() {
     }, [user]);
 
     useEffect(() => {
+        if (!avatarUrl) return;
+
         return () => {
-            if (avatarUrl) URL.revokeObjectURL(avatarUrl);
+            URL.revokeObjectURL(avatarUrl);
         };
-    }, []);
+    }, [avatarUrl]);
 
     const handleAvatarFileChange = async (
         e: React.ChangeEvent<HTMLInputElement>,
@@ -311,7 +313,8 @@ export default function SettingsPage() {
                         <div className={styles.fieldText}>
                             <div className={styles.label}>Profile picture</div>
                             <p className={styles.hint}>
-                                Accepted formats: JPEG, PNG, WebP, HEIC, AVIF, TIFF, SVG.
+                                Accepted formats: JPEG, PNG, WebP, HEIC, AVIF,
+                                TIFF, SVG.
                             </p>
                         </div>
 

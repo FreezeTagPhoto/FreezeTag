@@ -11,7 +11,14 @@ import {
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import styles from "./PreviewWindow.module.css";
 import MetadataSidebar from "../MetadataSidebar/MetadataSidebar";
-import { ChevronLeft, ChevronRight, Info, X, ZoomIn, ZoomOut } from "lucide-react";
+import {
+    ChevronLeft,
+    ChevronRight,
+    Info,
+    X,
+    ZoomIn,
+    ZoomOut,
+} from "lucide-react";
 
 type PendingPan = null | { fx: number; fy: number };
 type BaseSize = null | { w: number; h: number };

@@ -39,9 +39,9 @@ export default async function ProfilePictureReset(
             return Err({
                 status,
                 message:
-                    (await request_result.error.response.text().catch(
-                        () => "",
-                    )) || "Failed to reset profile picture",
+                    (await request_result.error.response
+                        .text()
+                        .catch(() => "")) || "Failed to reset profile picture",
             });
         }
     }
