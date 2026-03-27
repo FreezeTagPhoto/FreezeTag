@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import {
     DarkThemeRegistry,
@@ -16,9 +16,14 @@ import {
     type UnitSystem,
 } from "@/common/units/UnitManager";
 import PasswordChanger from "@/api/auth/passwordchanger";
+import ProfilePictureGetter from "@/api/users/profilepicturegetter";
+import ProfilePictureSetter from "@/api/users/profilepicturesetter";
+import ProfilePictureReset from "@/api/users/profilepicturereset";
+import { UserContext } from "@/components/Auth/AuthGate";
+import { ProfilePictureContext } from "@/components/Auth/ProfilePictureContext";
 import { Option, Some, None } from "@/common/option";
-import { Result, Err } from "@/common/result";
-import { Eye, EyeOff } from "lucide-react";
+import { Result, Ok, Err } from "@/common/result";
+import { Camera, Eye, EyeOff, User, RotateCcw } from "lucide-react";
 
 type ThemeName =
     | (typeof LightThemeRegistry)[number]
@@ -82,6 +87,107 @@ const PasswordField = ({
 );
 
 export default function SettingsPage() {
+    const user = useContext(UserContext);
+    const { refreshProfilePicture } = useContext(ProfilePictureContext);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+    const [avatarBusy, setAvatarBusy] = useState(false);
+    const [avatarStatus, setAvatarStatus] =
+        useState<Option<Result<string, string>>>(None());
+    useEffect(() => {
+        if (!user) return;
+        ProfilePictureGetter(user.user_id).then((result) => {
+            if (result.ok) {
+                const url = URL.createObjectURL(result.value);
+                setAvatarUrl((prev) => {
+                    if (prev) URL.revokeObjectURL(prev);
+                    return url;
+                });
+            }
+        });
+    }, [user]);
+
+    useEffect(() => {
+        if (!avatarUrl) return;
+
+        return () => {
+            URL.revokeObjectURL(avatarUrl);
+        };
+    }, [avatarUrl]);
+
+    const handleAvatarFileChange = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = e.target.files?.[0];
+
+        // reset the input so the same file can be re-selected after an error
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        if (!file || !user) return;
+
+        setAvatarBusy(true);
+        setAvatarStatus(None());
+
+        const result = await ProfilePictureSetter(user.user_id, file);
+
+        if (result.ok) {
+            const refreshed = await ProfilePictureGetter(user.user_id);
+            if (refreshed.ok) {
+                const url = URL.createObjectURL(refreshed.value);
+                setAvatarUrl((prev) => {
+                    if (prev) URL.revokeObjectURL(prev);
+                    return url;
+                });
+            }
+            refreshProfilePicture();
+            setAvatarStatus(Some(Ok("Profile picture updated.")));
+        } else {
+            setAvatarStatus(
+                Some(
+                    Err(
+                        result.error.message ||
+                            "Failed to update profile picture.",
+                    ),
+                ),
+            );
+        }
+
+        setAvatarBusy(false);
+    };
+
+    const handleResetProfilePicture = async () => {
+        if (!user) return;
+
+        setAvatarBusy(true);
+        setAvatarStatus(None());
+
+        const result = await ProfilePictureReset(user.user_id);
+
+        if (result.ok) {
+            const refreshed = await ProfilePictureGetter(user.user_id);
+            if (refreshed.ok) {
+                const url = URL.createObjectURL(refreshed.value);
+                setAvatarUrl((prev) => {
+                    if (prev) URL.revokeObjectURL(prev);
+                    return url;
+                });
+            }
+            refreshProfilePicture();
+            setAvatarStatus(Some(Ok("Profile picture reset to default.")));
+        } else {
+            setAvatarStatus(
+                Some(
+                    Err(
+                        result.error.message ||
+                            "Failed to reset profile picture.",
+                    ),
+                ),
+            );
+        }
+
+        setAvatarBusy(false);
+    };
+
     const [theme, setTheme] = useState<ThemeName>("Catppuccin Mocha");
     const [units, setUnits] = useState<UnitSystem>("metric");
 
@@ -187,6 +293,145 @@ export default function SettingsPage() {
                     Customize preferences and manage account security.
                 </p>
             </header>
+
+            <section
+                id="profile"
+                className={styles.panel}
+                aria-labelledby="profile-heading"
+            >
+                <div className={styles.sectionHeader}>
+                    <h2 id="profile-heading" className={styles.sectionTitle}>
+                        Profile
+                    </h2>
+                    <p className={styles.sectionDescription}>
+                        Profile detail management.
+                    </p>
+                </div>
+
+                <div className={styles.fields}>
+                    <div className={`${styles.fieldRow} ${styles.fieldRowTop}`}>
+                        <div className={styles.fieldText}>
+                            <div className={styles.label}>Profile picture</div>
+                            <p className={styles.hint}>
+                                Accepted formats: JPEG, PNG, WebP, HEIC, AVIF,
+                                TIFF, SVG.
+                            </p>
+                        </div>
+
+                        <div className={styles.control}>
+                            <div className={styles.avatarInnerGrid}>
+                                <div
+                                    className={styles.avatarRing}
+                                    aria-hidden="true"
+                                >
+                                    {avatarUrl ? (
+                                        <img
+                                            src={avatarUrl}
+                                            alt="Your profile picture"
+                                            className={styles.avatarImg}
+                                        />
+                                    ) : (
+                                        <div className={styles.avatarFallback}>
+                                            <User
+                                                className={
+                                                    styles.avatarFallbackIcon
+                                                }
+                                                aria-hidden
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className={styles.avatarActions}>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,image/tiff,image/svg+xml"
+                                        className={styles.hiddenFileInput}
+                                        aria-label="Upload profile picture"
+                                        disabled={avatarBusy}
+                                        onChange={handleAvatarFileChange}
+                                    />
+                                    <div className={styles.avatarBtnsGroup}>
+                                        <div className={styles.avatarBtns}>
+                                            <button
+                                                type="button"
+                                                className={`${styles.button} ${styles.buttonInline} ${styles.avatarUploadBtn}`}
+                                                disabled={avatarBusy}
+                                                onClick={() =>
+                                                    fileInputRef.current?.click()
+                                                }
+                                            >
+                                                <Camera
+                                                    className={
+                                                        styles.btnLeadIcon
+                                                    }
+                                                    aria-hidden
+                                                />
+                                                {avatarBusy
+                                                    ? "Uploading…"
+                                                    : "Change profile picture"}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`${styles.iconBtn}`}
+                                                disabled={avatarBusy}
+                                                onClick={
+                                                    handleResetProfilePicture
+                                                }
+                                                title="Reset to default profile picture"
+                                                aria-label="Reset to default profile picture"
+                                            >
+                                                <RotateCcw
+                                                    className={
+                                                        styles.iconBtnIcon
+                                                    }
+                                                    aria-hidden
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {avatarStatus.some && (
+                                            <div
+                                                className={`${styles.callout} ${
+                                                    avatarStatus.value.ok
+                                                        ? styles.calloutOk
+                                                        : styles.calloutError
+                                                }`}
+                                                role={
+                                                    avatarStatus.value.ok
+                                                        ? "status"
+                                                        : "alert"
+                                                }
+                                            >
+                                                <div
+                                                    className={
+                                                        styles.calloutTitle
+                                                    }
+                                                >
+                                                    {avatarStatus.value.ok
+                                                        ? "Updated"
+                                                        : "Error"}
+                                                </div>
+                                                <div
+                                                    className={
+                                                        styles.calloutBody
+                                                    }
+                                                >
+                                                    {avatarStatus.value.ok
+                                                        ? "Profile picture updated."
+                                                        : avatarStatus.value
+                                                              .error}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <section
                 id="preferences"

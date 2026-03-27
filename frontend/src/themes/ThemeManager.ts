@@ -5,9 +5,13 @@ export const DarkThemeRegistry = [
     "Catppuccin Frappe",
     "Catppuccin Macchiato",
     "Catppuccin Mocha",
+    "Colorblind Mocha",
+    "High Contrast Dark",
 ];
 export const LightThemeRegistry = [
     "Catppuccin Latte",
+    "Colorblind Latte",
+    "High Contrast Light",
     "Microsoft Hot Dog Stand",
 ];
 

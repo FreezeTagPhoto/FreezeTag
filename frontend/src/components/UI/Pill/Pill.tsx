@@ -1,10 +1,11 @@
+import { memo } from "react";
 import styles from "./Pill.module.css";
 import type React from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 type PillVariant = "menu" | "token" | "error";
 
-export default function Pill({
+export default memo(function Pill({
     label,
     caret,
     variant = "menu",
@@ -50,4 +51,4 @@ export default function Pill({
             )}
         </button>
     );
-}
+});

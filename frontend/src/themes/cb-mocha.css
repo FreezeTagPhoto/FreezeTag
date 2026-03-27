@@ -1,0 +1,37 @@
+/* Colorblind Mocha: based on Catppuccin Mocha, adapted for red-green colorblindness (deuteranopia/protanopia).
+ *
+ * The core change is replacing the red-green axis with an orange-blue axis:
+ *   --red / --maroon:  orange/amber  
+ *   --green         :  blue          
+ *   --teal          :  shifted slightly toward blue-cyan
+ *
+ * All surface, text, and overlay colors are identical to Mocha.
+ */
+[data-theme="Colorblind Mocha"] {
+    --rosewater: #f5e0dc;
+    --flamingo: #f2cdcd;
+    --pink: #f5c2e7;
+    --mauve: #cba6f7;
+    --red: #f5a742;
+    --maroon: #e89848;
+    --peach: #fab387;
+    --yellow: #f9e2af;
+    --green: #56b4e9;
+    --teal: #72c9e8;
+    --sky: #89dceb;
+    --sapphire: #74c7ec;
+    --blue: #89b4fa;
+    --lavender: #b4befe;
+    --text: #cdd6f4;
+    --subtext1: #bac2de;
+    --subtext0: #a6adc8;
+    --overlay2: #9399b2;
+    --overlay1: #7f849c;
+    --overlay0: #6c7086;
+    --surface2: #585b70;
+    --surface1: #45475a;
+    --surface0: #313244;
+    --base: #1e1e2e;
+    --mantle: #181825;
+    --crust: #11111b;
+}

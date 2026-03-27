@@ -258,3 +258,26 @@ func (ue UserEndpoint) SetProfilePicture(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "profile picture updated"})
 }
+
+// @Summary     Reset a user's profile picture to default
+// @Description Resets the profile picture of a user to the default generated avatar. A user can only reset their own profile picture,
+// but an admin with the appropriate permissions can reset any user's profile picture.
+// @Tags        users
+// @Produce     application/json
+// @Param       id path int true "User ID"
+// @Success     200 {object} api.MessageResponse
+// @Failure     400 {object} api.BadRequestResponse
+// @Failure     500 {object} api.ServerErrorResponse
+// @Router      /users/profile-picture/{id} [delete]
+func (ue UserEndpoint) ResetProfilePicture(c *gin.Context) {
+	targetID, err := api.ParseParamIntoID[database.UserID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid target id"})
+		return
+	}
+	if err := ue.authService.ResetProfilePicture(targetID); err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "failed to reset profile picture: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, api.MessageResponse{Message: "profile picture reset to default"})
+}

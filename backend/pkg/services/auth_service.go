@@ -84,6 +84,8 @@ type AuthService interface {
 	SetUserProfilePicture(userID database.UserID, pictureData []byte, filename string) error
 	// GetUserProfilePicture returns the profile picture for a user, given the user ID. Returns an error if the user does not exist or does not have a profile picture.
 	GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error)
+	// ResetProfilePicture resets the profile picture for a user to the default generated avatar. Returns an error if the user does not exist.
+	ResetProfilePicture(userID database.UserID) error
 }
 
 type DefaultAuthService struct {
@@ -314,6 +316,19 @@ func (s *DefaultAuthService) SetUserProfilePicture(userID database.UserID, pictu
 
 func (s *DefaultAuthService) GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error) {
 	return s.userDatabase.GetUserProfilePicture(userID)
+}
+
+func (s *DefaultAuthService) ResetProfilePicture(userID database.UserID) error {
+	user, err := s.userDatabase.GetUserById(userID)
+	if err != nil {
+		return err
+	}
+	username := user.Username
+	defaultPicture, err := images.DefaultProfilePicture(username)
+	if err != nil {
+		return err
+	}
+	return s.userDatabase.SetUserProfilePicture(userID, defaultPicture)
 }
 
 func hashToken(token string) [32]byte {

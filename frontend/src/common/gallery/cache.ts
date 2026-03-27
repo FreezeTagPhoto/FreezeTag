@@ -1,5 +1,4 @@
-// src/hooks/useCachedById.ts
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Result } from "@/common/result";
 import { None, Some, type Option } from "@/common/option";
 
@@ -19,6 +18,11 @@ export function useCachedById<T, E extends WithMessage = WithMessage>(
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<Option<string>>(None());
 
+    // keep a ref in sync with byId so the effect can check the cache without listing byID as a dependency
+    // (which would re-trigger the effect after every fetch and queue redundant state updates)
+    const byIdRef = useRef(byId);
+    byIdRef.current = byId;
+
     const current: Option<T> = useMemo(() => {
         if (selectedId === null) return None();
         const v = byId[selectedId];
@@ -29,7 +33,7 @@ export function useCachedById<T, E extends WithMessage = WithMessage>(
         if (selectedId === null) return;
 
         // already cached
-        if (byId[selectedId] !== undefined) {
+        if (byIdRef.current[selectedId] !== undefined) {
             setError(None());
             setLoading(false);
             return;
@@ -57,7 +61,7 @@ export function useCachedById<T, E extends WithMessage = WithMessage>(
         return () => {
             cancelled = true;
         };
-    }, [selectedId, byId, fetcher]);
+    }, [selectedId, fetcher]);
 
     return {
         byId,

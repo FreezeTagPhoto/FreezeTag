@@ -96,7 +96,7 @@
     border-radius: 999px;
     padding: 0 10px;
 
-    background: var(--rosewater);
+    background: var(--base);
     border: 1px solid var(--red);
     color: var(--red);
 }

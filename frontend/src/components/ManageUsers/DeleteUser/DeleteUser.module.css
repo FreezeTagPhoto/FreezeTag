@@ -70,13 +70,13 @@
 .calloutError {
     border-color: var(--red);
     background: var(--red);
-    color: var(--crust);
+    color: var(--base);
 }
 
 .calloutOk {
     border-color: var(--green);
     background: var(--green);
-    color: var(--crust);
+    color: var(--base);
 }
 
 .buttons {

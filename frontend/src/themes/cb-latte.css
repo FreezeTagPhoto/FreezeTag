@@ -1,0 +1,37 @@
+/* Colorblind Latte: based on Catppuccin Latte, adapted for red-green colorblindness (deuteranopia/protanopia).
+ *
+ * The core change is replacing the red-green axis with an orange-blue axis:
+ *   --red / --maroon:  orange/amber  
+ *   --green         :  blue          
+ *   --teal          :  shifted slightly toward blue-cyan
+ *
+ * All surface, text, and overlay colors are identical to Latte.
+ */
+[data-theme="Colorblind Latte"] {
+    --rosewater: #dc8a78;
+    --flamingo: #dd7878;
+    --pink: #ea76cb;
+    --mauve: #8839ef;
+    --red: #b45000;
+    --maroon: #9a4200;
+    --peach: #fe640b;
+    --yellow: #df8e1d;
+    --green: #0072b4;
+    --teal: #0287a8;
+    --sky: #04a5e5;
+    --sapphire: #209fb5;
+    --blue: #1e66f5;
+    --lavender: #7287fd;
+    --text: #4c4f69;
+    --subtext1: #5c5f77;
+    --subtext0: #6c6f85;
+    --overlay2: #5c5f77;
+    --overlay1: #6c6f85;
+    --overlay0: #7c7f93;
+    --surface2: #acb0be;
+    --surface1: #bcc0cc;
+    --surface0: #ccd0da;
+    --base: #eff1f5;
+    --mantle: #e6e9ef;
+    --crust: #dce0e8;
+}
