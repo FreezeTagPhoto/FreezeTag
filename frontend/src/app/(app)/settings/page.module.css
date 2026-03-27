@@ -469,3 +469,74 @@
     color: var(--base);
     border-color: var(--red);
 }
+
+.avatarRow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.avatarRing {
+    flex: 0 0 auto;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: var(--border-info);
+    background: var(--surface0);
+    overflow: hidden;
+    filter: var(--dropshadow);
+}
+
+.avatarInnerGrid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 14px;
+    width: 100%;
+}
+
+.avatarImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatarFallback {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: var(--subtext0);
+}
+
+.avatarFallbackIcon {
+    width: 32px;
+    height: 32px;
+}
+
+.avatarActions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    width: 100%;
+}
+
+.hiddenFileInput {
+    display: none;
+}
+
+.avatarUploadBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.btnLeadIcon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+}

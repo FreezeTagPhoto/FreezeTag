@@ -25,6 +25,7 @@ import {
 
 import { useContext, useEffect, useMemo, useState } from "react";
 import { UserContext } from "../Auth/AuthGate";
+import { ProfilePictureContext } from "../Auth/ProfilePictureContext";
 import { ExtractPermsList } from "@/api/permissions/permshelpers";
 import UserGetter from "@/api/users/usergetter";
 import ProfilePictureGetter from "@/api/users/profilepicturegetter";
@@ -177,6 +178,7 @@ export default function Sidebar({
     const router = useRouter();
 
     const user = useContext(UserContext);
+    const { profilePictureVersion } = useContext(ProfilePictureContext);
     const userPerms = useMemo(() => ExtractPermsList(user) ?? [], [user]);
 
     const [username, setUsername] = useState<string>("");
@@ -224,7 +226,7 @@ export default function Sidebar({
             alive = false;
             if (urlToRevoke) URL.revokeObjectURL(urlToRevoke);
         };
-    }, [user]);
+    }, [user, profilePictureVersion]);
 
     const onLogout = async () => {
         await LogoutHandler();
