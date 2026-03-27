@@ -11,7 +11,7 @@ import {
 import SERVER_ADDRESS from "@/api/common/serveraddress";
 import styles from "./PreviewWindow.module.css";
 import MetadataSidebar from "../MetadataSidebar/MetadataSidebar";
-import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, X, ZoomIn, ZoomOut } from "lucide-react";
 
 type PendingPan = null | { fx: number; fy: number };
 type BaseSize = null | { w: number; h: number };
@@ -42,6 +42,7 @@ export default function PreviewWindow({
     const [hoveringImage, setHoveringImage] = useState(false);
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
     const [baseSize, setBaseSize] = useState<BaseSize>(null);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
@@ -218,7 +219,7 @@ export default function PreviewWindow({
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>
             <div
                 ref={viewerRef}
-                className={styles.viewer}
+                className={`${styles.viewer} ${sidebarOpen ? "" : styles.viewerSidebarHidden}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className={styles.viewerImageArea}>
@@ -263,6 +264,19 @@ export default function PreviewWindow({
 
                     <button
                         type="button"
+                        className={styles.infoButton}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSidebarOpen((v) => !v);
+                        }}
+                        aria-label={sidebarOpen ? "Hide info" : "Show info"}
+                        title={sidebarOpen ? "Hide info" : "Show info"}
+                    >
+                        <Info className={styles.icon} />
+                    </button>
+
+                    <button
+                        type="button"
                         className={styles.zoomButton}
                         onClick={handleZoomButtonClick}
                         aria-label={zoom === 1 ? "Zoom to 2x" : "Zoom to 1x"}
@@ -303,12 +317,14 @@ export default function PreviewWindow({
                     </div>
                 </div>
 
-                <MetadataSidebar
-                    selectedId={selectedId}
-                    onSearchTag={onSearchTag}
-                    viewerRef={viewerRef}
-                    onDeleted={() => onDeleted?.(selectedId)}
-                />
+                {sidebarOpen && (
+                    <MetadataSidebar
+                        selectedId={selectedId}
+                        onSearchTag={onSearchTag}
+                        viewerRef={viewerRef}
+                        onDeleted={() => onDeleted?.(selectedId)}
+                    />
+                )}
             </div>
         </div>
     );

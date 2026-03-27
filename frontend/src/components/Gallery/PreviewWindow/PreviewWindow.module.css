@@ -81,7 +81,8 @@
 
 .navButton,
 .closeButton,
-.zoomButton {
+.zoomButton,
+.infoButton {
     background: var(--mantle);
     color: var(--text);
     border: var(--border-info);
@@ -99,20 +100,23 @@
 
 .viewerImageArea:hover .navButton,
 .viewerImageArea:hover .closeButton,
-.viewerImageArea:hover .zoomButton {
+.viewerImageArea:hover .zoomButton,
+.viewerImageArea:hover .infoButton {
     opacity: 1;
     pointer-events: auto;
 }
 
 .navButton:hover,
 .closeButton:hover,
-.zoomButton:hover {
+.zoomButton:hover,
+.infoButton:hover {
     background: var(--surface0);
 }
 
 .navButton:focus-visible,
 .closeButton:focus-visible,
-.zoomButton:focus-visible {
+.zoomButton:focus-visible,
+.infoButton:focus-visible {
     outline: 2px solid var(--blue);
     outline-offset: 2px;
     opacity: 1;
@@ -165,11 +169,29 @@
 .zoomButton {
     position: absolute;
     top: 16px;
+    right: 56px; /* 16px offset + 32px info width + 8px gap */
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    padding: 0;
+}
+
+/* ===========================
+   Info / sidebar toggle button
+   =========================== */
+
+.infoButton {
+    position: absolute;
+    top: 16px;
     right: 16px;
     width: 32px;
     height: 32px;
     border-radius: 999px;
     padding: 0;
+}
+
+.viewer.viewerSidebarHidden {
+    grid-template-columns: 1fr;
 }
 
 /* ===========================
@@ -204,6 +226,10 @@
         width: 100%;
         height: min(94svh, 100%);
     }
+
+    .viewer.viewerSidebarHidden {
+        grid-template-rows: 1fr;
+    }
 }
 
 @media (max-width: 640px) {
@@ -213,13 +239,15 @@
 
     .navButton,
     .closeButton,
-    .zoomButton {
+    .zoomButton,
+    .infoButton {
         width: 28px;
         height: 28px;
     }
 
     .closeButton,
-    .zoomButton {
+    .zoomButton,
+    .infoButton {
         top: 10px;
     }
 
@@ -228,6 +256,10 @@
     }
 
     .zoomButton {
+        right: 46px; /* 10px + 28px + 8px gap */
+    }
+
+    .infoButton {
         right: 10px;
     }
 }
@@ -235,7 +267,8 @@
 @media (hover: none) and (pointer: coarse) {
     .navButton,
     .closeButton,
-    .zoomButton {
+    .zoomButton,
+    .infoButton {
         opacity: 1;
         pointer-events: auto;
     }
