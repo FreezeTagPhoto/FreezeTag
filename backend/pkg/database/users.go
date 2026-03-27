@@ -91,7 +91,7 @@ type SqliteUserDatabase struct {
 	db *sql.DB
 }
 
-//go:embed user_schema.sql
+//go:embed schema.sql
 var user_schema string
 
 func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
@@ -600,6 +600,7 @@ func (s SqliteUserDatabase) SetUserProfilePicture(userID UserID, pictureData []b
 	}
 	return nil
 }
+	
 
 func (s SqliteUserDatabase) GetUserProfilePicture(userID UserID) (ProfilePicture, error) {
 	var pictureData ProfilePicture

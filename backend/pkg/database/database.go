@@ -85,11 +85,17 @@ type ImageDatabase interface {
 	SetImageAlbum(ImageId, AlbumId) error
 	RemoveAlbum(string) error
 	RemoveImageFromAlbum(ImageId, AlbumId) error
-	GetAlbums() ([]AlbumId, error)
+	GetAlbumIds() ([]AlbumId, error)
+	GetAlbumNames() ([]string, error)
 	GetAlbumImages(AlbumId) ([]ImageId, error)
 	GetAlbumImageCount(AlbumId) (int64, error)
 	GetAlbumTagCounts(AlbumId) (map[string]int64, error)
-	GetAlbumName(AlbumId) (*string, error)
+
+	// Get the album ID corresponding to the given name
+	//
+	// returns: the album ID, or -1 if no album with that name exists
+	GetAlbumIdByName(string) (AlbumId, error)
+
 }
 
 type SqliteImageDatabase struct {
@@ -600,16 +606,15 @@ func (db SqliteImageDatabase) GetTagCounts(imageIds []ImageId) (map[string]int64
 	return counts, nil
 }
 
-
-	// CreateAlbum(string) (AlbumId, error)
-	// SetImageAlbum(ImageId, AlbumId) error
-	// RemoveAlbum(string) error
-	// RemoveImageFromAlbum(ImageId, AlbumId) error
-	// GetAlbums() ([]AlbumId, error)
-	// GetAlbumImages(AlbumId) ([]ImageId, error)
-	// GetAlbumImageCount(AlbumId) (int64, error)
-	// GetAlbumTagCounts(AlbumId) (map[string]int64, error)
-	// GetAlbumName(AlbumId) (*string, error)
+// CreateAlbum(string) (AlbumId, error)
+// SetImageAlbum(ImageId, AlbumId) error
+// RemoveAlbum(string) error
+// RemoveImageFromAlbum(ImageId, AlbumId) error
+// GetAlbums() ([]AlbumId, error)
+// GetAlbumImages(AlbumId) ([]ImageId, error)
+// GetAlbumImageCount(AlbumId) (int64, error)
+// GetAlbumTagCounts(AlbumId) (map[string]int64, error)
+// GetAlbumName(AlbumId) (*string, error)
 
 func (db SqliteImageDatabase) CreateAlbum(name string) (AlbumId, error) {
 	var id int64
@@ -636,7 +641,7 @@ func (db SqliteImageDatabase) RemoveImageFromAlbum(imageId ImageId, albumId Albu
 	return err
 }
 
-func (db SqliteImageDatabase) GetAlbums() ([]AlbumId, error) {
+func (db SqliteImageDatabase) GetAlbumIds() ([]AlbumId, error) {
 	rows, err := db.db.Query("SELECT id FROM Albums")
 	if err != nil {
 		return []AlbumId{}, err
@@ -654,6 +659,26 @@ func (db SqliteImageDatabase) GetAlbums() ([]AlbumId, error) {
 		albums = append(albums, AlbumId(id))
 	}
 	return albums, nil
+}
+
+func (db SqliteImageDatabase) GetAlbumNames() ([]string, error) {
+	rows, err := db.db.Query("SELECT name FROM Albums")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() //nolint:errcheck
+	var names []string
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, nil
 }
 
 func (db SqliteImageDatabase) GetAlbumImages(albumId AlbumId) ([]ImageId, error) {
@@ -714,15 +739,16 @@ func (db SqliteImageDatabase) GetAlbumTagCounts(albumId AlbumId) (map[string]int
 	return counts, nil
 }
 
-func (db SqliteImageDatabase) GetAlbumName(albumId AlbumId) (*string, error) {
-	var name string
-	err := db.db.QueryRow("SELECT name FROM Albums WHERE id = ?", albumId).Scan(&name)
+func (db SqliteImageDatabase) GetAlbumIdByName(name string) (AlbumId, error) {
+	var id int64
+	err := db.db.QueryRow("SELECT id FROM Albums WHERE name = ?", name).Scan(&id)
 	if err == sql.ErrNoRows {
-		return nil, nil
+		return -1, nil
 	} else if err != nil {
-		return nil, err
+		return -1, err
 	}
-	return &name, nil
+	albumId := AlbumId(id)
+	return albumId, nil
 }
 
 // helper functions to convert sql.Null* to pointers

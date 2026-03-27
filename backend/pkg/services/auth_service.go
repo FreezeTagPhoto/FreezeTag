@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/pprof/profile"
 	_ "github.com/joho/godotenv/autoload"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -312,6 +313,20 @@ func (s *DefaultAuthService) SetUserProfilePicture(userID database.UserID, pictu
 		return fmt.Errorf("could not create profile picture: %w", err)
 	}
 	return s.userDatabase.SetUserProfilePicture(userID, profilePicture)
+}
+
+func (s *DefaultAuthService) ResetProfilePicture(userID database.UserID) (error) {
+	user, err := s.userDatabase.GetUserById(userID)
+	if err != nil {
+		return err
+	}
+	username := user.Username
+	defaultPicture, err := images.DefaultProfilePicture(username)
+
+	if err != nil {
+		return err
+	}
+	return s.userDatabase.SetUserProfilePicture(userID, defaultPicture)
 }
 
 func (s *DefaultAuthService) GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error) {

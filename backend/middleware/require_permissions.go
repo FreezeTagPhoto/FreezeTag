@@ -25,7 +25,6 @@ func RequirePermissionOrSelf(required ...data.Permission) gin.HandlerFunc {
 			c.Next()
 			return
 		}
-
 		if err := hasPermissions(c, required...); err != nil {
 			c.AbortWithStatusJSON(http.StatusForbidden, api.BadRequestResponse{Error: err.Error()})
 			return

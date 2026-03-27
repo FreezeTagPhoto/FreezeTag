@@ -11,21 +11,52 @@ type Permission struct {
 type Permissions []Permission
 
 var (
-	ReadFiles  Permission = register("read:files", "Read Files", "Allows downloading/viewing stored files.")
-	WriteFiles Permission = register("write:files", "Write Files", "Allows uploading files.")
-	ReadTags   Permission = register("read:tags", "Read Tags", "Allows viewing metadata tags.")
-	WriteTags  Permission = register("write:tags", "Write Tags", "Allows creating and editing metadata tags.")
+	ReadFiles Permission = register("read:files",
+		"Read Files",
+		"Allows downloading/viewing stored files.")
+	WriteFiles Permission = register("write:files",
+		"Write Files",
+		"Allows uploading files.")
+	ReadTags Permission = register("read:tags",
+		"Read Tags",
+		"Allows viewing metadata tags.")
+	WriteTags Permission = register("write:tags",
+		"Write Tags",
+		"Allows creating and editing metadata tags.")
 
-	WriteUser Permission = register("write:user", "Write User", "Allows updating existing user information. (e.g passwords).")
-	ReadUser  Permission = register("read:user", "Read User", "Allows viewing user profiles.")
+	WriteUser Permission = register("write:user",
+		"Write User",
+		"Allows updating existing user information. (e.g passwords).")
+	ReadUser Permission = register("read:user",
+		"Read User",
+		"Allows viewing user profiles.")
 
-	ReadPlugins  Permission = register("read:plugins", "Read Plugins", "Allows viewing the plugins enabled on the system.")
-	WritePlugins Permission = register("write:plugins", "Write Plugins", "Allows changing plugins' enabled status, as well as downloading new plugins.")
+	ReadPlugins Permission = register("read:plugins",
+		"Read Plugins",
+		"Allows viewing the plugins enabled on the system.")
+	WritePlugins Permission = register("write:plugins",
+		"Write Plugins",
+		"Allows changing plugins' enabled status, as well as downloading new plugins.")
 
-	WriteToken Permission = register("write:tokens", "Write API Tokens", "Allows creating and revoking API tokens.")
-	ReadToken  Permission = register("read:tokens", "Read API Tokens", "Allows viewing existing API token information.")
+	WriteToken Permission = register("write:tokens",
+		"Write API Tokens",
+		"Allows creating and revoking API tokens.")
+	ReadToken Permission = register("read:tokens",
+		"Read API Tokens",
+		"Allows viewing existing API token information.")
 
-	WriteJobs Permission = register("write:jobs", "Write/Cancel Jobs", "Allows modifying or cancelling running jobs (uploads, plugins, etc...)")
+	WriteJobs Permission = register("write:jobs",
+		"Write/Cancel Jobs",
+		"Allows modifying or cancelling running jobs (uploads, plugins, etc...)")
+
+	// Permissions related to album visibility restrictions
+	RestrictAlbum Permission = register("restrict:album",
+		"Restrict Album Access",
+		"Allows setting an album to be visible only to a specific list of users.")
+	UnrestrictAlbum Permission = register("unrestrict:album",
+		"Unrestrict Album Access",
+		"Allows setting an album to be visible to all users.")
+	
 
 	// More powerful permissions for admin users
 	WriteAnyToken    Permission = register("write:any_token", "Write Any API Token", "Allows revoking and deleting any API token, including those not owned by the user.")

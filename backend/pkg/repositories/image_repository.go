@@ -153,7 +153,7 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	}
 	if !ok {
 		return 0, fmt.Errorf("database returned false when adding thumbnail")
-	}
+	}	
 
 	// 0644 is rw-r--r-- permissions for this new file
 	// 0755 is rwxr-xr-x permissions for this new directory (if it doesn't exist)
@@ -313,4 +313,65 @@ func (repo *DefaultImageRepository) GetQueryTagCounts(query queries.DatabaseQuer
 		return nil, err
 	}
 	return repo.db.GetTagCounts(images)
+}
+
+
+func (repo *DefaultImageRepository) AddImageToAlbum(imageId database.ImageId, album string) error {
+	albumId, err := repo.db.GetAlbumIdByName(album)
+	if err != nil {
+		return err
+	}
+	if albumId < 0 {
+		albumId, err = repo.db.CreateAlbum(album)
+		if err != nil {
+			return err
+		}
+	}
+	return repo.db.SetImageAlbum(imageId, albumId)
+}
+
+func (repo *DefaultImageRepository) RemoveImageFromAlbum(imageId database.ImageId, album string) error {
+	albumId, err := repo.db.GetAlbumIdByName(album)
+	if err != nil {
+		return err
+	}
+	if albumId < 0 {
+		return fmt.Errorf("album with name %s does not exist", album)
+	}
+	return repo.db.RemoveImageFromAlbum(imageId, albumId)
+}
+
+func (repo *DefaultImageRepository) GetAlbumImageCount(album string) (int64, error) {
+	albumId, err := repo.db.GetAlbumIdByName(album)
+	if err != nil {
+		return 0, err
+	}
+	if albumId < 0 {
+		return 0, fmt.Errorf("album with name %s does not exist", album)
+	}
+	return repo.db.GetAlbumImageCount(albumId)
+}
+
+func (repo *DefaultImageRepository) GetAlbumTagCounts(album string) (map[string]int64, error) {
+	albumId, err := repo.db.GetAlbumIdByName(album)
+	if err != nil {
+		return nil, err
+	}
+	if albumId < 0 {
+		return nil, fmt.Errorf("album with name %s does not exist", album)
+	}
+	return repo.db.GetAlbumTagCounts(albumId)
+}
+
+
+func (repo *DefaultImageRepository) GetAlbumNames() ([]string, error) {
+	names, err := repo.db.GetAlbumNames()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get album names: %w", err)
+	}
+	return names, nil
+}
+
+func (repo *DefaultImageRepository) GetAlbumImages(album database.AlbumId) ([]database.ImageId, error) {
+	return repo.db.GetAlbumImages(album)
 }
