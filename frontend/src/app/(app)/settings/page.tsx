@@ -311,7 +311,7 @@ export default function SettingsPage() {
                         <div className={styles.fieldText}>
                             <div className={styles.label}>Profile picture</div>
                             <p className={styles.hint}>
-                                Accepted formats: JPEG, PNG, WebP.
+                                Accepted formats: JPEG, PNG, WebP, HEIC, AVIF, TIFF, SVG.
                             </p>
                         </div>
 
@@ -338,12 +338,12 @@ export default function SettingsPage() {
                                         </div>
                                     )}
                                 </div>
-                                {/* only jpeg, png, or webp formats supported for profile pictures */}
+
                                 <div className={styles.avatarActions}>
                                     <input
                                         ref={fileInputRef}
                                         type="file"
-                                        accept="image/jpeg,image/png,image/webp"
+                                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,image/tiff,image/svg+xml"
                                         className={styles.hiddenFileInput}
                                         aria-label="Upload profile picture"
                                         disabled={avatarBusy}
