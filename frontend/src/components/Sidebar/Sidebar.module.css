@@ -8,7 +8,6 @@
     overflow: hidden;
 }
 
-/* Brand area – logo only, no buttons */
 .brand {
     display: flex;
     align-items: center;
