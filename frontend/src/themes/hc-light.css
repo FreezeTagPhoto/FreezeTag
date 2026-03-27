@@ -1,0 +1,41 @@
+/* High Contrast Light: maximum readability on a white/near-white background.
+ *
+ * Design goals:
+ *   - Background is pure white; all text / surface colors are very dark.
+ *   - WCAG AAA (7:1) contrast ratio for --text against --base.
+ *   - Accent colors are deep, saturated hues that still clear 4.5:1 (WCAG AA) against white.
+ *   - The orange-blue pair is used for danger/success to be colorblind-safe too.
+ */
+[data-theme="High Contrast Light"] {
+    --rosewater: #8c3020;
+    --flamingo: #8c2020;
+    --pink: #8c0070;
+    --mauve: #5a00c0;
+    --red: #a03400;      
+    --maroon: #7a2d00;    
+    --peach: #7a3200;
+    --yellow: #6b5000;
+    --green: #005f8a;    
+    --teal: #005566;
+    --sky: #0066aa;
+    --sapphire: #0055aa;
+    --blue: #0040c0;
+    --lavender: #2200b0;
+    --text: #0a0a0a;
+    --subtext1: #1f1f1f;
+    --subtext0: #3b3b3b;
+    --overlay2: #555555;
+    --overlay1: #6b6b6b;
+    --overlay0: #888888;
+    --surface2: #bbbbbb;
+    --surface1: #d5d5d5;
+    --surface0: #ebebeb;
+    --base: #ffffff;
+    --mantle: #f2f2f2;
+    --crust: #e5e5e5;
+}
+
+/* Override globals.css theme-type variables that need higher contrast here. */
+[data-theme="High Contrast Light"][data-theme-type="light"] {
+    --border-color: #707070;
+}

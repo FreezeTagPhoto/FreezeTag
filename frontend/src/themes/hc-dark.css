@@ -1,0 +1,46 @@
+/* High Contrast Dark: maximum readability on a pure-black background.
+ *
+ * Design goals:
+ *   - Background is pure black; all text / surface colors are very light.
+ *   - WCAG AAA (7:1) contrast ratio for --text against --base.
+ *   - Accent colors are bright, vivid hues that still clear 4.5:1 (WCAG AA) against black.
+ *   - The orange-blue pair is used for danger/success to be colorblind-safe too.
+ */
+[data-theme="High Contrast Dark"] {
+    --rosewater: #ffb3a0;
+    --flamingo: #ffaaaa;
+    --pink: #ff88dd;
+    --mauve: #cc88ff;
+    --red: #ff8c33;       
+    --maroon: #ffaa55;    
+    --peach: #ffaa66;
+    --yellow: #ffe066;
+    --green: #5bbfff;     
+    --teal: #44ddee;
+    --sky: #66eeff;
+    --sapphire: #55bbff;
+    --blue: #6699ff;
+    --lavender: #99aaff;
+    --text: #f5f5f5;
+    --subtext1: #d8d8d8;
+    --subtext0: #b8b8b8;
+    --overlay2: #999999;
+    --overlay1: #7f7f7f;
+    --overlay0: #666666;
+    --surface2: #303030;
+    --surface1: #1e1e1e;
+    --surface0: #111111;
+    --base: #000000;
+    --mantle: #080808;
+    --crust: #101010;
+}
+
+/* Override globals.css theme-type variables that need higher contrast here. */
+[data-theme="High Contrast Dark"][data-theme-type="dark"] {
+    --accent1: #0066bb;
+
+    --border-color: #767676;
+
+    /* Black drop-shadow is invisible on a black background*/
+    --dropshadow: none;
+}
