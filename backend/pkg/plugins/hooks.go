@@ -216,6 +216,9 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 			return nil, err
 		}
 		return map[string]any{"name": name, "id": id}, nil
+	case "send_form":
+		form := msg["form"]
+		return map[string]any{"form": form}, nil
 	case "multipart":
 		parts, err := intoList[any](msg["parts"])
 		if err != nil {

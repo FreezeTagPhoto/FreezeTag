@@ -47,12 +47,17 @@ class AddImageAction(HookAction):
         data = base64.b64encode(image_bytes)
         HookAction.__init__(self, {"name": name + "." + format, "data": data.decode("utf-8")}, "add_image")
 
+class SendFormAction(HookAction):
+    def __init__(self, form: str):
+        HookAction.__init__(self, {"form": form}, "send_form")
+        
 class MultipartAction(HookAction):
     def __init__(self, *hooks: HookAction):
         actions = []
         for action in hooks:
             actions.append(action.contents)
         HookAction.__init__(self, {"parts": actions}, "multipart")
+
 
 def init_func(func: Callable[[], None | Message]):
     global _plugin_init

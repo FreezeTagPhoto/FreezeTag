@@ -1,10 +1,10 @@
 import freezetag
-from freezetag.hooks import single_image, AddImageAction
+from freezetag.hooks import single_image, form_data, SendFormAction
 
 @single_image
 def make_caption_form(img, id):
     # TODO: This function should return a form through a like "MakeFormAction" or something
-    return None
+    return SendFormAction("<form>yo</form>")
 
 @form_data
 def process_caption_form(data):

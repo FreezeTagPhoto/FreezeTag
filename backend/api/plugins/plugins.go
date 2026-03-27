@@ -86,7 +86,7 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("plugin %v has no hook '%s'", plug, hook)})
 		return
 	}
-	if sig.Type != plugs.ManualTrigger {
+	if (sig.Type != plugs.ManualTrigger) && (sig.Type != plugs.GenerateForm) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("hook %s:%s is not a manual hook", plug, hook)})
 		return
 	}
