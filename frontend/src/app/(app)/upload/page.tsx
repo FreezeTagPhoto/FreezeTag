@@ -75,7 +75,7 @@ export default function Home() {
                                 progress={progress}
                                 className={styles.progress_bar}
                             />
-                            <p>It is safe to leave the page</p>
+                            <p>It is safe to leave the page.</p>
                         </label>
                     </div>
                 </div>

@@ -8,7 +8,7 @@ import IndeterminateCheckbox, {
 import TagIdCounter from "@/api/tags/tagidcounter";
 import TagRemover from "@/api/tags/tagremover";
 import FreezeTagSet from "@/common/freezetag/freezetagset";
-import { CirclePlus } from "lucide-react";
+import { CirclePlus, Tag } from "lucide-react";
 
 export type TagChangeProps = {
     image_ids: FreezeTagSet<number>;
@@ -23,6 +23,8 @@ export default function TagChangeButton({
     const [allTags, setAllTags] = useState<string[]>([]);
     const [filteredTags, setFilteredTags] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>("");
+    const [fade, setFade] = useState({ top: false, bottom: false });
+    const tagScrollRef = useRef<HTMLDivElement | null>(null);
 
     const updateAllTags = async () => {
         const result = await TagGetter();
@@ -57,6 +59,48 @@ export default function TagChangeButton({
 
         setChangedCheckboxes(new Map());
     };
+
+    const syncFade = () => {
+        const el = tagScrollRef.current;
+        if (!el) {
+            setFade((prev) =>
+                prev.top === false && prev.bottom === false
+                    ? prev
+                    : { top: false, bottom: false },
+            );
+            return;
+        }
+        const overflow = el.scrollHeight > el.clientHeight + 1;
+        if (!overflow) {
+            setFade((prev) =>
+                prev.top === false && prev.bottom === false
+                    ? prev
+                    : { top: false, bottom: false },
+            );
+            return;
+        }
+        const atTop = el.scrollTop <= 1;
+        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+        const next = { top: !atTop, bottom: !atBottom };
+        setFade((prev) =>
+            prev.top === next.top && prev.bottom === next.bottom ? prev : next,
+        );
+    };
+
+    useEffect(() => {
+        const el = tagScrollRef.current;
+        if (!el) return;
+        const raf = requestAnimationFrame(syncFade);
+        const onResize = () => syncFade();
+        window.addEventListener("resize", onResize);
+        const ro = new ResizeObserver(() => syncFade());
+        ro.observe(el);
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener("resize", onResize);
+            ro.disconnect();
+        };
+    }, [filteredTags]);
 
     const searchTagRef = useRef<HTMLInputElement | null>(null);
 
@@ -121,25 +165,35 @@ export default function TagChangeButton({
 
     return (
         <div className={styles.form}>
-            <div className={styles.tag_menu}>
-                {filteredTags.map((tag) => (
-                    <label key={tag} title={tag}>
-                        <IndeterminateCheckbox
-                            value={
-                                (changedCheckboxes.has(tag)
-                                    ? changedCheckboxes.get(tag)
-                                    : checkboxSeeds.get(tag)) ??
-                                CheckboxState.Unchecked
-                            }
-                            afterChange={(val) =>
-                                setChangedCheckboxes(
-                                    changedCheckboxes.set(tag, val),
-                                )
-                            }
-                        />
-                        <p>{tag}</p>
-                    </label>
-                ))}
+            <div
+                className={styles.tag_menu_wrap}
+                data-fade-top={fade.top ? "1" : "0"}
+                data-fade-bottom={fade.bottom ? "1" : "0"}
+            >
+                <div
+                    className={styles.tag_menu}
+                    ref={tagScrollRef}
+                    onScroll={syncFade}
+                >
+                    {filteredTags.map((tag) => (
+                        <label key={tag} title={tag}>
+                            <IndeterminateCheckbox
+                                value={
+                                    (changedCheckboxes.has(tag)
+                                        ? changedCheckboxes.get(tag)
+                                        : checkboxSeeds.get(tag)) ??
+                                    CheckboxState.Unchecked
+                                }
+                                afterChange={(val) =>
+                                    setChangedCheckboxes(
+                                        changedCheckboxes.set(tag, val),
+                                    )
+                                }
+                            />
+                            <p>{tag}</p>
+                        </label>
+                    ))}
+                </div>
             </div>
 
             <div className={styles.bottom_container}>
@@ -168,6 +222,7 @@ export default function TagChangeButton({
                     className={styles.label}
                     title="Adds selected tags to the selected images"
                 >
+                    <Tag className={styles.labelIcon} aria-hidden="true" />
                     Add Selected Tags
                 </label>
                 <input

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import logoUrl from "@/icons/freezetag+text.svg";
+import cubeLogoUrl from "@/icons/freezetag.svg";
 import styles from "./Sidebar.module.css";
 import LogoutHandler from "@/api/auth/logouthandler";
 
@@ -17,6 +18,9 @@ import {
     Puzzle,
     Users,
     LogOut,
+    PanelLeftClose,
+    PanelLeftOpen,
+    ChevronsLeft,
 } from "lucide-react";
 
 import { useContext, useEffect, useMemo, useState } from "react";
@@ -61,10 +65,12 @@ function AccountInfo({
     username,
     userId,
     profilePictureUrl,
+    collapsed,
 }: {
     username: string;
     userId: number;
     profilePictureUrl: string | null;
+    collapsed: boolean;
 }) {
     const initial =
         username && username.trim().length > 0
@@ -72,7 +78,11 @@ function AccountInfo({
             : (userId.toString()[0] ?? "?");
 
     return (
-        <div className={styles.accountInfo} aria-label="Signed in user">
+        <div
+            className={`${styles.accountInfo} ${collapsed ? styles.accountInfoCollapsed : ""}`}
+            aria-label="Signed in user"
+            title={collapsed ? username : undefined}
+        >
             <span className={styles.itemInner}>
                 {profilePictureUrl ? (
                     <span
@@ -117,36 +127,52 @@ function AccountInfo({
                     </span>
                 )}
 
-                <span className={styles.itemLabel} style={{ lineHeight: 1.15 }}>
+                {!collapsed && (
                     <span
-                        style={{
-                            display: "block",
-                            fontWeight: 700,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            maxWidth: "100%",
-                        }}
-                        title={username}
+                        className={styles.itemLabel}
+                        style={{ lineHeight: 1.15 }}
                     >
-                        {username}
+                        <span
+                            style={{
+                                display: "block",
+                                fontWeight: 700,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: "100%",
+                            }}
+                            title={username}
+                        >
+                            {username}
+                        </span>
+                        <span
+                            style={{
+                                display: "block",
+                                opacity: 0.8,
+                                fontSize: "0.85em",
+                            }}
+                        >
+                            ID {userId}
+                        </span>
                     </span>
-                    <span
-                        style={{
-                            display: "block",
-                            opacity: 0.8,
-                            fontSize: "0.85em",
-                        }}
-                    >
-                        ID {userId}
-                    </span>
-                </span>
+                )}
             </span>
         </div>
     );
 }
 
-export default function Sidebar() {
+type SidebarProps = {
+    collapsed?: boolean;
+    onToggleCollapsed?: () => void;
+    /** Called when the sidebar should close (mobile overlay or after nav). */
+    onMobileClose?: () => void;
+};
+
+export default function Sidebar({
+    collapsed = false,
+    onToggleCollapsed,
+    onMobileClose,
+}: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
 
@@ -183,7 +209,6 @@ export default function Sidebar() {
             if (!alive) return;
 
             if (!result.ok) {
-                // initial profile picture is backup
                 console.warn(
                     `Profile picture fetch failed (${result.error.status}): ${result.error.message}`,
                 );
@@ -217,15 +242,23 @@ export default function Sidebar() {
     if (!user) return null;
 
     return (
-        <div className={styles.wrap}>
+        <div
+            className={`${styles.wrap} ${collapsed ? styles.wrapCollapsed : ""}`}
+        >
+            {/* Brand / logo – no buttons here */}
             <div className={styles.brand}>
-                <Link href="/" className={styles.logoWrap}>
+                <Link
+                    href="/"
+                    className={`${styles.logoWrap} ${collapsed ? styles.logoWrapCollapsed : ""}`}
+                    title="FreezeTag"
+                    onClick={() => onMobileClose?.()}
+                >
                     <Image
-                        src={logoUrl}
+                        src={collapsed ? cubeLogoUrl : logoUrl}
                         alt="FreezeTag"
                         fill
                         priority
-                        sizes="240px"
+                        sizes={collapsed ? "48px" : "240px"}
                         className={styles.logoImg}
                     />
                 </Link>
@@ -257,17 +290,21 @@ export default function Sidebar() {
                             href={item.href}
                             className={`${styles.item} ${
                                 isActive ? styles.itemActive : ""
-                            }`}
+                            } ${collapsed ? styles.itemCollapsed : ""}`}
                             aria-current={isActive ? "page" : undefined}
+                            title={collapsed ? item.label : undefined}
+                            onClick={() => onMobileClose?.()}
                         >
                             <span className={styles.itemInner}>
                                 <Icon
                                     className={styles.itemIcon}
                                     aria-hidden="true"
                                 />
-                                <span className={styles.itemLabel}>
-                                    {item.label}
-                                </span>
+                                {!collapsed && (
+                                    <span className={styles.itemLabel}>
+                                        {item.label}
+                                    </span>
+                                )}
                             </span>
                         </Link>
                     );
@@ -277,26 +314,100 @@ export default function Sidebar() {
                     <div className={styles.sectionLine} />
                 </div>
 
+                <div className={styles.collapseSidebar} aria-hidden="true">
+                    {/*
+                     * SLOT 1 (right below the divider):
+                     * – Desktop: Collapse / Expand button
+                     * – Mobile:  Close button
+                     * Shown via CSS media query, not JS conditional.
+                     */}
+
+                    {/* Desktop collapse/expand */}
+                    {onToggleCollapsed && (
+                        <button
+                            type="button"
+                            className={`${styles.item} ${styles.collapseToggle} ${
+                                collapsed ? styles.itemCollapsed : ""
+                            } ${styles.collapseToggleDesktop}`}
+                            onClick={onToggleCollapsed}
+                            aria-label={
+                                collapsed
+                                    ? "Expand sidebar"
+                                    : "Collapse sidebar"
+                            }
+                            title={
+                                collapsed
+                                    ? "Expand sidebar"
+                                    : "Collapse sidebar"
+                            }
+                        >
+                            <span className={styles.itemInner}>
+                                {collapsed ? (
+                                    <PanelLeftOpen
+                                        className={styles.itemIcon}
+                                        aria-hidden="true"
+                                    />
+                                ) : (
+                                    <PanelLeftClose
+                                        className={styles.itemIcon}
+                                        aria-hidden="true"
+                                    />
+                                )}
+                                {!collapsed && (
+                                    <span className={styles.itemLabel}>
+                                        Collapse Sidebar
+                                    </span>
+                                )}
+                            </span>
+                        </button>
+                    )}
+
+                    {/* Mobile close */}
+                    <button
+                        type="button"
+                        className={`${styles.item} ${styles.collapseToggle} ${styles.collapseToggleMobile}`}
+                        onClick={onMobileClose}
+                        aria-label="Close navigation"
+                    >
+                        <span className={styles.itemInner}>
+                            <ChevronsLeft
+                                className={styles.itemIcon}
+                                aria-hidden="true"
+                            />
+                            <span className={styles.itemLabel}>Close</span>
+                        </span>
+                    </button>
+                </div>
+
                 <div className={styles.bottomDock}>
                     <AccountInfo
                         username={username}
                         userId={user.user_id}
                         profilePictureUrl={profilePictureUrl}
+                        collapsed={collapsed}
                     />
+
                     <div
                         role="button"
                         tabIndex={0}
-                        className={`${styles.item} ${styles.logoutItem}`}
+                        className={`${styles.item} ${styles.logoutItem} ${
+                            collapsed ? styles.itemCollapsed : ""
+                        }`}
                         onClick={onLogout}
                         onKeyDown={onLogoutKeyDown}
                         aria-label="Log out"
+                        title={collapsed ? "Log out" : undefined}
                     >
                         <span className={styles.itemInner}>
                             <LogOut
                                 className={styles.itemIcon}
                                 aria-hidden="true"
                             />
-                            <span className={styles.itemLabel}>Log out</span>
+                            {!collapsed && (
+                                <span className={styles.itemLabel}>
+                                    Log out
+                                </span>
+                            )}
                         </span>
                     </div>
                 </div>

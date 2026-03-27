@@ -1,9 +1,9 @@
 .wrap {
     height: 100%;
     display: grid;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto 1fr;
     gap: 8px;
-    padding: 0 16px;
+    padding: 0 8px;
     min-height: 0;
     overflow: hidden;
 }
@@ -17,7 +17,8 @@
 
 .logoWrap {
     position: relative;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     height: clamp(44px, 9vw, 72px);
     cursor: pointer;
 }
@@ -62,7 +63,6 @@
 
 .item:active {
     filter: none;
-    /* transform: scale(0.98); */
     translate: 1px 1px;
 }
 
@@ -113,12 +113,74 @@
     background: var(--border-color);
 }
 
+.collapseSidebar {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 2rem;
+}
+
+.collapseToggle {
+    color: var(--text);
+    background: var(--crust);
+    border: var(--border-info);
+    font-size: 0.9rem;
+    filter: var(--dropshadow);
+}
+
+.collapseToggle:hover {
+    background: var(--surface0);
+    color: var(--text);
+}
+.collapseToggleDesktop {
+    display: flex;
+}
+.collapseToggleMobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .collapseToggleDesktop {
+        display: none;
+    }
+
+    .collapseToggleMobile {
+        display: flex;
+    }
+}
+
+/* Collapsed sidebar */
+
+.wrapCollapsed {
+    padding: 0 8px;
+}
+
+.logoWrapCollapsed {
+    width: 48px;
+    height: clamp(44px, 9vw, 72px);
+}
+
+.itemCollapsed {
+    justify-content: center;
+    padding: 4px 0;
+}
+
+.itemCollapsed .itemInner {
+    justify-content: center;
+}
+
+.accountInfoCollapsed {
+    justify-content: center;
+}
+
+.accountInfoCollapsed .itemInner {
+    justify-content: center;
+}
+
 .bottomDock {
     margin-top: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    /* gap: 6px; */
     padding-bottom: 2rem;
 }
 
@@ -136,6 +198,7 @@
     font-size: 1rem;
     text-align: left;
     filter: none;
+    /* translate: 0.5rem; */
 }
 
 .logoutItem {

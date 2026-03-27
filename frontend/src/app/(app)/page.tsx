@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { CheckCheck, X, Puzzle, Trash2 } from "lucide-react";
 import SearchHandler from "@/api/query/searchhandler";
 import TagGetter from "@/api/tags/taggetter";
 import styles from "../page.module.css";
@@ -119,6 +120,21 @@ export default function Home() {
         };
     }, []);
 
+    useEffect(() => {
+        const onTagCreated = (e: Event) => {
+            const tag = (e as CustomEvent<{ tag: string }>).detail?.tag;
+            if (!tag) return;
+            setAllTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
+            setTagCounts((prev) => ({
+                ...prev,
+                [tag]: (prev[tag] ?? 0) + 1,
+            }));
+        };
+        window.addEventListener("freezetag:tag-created", onTagCreated);
+        return () =>
+            window.removeEventListener("freezetag:tag-created", onTagCreated);
+    }, []);
+
     // Load tag counts for the currently visible images
     useEffect(() => {
         let cancelled = false;
@@ -192,6 +208,12 @@ export default function Home() {
                                             )
                                         }
                                     >
+                                        <CheckCheck
+                                            className={
+                                                styles.select_button_icon
+                                            }
+                                            aria-hidden="true"
+                                        />
                                         Select All
                                     </button>
                                     <button
@@ -201,11 +223,32 @@ export default function Home() {
                                             setSelectedIds(selectedIds.clear())
                                         }
                                     >
+                                        <X
+                                            className={
+                                                styles.select_button_icon
+                                            }
+                                            aria-hidden="true"
+                                        />
                                         Deselect All
                                     </button>
                                     <button
                                         type="button"
                                         className={styles.select_button}
+                                        onClick={async () => {
+                                            setSelectingPlugin(true);
+                                        }}
+                                    >
+                                        <Puzzle
+                                            className={
+                                                styles.select_button_icon
+                                            }
+                                            aria-hidden="true"
+                                        />
+                                        Run Plugins
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`${styles.select_button} ${styles.select_button_danger}`}
                                         onClick={async (e) => {
                                             e.stopPropagation();
 
@@ -242,16 +285,13 @@ export default function Home() {
                                             setSelectedIds(new FreezeTagSet());
                                         }}
                                     >
+                                        <Trash2
+                                            className={
+                                                styles.select_button_icon
+                                            }
+                                            aria-hidden="true"
+                                        />
                                         Delete Images
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={styles.select_button}
-                                        onClick={async () => {
-                                            setSelectingPlugin(true);
-                                        }}
-                                    >
-                                        Run Plugins
                                     </button>
                                 </div>
                                 <div className={styles.gallery}>

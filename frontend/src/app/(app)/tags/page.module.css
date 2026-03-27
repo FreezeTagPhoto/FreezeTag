@@ -1,9 +1,11 @@
 .main {
     padding: 24px 28px;
     overflow: auto;
+    height: 100%;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    box-sizing: border-box;
 }
 
 .header {

@@ -7,7 +7,7 @@
     background: var(--base);
 
     color: var(--text);
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: 500;
 
     display: inline-flex;
