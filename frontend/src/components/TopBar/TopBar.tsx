@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Undo2, MousePointer2 } from "lucide-react";
 import styles from "./TopBar.module.css";
 import SearchBar from "@/components/SearchBar/SearchBar";
 import Pill from "@/components/UI/Pill/Pill";
@@ -378,7 +379,19 @@ export default function TopBar({
                 </div>
                 <div className={styles.menuContainer}>
                     <Pill
-                        label={multiSelect ? "Return" : "Select"}
+                        label={
+                            multiSelect ? (
+                                <>
+                                    <Undo2 className={styles.pillIcon} aria-hidden="true" />
+                                    Return
+                                </>
+                            ) : (
+                                <>
+                                    <MousePointer2 className={styles.pillIcon} aria-hidden="true" />
+                                    Select
+                                </>
+                            )
+                        }
                         variant="menu"
                         onClick={() => onMultiSelectChange(!multiSelect)}
                     />

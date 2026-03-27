@@ -1,3 +1,9 @@
+.pillIcon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+}
+
 .bar {
     min-height: 72px;
     height: auto;
