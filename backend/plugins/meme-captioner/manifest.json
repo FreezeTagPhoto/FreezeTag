@@ -6,7 +6,7 @@
     "make_caption_form": {
       "friendly_name": "Make Form for Captioning",
       "type": "generate_form",
-      "signature": "single_image"
+      "signature": "image_batch"
     },
     "process_caption_form": {
       "friendly_name": "Add Caption To Image",
