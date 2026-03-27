@@ -317,7 +317,6 @@ export default function Sidebar({
                 </div>
 
                 <div className={styles.collapseSidebar}>
-
                     {/* Desktop collapse/expand */}
                     {onToggleCollapsed && (
                         <button

@@ -51,6 +51,11 @@ export default function PreviewWindow({
     const [baseSize, setBaseSize] = useState<BaseSize>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
+    const handleDeleted = useCallback(
+        () => onDeleted?.(selectedId),
+        [onDeleted, selectedId],
+    );
+
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {
             const currentIndex = imageIds.indexOf(selectedId);
@@ -329,7 +334,7 @@ export default function PreviewWindow({
                         selectedId={selectedId}
                         onSearchTag={onSearchTag}
                         viewerRef={viewerRef}
-                        onDeleted={() => onDeleted?.(selectedId)}
+                        onDeleted={handleDeleted}
                     />
                 )}
             </div>

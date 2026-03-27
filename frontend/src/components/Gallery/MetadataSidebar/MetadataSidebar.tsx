@@ -5,6 +5,8 @@ import {
     useLayoutEffect,
     useRef,
     useState,
+    useCallback,
+    memo,
     RefObject,
     MouseEvent as ReactMouseEvent,
 } from "react";
@@ -38,6 +40,56 @@ import {
     Trash2,
     Loader2,
 } from "lucide-react";
+
+// memoized so individual pills don't re-render when unrelated sidebar state changes
+type TagTokenProps = {
+    tag: string;
+    disabled: boolean;
+    onSearch?: (tag: string) => void;
+    onRemove: (tag: string) => Promise<void>;
+};
+const TagToken = memo(function TagToken({
+    tag,
+    disabled,
+    onSearch,
+    onRemove,
+}: TagTokenProps) {
+    const handleSearch = useCallback(
+        (e: ReactMouseEvent<HTMLButtonElement>) => {
+            e.stopPropagation();
+            onSearch?.(tag);
+        },
+        [tag, onSearch],
+    );
+    const handleRemove = useCallback(
+        (e: ReactMouseEvent<HTMLButtonElement>) => {
+            e.stopPropagation();
+            void onRemove(tag);
+        },
+        [tag, onRemove],
+    );
+    return (
+        <span className={styles.tagTokenWrap}>
+            <Pill
+                label={tag}
+                variant="token"
+                className={styles.tagPill}
+                onClick={handleSearch}
+            />
+            <button
+                className={styles.tagTokenClose}
+                type="button"
+                aria-label={`Remove tag ${tag}`}
+                title="Remove"
+                disabled={disabled}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleRemove}
+            >
+                <X className={styles.iconSm} />
+            </button>
+        </span>
+    );
+});
 
 export type MetadataSidebarProps = {
     selectedId: number;
@@ -89,7 +141,7 @@ function triggerBrowserDownload(blob: Blob, filename: string) {
     URL.revokeObjectURL(url);
 }
 
-export default function MetadataSidebar({
+const MetadataSidebar = memo(function MetadataSidebar({
     selectedId,
     onSearchTag,
     viewerRef,
@@ -187,39 +239,50 @@ export default function MetadataSidebar({
         top: false,
         bottom: false,
     });
+    const syncRafRef = useRef<number | null>(null);
 
-    const syncTagPillsFade = () => {
-        const el = tagPillsScrollRef.current;
-        if (!el) {
-            setTagPillsFade({ top: false, bottom: false });
-            return;
-        }
-        const overflow = el.scrollHeight > el.clientHeight + 1;
-        if (!overflow) {
-            setTagPillsFade({ top: false, bottom: false });
-            return;
-        }
-        const atTop = el.scrollTop <= 1;
-        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-        setTagPillsFade((prev) => {
-            const next = { top: !atTop, bottom: !atBottom };
-            return prev.top === next.top && prev.bottom === next.bottom
-                ? prev
-                : next;
+    // schedules at most one RAF per frame so rapid scroll events don't queue up multiple state updates
+    const syncTagPillsFade = useCallback(() => {
+        if (syncRafRef.current !== null)
+            cancelAnimationFrame(syncRafRef.current);
+        syncRafRef.current = requestAnimationFrame(() => {
+            syncRafRef.current = null;
+            const el = tagPillsScrollRef.current;
+            if (!el) {
+                setTagPillsFade({ top: false, bottom: false });
+                return;
+            }
+            const overflow = el.scrollHeight > el.clientHeight + 1;
+            if (!overflow) {
+                setTagPillsFade({ top: false, bottom: false });
+                return;
+            }
+            const atTop = el.scrollTop <= 1;
+            const atBottom =
+                el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+            setTagPillsFade((prev) => {
+                const next = { top: !atTop, bottom: !atBottom };
+                return prev.top === next.top && prev.bottom === next.bottom
+                    ? prev
+                    : next;
+            });
         });
-    };
+    }, []);
 
     useEffect(() => {
         const el = tagPillsScrollRef.current;
         if (!el) return;
-        const raf = requestAnimationFrame(syncTagPillsFade);
+        syncTagPillsFade();
         const ro = new ResizeObserver(() => syncTagPillsFade());
         ro.observe(el);
         return () => {
-            cancelAnimationFrame(raf);
+            if (syncRafRef.current !== null) {
+                cancelAnimationFrame(syncRafRef.current);
+                syncRafRef.current = null;
+            }
             ro.disconnect();
         };
-    }, [currentTags]);
+    }, [currentTags, syncTagPillsFade]);
 
     const stopClick = (e: ReactMouseEvent<HTMLElement>) => e.stopPropagation();
 
@@ -444,48 +507,15 @@ export default function MetadataSidebar({
                                             onScroll={syncTagPillsFade}
                                         >
                                             {(currentTags ?? []).map((t) => (
-                                                <span
+                                                <TagToken
                                                     key={t}
-                                                    className={
-                                                        styles.tagTokenWrap
+                                                    tag={t}
+                                                    disabled={tagMutating}
+                                                    onSearch={onSearchTag}
+                                                    onRemove={
+                                                        removeTagFromSelected
                                                     }
-                                                >
-                                                    <Pill
-                                                        label={t}
-                                                        variant="token"
-                                                        className={
-                                                            styles.tagPill
-                                                        }
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onSearchTag?.(t);
-                                                        }}
-                                                    />
-                                                    <button
-                                                        className={
-                                                            styles.tagTokenClose
-                                                        }
-                                                        type="button"
-                                                        aria-label={`Remove tag ${t}`}
-                                                        title="Remove"
-                                                        disabled={tagMutating}
-                                                        onMouseDown={(e) =>
-                                                            e.preventDefault()
-                                                        }
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            void removeTagFromSelected(
-                                                                t,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <X
-                                                            className={
-                                                                styles.iconSm
-                                                            }
-                                                        />
-                                                    </button>
-                                                </span>
+                                                />
                                             ))}
                                         </div>
                                     </div>
@@ -719,4 +749,6 @@ export default function MetadataSidebar({
             </div>
         </aside>
     );
-}
+});
+
+export default MetadataSidebar;
