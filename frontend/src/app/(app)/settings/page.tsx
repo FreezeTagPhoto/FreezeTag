@@ -269,15 +269,9 @@ export default function SettingsPage() {
                 </div>
 
                 <div className={styles.fields}>
-                    {/*
-                     * Profile picture row:
-                     *   Outer grid  — col 1: label + hint  |  col 2: avatar + controls
-                     *   Inner grid  — col 1: avatar circle  |  col 2: button + callout
-                     */}
                     <div
                         className={`${styles.fieldRow} ${styles.fieldRowTop}`}
                     >
-                        {/* ── Outer col 1: label + hint ── */}
                         <div className={styles.fieldText}>
                             <div className={styles.label}>Profile picture</div>
                             <p className={styles.hint}>
@@ -285,10 +279,8 @@ export default function SettingsPage() {
                             </p>
                         </div>
 
-                        {/* ── Outer col 2: inner two-column layout ── */}
                         <div className={styles.control}>
                             <div className={styles.avatarInnerGrid}>
-                                {/* Inner col 1: avatar circle */}
                                 <div
                                     className={styles.avatarRing}
                                     aria-hidden="true"
@@ -310,8 +302,7 @@ export default function SettingsPage() {
                                         </div>
                                     )}
                                 </div>
-
-                                {/* Inner col 2: button + callout */}
+                                { /* only jpeg, png, or webp formats supported for profile pictures */ }
                                 <div className={styles.avatarActions}>
                                     <input
                                         ref={fileInputRef}
