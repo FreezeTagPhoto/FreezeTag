@@ -221,6 +221,7 @@ func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		ue := user.InitUserEndpoint(deps.authService)
 		userGroup.GET("/profile-picture/:id", middleware.RequirePermissionOrSelf(data.ReadUser), ue.GetProfilePicture)
 		userGroup.POST("/profile-picture/:id", middleware.RequirePermissionOrSelf(data.WriteUser), ue.SetProfilePicture)
+		userGroup.DELETE("/profile-picture/:id", middleware.RequirePermissionOrSelf(data.WriteUser), ue.ResetProfilePicture)
 
 		userGroup.GET("/:id", middleware.RequirePermissionOrSelf(data.ReadUser), ue.GetUser)
 		userGroup.DELETE("/:id", middleware.RequirePermission(data.WriteUser), ue.DeleteUser)
