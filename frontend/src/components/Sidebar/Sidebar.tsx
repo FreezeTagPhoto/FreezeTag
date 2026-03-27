@@ -316,13 +316,7 @@ export default function Sidebar({
                     <div className={styles.sectionLine} />
                 </div>
 
-                <div className={styles.collapseSidebar} aria-hidden="true">
-                    {/*
-                     * SLOT 1 (right below the divider):
-                     * – Desktop: Collapse / Expand button
-                     * – Mobile:  Close button
-                     * Shown via CSS media query, not JS conditional.
-                     */}
+                <div className={styles.collapseSidebar}>
 
                     {/* Desktop collapse/expand */}
                     {onToggleCollapsed && (
