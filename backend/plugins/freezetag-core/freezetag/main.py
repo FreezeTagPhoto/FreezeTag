@@ -3,6 +3,7 @@ from .protocol import read_message, write_message, MessageType, Message
 from .hooks import NoAction
 from .message import log
 from . import hooks
+import json
 
 from PIL import Image
 import io
@@ -66,13 +67,23 @@ def run():
                         else:
                             write_message(NoAction())
                     case "form_data":
-                        # TODO: this is for taking in form data from the server
-                        write_message(Message(MessageType.ERR, f'unimplemented form_data hook'))
-                        continue
+                        hook = msg.contents["hook"]
+                        form_str = msg.contents["json"]
+                        hook_func = hooks._plugin_hooks.get(hook, None)
+                        if hook_func is None:
+                            write_message(Message(MessageType.ERR, f'form_data hook "{hook}" not found'.encode("utf-8")))
+                            continue
 
-                        # postlude
+                        form = None
                         try:
-                            action = hook_func(ids)
+                            form = json.loads(form_str)
+                        except Exception as error:
+                            write_message(Message(MessageType.ERR, f"exception while parsing form data as object: {error}"))
+                            continue
+
+                        action = hooks.NoAction()
+                        try:
+                            action = hook_func(form)
                         except Exception as error:
                             write_message(Message(MessageType.ERR, f'exception during hook: {error}'))
                             continue

@@ -49,8 +49,9 @@ class AddImageAction(HookAction):
 
 class SendFormAction(HookAction):
     def __init__(self, form: str):
+        """`form` should be a string containing valid HTML (can have embedded CSS), with the outermost tag being `<form></form>` without any attributes."""
         HookAction.__init__(self, {"form": form}, "send_form")
-        
+
 class MultipartAction(HookAction):
     def __init__(self, *hooks: HookAction):
         actions = []

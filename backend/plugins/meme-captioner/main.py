@@ -1,5 +1,6 @@
 import freezetag
-from freezetag.hooks import single_image, form_data, SendFormAction
+from freezetag.hooks import single_image, form_data, SendFormAction, NoAction
+from freezetag.message import log
 
 @single_image
 def make_caption_form(img, id):
@@ -8,9 +9,9 @@ def make_caption_form(img, id):
 
 @form_data
 def process_caption_form(data):
-    # TODO: This function can actually choose to modify images and such based on the form data
-    # TODO: The form data should probably just be akin to a dictionary?
-    return None
+    log("Running process caption form...")
+    log(f"Expected to see name field as Dan, got {data["name"]}")
+    return NoAction()
 
 if __name__ == "__main__":
     freezetag.run()
