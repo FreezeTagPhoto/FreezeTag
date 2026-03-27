@@ -339,6 +339,10 @@
         color 120ms ease;
 }
 
+.iconBtn:hover {
+    background: var(--surface0);
+}
+
 .iconBtn:active {
     transform: translateY(1px);
 }
@@ -348,7 +352,8 @@
 }
 
 .iconBtn:disabled {
-    cursor: default;
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .iconBtnIcon {
@@ -489,11 +494,10 @@
 }
 
 .avatarInnerGrid {
-    display: grid;
-    grid-template-columns: auto 1fr;
+    display: inline-grid;
+    grid-template-columns: auto auto;
     align-items: start;
     gap: 14px;
-    width: 100%;
 }
 
 .avatarImg {
@@ -519,9 +523,21 @@
 .avatarActions {
     display: flex;
     flex-direction: column;
+    align-items: flex-end;
     gap: 8px;
-    min-width: 0;
-    width: 100%;
+}
+
+.avatarBtnsGroup {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.avatarBtns {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
 }
 
 .hiddenFileInput {
