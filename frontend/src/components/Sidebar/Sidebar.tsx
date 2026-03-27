@@ -20,7 +20,6 @@ import {
     LogOut,
     PanelLeftClose,
     PanelLeftOpen,
-    X,
     ChevronsLeft,
 } from "lucide-react";
 
@@ -392,7 +391,7 @@ export default function Sidebar({
                         role="button"
                         tabIndex={0}
                         className={`${styles.item} ${styles.logoutItem} ${
-                            collapsed ? styles.itemCollapsed : ""   
+                            collapsed ? styles.itemCollapsed : ""
                         }`}
                         onClick={onLogout}
                         onKeyDown={onLogoutKeyDown}

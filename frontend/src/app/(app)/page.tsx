@@ -124,9 +124,7 @@ export default function Home() {
         const onTagCreated = (e: Event) => {
             const tag = (e as CustomEvent<{ tag: string }>).detail?.tag;
             if (!tag) return;
-            setAllTags((prev) =>
-                prev.includes(tag) ? prev : [...prev, tag],
-            );
+            setAllTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
             setTagCounts((prev) => ({
                 ...prev,
                 [tag]: (prev[tag] ?? 0) + 1,
@@ -210,7 +208,12 @@ export default function Home() {
                                             )
                                         }
                                     >
-                                        <CheckCheck className={styles.select_button_icon} aria-hidden="true" />
+                                        <CheckCheck
+                                            className={
+                                                styles.select_button_icon
+                                            }
+                                            aria-hidden="true"
+                                        />
                                         Select All
                                     </button>
                                     <button
@@ -220,7 +223,12 @@ export default function Home() {
                                             setSelectedIds(selectedIds.clear())
                                         }
                                     >
-                                        <X className={styles.select_button_icon} aria-hidden="true" />
+                                        <X
+                                            className={
+                                                styles.select_button_icon
+                                            }
+                                            aria-hidden="true"
+                                        />
                                         Deselect All
                                     </button>
                                     <button
@@ -230,7 +238,12 @@ export default function Home() {
                                             setSelectingPlugin(true);
                                         }}
                                     >
-                                        <Puzzle className={styles.select_button_icon} aria-hidden="true" />
+                                        <Puzzle
+                                            className={
+                                                styles.select_button_icon
+                                            }
+                                            aria-hidden="true"
+                                        />
                                         Run Plugins
                                     </button>
                                     <button
@@ -272,7 +285,12 @@ export default function Home() {
                                             setSelectedIds(new FreezeTagSet());
                                         }}
                                     >
-                                        <Trash2 className={styles.select_button_icon} aria-hidden="true" />
+                                        <Trash2
+                                            className={
+                                                styles.select_button_icon
+                                            }
+                                            aria-hidden="true"
+                                        />
                                         Delete Images
                                     </button>
                                 </div>

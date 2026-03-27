@@ -382,12 +382,18 @@ export default function TopBar({
                         label={
                             multiSelect ? (
                                 <>
-                                    <Undo2 className={styles.pillIcon} aria-hidden="true" />
+                                    <Undo2
+                                        className={styles.pillIcon}
+                                        aria-hidden="true"
+                                    />
                                     Return
                                 </>
                             ) : (
                                 <>
-                                    <MousePointer2 className={styles.pillIcon} aria-hidden="true" />
+                                    <MousePointer2
+                                        className={styles.pillIcon}
+                                        aria-hidden="true"
+                                    />
                                     Select
                                 </>
                             )
