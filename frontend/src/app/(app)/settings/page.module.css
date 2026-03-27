@@ -170,18 +170,18 @@
 
 .primaryButton {
     background: var(--accent1);
-    color: var(--text);
+    color: var(--on-accent);
     border-color: var(--accent1);
 }
 
 .primaryButton:hover {
     background: var(--accent1);
     border-color: var(--accent1);
-    color: var(--text);
+    color: var(--on-accent);
 }
 
 .primaryButton:disabled {
-    color: var(--text);
+    color: var(--on-accent);
 }
 
 .segmented {
@@ -263,7 +263,7 @@
 
 .segment input:checked + .segmentText {
     background: var(--accent1);
-    color: var(--text);
+    color: var(--on-accent);
     filter: none;
     position: relative;
     /* z-index: 1; */

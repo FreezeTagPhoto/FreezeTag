@@ -129,8 +129,8 @@
     margin-bottom: 12px;
     padding: 10px 12px;
     border-radius: var(--border-radius);
-    color: var(--maroon);
-    background: var(--rosewater);
+    color: var(--red);
+    background: var(--base);
     border: 1px solid var(--red);
     font-size: 0.85rem;
     line-height: 1.2rem;
@@ -322,7 +322,7 @@
     border-radius: 999px;
 
     border: 1px solid var(--red);
-    background: var(--rosewater);
+    background: var(--red);
     color: var(--base);
 
     display: grid;
@@ -371,7 +371,7 @@
     margin-bottom: 10px;
     padding: 10px 12px;
     border-radius: var(--border-radius);
-    color: var(--text);
+    color: var(--on-accent);
     background: var(--accent1);
     border: var(--border-info);
     border-color: var(--accent2);

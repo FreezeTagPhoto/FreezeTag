@@ -132,6 +132,8 @@ export default function SearchBar({
 
     const [manualClosed, setManualClosed] = useState(false);
 
+    const hasValue = value.length > 0;
+
     const rawSuggestions = useMemo(() => {
         if (!suggestionsEnabled) return [];
         if (manualClosed) return [];
@@ -257,18 +259,18 @@ export default function SearchBar({
                         maybeOpenDropdown();
                     }}
                 />
-                <button
-                    className={`${styles.clear} ${
-                        value.length === 0 ? styles.iconDisabled : styles.iconOn
-                    }`}
-                    aria-label="Clear"
-                    onClick={() => onChange("")}
-                    type="button"
-                    disabled={value.length === 0 || !enabled}
-                    title={value.length === 0 ? "Nothing to clear" : "Clear"}
-                >
-                    <X className={styles.btnIcon} aria-hidden="true" />
-                </button>
+                {hasValue ? (
+                    <button
+                        className={`${styles.clear} ${styles.iconOn}`}
+                        aria-label="Clear"
+                        onClick={() => onChange("")}
+                        type="button"
+                        disabled={!enabled}
+                        title="Clear"
+                    >
+                        <X className={styles.btnIcon} aria-hidden="true" />
+                    </button>
+                ) : null}
 
                 {dropdownOpen && suggestions.length > 0 && (
                     <div

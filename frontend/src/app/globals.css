@@ -19,6 +19,8 @@ body {
     --accent3: #ffffff;
     --backdrop: rgba(0, 0, 0, 0.15);
     --border-color: rgba(0, 0, 0, 0.1);
+    --subtext0: var(--subtext1);
+    --on-accent: var(--text);
 }
 
 [data-theme-type="dark"] {
@@ -28,6 +30,7 @@ body {
     --accent3: #ffffff;
     --backdrop: rgba(255, 255, 255, 0.15);
     --border-color: rgba(150, 150, 150, 0.1);
+    --on-accent: var(--crust);
 }
 
 body {

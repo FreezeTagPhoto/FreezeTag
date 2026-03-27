@@ -130,7 +130,7 @@
 }
 
 .clear:disabled {
-    background: var(--mantle);
+    background: var(--surface0);
     color: var(--subtext0);
     cursor: default;
     pointer-events: none;
@@ -235,8 +235,8 @@
     width: 20px;
     border-radius: 999px;
 
-    border: var(--rosewater);
-    background: var(--rosewater);
+    border: 1px solid var(--red);
+    background: var(--red);
     color: var(--base);
 
     display: grid;
