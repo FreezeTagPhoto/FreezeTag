@@ -49,7 +49,7 @@ export default function PreviewWindow({
     const [hoveringImage, setHoveringImage] = useState(false);
     const [pendingPan, setPendingPan] = useState<PendingPan>(null);
     const [baseSize, setBaseSize] = useState<BaseSize>(null);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const moveSelection = useCallback(
         (direction: "next" | "prev") => {

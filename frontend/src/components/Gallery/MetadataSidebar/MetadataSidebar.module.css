@@ -321,8 +321,8 @@
     width: 20px;
     border-radius: 999px;
 
-    border: 1px solid var(--red);
-    background: var(--red);
+    border: var(--red);
+    background: var(--maroon);
     color: var(--base);
 
     display: grid;
