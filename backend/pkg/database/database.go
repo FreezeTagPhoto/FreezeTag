@@ -15,6 +15,7 @@ import (
 
 type ImageId int64
 type TagId int64
+type AlbumId int64
 
 type ImageDatabase interface {
 	// Get a list of image IDs corresponding to the provided query
@@ -79,6 +80,16 @@ type ImageDatabase interface {
 	//
 	// returns: a map of tag name to count
 	GetTagCounts([]ImageId) (map[string]int64, error)
+
+	CreateAlbum(string) (AlbumId, error)
+	SetImageAlbum(ImageId, AlbumId) error
+	RemoveAlbum(string) error
+	RemoveImageFromAlbum(ImageId, AlbumId) error
+	GetAlbums() ([]AlbumId, error)
+	GetAlbumImages(AlbumId) ([]ImageId, error)
+	GetAlbumImageCount(AlbumId) (int64, error)
+	GetAlbumTagCounts(AlbumId) (map[string]int64, error)
+	GetAlbumName(AlbumId) (*string, error)
 }
 
 type SqliteImageDatabase struct {
@@ -100,6 +111,19 @@ func InitSQLiteImageDatabase(datasource string) (SqliteImageDatabase, error) {
 	}
 	return SqliteImageDatabase{db}, nil
 }
+
+// func (db SqliteImageDatabase) WithTransaction(fn func(ImageDatabase) error) error {
+// 	tx, err := db.db.Begin()
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer tx.Rollback() //nolint:errcheck
+// 	txdb := &SqliteImageDatabase{db: tx}
+// 	if err := fn(txdb); err != nil {
+// 		return err
+// 	}
+// 	return tx.Commit()
+// }
 
 func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery) ([]ImageId, error) {
 	return db.GetImagesOrder(q, queries.DateAdded, queries.Descending)
@@ -411,10 +435,20 @@ func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageI
 		longitude = &data.Geo.Lon
 	}
 	var id int64
-	if err := db.db.QueryRow(
+	tx, err := db.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	if err := tx.QueryRow(
 		"INSERT INTO Images (imageFile, dateTaken, dateUploaded, cameraMake, cameraModel, latitude, longitude, width, height) values (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
 		file, datetaken, &dateuploaded, make, model, latitude, longitude, data.Width, data.Height,
 	).Scan(&id); err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 	return ImageId(id), nil
@@ -564,6 +598,131 @@ func (db SqliteImageDatabase) GetTagCounts(imageIds []ImageId) (map[string]int64
 		counts[tag] = count
 	}
 	return counts, nil
+}
+
+
+	// CreateAlbum(string) (AlbumId, error)
+	// SetImageAlbum(ImageId, AlbumId) error
+	// RemoveAlbum(string) error
+	// RemoveImageFromAlbum(ImageId, AlbumId) error
+	// GetAlbums() ([]AlbumId, error)
+	// GetAlbumImages(AlbumId) ([]ImageId, error)
+	// GetAlbumImageCount(AlbumId) (int64, error)
+	// GetAlbumTagCounts(AlbumId) (map[string]int64, error)
+	// GetAlbumName(AlbumId) (*string, error)
+
+func (db SqliteImageDatabase) CreateAlbum(name string) (AlbumId, error) {
+	var id int64
+	err := db.db.QueryRow("INSERT INTO Albums (name) VALUES (?) RETURNING id", name).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return AlbumId(id), nil
+}
+
+func (db SqliteImageDatabase) SetImageAlbum(imageId ImageId, albumId AlbumId) error {
+	query := "INSERT INTO AlbumImages (albumId, imageId) VALUES (?, ?)"
+	_, err := db.db.Exec(query, albumId, imageId)
+	return err
+}
+
+func (db SqliteImageDatabase) RemoveAlbum(name string) error {
+	_, err := db.db.Exec("DELETE FROM Albums WHERE name = ?", name)
+	return err
+}
+
+func (db SqliteImageDatabase) RemoveImageFromAlbum(imageId ImageId, albumId AlbumId) error {
+	_, err := db.db.Exec("DELETE FROM AlbumImages WHERE albumId = ? AND imageId = ?", albumId, imageId)
+	return err
+}
+
+func (db SqliteImageDatabase) GetAlbums() ([]AlbumId, error) {
+	rows, err := db.db.Query("SELECT id FROM Albums")
+	if err != nil {
+		return []AlbumId{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	albums := []AlbumId{}
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return []AlbumId{}, err
+		}
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return []AlbumId{}, err
+		}
+		albums = append(albums, AlbumId(id))
+	}
+	return albums, nil
+}
+
+func (db SqliteImageDatabase) GetAlbumImages(albumId AlbumId) ([]ImageId, error) {
+	rows, err := db.db.Query("SELECT imageId FROM AlbumImages WHERE albumId = ?", albumId)
+	if err != nil {
+		return []ImageId{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	images := []ImageId{}
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return []ImageId{}, err
+		}
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return []ImageId{}, err
+		}
+		images = append(images, ImageId(id))
+	}
+	return images, nil
+}
+
+func (db SqliteImageDatabase) GetAlbumImageCount(albumId AlbumId) (int64, error) {
+	var count int64
+	err := db.db.QueryRow("SELECT COUNT(*) FROM AlbumImages WHERE albumId = ?", albumId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (db SqliteImageDatabase) GetAlbumTagCounts(albumId AlbumId) (map[string]int64, error) {
+	query := `
+		SELECT tag, COUNT(Tags.id) as count FROM Tags
+		LEFT JOIN ImageTags on Tags.id = ImageTags.tagId
+		LEFT JOIN AlbumImages on ImageTags.imageId = AlbumImages.imageId
+		WHERE AlbumImages.albumId = ?
+		GROUP BY Tags.tag
+		`
+
+	rows, err := db.db.Query(query, albumId)
+	if err != nil {
+		return map[string]int64{}, err
+	}
+	defer rows.Close() //nolint:errcheck
+	counts := make(map[string]int64)
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return map[string]int64{}, err
+		}
+		var tag string
+		var count int64
+		if err := rows.Scan(&tag, &count); err != nil {
+			return map[string]int64{}, err
+		}
+		counts[tag] = count
+	}
+	return counts, nil
+}
+
+func (db SqliteImageDatabase) GetAlbumName(albumId AlbumId) (*string, error) {
+	var name string
+	err := db.db.QueryRow("SELECT name FROM Albums WHERE id = ?", albumId).Scan(&name)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	return &name, nil
 }
 
 // helper functions to convert sql.Null* to pointers

@@ -36,3 +36,16 @@ CREATE TABLE IF NOT EXISTS Thumbnails (
     CHECK(thumbnailSize > 0),
     UNIQUE(imageId, thumbnailSize)
 );
+
+CREATE TABLE IF NOT EXISTS Albums (
+    id INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS AlbumImages (
+    albumId INTEGER,
+    imageId INTEGER,
+    FOREIGN KEY(albumId) REFERENCES Albums(id) ON DELETE CASCADE,
+    FOREIGN KEY(imageId) REFERENCES Images(id) ON DELETE CASCADE,
+    UNIQUE(albumId, imageId)
+);
