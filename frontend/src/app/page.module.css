@@ -187,11 +187,32 @@
     background-color: var(--base);
 
     color: var(--text);
-    font-size: 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
 
     cursor: pointer;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
 }
 
 .select_button:hover {
     background-color: var(--surface0);
+}
+
+.select_button_icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex: 0 0 auto;
+}
+
+.select_button_danger {
+    color: var(--red);
+}
+
+.select_button_danger:hover {
+    background-color: var(--red);
+    color: var(--base);
+    border-color: var(--red);
 }
