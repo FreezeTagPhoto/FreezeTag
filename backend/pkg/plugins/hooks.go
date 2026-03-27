@@ -55,8 +55,11 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 			}
 			return h.processImageBatch(hookName, resolved, repo)
 		case ProcessFormData:
-			// TODO: Fill this in 
-			return nil, fmt.Errorf("manual_trigger,form_data not implemented")
+			resolved, ok := in.(string)
+			if !ok {
+				return nil, fmt.Errorf("invalid input type for manual_trigger,form_data")
+			}
+			return h.processFormData(hookName, resolved, repo);
 		}
 	}
 	return nil, fmt.Errorf("unknown hook type: %v,%v", t, s)
@@ -102,7 +105,21 @@ func (h *HookedPlugin) processImageBatch(hookName string, ids []database.ImageId
 	return res, nil
 }
 
-// TODO: Add processFormData
+func (h *HookedPlugin) processFormData(hookName string, data string, repo repositories.ImageRepository) (PluginResult, error) {
+	h.IO().In <- PluginMessage{
+		GET,
+		map[string]any{"action": "form_data", "json": data, "hook": hookName},
+	}
+	resp, err := h.handleRequests(repo)
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.handlePost(repo, resp.Contents)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
 
 // loop and handle plugin GETs until the next plugin PUT, then return it
 // errors marked with FATAL should stop further processing (the plugin is in an unworkable state)
@@ -217,7 +234,13 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 		}
 		return map[string]any{"name": name, "id": id}, nil
 	case "send_form":
-		form := msg["form"]
+		form, err := into[string](msg["form"])
+		if err != nil {
+			return nil, err
+		}
+		if !(strings.HasPrefix(form, "<form>") && strings.HasSuffix(form, "</form>")){
+			return nil, fmt.Errorf("form has bad syntax, expected to start with <form> and end with </form>, got %s", form)
+		}
 		return map[string]any{"form": form}, nil
 	case "multipart":
 		parts, err := intoList[any](msg["parts"])
