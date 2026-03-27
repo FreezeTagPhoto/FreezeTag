@@ -156,9 +156,8 @@
 }
 
 .logoWrapCollapsed {
-    /* flex: 0 0 40px; */
     width: 48px;
-    height: 48px;
+    height: clamp(44px, 9vw, 72px);
 }
 
 .itemCollapsed {
