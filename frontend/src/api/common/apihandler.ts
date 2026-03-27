@@ -9,7 +9,22 @@ export const enum Method {
 
 export type RequestError = { status_code: number; response: Response };
 
-export function ApiHandler<T>(address: string, body_request: boolean = true) {
+/**
+ * "json":  response.json()  (default, T should be a plain object type)
+ * "blob":  response.blob()  (use when T = Blob, e.g. image downloads)
+ */
+export function ApiHandler<T>(
+    address: string,
+    body_request: boolean = true,
+    responseType: "json" | "blob" = "json",
+) {
+    const parseResponse = async (response: Response): Promise<T> => {
+        if (responseType === "blob") {
+            return (await response.blob()) as T;
+        }
+        return (await response.json()) as T;
+    };
+
     return (method: Method) => {
         if (method === Method.POST && body_request) {
             return async (data: BodyInit): Promise<Result<T, RequestError>> => {
@@ -28,7 +43,7 @@ export function ApiHandler<T>(address: string, body_request: boolean = true) {
 
                 if (response.ok) {
                     try {
-                        return Ok((await response.json()) as T);
+                        return Ok(await parseResponse(response));
                     } catch (error) {
                         return Err({
                             status_code: 0,
@@ -55,7 +70,7 @@ export function ApiHandler<T>(address: string, body_request: boolean = true) {
 
                 if (response.ok) {
                     try {
-                        return Ok((await response.json()) as T);
+                        return Ok(await parseResponse(response));
                     } catch (error) {
                         return Err({
                             status_code: 0,
