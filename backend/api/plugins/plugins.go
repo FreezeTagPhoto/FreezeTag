@@ -110,9 +110,9 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 		}
 		input = ids
 	case plugs.ProcessFormData:
-		var data string
+		var data map[string]any
 		if err := c.BindJSON(&data); err != nil {
-			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("failed to parse request body (expected json in a string): %v", err)})
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("failed to parse request body (expected json object): %v", err)})
 			return
 		}
 		input = data

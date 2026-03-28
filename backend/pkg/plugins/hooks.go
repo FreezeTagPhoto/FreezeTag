@@ -55,7 +55,7 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 			}
 			return h.processImageBatch(hookName, resolved, repo)
 		case ProcessFormData:
-			resolved, ok := in.(string)
+			resolved, ok := in.(map[string]any)
 			if !ok {
 				return nil, fmt.Errorf("invalid input type for manual_trigger,form_data")
 			}
@@ -105,7 +105,7 @@ func (h *HookedPlugin) processImageBatch(hookName string, ids []database.ImageId
 	return res, nil
 }
 
-func (h *HookedPlugin) processFormData(hookName string, data string, repo repositories.ImageRepository) (PluginResult, error) {
+func (h *HookedPlugin) processFormData(hookName string, data map[string]any, repo repositories.ImageRepository) (PluginResult, error) {
 	h.IO().In <- PluginMessage{
 		GET,
 		map[string]any{"action": "form_data", "json": data, "hook": hookName},
