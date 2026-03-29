@@ -39,6 +39,15 @@ type AddImageByNameRequest struct {
 	AlbumName string           `json:"album_name" binding:"required"`
 }
 
+type RenameAlbumRequest struct {
+	OldName string `json:"old_name" binding:"required"`
+	NewName string `json:"new_name" binding:"required"`
+}
+
+type DeleteAlbumRequest struct {
+	AlbumName string `json:"album_name" binding:"required"`
+}
+
 func InitAlbumEndpoint(repository database.AlbumDatabase) AlbumEndpoint {
 	return AlbumEndpoint{
 		albumRepository: repository,
@@ -137,7 +146,7 @@ func (ae AlbumEndpoint) AddImageToAlbumByName(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
-	if albumID < 0 {
+	if albumID == 0 {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "album not found"})
 		return
 	}
@@ -265,15 +274,94 @@ func (ae AlbumEndpoint) ListImageAlbums(c *gin.Context) {
 	c.JSON(http.StatusOK, albums)
 }
 
-// @summary     Get album images
-// @description Retrieve a list of image IDs contained in a specific album
-// @tags        albums
-// @router      /album/images [get]
-// @param album_id query int true "Album ID"
-// @success     200 {array} database.ImageId
-// @failure     400 {object} api.BadRequestResponse
-// @failure     500 {object} api.ServerErrorResponse
-// @produce     application/json
-func (ae AlbumEndpoint) GetAlbumImages(c *gin.Context) {
 
+func (ae AlbumEndpoint) GetAlbumImagesByName(c *gin.Context) {
+	id, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
+		return
+	}
+
+	albumName := c.Param("name")
+	if albumName == "" {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "album name is required"})
+		return
+	}
+
+	albumID, err := ae.albumRepository.GetAlbumIdByName(albumName, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	if albumID == 0 {
+		c.JSON(http.StatusNotFound, api.BadRequestResponse{Error: "album not found"})
+		return
+	}
+
+	images, err := ae.albumRepository.GetAlbumImages(albumID, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, images)
+}
+
+func (ae AlbumEndpoint) RenameAlbum(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
+		return
+	}
+
+	var req RenameAlbumRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
+		return
+	}
+
+	err = ae.albumRepository.RenameAlbum(req.OldName, req.NewName, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, api.MessageResponse{Message: "Album renamed successfully"})
+}
+
+func (ae AlbumEndpoint) DeleteAlbum(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
+		return
+	}
+
+	var req DeleteAlbumRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
+		return
+	}
+
+	err = ae.albumRepository.RemoveAlbum(req.AlbumName, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, api.MessageResponse{Message: "Album deleted successfully"})
 }

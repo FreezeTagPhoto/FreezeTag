@@ -17,6 +17,7 @@ type AlbumDatabase interface {
 	CreateAlbum(string, UserID, PrivacyLevel) (AlbumId, error)
 	SetImageAlbum(ImageId, AlbumId, UserID) error
 	RemoveAlbum(string, UserID) error
+	RenameAlbum(string, string, UserID) error
 	RemoveImageFromAlbum(ImageId, AlbumId, UserID) error
 	GetAlbumIds(UserID) ([]AlbumId, error)
 	GetAlbumNames(UserID) ([]string, error)
@@ -64,6 +65,19 @@ func (db SqliteAlbumDatabase) SetImageAlbum(imageId ImageId, albumId AlbumId, us
 func (db SqliteAlbumDatabase) RemoveAlbum(name string, userID UserID) error {
 	_, err := db.db.Exec("DELETE FROM Albums WHERE album_name = ? AND userId = ?", name, userID)
 	return err
+}
+
+func (db SqliteAlbumDatabase) RenameAlbum(oldName string, newName string, userID UserID) error {
+	res, err := db.db.Exec("UPDATE Albums SET album_name = ? WHERE album_name = ? AND userId = ?", newName, oldName, userID)
+	if err != nil {
+		return err
+	}
+
+	if count, _ := res.RowsAffected(); count == 0 {
+		return fmt.Errorf("album %q not found or not owned by %v", oldName, userID)
+	}
+
+	return nil
 }
 
 func (db SqliteAlbumDatabase) RemoveImageFromAlbum(imageId ImageId, albumId AlbumId, userID UserID) error {
@@ -172,7 +186,29 @@ func (db SqliteAlbumDatabase) GetImageAlbumNames(imageID ImageId, userID UserID)
 }
 
 func (db SqliteAlbumDatabase) GetAlbumImages(albumId AlbumId, userID UserID) ([]ImageId, error) {
-	rows, err := db.db.Query("SELECT imageId FROM AlbumImages WHERE albumId = ? AND EXISTS (SELECT 1 FROM Albums WHERE id = ? AND userId = ?)", albumId, albumId, userID)
+	query := `
+		SELECT ai.imageId
+		FROM AlbumImages ai
+		JOIN Albums a
+			ON a.id = ai.albumId
+		LEFT JOIN AlbumAccess aa
+			ON aa.albumId = a.id AND aa.userId = ?
+		WHERE
+			ai.albumId = ?
+			AND (
+				a.userId = ?
+				OR (
+					CASE
+						WHEN aa.access_level IS NOT NULL THEN aa.access_level > 0
+						WHEN a.visibility_mode = 0 THEN 0
+						ELSE 1
+					END
+				)
+			)
+		ORDER BY ai.imageId ASC
+	`
+
+	rows, err := db.db.Query(query, userID, albumId, userID)
 	if err != nil {
 		return []ImageId{}, err
 	}
@@ -233,9 +269,9 @@ func (db SqliteAlbumDatabase) GetAlbumIdByName(name string, userID UserID) (Albu
 	var id int64
 	err := db.db.QueryRow("SELECT id FROM Albums WHERE album_name = ? AND userId = ?", name, userID).Scan(&id)
 	if err == sql.ErrNoRows {
-		return -1, nil
+		return 0, nil
 	} else if err != nil {
-		return -1, err
+		return 0, err
 	}
 	albumId := AlbumId(id)
 	return albumId, nil
