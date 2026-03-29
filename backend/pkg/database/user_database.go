@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/images"
 
@@ -85,6 +86,8 @@ type UserDatabase interface {
 	SetUserProfilePicture(userID UserID, pictureData []byte) error
 	// Get user profile picture, return error if user not found or issue occurs
 	GetUserProfilePicture(userID UserID) (ProfilePicture, error)
+	// Set user visibility mode, return error if user not found or issue occurs. visibility should be either 0 (private) or 1 (public)
+	SetUserVisibilityMode(userID UserID, visibility int) error
 }
 
 type SqliteUserDatabase struct {
@@ -94,21 +97,21 @@ type SqliteUserDatabase struct {
 //go:embed schema.sql
 var user_schema string
 
-func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
-	db, err := sql.Open("sqlite3", datasource)
-	if err != nil {
-		return SqliteUserDatabase{}, err
-	}
-	_, err = db.Exec(user_schema)
-	if err != nil {
-		return SqliteUserDatabase{}, err
-	}
-	defaultDB := SqliteUserDatabase{db}
-	if err := defaultDB.seedPermissions(); err != nil {
-		return SqliteUserDatabase{}, err
-	}
-	return defaultDB, nil
-}
+// func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
+// 	db, err := sql.Open("sqlite3", datasource)
+// 	if err != nil {
+// 		return SqliteUserDatabase{}, err
+// 	}
+// 	_, err = db.Exec(user_schema)
+// 	if err != nil {
+// 		return SqliteUserDatabase{}, err
+// 	}
+// 	defaultDB := SqliteUserDatabase{db}
+// 	if err := defaultDB.seedPermissions(); err != nil {
+// 		return SqliteUserDatabase{}, err
+// 	}
+// 	return defaultDB, nil
+// }
 
 // Seed the App_Permissions table with all defined permissions
 func (s SqliteUserDatabase) seedPermissions() error {
@@ -600,7 +603,6 @@ func (s SqliteUserDatabase) SetUserProfilePicture(userID UserID, pictureData []b
 	}
 	return nil
 }
-	
 
 func (s SqliteUserDatabase) GetUserProfilePicture(userID UserID) (ProfilePicture, error) {
 	var pictureData ProfilePicture
@@ -612,4 +614,23 @@ func (s SqliteUserDatabase) GetUserProfilePicture(userID UserID) (ProfilePicture
 		return nil, err
 	}
 	return pictureData, nil
+}
+
+func (s SqliteUserDatabase) SetUserVisibilityMode(userID UserID, visibility int) error {
+	result, err := s.db.Exec(
+		"UPDATE Users SET visibility_mode = ? WHERE id = ?",
+		visibility,
+		userID,
+	)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return fmt.Errorf("failed to update visibility mode for user %v: %w", userID, err)
+	}
+	return nil
 }

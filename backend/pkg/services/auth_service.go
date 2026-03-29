@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/pprof/profile"
 	_ "github.com/joho/godotenv/autoload"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -85,6 +84,8 @@ type AuthService interface {
 	SetUserProfilePicture(userID database.UserID, pictureData []byte, filename string) error
 	// GetUserProfilePicture returns the profile picture for a user, given the user ID. Returns an error if the user does not exist or does not have a profile picture.
 	GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error)
+	// SetUserVisibility sets the visibility of a user's profile to either public or private
+	SetUserVisibilityMode(userID database.UserID, visibility int) error
 	// ResetProfilePicture resets the profile picture for a user to the default generated avatar. Returns an error if the user does not exist.
 	ResetProfilePicture(userID database.UserID) error
 }
@@ -315,22 +316,15 @@ func (s *DefaultAuthService) SetUserProfilePicture(userID database.UserID, pictu
 	return s.userDatabase.SetUserProfilePicture(userID, profilePicture)
 }
 
-func (s *DefaultAuthService) ResetProfilePicture(userID database.UserID) (error) {
-	user, err := s.userDatabase.GetUserById(userID)
-	if err != nil {
-		return err
-	}
-	username := user.Username
-	defaultPicture, err := images.DefaultProfilePicture(username)
-
-	if err != nil {
-		return err
-	}
-	return s.userDatabase.SetUserProfilePicture(userID, defaultPicture)
-}
-
 func (s *DefaultAuthService) GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error) {
 	return s.userDatabase.GetUserProfilePicture(userID)
+}
+
+func (s *DefaultAuthService) SetUserVisibilityMode(userID database.UserID, visibility int) error {
+	if visibility < 0 || visibility > 1 {
+		return fmt.Errorf("invalid visibility mode: %d", visibility)
+	}
+	return s.userDatabase.SetUserVisibilityMode(userID, visibility)
 }
 
 func (s *DefaultAuthService) ResetProfilePicture(userID database.UserID) error {
@@ -349,3 +343,4 @@ func (s *DefaultAuthService) ResetProfilePicture(userID database.UserID) error {
 func hashToken(token string) [32]byte {
 	return sha256.Sum256([]byte(token))
 }
+

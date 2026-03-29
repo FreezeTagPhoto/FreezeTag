@@ -22,14 +22,23 @@ func (se SearchEndpoint) RegisterEndpoints(e gin.IRoutes) {
 	e.GET("/search", se.Search)
 }
 
+func setupTestRouter(m *mocks.MockImageRepository) *gin.Engine {
+	router := gin.Default()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
+	InitSearchEndpoint(m).RegisterEndpoints(router)
+	return router
+}
+
 func TestSearchSuccessNoQueries(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return([]database.ImageId{1, 2, 3}, nil)
 
-	router := gin.Default()
-	InitSearchEndpoint(m).RegisterEndpoints(router)
+	router := setupTestRouter(m)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/search", nil)
@@ -45,11 +54,10 @@ func TestSearchSuccessNoQueries(t *testing.T) {
 func TestSearchSuccessBasicQueries(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), queries.DateCreated, queries.Ascending, mock.Anything, mock.Anything).
+		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), queries.DateCreated, queries.Ascending, mock.Anything, mock.Anything, mock.Anything).
 		Return([]database.ImageId{1}, nil)
 
-	router := gin.Default()
-	InitSearchEndpoint(m).RegisterEndpoints(router)
+	router := setupTestRouter(m)
 
 	w := httptest.NewRecorder()
 	// Build query parameters
@@ -80,11 +88,10 @@ func TestSearchSuccessBasicQueries(t *testing.T) {
 func TestSearchSuccessBasicQueries2(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), queries.DateAdded, queries.Descending, mock.Anything, mock.Anything).
+		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), queries.DateAdded, queries.Descending, mock.Anything, mock.Anything, mock.Anything).
 		Return([]database.ImageId{1}, nil)
 
-	router := gin.Default()
-	InitSearchEndpoint(m).RegisterEndpoints(router)
+	router := setupTestRouter(m)
 
 	w := httptest.NewRecorder()
 	// Build query parameters
@@ -128,15 +135,14 @@ func TestSearchSuccessTags(t *testing.T) {
 
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(
-			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint) ([]database.ImageId, error) {
+			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint, _ database.UserID) ([]database.ImageId, error) {
 				assert.Equal(t, expectedQuery, actualQuery)
 				return []database.ImageId{1, 2, 3, 4}, nil
 			})
 
-	router := gin.Default()
-	InitSearchEndpoint(m).RegisterEndpoints(router)
+	router := setupTestRouter(m)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", reqURL, nil)
@@ -158,8 +164,7 @@ func runNearErrorTest(t *testing.T, near string, expectedErr string) {
 
 	m := mocks.NewMockImageRepository(t)
 
-	router := gin.Default()
-	InitSearchEndpoint(m).RegisterEndpoints(router)
+	router := setupTestRouter(m)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", reqURL, nil)
@@ -176,7 +181,6 @@ func runNearErrorTest(t *testing.T, near string, expectedErr string) {
 
 func TestSearchNearBadNearTooManyCoords(t *testing.T) {
 	runNearErrorTest(t, "1,2,3,4", "invalid near parameter")
-
 }
 
 func TestSearchNearBadLatitude(t *testing.T) {
@@ -192,59 +196,67 @@ func TestSearchNearBadDistance(t *testing.T) {
 }
 
 func TestSearchNearSuccess(t *testing.T) {
-	expectedQuery := queries.CreateImageQuery()
-	expectedQuery.WithLocation(1, 2, 3)
-	params := url.Values{}
-	params.Add("near", "1,2,3")
-	reqURL := "/search?" + params.Encode()
+    expectedQuery := queries.CreateImageQuery()
+    expectedQuery.WithLocation(1, 2, 3)
+    params := url.Values{}
+    params.Add("near", "1,2,3")
+    reqURL := "/search?" + params.Encode()
 
-	m := mocks.NewMockImageRepository(t)
-	m.EXPECT().
-		SearchImageOrderedPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-		RunAndReturn(
-			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint) ([]database.ImageId, error) {
-				assert.Equal(t, expectedQuery, actualQuery)
-				return []database.ImageId{1}, nil
-			})
+    m := mocks.NewMockImageRepository(t)
+    m.EXPECT().
+        SearchImageOrderedPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+        RunAndReturn(
+            func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint, _ database.UserID) ([]database.ImageId, error) {
+                assert.Equal(t, expectedQuery, actualQuery)
+                return []database.ImageId{1}, nil
+            })
 
-	router := gin.Default()
-	InitSearchEndpoint(m).RegisterEndpoints(router)
+    router := gin.Default()
+    router.Use(func(c *gin.Context) {
+        c.Set("userID", "1") 
+        c.Next()
+    })
+    InitSearchEndpoint(m).RegisterEndpoints(router)
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", reqURL, nil)
-	router.ServeHTTP(w, req)
+    w := httptest.NewRecorder()
+    req, _ := http.NewRequest("GET", reqURL, nil)
+    router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
+    assert.Equal(t, http.StatusOK, w.Code)
 
-	expected := []database.ImageId{1}
-	var got []database.ImageId
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-	assert.Equal(t, expected, got)
+    expected := []database.ImageId{1}
+    var got []database.ImageId
+    require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+    assert.Equal(t, expected, got)
 }
 
 func runBadTakenXTest(t *testing.T, query, location, expectedErr string) {
-	t.Helper()
+    t.Helper()
 
-	params := url.Values{}
-	params.Add(query, location)
-	reqURL := "/search?" + params.Encode()
+    params := url.Values{}
+    params.Add(query, location)
+    reqURL := "/search?" + params.Encode()
 
-	m := mocks.NewMockImageRepository(t)
+    m := mocks.NewMockImageRepository(t)
 
-	router := gin.Default()
-	InitSearchEndpoint(m).RegisterEndpoints(router)
+    router := gin.Default()
+    router.Use(func(c *gin.Context) {
+        c.Set("userID", "1") 
+        c.Next()
+    })
+    InitSearchEndpoint(m).RegisterEndpoints(router)
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", reqURL, nil)
-	router.ServeHTTP(w, req)
+    w := httptest.NewRecorder()
+    req, _ := http.NewRequest("GET", reqURL, nil)
+    router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+    assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expected := api.BadRequestResponse{Error: expectedErr}
-	var got api.BadRequestResponse
+    expected := api.BadRequestResponse{Error: expectedErr}
+    var got api.BadRequestResponse
 
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-	assert.Equal(t, expected, got)
+    require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+    assert.Equal(t, expected, got)
 }
 
 func TestBadTakenBefore(t *testing.T) {
@@ -264,49 +276,55 @@ func TestBadUploadedAfter(t *testing.T) {
 func TestSearchImageFail(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		SearchImageOrderedPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		SearchImageOrderedPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil, fmt.Errorf("mock error"))
 
 	router := gin.Default()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
 	InitSearchEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/search", nil)
 	router.ServeHTTP(w, req)
+	
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
-
 	expected := api.ServerErrorResponse{Error: "mock error"}
 	var got api.ServerErrorResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
-
 }
 
 func runBadSortTest(t *testing.T, param string, value string, expected string) {
-	t.Helper()
+    t.Helper()
 
-	params := url.Values{}
-	params.Add(param, value)
-	reqURL := "/search?" + params.Encode()
+    params := url.Values{}
+    params.Add(param, value)
+    reqURL := "/search?" + params.Encode()
 
-	m := mocks.NewMockImageRepository(t)
+    m := mocks.NewMockImageRepository(t)
 
-	router := gin.Default()
-	InitSearchEndpoint(m).RegisterEndpoints(router)
+    router := gin.Default()
+    router.Use(func(c *gin.Context) {
+        c.Set("userID", "1")
+        c.Next()
+    })
+    InitSearchEndpoint(m).RegisterEndpoints(router)
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", reqURL, nil)
-	router.ServeHTTP(w, req)
+    w := httptest.NewRecorder()
+    req, _ := http.NewRequest("GET", reqURL, nil)
+    router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+    assert.Equal(t, http.StatusBadRequest, w.Code)
 
-	expectedErr := api.BadRequestResponse{Error: expected}
-	var got api.BadRequestResponse
+    expectedErr := api.BadRequestResponse{Error: expected}
+    var got api.BadRequestResponse
 
-	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-	assert.Equal(t, expectedErr, got)
+    require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+    assert.Equal(t, expectedErr, got)
 }
-
 func TestSearchImageBadSort(t *testing.T) {
 	runBadSortTest(t, "sortBy", "foo", "bad sortBy parameter")
 	runBadSortTest(t, "sortOrder", "bar", "bad sortOrder parameter")

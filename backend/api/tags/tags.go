@@ -270,11 +270,21 @@ func (te TagEndpoint) ListCounts(c *gin.Context) {
 // @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
 func (te TagEndpoint) ListCountsQuery(c *gin.Context) {
+	userId, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userId not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userId in context is not of type UserID"})
+		return
+	}
 	query := api.GetRequestQuery(c)
 	if query == nil {
 		return
 	}
-	tc, err := te.imageRepository.GetQueryTagCounts(query)
+	tc, err := te.imageRepository.GetQueryTagCounts(query, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return

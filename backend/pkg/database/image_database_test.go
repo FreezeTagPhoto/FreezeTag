@@ -17,19 +17,25 @@ import (
 func createTempFile(t *testing.T) *os.File {
 	tmp, err := os.CreateTemp("", "*.db")
 	require.NoError(t, err)
+	t.Cleanup(func() {
+        err := os.Remove(tmp.Name())
+        if err != nil {
+            t.Logf("failed to remove temp database %s: %v", tmp.Name(), err)
+        }
+    })
 	return tmp
 }
 
 func createTempDatabase(t *testing.T) ImageDatabase {
 	tmp := createTempFile(t)
-	db, err := InitSQLiteImageDatabase(tmp.Name())
+	db, err := NewDefaultManager(tmp.Name())
 	require.NoError(t, err)
-	return db
+	return db.ImageDB
 }
 
 func TestOpenDatabase(t *testing.T) {
 	tmp := createTempFile(t)
-	_, err := InitSQLiteImageDatabase(tmp.Name())
+	_, err := NewDefaultManager(tmp.Name())
 	assert.NoError(t, err)
 }
 
@@ -40,7 +46,7 @@ func TestOpenDatabaseBrokenFile(t *testing.T) {
 	_, err := io.Copy(tmp, reader)
 	require.NoError(t, err)
 	// try to open it and it will fail integrity
-	_, err = InitSQLiteImageDatabase(tmp.Name())
+	_, err = NewDefaultManager(tmp.Name())
 	assert.Error(t, err)
 }
 
@@ -100,7 +106,7 @@ func TestRetrieveImagesSortedByDateCreated(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.NotZero(t, id3)
-	ids, err := tmp.GetImagesOrder(queries.CreateImageQuery(), queries.DateCreated, queries.Descending)
+	ids, err := tmp.GetImagesOrder(queries.CreateImageQuery(), queries.DateCreated, queries.Descending, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{id2, id3, id1}, ids)
 }
@@ -132,7 +138,7 @@ func TestRetrieveAllImages(t *testing.T) {
 		Cam:         nil,
 	})
 	require.NoError(t, err)
-	ids, err := tmp.GetImages(queries.CreateImageQuery())
+	ids, err := tmp.GetImages(queries.CreateImageQuery(), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(ids))
 	for _, id := range ids {
@@ -172,10 +178,10 @@ func TestRetrieveImageWithMakeAndModel(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	ids, err := tmp.GetImages(queries.CreateImageQuery().WithMake("Nikon"))
+	ids, err := tmp.GetImages(queries.CreateImageQuery().WithMake("Nikon"), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{idNikon}, ids)
-	ids, err = tmp.GetImages(queries.CreateImageQuery().WithModelLike("EOS"))
+	ids, err = tmp.GetImages(queries.CreateImageQuery().WithModelLike("EOS"), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{idCanon}, ids)
 }
@@ -217,10 +223,10 @@ func TestRetrieveImageByGeoDegrees(t *testing.T) {
 	})
 	_ = insertTestImage(t, tmp)
 	require.NoError(t, err)
-	ids, err := tmp.GetImages(queries.CreateImageQuery().WithLocation(0., 0., 1.))
+	ids, err := tmp.GetImages(queries.CreateImageQuery().WithLocation(0., 0., 1.), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{idA}, ids)
-	ids, err = tmp.GetImages(queries.CreateImageQuery().WithLocation(11.0, 4.0, 1.1))
+	ids, err = tmp.GetImages(queries.CreateImageQuery().WithLocation(11.0, 4.0, 1.1), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{idB}, ids)
 }
@@ -249,10 +255,10 @@ func TestRetrieveImageByDateRange(t *testing.T) {
 		Cam:         nil,
 	})
 	require.NoError(t, err)
-	ids, err := tmp.GetImages(queries.CreateImageQuery().TakenAfter(beforeThen).TakenBefore(afterThen))
+	ids, err := tmp.GetImages(queries.CreateImageQuery().TakenAfter(beforeThen).TakenBefore(afterThen), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{idA}, ids)
-	ids, err = tmp.GetImages(queries.CreateImageQuery().TakenAfter(afterThen))
+	ids, err = tmp.GetImages(queries.CreateImageQuery().TakenAfter(afterThen), 0)
 	assert.NoError(t, err)
 	assert.Equal(t, []ImageId{idB}, ids)
 }
@@ -656,10 +662,10 @@ func TestGetImagePaged(t *testing.T) {
 		_, err := tmp.AddImage(strconv.Itoa(i+10), imagedata.Data{})
 		require.NoError(t, err)
 	}
-	page, err := tmp.GetImagesOrderPaged(queries.CreateImageQuery(), queries.DateAdded, queries.Ascending, 10, 0)
+	page, err := tmp.GetImagesOrderPaged(queries.CreateImageQuery(), queries.DateAdded, queries.Ascending, 10, 0, 0)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, page, []ImageId{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-	page, err = tmp.GetImagesOrderPaged(queries.CreateImageQuery(), queries.DateAdded, queries.Ascending, 10, 1)
+	page, err = tmp.GetImagesOrderPaged(queries.CreateImageQuery(), queries.DateAdded, queries.Ascending, 10, 1, 0)
 	require.NoError(t, err)
 	assert.ElementsMatch(t, page, []ImageId{11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
 }

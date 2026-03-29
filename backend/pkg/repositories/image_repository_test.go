@@ -223,11 +223,11 @@ func TestSearchImageError(t *testing.T) {
 	ids := []database.ImageId{}
 
 	mockdb := mockDatabase.NewMockImageDatabase(t)
-	mockdb.EXPECT().GetImages(mock.Anything).Return(ids, err)
+	mockdb.EXPECT().GetImages(mock.Anything, mock.Anything).Return(ids, err)
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "")
 
-	result, err := repo.SearchImage(queries.CreateImageQuery())
+	result, err := repo.SearchImage(queries.CreateImageQuery(), 0)
 	assert.NotNil(t, err, "error didn't occur when it should have when retrieving imageID from mockdb")
 	assert.Equal(t, result, ids)
 }
@@ -236,11 +236,11 @@ func TestSearchImageNoneReturn(t *testing.T) {
 	ids := []database.ImageId{}
 
 	mockdb := mockDatabase.NewMockImageDatabase(t)
-	mockdb.EXPECT().GetImages(mock.Anything).Return(ids, nil)
+	mockdb.EXPECT().GetImages(mock.Anything, mock.Anything).Return(ids, nil)
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "")
 
-	result, err := repo.SearchImage(queries.CreateImageQuery())
+	result, err := repo.SearchImage(queries.CreateImageQuery(), 0)
 	assert.Nil(t, err, "error occured when it shouldn't have when retrieving imageID from mockdb")
 	assert.Equal(t, result, ids)
 }
@@ -248,11 +248,11 @@ func TestSearchImageNoneReturn(t *testing.T) {
 func TestSearchImageSomeReturnedIDs(t *testing.T) {
 	ids := []database.ImageId{1, 2, 3, 4, 5}
 	mockdb := mockDatabase.NewMockImageDatabase(t)
-	mockdb.EXPECT().GetImages(mock.Anything).Return(ids, nil)
+	mockdb.EXPECT().GetImages(mock.Anything, mock.Anything).Return(ids, nil)
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "")
 
-	result, err := repo.SearchImage(queries.CreateImageQuery())
+	result, err := repo.SearchImage(queries.CreateImageQuery(), 0)
 	assert.Nil(t, err, "error occured when it shouldn't have when retrieving imageID from mockdb")
 	assert.Equal(t, result, ids)
 }
@@ -260,11 +260,11 @@ func TestSearchImageSomeReturnedIDs(t *testing.T) {
 func TestSearchImageOrderedSomeReturnedIDs(t *testing.T) {
 	ids := []database.ImageId{1, 3, 2, 4, 5}
 	mockdb := mockDatabase.NewMockImageDatabase(t)
-	mockdb.EXPECT().GetImagesOrder(mock.Anything, mock.Anything, mock.Anything).Return(ids, nil)
+	mockdb.EXPECT().GetImagesOrder(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(ids, nil)
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "")
 
-	result, err := repo.SearchImageOrdered(queries.CreateImageQuery(), queries.DateCreated, queries.Ascending)
+	result, err := repo.SearchImageOrdered(queries.CreateImageQuery(), queries.DateCreated, queries.Ascending, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, result, ids)
 }
@@ -272,11 +272,11 @@ func TestSearchImageOrderedSomeReturnedIDs(t *testing.T) {
 func TestSearchImageOrderedPagedSomeReturnedIDs(t *testing.T) {
 	ids := []database.ImageId{1, 3, 2, 4, 5}
 	mockdb := mockDatabase.NewMockImageDatabase(t)
-	mockdb.EXPECT().GetImagesOrderPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(ids, nil)
+	mockdb.EXPECT().GetImagesOrderPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(ids, nil)
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "")
 
-	result, err := repo.SearchImageOrderedPaged(queries.CreateImageQuery(), queries.DateCreated, queries.Ascending, 4, 20)
+	result, err := repo.SearchImageOrderedPaged(queries.CreateImageQuery(), queries.DateCreated, queries.Ascending, 4, 20, 0)
 	assert.NoError(t, err)
 	assert.Equal(t, result, ids)
 }
@@ -527,7 +527,7 @@ func TestGetTagCountFail(t *testing.T) {
 func TestGetQueryTagCountQuerySuccess(t *testing.T) {
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().
-		GetImages(mock.Anything).
+		GetImages(mock.Anything, mock.Anything).
 		Return([]database.ImageId{1, 2}, nil)
 	mockdb.EXPECT().
 		GetTagCounts([]database.ImageId{1, 2}).
@@ -535,7 +535,7 @@ func TestGetQueryTagCountQuerySuccess(t *testing.T) {
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
 
-	res, err := repo.GetQueryTagCounts(queries.CreateImageQuery())
+	res, err := repo.GetQueryTagCounts(queries.CreateImageQuery(), 0)
 	assert.NoError(t, err)
 	assert.Contains(t, res, "foo")
 	assert.Equal(t, int64(2), res["foo"])
@@ -544,12 +544,12 @@ func TestGetQueryTagCountQuerySuccess(t *testing.T) {
 func TestGetQueryTagCountQueryFail(t *testing.T) {
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().
-		GetImages(mock.Anything).
+		GetImages(mock.Anything, mock.Anything).
 		Return(nil, fmt.Errorf("test"))
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
 
-	res, err := repo.GetQueryTagCounts(queries.CreateImageQuery())
+	res, err := repo.GetQueryTagCounts(queries.CreateImageQuery(), 0)
 	assert.Error(t, err)
 	assert.Nil(t, res)
 }

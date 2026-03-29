@@ -18,12 +18,24 @@ type TagId int64
 type AlbumId int64
 
 type ImageDatabase interface {
-	// Get a list of image IDs corresponding to the provided query
-	GetImages(queries.DatabaseQuery) ([]ImageId, error)
+	// Get a list of all image IDs corresponding to the
+	//
+	// Only returns a list of image IDs that the user has access to.
+	GetImages(queries.DatabaseQuery, UserID) ([]ImageId, error)
 	// Get a list of image IDs corresponding to the provided query and order
-	GetImagesOrder(queries.DatabaseQuery, queries.SortField, queries.SortOrder) ([]ImageId, error)
+	GetImagesOrder(
+		queries.DatabaseQuery,
+		queries.SortField,
+		queries.SortOrder,
+		UserID) ([]ImageId, error)
 	// Get a list of image IDs corresponding to the provided query, order, page size, and page number
-	GetImagesOrderPaged(queries.DatabaseQuery, queries.SortField, queries.SortOrder, uint, uint) ([]ImageId, error)
+	GetImagesOrderPaged(
+		queries.DatabaseQuery,
+		queries.SortField,
+		queries.SortOrder,
+		uint,
+		uint,
+		UserID) ([]ImageId, error)
 	// Get the image filename pointed to by the image ID
 	GetImageFile(ImageId) (*string, error)
 	// Get the lowest suffix number that doesn't overlap with an existing image
@@ -80,22 +92,6 @@ type ImageDatabase interface {
 	//
 	// returns: a map of tag name to count
 	GetTagCounts([]ImageId) (map[string]int64, error)
-
-	CreateAlbum(string) (AlbumId, error)
-	SetImageAlbum(ImageId, AlbumId) error
-	RemoveAlbum(string) error
-	RemoveImageFromAlbum(ImageId, AlbumId) error
-	GetAlbumIds() ([]AlbumId, error)
-	GetAlbumNames() ([]string, error)
-	GetAlbumImages(AlbumId) ([]ImageId, error)
-	GetAlbumImageCount(AlbumId) (int64, error)
-	GetAlbumTagCounts(AlbumId) (map[string]int64, error)
-
-	// Get the album ID corresponding to the given name
-	//
-	// returns: the album ID, or -1 if no album with that name exists
-	GetAlbumIdByName(string) (AlbumId, error)
-
 }
 
 type SqliteImageDatabase struct {
@@ -105,48 +101,75 @@ type SqliteImageDatabase struct {
 //go:embed schema.sql
 var schema string
 
-func InitSQLiteImageDatabase(datasource string) (SqliteImageDatabase, error) {
-	registerExtendedSqlite("sqlite3_extrafunc")
-	db, err := sql.Open("sqlite3_extrafunc", datasource)
-	if err != nil {
-		return SqliteImageDatabase{}, err
-	}
-	_, err = db.Exec(schema)
-	if err != nil {
-		return SqliteImageDatabase{}, err
-	}
-	return SqliteImageDatabase{db}, nil
-}
+//  1. If the user's visibility mode is 2, they can see all images regardless of restrictions.
+//  2. If the image is not in an album, the user can see it if their visibility mode is at least 1
+//  3. If the image is in an album, the user can see it if:
+//     a. They are the owner of the album
+//     b. They have an explicit grant for that album
+//     c. The album is public and they don't have an explicit block for that album.
+// Note: This query is designed to be used as a subquery in the WHERE clause of a larger query, so it references the "Images" table without explicitly joining it.
+const IMAGE_IS_VISIBILE string = `
+    (SELECT visibility_mode FROM Users WHERE id = ?) = 2
+    OR
+    (NOT EXISTS (SELECT 1 FROM AlbumImages WHERE imageId = Images.id) 
+    AND 
+    (SELECT visibility_mode FROM Users WHERE id = ?) = 1)
+    OR
+    EXISTS (
+        SELECT 1 FROM AlbumImages ai
+        JOIN Albums a ON ai.albumId = a.id
+        LEFT JOIN AlbumAccess aa ON a.id = aa.albumId AND aa.userId = ?
+        WHERE ai.imageId = Images.id AND (
+            -- user owns the album
+            a.userId = ? 
+            -- user has an explicit grant for the album (1: read, 2: write)
+            OR aa.access_level >= 1 
+            -- album is public (1: read, 2: write) AND user is not explicitly blocked (0)
+            OR (a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level != 0))
+        )
+    )`
 
-// func (db SqliteImageDatabase) WithTransaction(fn func(ImageDatabase) error) error {
-// 	tx, err := db.db.Begin()
+// func InitSQLiteImageDatabase(datasource string) (SqliteImageDatabase, error) {
+// 	registerExtendedSqlite("sqlite3_extrafunc")
+// 	db, err := sql.Open("sqlite3_extrafunc", datasource)
 // 	if err != nil {
-// 		return err
+// 		return SqliteImageDatabase{}, err
 // 	}
-// 	defer tx.Rollback() //nolint:errcheck
-// 	txdb := &SqliteImageDatabase{db: tx}
-// 	if err := fn(txdb); err != nil {
-// 		return err
+// 	_, err = db.Exec(schema)
+// 	if err != nil {
+// 		return SqliteImageDatabase{}, err
 // 	}
-// 	return tx.Commit()
+// 	return SqliteImageDatabase{db}, nil
 // }
 
-func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery) ([]ImageId, error) {
-	return db.GetImagesOrder(q, queries.DateAdded, queries.Descending)
+func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery, UserID UserID) ([]ImageId, error) {
+	return db.GetImagesOrder(q, queries.DateAdded, queries.Descending, UserID)
 }
 
-func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder) ([]ImageId, error) {
-	return db.GetImagesOrderPaged(q, sf, so, 0, 0)
+func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, UserID UserID) ([]ImageId, error) {
+	return db.GetImagesOrderPaged(q, sf, so, 0, 0, UserID)
 }
 
-func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, pageSize uint, pageNum uint) ([]ImageId, error) {
-	s, as := queries.ImageIdPreparable(q, sf, so, pageSize, pageNum)
-	stmt, err := db.db.Prepare(s)
-	if err != nil {
-		return []ImageId{}, err
+func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, pageSize uint, pageNum uint, UserID UserID) ([]ImageId, error) {
+	stmt, stmtArgs := q.StatementWithArgs()
+	var query string
+	var args []any
+
+	if UserID == 0 {
+		query = fmt.Sprintf("SELECT id FROM Images WHERE %s", stmt)
+	} else {
+		query = fmt.Sprintf("SELECT id FROM Images WHERE (%s) AND (%s)", IMAGE_IS_VISIBILE, stmt)
+		args = append(args, UserID, UserID, UserID, UserID)
 	}
-	defer stmt.Close() //nolint:errcheck
-	rows, err := stmt.Query(as...)
+
+	args = append(args, stmtArgs...)
+	query += fmt.Sprintf(" ORDER BY %s %s", sf.String(), so.String())
+	if pageSize != 0 {
+		query += " LIMIT ? OFFSET ?"
+		args = append(args, pageSize, pageSize*pageNum)
+	}
+
+	rows, err := db.db.Query(query, args...)
 	if err != nil {
 		return []ImageId{}, err
 	}
@@ -156,7 +179,7 @@ func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf qu
 		if err := rows.Err(); err != nil {
 			return []ImageId{}, err
 		}
-		var id int
+		var id int64
 		if err := rows.Scan(&id); err != nil {
 			return []ImageId{}, err
 		}
@@ -604,151 +627,6 @@ func (db SqliteImageDatabase) GetTagCounts(imageIds []ImageId) (map[string]int64
 		counts[tag] = count
 	}
 	return counts, nil
-}
-
-// CreateAlbum(string) (AlbumId, error)
-// SetImageAlbum(ImageId, AlbumId) error
-// RemoveAlbum(string) error
-// RemoveImageFromAlbum(ImageId, AlbumId) error
-// GetAlbums() ([]AlbumId, error)
-// GetAlbumImages(AlbumId) ([]ImageId, error)
-// GetAlbumImageCount(AlbumId) (int64, error)
-// GetAlbumTagCounts(AlbumId) (map[string]int64, error)
-// GetAlbumName(AlbumId) (*string, error)
-
-func (db SqliteImageDatabase) CreateAlbum(name string) (AlbumId, error) {
-	var id int64
-	err := db.db.QueryRow("INSERT INTO Albums (name) VALUES (?) RETURNING id", name).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-	return AlbumId(id), nil
-}
-
-func (db SqliteImageDatabase) SetImageAlbum(imageId ImageId, albumId AlbumId) error {
-	query := "INSERT INTO AlbumImages (albumId, imageId) VALUES (?, ?)"
-	_, err := db.db.Exec(query, albumId, imageId)
-	return err
-}
-
-func (db SqliteImageDatabase) RemoveAlbum(name string) error {
-	_, err := db.db.Exec("DELETE FROM Albums WHERE name = ?", name)
-	return err
-}
-
-func (db SqliteImageDatabase) RemoveImageFromAlbum(imageId ImageId, albumId AlbumId) error {
-	_, err := db.db.Exec("DELETE FROM AlbumImages WHERE albumId = ? AND imageId = ?", albumId, imageId)
-	return err
-}
-
-func (db SqliteImageDatabase) GetAlbumIds() ([]AlbumId, error) {
-	rows, err := db.db.Query("SELECT id FROM Albums")
-	if err != nil {
-		return []AlbumId{}, err
-	}
-	defer rows.Close() //nolint:errcheck
-	albums := []AlbumId{}
-	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return []AlbumId{}, err
-		}
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return []AlbumId{}, err
-		}
-		albums = append(albums, AlbumId(id))
-	}
-	return albums, nil
-}
-
-func (db SqliteImageDatabase) GetAlbumNames() ([]string, error) {
-	rows, err := db.db.Query("SELECT name FROM Albums")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close() //nolint:errcheck
-	var names []string
-	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			return nil, err
-		}
-		names = append(names, name)
-	}
-	return names, nil
-}
-
-func (db SqliteImageDatabase) GetAlbumImages(albumId AlbumId) ([]ImageId, error) {
-	rows, err := db.db.Query("SELECT imageId FROM AlbumImages WHERE albumId = ?", albumId)
-	if err != nil {
-		return []ImageId{}, err
-	}
-	defer rows.Close() //nolint:errcheck
-	images := []ImageId{}
-	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return []ImageId{}, err
-		}
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return []ImageId{}, err
-		}
-		images = append(images, ImageId(id))
-	}
-	return images, nil
-}
-
-func (db SqliteImageDatabase) GetAlbumImageCount(albumId AlbumId) (int64, error) {
-	var count int64
-	err := db.db.QueryRow("SELECT COUNT(*) FROM AlbumImages WHERE albumId = ?", albumId).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-func (db SqliteImageDatabase) GetAlbumTagCounts(albumId AlbumId) (map[string]int64, error) {
-	query := `
-		SELECT tag, COUNT(Tags.id) as count FROM Tags
-		LEFT JOIN ImageTags on Tags.id = ImageTags.tagId
-		LEFT JOIN AlbumImages on ImageTags.imageId = AlbumImages.imageId
-		WHERE AlbumImages.albumId = ?
-		GROUP BY Tags.tag
-		`
-
-	rows, err := db.db.Query(query, albumId)
-	if err != nil {
-		return map[string]int64{}, err
-	}
-	defer rows.Close() //nolint:errcheck
-	counts := make(map[string]int64)
-	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return map[string]int64{}, err
-		}
-		var tag string
-		var count int64
-		if err := rows.Scan(&tag, &count); err != nil {
-			return map[string]int64{}, err
-		}
-		counts[tag] = count
-	}
-	return counts, nil
-}
-
-func (db SqliteImageDatabase) GetAlbumIdByName(name string) (AlbumId, error) {
-	var id int64
-	err := db.db.QueryRow("SELECT id FROM Albums WHERE name = ?", name).Scan(&id)
-	if err == sql.ErrNoRows {
-		return -1, nil
-	} else if err != nil {
-		return -1, err
-	}
-	albumId := AlbumId(id)
-	return albumId, nil
 }
 
 // helper functions to convert sql.Null* to pointers

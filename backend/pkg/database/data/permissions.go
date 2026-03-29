@@ -49,15 +49,6 @@ var (
 		"Write/Cancel Jobs",
 		"Allows modifying or cancelling running jobs (uploads, plugins, etc...)")
 
-	// Permissions related to album visibility restrictions
-	RestrictAlbum Permission = register("restrict:album",
-		"Restrict Album Access",
-		"Allows setting an album to be visible only to a specific list of users.")
-	UnrestrictAlbum Permission = register("unrestrict:album",
-		"Unrestrict Album Access",
-		"Allows setting an album to be visible to all users.")
-	
-
 	// More powerful permissions for admin users
 	WriteAnyToken    Permission = register("write:any_token", "Write Any API Token", "Allows revoking and deleting any API token, including those not owned by the user.")
 	ReadAnyToken     Permission = register("read:any_token", "Read Any API Token", "Allows viewing any API token, including those not owned by the user.")
