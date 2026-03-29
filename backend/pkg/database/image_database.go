@@ -13,7 +13,7 @@ import (
 	_ "embed"
 )
 
-type ImageId int64
+type ImageId uint64
 type TagId int64
 type AlbumId int64
 

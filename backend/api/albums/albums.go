@@ -34,6 +34,11 @@ type AddImageRequest struct {
 	AlbumId database.AlbumId `json:"album_id"`
 }
 
+type AddImageByNameRequest struct {
+	ImageId   database.ImageId `json:"image_id"`
+	AlbumName string           `json:"album_name" binding:"required"`
+}
+
 func InitAlbumEndpoint(repository database.AlbumDatabase) AlbumEndpoint {
 	return AlbumEndpoint{
 		albumRepository: repository,
@@ -109,6 +114,43 @@ func (ae AlbumEndpoint) AddImageToAlbum(c *gin.Context) {
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "Image added to album successfully"})
 }
 
+func (ae AlbumEndpoint) AddImageToAlbumByName(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
+		return
+	}
+
+	var req AddImageByNameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
+		return
+	}
+
+	albumID, err := ae.albumRepository.GetAlbumIdByName(req.AlbumName, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	if albumID < 0 {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "album not found"})
+		return
+	}
+
+	err = ae.albumRepository.SetImageAlbum(req.ImageId, albumID, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, api.MessageResponse{Message: "Image added to album successfully"})
+}
+
 // @summary     Set album visibility
 // @description Set the visibility mode of an album
 // @tags        albums
@@ -176,6 +218,51 @@ func (ae AlbumEndpoint) SetUserAlbumPermission(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "User album permission updated successfully"})
+}
+
+func (ae AlbumEndpoint) ListVisibleAlbums(c *gin.Context) {
+	id, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
+		return
+	}
+	albums, err := ae.albumRepository.GetAlbumNames(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, albums)
+}
+
+func (ae AlbumEndpoint) ListImageAlbums(c *gin.Context) {
+	id, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
+		return
+	}
+
+	imageID, err := api.ParseParamIntoID[database.ImageId](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
+
+	albums, err := ae.albumRepository.GetImageAlbumNames(imageID, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, albums)
 }
 
 // @summary     Get album images

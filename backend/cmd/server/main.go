@@ -170,6 +170,9 @@ func initAlbumEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		ae := albums.InitAlbumEndpoint(deps.albumRepository)
 		albumGroup.POST("/create", ae.CreateAlbum)
 		albumGroup.POST("/add_image", ae.AddImageToAlbum)
+		albumGroup.POST("/add_image_by_name", ae.AddImageToAlbumByName)
+		albumGroup.GET("/names", ae.ListVisibleAlbums)
+		albumGroup.GET("/image_names/:id", ae.ListImageAlbums)
 		albumGroup.POST("/set_visibility", ae.SetAlbumVisibility)
 		albumGroup.POST("/set_permission", ae.SetUserAlbumPermission)
 	}

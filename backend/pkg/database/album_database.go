@@ -20,6 +20,7 @@ type AlbumDatabase interface {
 	RemoveImageFromAlbum(ImageId, AlbumId, UserID) error
 	GetAlbumIds(UserID) ([]AlbumId, error)
 	GetAlbumNames(UserID) ([]string, error)
+	GetImageAlbumNames(ImageId, UserID) ([]string, error)
 	GetAlbumImages(AlbumId, UserID) ([]ImageId, error)
 	GetAlbumImageCount(AlbumId, UserID) (int64, error)
 	GetAlbumTagCounts(AlbumId, UserID) (map[string]int64, error)
@@ -91,7 +92,23 @@ func (db SqliteAlbumDatabase) GetAlbumIds(userID UserID) ([]AlbumId, error) {
 }
 
 func (db SqliteAlbumDatabase) GetAlbumNames(userID UserID) ([]string, error) {
-	rows, err := db.db.Query("SELECT album_name FROM Albums WHERE userId = ?", userID)
+	query := `
+		SELECT a.album_name
+		FROM Albums a
+		LEFT JOIN AlbumAccess aa
+			ON aa.albumId = a.id AND aa.userId = ?
+		WHERE
+			a.userId = ?
+			OR (
+				CASE
+					WHEN aa.access_level IS NOT NULL THEN aa.access_level > 0
+					WHEN a.visibility_mode = 0 THEN 0
+					ELSE 1
+				END
+			)
+		ORDER BY a.album_name ASC
+		`
+	rows, err := db.db.Query(query, userID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +124,50 @@ func (db SqliteAlbumDatabase) GetAlbumNames(userID UserID) ([]string, error) {
 		}
 		names = append(names, name)
 	}
+	return names, nil
+}
+
+func (db SqliteAlbumDatabase) GetImageAlbumNames(imageID ImageId, userID UserID) ([]string, error) {
+	query := `
+		SELECT a.album_name
+		FROM Albums a
+		JOIN AlbumImages ai
+			ON ai.albumId = a.id
+		LEFT JOIN AlbumAccess aa
+			ON aa.albumId = a.id AND aa.userId = ?
+		WHERE
+			ai.imageId = ?
+			AND (
+				a.userId = ?
+				OR (
+					CASE
+						WHEN aa.access_level IS NOT NULL THEN aa.access_level > 0
+						WHEN a.visibility_mode = 0 THEN 0
+						ELSE 1
+					END
+				)
+			)
+		ORDER BY a.album_name ASC
+	`
+
+	rows, err := db.db.Query(query, userID, imageID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() //nolint:errcheck
+
+	var names []string
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+
 	return names, nil
 }
 
