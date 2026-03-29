@@ -106,7 +106,7 @@ func TestStoreImageBytesFailThumbnailGen(t *testing.T) {
 func TestStoreImageAddImageFails(t *testing.T) {
 	tmpDir := t.TempDir()
 	mockdb := mockDatabase.NewMockImageDatabase(t)
-	mockdb.EXPECT().AddImage(mock.Anything, mock.Anything).Return(-1, fmt.Errorf("mock fail"))
+	mockdb.EXPECT().AddImage(mock.Anything, mock.Anything).Return(0, fmt.Errorf("mock fail"))
 	mockdb.
 		EXPECT().
 		GetNonOverlappingSuffix(mock.Anything).
