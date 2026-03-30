@@ -85,7 +85,7 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("plugin %v has no hook '%s'", plug, hook)})
 		return
 	}
-	if sig.Type != plugs.ManualTrigger {
+	if (sig.Type != plugs.ManualTrigger) && (sig.Type != plugs.GenerateForm) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("hook %s:%s is not a manual hook", plug, hook)})
 		return
 	}
@@ -109,6 +109,13 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 			ids[i] = database.ImageId(id)
 		}
 		input = ids
+	case plugs.ProcessFormData:
+		var data map[string]any
+		if err := c.BindJSON(&data); err != nil {
+			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("failed to parse request body (expected json object): %v", err)})
+			return
+		}
+		input = data
 	}
 	id := pe.jobs.SchedulePluginHook(plug, hook, input)
 	c.JSON(http.StatusAccepted, id)

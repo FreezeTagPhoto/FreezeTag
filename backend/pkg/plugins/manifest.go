@@ -96,6 +96,7 @@ type HookType uint8
 const (
 	PostUpload HookType = iota
 	ManualTrigger
+	GenerateForm
 )
 
 type HookSignature uint8
@@ -103,17 +104,20 @@ type HookSignature uint8
 const (
 	ProcessOneImage HookSignature = iota
 	ProcessImageBatch
+	ProcessFormData
 )
 
 var stringHookMap map[string]HookType = map[string]HookType{
 	"post_upload":    PostUpload,
 	"manual_trigger": ManualTrigger,
+	"generate_form":  GenerateForm,
 }
 var hookStringMap map[HookType]string
 
 var stringSignatureMap map[string]HookSignature = map[string]HookSignature{
 	"single_image": ProcessOneImage,
 	"image_batch":  ProcessImageBatch,
+	"form_data":    ProcessFormData,
 }
 var signatureStringMap map[HookSignature]string
 

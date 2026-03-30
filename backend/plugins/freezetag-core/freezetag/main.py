@@ -1,7 +1,5 @@
-
 from .protocol import read_message, write_message, MessageType, Message
 from .hooks import NoAction
-from .message import log
 from . import hooks
 
 from PIL import Image
@@ -65,8 +63,27 @@ def run():
                             write_message(action)
                         else:
                             write_message(NoAction())
+                    case "form_data":
+                        hook = msg.contents["hook"]
+                        form = msg.contents["json"]
+                        hook_func = hooks._plugin_hooks.get(hook, None)
+
+                        if hook_func is None:
+                            write_message(Message(MessageType.ERR, f'form_data hook "{hook}" not found'.encode("utf-8")))
+                            continue
+
+                        action = hooks.NoAction()
+                        try:
+                            action = hook_func(form)
+                        except Exception as error:
+                            write_message(Message(MessageType.ERR, f'exception during hook: {error}'))
+                            continue
+                        if action is not None:
+                            write_message(action)
+                        else:
+                            write_message(NoAction())
                     case _:
-                        write_message(Message(MessageType.ERR, f'unsupported hook signature'))
+                        write_message(Message(MessageType.ERR, 'unsupported hook signature'))
             case _:
                 write_message(Message(MessageType.ERR, f'{msg.mtype.name} not supported.'.encode("utf-8")))
     

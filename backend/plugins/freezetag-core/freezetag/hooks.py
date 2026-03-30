@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Callable
+from typing import Callable, Any
 from PIL import Image
 import io, base64
 
@@ -47,12 +47,18 @@ class AddImageAction(HookAction):
         data = base64.b64encode(image_bytes)
         HookAction.__init__(self, {"name": name + "." + format, "data": data.decode("utf-8")}, "add_image")
 
+class SendFormAction(HookAction):
+    def __init__(self, form: str):
+        """`form` should be a string containing valid HTML (can have embedded CSS), with the outermost tag being `<form></form>` without any attributes."""
+        HookAction.__init__(self, {"form": form}, "send_form")
+
 class MultipartAction(HookAction):
     def __init__(self, *hooks: HookAction):
         actions = []
         for action in hooks:
             actions.append(action.contents)
         HookAction.__init__(self, {"parts": actions}, "multipart")
+
 
 def init_func(func: Callable[[], None | Message]):
     global _plugin_init
@@ -77,6 +83,18 @@ def image_batch(func: Callable[[list[int]], HookAction]):
     def wrapper(ids: list[int]) -> HookAction:
         return func(ids)
     _plugin_hooks[func.__name__] = func
+    return wrapper
+
+_form_data_exists = False
+def form_data(func: Callable[[dict[str, Any]], HookAction]):
+    global _plugin_hooks, _form_data_exists
+    if _form_data_exists:
+        raise Exception("Only support one form data signature hook per plugin (you can filter the forms yourself :))")
+    @wraps(func)
+    def wrapper(form: dict[str, Any]) -> HookAction:
+        return func(form)
+    _plugin_hooks[func.__name__] = func
+    _form_data_exists = True
     return wrapper
 
 def teardown_func(func: Callable[[], None | Message]):

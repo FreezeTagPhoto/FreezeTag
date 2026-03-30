@@ -37,8 +37,10 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 				ids[i] = res.Id
 			}
 			return h.processImageBatch(hookName, ids, repo)
+		case ProcessFormData:
+			return nil, fmt.Errorf("form_data not legal for post_upload")
 		}
-	case ManualTrigger:
+	case ManualTrigger, GenerateForm:
 		switch s {
 		case ProcessOneImage:
 			resolved, ok := in.(database.ImageId)
@@ -52,6 +54,12 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 				return nil, fmt.Errorf("invalid input type for manual_trigger,image_batch")
 			}
 			return h.processImageBatch(hookName, resolved, repo)
+		case ProcessFormData:
+			resolved, ok := in.(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("invalid input type for manual_trigger,form_data")
+			}
+			return h.processFormData(hookName, resolved, repo)
 		}
 	}
 	return nil, fmt.Errorf("unknown hook type: %v,%v", t, s)
@@ -85,6 +93,22 @@ func (h *HookedPlugin) processImageBatch(hookName string, ids []database.ImageId
 	h.IO().In <- PluginMessage{
 		GET,
 		map[string]any{"action": "image_batch", "ids": ids, "hook": hookName},
+	}
+	resp, err := h.handleRequests(repo)
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.handlePost(repo, resp.Contents)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (h *HookedPlugin) processFormData(hookName string, data map[string]any, repo repositories.ImageRepository) (PluginResult, error) {
+	h.IO().In <- PluginMessage{
+		GET,
+		map[string]any{"action": "form_data", "json": data, "hook": hookName},
 	}
 	resp, err := h.handleRequests(repo)
 	if err != nil {
@@ -209,6 +233,15 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 			return nil, err
 		}
 		return map[string]any{"name": name, "id": id}, nil
+	case "send_form":
+		form, err := into[string](msg["form"])
+		if err != nil {
+			return nil, err
+		}
+		if !strings.HasPrefix(form, "<form>") || !strings.HasSuffix(form, "</form>") {
+			return nil, fmt.Errorf("form has bad syntax, expected to start with <form> and end with </form>, got %s", form)
+		}
+		return map[string]any{"form": form}, nil
 	case "multipart":
 		parts, err := intoList[any](msg["parts"])
 		if err != nil {
