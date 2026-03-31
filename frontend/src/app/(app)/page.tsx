@@ -331,15 +331,21 @@ export default function Home() {
                 {selectingPlugin && (
                     <ManualRunMenu
                         onClose={() => setSelectingPlugin(false)}
-                        onPluginChosen={(plugin_name, hook_name) => {
+                        onPluginChosen={(
+                            plugin_name,
+                            hook_name,
+                            hook_signature,
+                        ) => {
                             PluginRunner(
                                 plugin_name,
                                 hook_name,
-                                selectedIds.toArray(),
+                                hook_signature === "image_batch"
+                                    ? selectedIds.toArray()
+                                    : selectedIds.toArray()[0],
                             );
                             router.replace("/jobs");
                         }}
-                        hookSignature="image_batch"
+                        multipleImages={selectedIds.size() > 1}
                     />
                 )}
             </main>

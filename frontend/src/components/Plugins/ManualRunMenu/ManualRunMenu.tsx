@@ -5,8 +5,12 @@ import { Play } from "lucide-react";
 
 export type ManualRunMenuProps = {
     onClose: () => void;
-    onPluginChosen: (plugin_name: string, hook_name: string) => void;
-    hookSignature: "single_image" | "image_batch";
+    onPluginChosen: (
+        plugin_name: string,
+        hook_name: string,
+        hook_signature: string,
+    ) => void;
+    multipleImages: boolean;
 };
 
 type PluginHookPair = {
@@ -14,12 +18,13 @@ type PluginHookPair = {
     plugin_friendly_name: string;
     hook_name: string;
     hook_friendly_name: string;
+    hook_signature: string;
 };
 
 export default function ManualRunMenu({
     onClose,
     onPluginChosen,
-    hookSignature,
+    multipleImages,
 }: ManualRunMenuProps) {
     const [plugins, setPlugins] = useState<PluginHookPair[] | undefined>(
         undefined,
@@ -40,7 +45,10 @@ export default function ManualRunMenu({
 
             for (const plugin of plugins) {
                 Object.entries(plugin.hooks).forEach(([name, hook]) => {
-                    if (hook.signature !== hookSignature) {
+                    if (hook.signature === "form_data") {
+                        return;
+                    }
+                    if (multipleImages && hook.signature === "single_image") {
                         return;
                     }
                     if (hook.type !== "manual_trigger") {
@@ -51,13 +59,14 @@ export default function ManualRunMenu({
                         plugin_name: plugin.name,
                         hook_name: name,
                         hook_friendly_name: hook.friendly_name,
+                        hook_signature: hook.signature,
                     });
                 });
             }
 
             setPlugins(pairs);
         })();
-    }, [hookSignature]);
+    }, [multipleImages]);
 
     return (
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>
@@ -79,6 +88,7 @@ export default function ManualRunMenu({
                                         onPluginChosen(
                                             pair.plugin_name,
                                             pair.hook_name,
+                                            pair.hook_signature,
                                         )
                                     }
                                     title="Run Plugin"
