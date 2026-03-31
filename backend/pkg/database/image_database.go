@@ -101,34 +101,6 @@ type SqliteImageDatabase struct {
 //go:embed schema.sql
 var schema string
 
-//  1. If the user's visibility mode is 2, they can see all images regardless of restrictions.
-//  2. If the image is not in an album, the user can see it if their visibility mode is at least 1
-//  3. If the image is in an album, the user can see it if:
-//     a. They are the owner of the album
-//     b. They have an explicit grant for that album
-//     c. The album is public and they don't have an explicit block for that album.
-// Note: This query is designed to be used as a subquery in the WHERE clause of a larger query, so it references the "Images" table without explicitly joining it.
-const IMAGE_IS_VISIBILE string = `
-    (SELECT visibility_mode FROM Users WHERE id = ?) = 2
-    OR
-    (NOT EXISTS (SELECT 1 FROM AlbumImages WHERE imageId = Images.id) 
-    AND 
-    (SELECT visibility_mode FROM Users WHERE id = ?) = 1)
-    OR
-    EXISTS (
-        SELECT 1 FROM AlbumImages ai
-        JOIN Albums a ON ai.albumId = a.id
-        LEFT JOIN AlbumAccess aa ON a.id = aa.albumId AND aa.userId = ?
-        WHERE ai.imageId = Images.id AND (
-            -- user owns the album
-            a.userId = ? 
-            -- user has an explicit grant for the album (1: read, 2: write)
-            OR aa.access_level >= 1 
-            -- album is public (1: read, 2: write) AND user is not explicitly blocked (0)
-            OR (a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level != 0))
-        )
-    )`
-
 // func InitSQLiteImageDatabase(datasource string) (SqliteImageDatabase, error) {
 // 	registerExtendedSqlite("sqlite3_extrafunc")
 // 	db, err := sql.Open("sqlite3_extrafunc", datasource)
@@ -150,19 +122,39 @@ func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries
 	return db.GetImagesOrderPaged(q, sf, so, 0, 0, UserID)
 }
 
-func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, pageSize uint, pageNum uint, UserID UserID) ([]ImageId, error) {
+func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, pageSize uint, pageNum uint, userID UserID) ([]ImageId, error) {
 	stmt, stmtArgs := q.StatementWithArgs()
-	var query string
 	var args []any
+	var query string
 
-	if UserID == 0 {
+	if userID == 0 {
+		// If userID is 0, we are assuming this is a plugin/other internal tool
+		// and dont apply filters because that would be a pain and this needs to be shipped
 		query = fmt.Sprintf("SELECT id FROM Images WHERE %s", stmt)
+		args = append(args, stmtArgs...)
 	} else {
-		query = fmt.Sprintf("SELECT id FROM Images WHERE (%s) AND (%s)", IMAGE_IS_VISIBILE, stmt)
-		args = append(args, UserID, UserID, UserID, UserID)
+		query = `
+        WITH UserPermissions AS (
+            SELECT visibility_mode FROM Users WHERE id = ?
+        ),
+        AccessibleAlbums AS (
+            SELECT albumId 
+            FROM AlbumAccess 
+            WHERE userId = ? AND access_level > 0
+        )
+        SELECT DISTINCT i.id 
+        FROM Images i
+        CROSS JOIN UserPermissions up
+        LEFT JOIN AlbumImages ai ON i.id = ai.imageId
+        WHERE (` + stmt + `) AND (
+            up.visibility_mode > 0
+            OR 
+            ai.albumId IN (SELECT albumId FROM AccessibleAlbums)
+        )`
+		args = append(args, userID, userID)
+		args = append(args, stmtArgs...)
 	}
 
-	args = append(args, stmtArgs...)
 	query += fmt.Sprintf(" ORDER BY %s %s", sf.String(), so.String())
 	if pageSize != 0 {
 		query += " LIMIT ? OFFSET ?"

@@ -30,6 +30,21 @@ type AlbumDatabase interface {
 	SetUserAlbumPermission(AlbumId, UserID, PrivacyLevel, UserID) error
 }
 
+// who is asking for the data and what are they allowed to see?
+const visJoins = `
+	CROSS JOIN (SELECT visibility_mode FROM Users WHERE id = ?) AS up
+	LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = ?
+`
+
+// visibility rules for a given user and album
+const visWhere = `(
+	up.visibility_mode = 2 -- admin bypass 
+	OR a.userId = ?        -- owner bypass
+	OR aa.access_level > 0 -- explicit access
+	OR (up.visibility_mode = 1 AND a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
+)`
+
+
 type SqliteAlbumDatabase struct {
 	db *sql.DB
 }
@@ -86,195 +101,205 @@ func (db SqliteAlbumDatabase) RemoveImageFromAlbum(imageId ImageId, albumId Albu
 }
 
 func (db SqliteAlbumDatabase) GetAlbumIds(userID UserID) ([]AlbumId, error) {
-	rows, err := db.db.Query("SELECT id FROM Albums WHERE userId = ?", userID)
-	if err != nil {
-		return []AlbumId{}, err
+	var query string
+	var args []any
+
+	if userID == 0 {
+		query = "SELECT id FROM Albums"
+	} else {
+		query = fmt.Sprintf("SELECT a.id FROM Albums a %s WHERE %s", visJoins, visWhere)
+		args = []any{userID, userID, userID}
 	}
-	defer rows.Close() //nolint:errcheck
-	albums := []AlbumId{}
+
+	rows, err := db.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var albums []AlbumId
 	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return []AlbumId{}, err
-		}
 		var id int64
 		if err := rows.Scan(&id); err != nil {
-			return []AlbumId{}, err
+			return nil, err
 		}
 		albums = append(albums, AlbumId(id))
 	}
-	return albums, nil
+	return albums, rows.Err()
 }
 
 func (db SqliteAlbumDatabase) GetAlbumNames(userID UserID) ([]string, error) {
-	query := `
-		SELECT a.album_name
-		FROM Albums a
-		LEFT JOIN AlbumAccess aa
-			ON aa.albumId = a.id AND aa.userId = ?
-		WHERE
-			a.userId = ?
-			OR (
-				CASE
-					WHEN aa.access_level IS NOT NULL THEN aa.access_level > 0
-					WHEN a.visibility_mode = 0 THEN 0
-					ELSE 1
-				END
-			)
-		ORDER BY a.album_name ASC
-		`
-	rows, err := db.db.Query(query, userID, userID)
+	var query string
+	var args []any
+
+	if userID == 0 {
+		query = "SELECT album_name FROM Albums ORDER BY album_name ASC"
+	} else {
+		query = fmt.Sprintf("SELECT a.album_name FROM Albums a %s WHERE %s ORDER BY a.album_name ASC", visJoins, visWhere)
+		args = []any{userID, userID, userID}
+	}
+
+	rows, err := db.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close() //nolint:errcheck
+	defer rows.Close()
+
 	var names []string
 	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
 		var name string
 		if err := rows.Scan(&name); err != nil {
 			return nil, err
 		}
 		names = append(names, name)
 	}
-	return names, nil
+	return names, rows.Err()
 }
 
 func (db SqliteAlbumDatabase) GetImageAlbumNames(imageID ImageId, userID UserID) ([]string, error) {
-	query := `
-		SELECT a.album_name
-		FROM Albums a
-		JOIN AlbumImages ai
-			ON ai.albumId = a.id
-		LEFT JOIN AlbumAccess aa
-			ON aa.albumId = a.id AND aa.userId = ?
-		WHERE
-			ai.imageId = ?
-			AND (
-				a.userId = ?
-				OR (
-					CASE
-						WHEN aa.access_level IS NOT NULL THEN aa.access_level > 0
-						WHEN a.visibility_mode = 0 THEN 0
-						ELSE 1
-					END
-				)
-			)
-		ORDER BY a.album_name ASC
-	`
+	var query string
+	var args []any
 
-	rows, err := db.db.Query(query, userID, imageID, userID)
+	if userID == 0 {
+		query = `
+			SELECT a.album_name FROM Albums a 
+			JOIN AlbumImages ai ON a.id = ai.albumId 
+			WHERE ai.imageId = ? ORDER BY a.album_name ASC`
+		args = []any{imageID}
+	} else {
+		query = fmt.Sprintf(`
+			SELECT a.album_name FROM Albums a 
+			JOIN AlbumImages ai ON a.id = ai.albumId 
+			%s WHERE ai.imageId = ? AND %s ORDER BY a.album_name ASC`, visJoins, visWhere)
+		args = []any{userID, userID, imageID, userID}
+	}
+
+	rows, err := db.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close() //nolint:errcheck
+	defer rows.Close()
 
 	var names []string
 	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
 		var name string
 		if err := rows.Scan(&name); err != nil {
 			return nil, err
 		}
 		names = append(names, name)
 	}
-
-	return names, nil
+	return names, rows.Err()
 }
 
 func (db SqliteAlbumDatabase) GetAlbumImages(albumId AlbumId, userID UserID) ([]ImageId, error) {
-	query := `
-		SELECT ai.imageId
-		FROM AlbumImages ai
-		JOIN Albums a
-			ON a.id = ai.albumId
-		LEFT JOIN AlbumAccess aa
-			ON aa.albumId = a.id AND aa.userId = ?
-		WHERE
-			ai.albumId = ?
-			AND (
-				a.userId = ?
-				OR (
-					CASE
-						WHEN aa.access_level IS NOT NULL THEN aa.access_level > 0
-						WHEN a.visibility_mode = 0 THEN 0
-						ELSE 1
-					END
-				)
-			)
-		ORDER BY ai.imageId ASC
-	`
+	var query string
+	var args []any
 
-	rows, err := db.db.Query(query, userID, albumId, userID)
-	if err != nil {
-		return []ImageId{}, err
+	if userID == 0 {
+		query = "SELECT imageId FROM AlbumImages WHERE albumId = ? ORDER BY imageId ASC"
+		args = []any{albumId}
+	} else {
+		query = fmt.Sprintf(`
+			SELECT ai.imageId FROM AlbumImages ai 
+			JOIN Albums a ON a.id = ai.albumId 
+			%s WHERE ai.albumId = ? AND %s ORDER BY ai.imageId ASC`, visJoins, visWhere)
+		args = []any{userID, userID, albumId, userID}
 	}
-	defer rows.Close() //nolint:errcheck
-	images := []ImageId{}
+
+	rows, err := db.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var images []ImageId
 	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return []ImageId{}, err
-		}
 		var id int64
 		if err := rows.Scan(&id); err != nil {
-			return []ImageId{}, err
+			return nil, err
 		}
 		images = append(images, ImageId(id))
 	}
-	return images, nil
+	return images, rows.Err()
 }
 
 func (db SqliteAlbumDatabase) GetAlbumImageCount(albumId AlbumId, userID UserID) (int64, error) {
+	var query string
+	var args []any
 	var count int64
-	err := db.db.QueryRow("SELECT COUNT(*) FROM AlbumImages WHERE albumId = ? AND EXISTS (SELECT 1 FROM Albums WHERE id = ? AND userId = ?)", albumId, albumId, userID).Scan(&count)
-	if err != nil {
-		return 0, err
+
+	if userID == 0 {
+		query = "SELECT COUNT(*) FROM AlbumImages WHERE albumId = ?"
+		args = []any{albumId}
+	} else {
+		query = fmt.Sprintf(`
+			SELECT COUNT(ai.imageId) FROM AlbumImages ai 
+			JOIN Albums a ON a.id = ai.albumId 
+			%s WHERE ai.albumId = ? AND %s`, visJoins, visWhere)
+		args = []any{userID, userID, albumId, userID}
 	}
-	return count, nil
+
+	err := db.db.QueryRow(query, args...).Scan(&count)
+	return count, err
 }
 
 func (db SqliteAlbumDatabase) GetAlbumTagCounts(albumId AlbumId, userID UserID) (map[string]int64, error) {
-	query := `
-		SELECT tag, COUNT(Tags.id) as count FROM Tags
-		LEFT JOIN ImageTags on Tags.id = ImageTags.tagId
-		LEFT JOIN AlbumImages on ImageTags.imageId = AlbumImages.imageId
-		WHERE AlbumImages.albumId = ? AND EXISTS (SELECT 1 FROM Albums WHERE id = ? AND userId = ?)
-		GROUP BY Tags.tag
-		`
+	var query string
+	var args []any
 
-	rows, err := db.db.Query(query, albumId, albumId, userID)
-	if err != nil {
-		return map[string]int64{}, err
+	if userID == 0 {
+		query = `
+			SELECT Tags.tag, COUNT(Tags.id) FROM Tags
+			LEFT JOIN ImageTags ON Tags.id = ImageTags.tagId
+			LEFT JOIN AlbumImages ON ImageTags.imageId = AlbumImages.imageId
+			WHERE AlbumImages.albumId = ? GROUP BY Tags.tag`
+		args = []any{albumId}
+	} else {
+		query = fmt.Sprintf(`
+			SELECT t.tag, COUNT(t.id) FROM Tags t
+			LEFT JOIN ImageTags it ON t.id = it.tagId
+			LEFT JOIN AlbumImages ai ON it.imageId = ai.imageId
+			JOIN Albums a ON a.id = ai.albumId
+			%s WHERE ai.albumId = ? AND %s GROUP BY t.tag`, visJoins, visWhere)
+		args = []any{userID, userID, albumId, userID}
 	}
-	defer rows.Close() //nolint:errcheck
+
+	rows, err := db.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
 	counts := make(map[string]int64)
 	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return map[string]int64{}, err
-		}
 		var tag string
 		var count int64
 		if err := rows.Scan(&tag, &count); err != nil {
-			return map[string]int64{}, err
+			return nil, err
 		}
 		counts[tag] = count
 	}
-	return counts, nil
+	return counts, rows.Err()
 }
 
 func (db SqliteAlbumDatabase) GetAlbumIdByName(name string, userID UserID) (AlbumId, error) {
+	var query string
+	var args []any
 	var id int64
-	err := db.db.QueryRow("SELECT id FROM Albums WHERE album_name = ? AND userId = ?", name, userID).Scan(&id)
+
+	if userID == 0 {
+		query = "SELECT id FROM Albums WHERE album_name = ? LIMIT 1"
+		args = []any{name}
+	} else {
+		query = fmt.Sprintf("SELECT a.id FROM Albums a %s WHERE a.album_name = ? AND %s LIMIT 1", visJoins, visWhere)
+		args = []any{userID, userID, name, userID}
+	}
+
+	err := db.db.QueryRow(query, args...).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0, nil
-	} else if err != nil {
-		return 0, err
 	}
-	albumId := AlbumId(id)
-	return albumId, nil
+	return AlbumId(id), err
 }
 
 func (db SqliteAlbumDatabase) SetAlbumVisibility(albumId AlbumId, mode PrivacyLevel, userID UserID) error {

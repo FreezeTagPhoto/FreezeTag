@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS AlbumImages (
     imageId INTEGER,
     FOREIGN KEY(albumId) REFERENCES Albums(id) ON DELETE CASCADE,
     FOREIGN KEY(imageId) REFERENCES Images(id) ON DELETE CASCADE,
-    UNIQUE(albumId, imageId)
+    UNIQUE(imageId, albumId) -- want the index on the imageId
 );
 
 CREATE TABLE IF NOT EXISTS Users (
