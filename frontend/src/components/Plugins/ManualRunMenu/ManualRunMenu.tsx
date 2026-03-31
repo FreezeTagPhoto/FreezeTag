@@ -9,6 +9,7 @@ export type ManualRunMenuProps = {
         plugin_name: string,
         hook_name: string,
         hook_signature: string,
+        hook_type: string,
     ) => void;
     multipleImages: boolean;
 };
@@ -19,6 +20,7 @@ type PluginHookPair = {
     hook_name: string;
     hook_friendly_name: string;
     hook_signature: string;
+    hook_type: "manual_trigger" | "generate_form";
 };
 
 export default function ManualRunMenu({
@@ -51,7 +53,10 @@ export default function ManualRunMenu({
                     if (multipleImages && hook.signature === "single_image") {
                         return;
                     }
-                    if (hook.type !== "manual_trigger") {
+                    if (
+                        hook.type !== "manual_trigger" &&
+                        hook.type !== "generate_form"
+                    ) {
                         return;
                     }
                     pairs.push({
@@ -60,6 +65,7 @@ export default function ManualRunMenu({
                         hook_name: name,
                         hook_friendly_name: hook.friendly_name,
                         hook_signature: hook.signature,
+                        hook_type: hook.type,
                     });
                 });
             }
@@ -89,6 +95,7 @@ export default function ManualRunMenu({
                                             pair.plugin_name,
                                             pair.hook_name,
                                             pair.hook_signature,
+                                            pair.hook_type,
                                         )
                                     }
                                     title="Run Plugin"

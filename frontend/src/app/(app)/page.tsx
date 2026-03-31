@@ -16,6 +16,7 @@ import FileDeleter from "@/api/files/filedeleter";
 import FreezeTagSet from "@/common/freezetag/freezetagset";
 import PluginRunner from "@/api/plugins/pluginrunner";
 import ManualRunMenu from "@/components/Plugins/ManualRunMenu/ManualRunMenu";
+import JobsDetailer, { JobsDetailResult } from "@/api/jobs/jobsdetailer";
 
 type TagInfo = { name: string; count?: number };
 
@@ -160,6 +161,57 @@ export default function Home() {
         () => allTags.map((name) => ({ name, count: tagCounts[name] ?? 0 })),
         [allTags, tagCounts],
     );
+
+    const pluginRunner = async (
+        plugin_name: string,
+        hook_name: string,
+        hook_signature: string,
+        hook_type: string,
+    ) => {
+        const res_promise = PluginRunner(
+            plugin_name,
+            hook_name,
+            hook_signature === "image_batch"
+                ? selectedIds.toArray()
+                : selectedIds.toArray()[0],
+        );
+        if (hook_type !== "generate_form") {
+            router.replace("/jobs");
+            return;
+        }
+
+        const res = await res_promise;
+        if (!res.ok) {
+            console.error(res.error);
+            return;
+        }
+
+        const uuid = res.value;
+        let job_output: JobsDetailResult | undefined = undefined;
+        while (true) {
+            job_output = await JobsDetailer(uuid);
+            if (!job_output.ok) {
+                console.error(job_output.error);
+                return;
+            }
+            if (job_output.value.completed?.length === 1) {
+                break;
+            }
+            // Wait 1 second before asking again
+            await new Promise((r) => setTimeout(r, 1000));
+        }
+
+        const form: string | undefined = job_output.value.completed[0]?.form;
+        if (!form) {
+            console.error(`Did not get form out of plugin! Job UUID: ${uuid}`);
+            return;
+        }
+        if (!form.startsWith("<form>") || !form.endsWith("</form>")) {
+            console.error(`Did not get valid form! Form received: ${form}`);
+            return;
+        }
+        console.log(form);
+    };
 
     return (
         <>
@@ -331,20 +383,7 @@ export default function Home() {
                 {selectingPlugin && (
                     <ManualRunMenu
                         onClose={() => setSelectingPlugin(false)}
-                        onPluginChosen={(
-                            plugin_name,
-                            hook_name,
-                            hook_signature,
-                        ) => {
-                            PluginRunner(
-                                plugin_name,
-                                hook_name,
-                                hook_signature === "image_batch"
-                                    ? selectedIds.toArray()
-                                    : selectedIds.toArray()[0],
-                            );
-                            router.replace("/jobs");
-                        }}
+                        onPluginChosen={pluginRunner}
                         multipleImages={selectedIds.size() > 1}
                     />
                 )}
