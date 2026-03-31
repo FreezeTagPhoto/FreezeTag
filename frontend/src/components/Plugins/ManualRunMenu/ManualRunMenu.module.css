@@ -24,7 +24,7 @@
     overflow: auto;
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
+    justify-content: flex-start;
     gap: 1rem;
 }
 
