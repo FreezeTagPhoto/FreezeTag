@@ -30,6 +30,7 @@ packages:
       pkgname: "mocks"
       structname: "Mock{{.InterfaceName}}"
     interfaces:
+      AlbumDatabase:
       ImageDatabase:
       UserDatabase:
 
