@@ -24,6 +24,9 @@ import { formatLongDate } from "@/common/dateformat";
 import { useTagEditor } from "@/common/gallery/tageditor";
 import FileDownloader from "@/api/files/filedownloader";
 import FileDeleter from "@/api/files/filedeleter";
+import AlbumCreator from "@/api/albums/albumcreator";
+import AlbumImageAdder from "@/api/albums/albumimageadder";
+import AlbumNamesLister from "@/api/albums/albumnameslister";
 import {
     MoreHorizontal,
     PlusCircle,
@@ -39,6 +42,7 @@ import {
     Download,
     Trash2,
     Loader2,
+    FolderPlus,
     PuzzleIcon,
 } from "lucide-react";
 import LocationMap from "./LocationMap";
@@ -201,6 +205,21 @@ const MetadataSidebar = memo(function MetadataSidebar({
     );
     const [fileError, setFileError] = useState<string | null>(null);
 
+    const [albumOpen, setAlbumOpen] = useState<boolean>(false);
+    const [albumMode, setAlbumMode] = useState<"existing" | "new">(
+        "existing",
+    );
+    const [existingAlbumName, setExistingAlbumName] = useState<string>("");
+    const [albumNames, setAlbumNames] = useState<string[]>([]);
+    const [imageAlbumNames, setImageAlbumNames] = useState<string[]>([]);
+    const [newAlbumName, setNewAlbumName] = useState<string>("");
+    const [newAlbumVisibility, setNewAlbumVisibility] = useState<
+        "0" | "1" | "2"
+    >("0");
+    const [albumBusy, setAlbumBusy] = useState<boolean>(false);
+    const [albumError, setAlbumError] = useState<string | null>(null);
+    const [albumInfo, setAlbumInfo] = useState<string | null>(null);
+
     const {
         tagMutating,
         tagMutateError,
@@ -310,7 +329,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
             ro.disconnect();
         };
     }, [currentTags, syncTagPillsFade]);
-
+    
     const stopClick = (e: ReactMouseEvent<HTMLElement>) => e.stopPropagation();
 
     const downloadBusy = fileBusy === "download";
@@ -419,6 +438,90 @@ const MetadataSidebar = memo(function MetadataSidebar({
         setAnsweringForm(form);
         setAnsweringPlugin(plugin_name);
         setAnsweringHook(form_receive_hook_name);
+    };
+
+    // reset album state when switching images or closing sidebar
+    useEffect(() => {
+        setAlbumOpen(false);
+        setAlbumMode("existing");
+        setAlbumNames([]);
+        setImageAlbumNames([]);
+        setNewAlbumName("");
+        setNewAlbumVisibility("0");
+        setAlbumBusy(false);
+        setAlbumError(null);
+        setAlbumInfo(null);
+    }, [selectedId]);
+
+    useEffect(() => {
+        if (!albumOpen || albumMode !== "existing") return;
+        (async () => {
+            const result = await AlbumNamesLister();
+            if (!result.ok) {
+                setAlbumError(result.error.message || "Failed to load albums.");
+                setExistingAlbumName("");
+                return;
+            }
+            const names = result.value ?? [];
+            setAlbumNames(names);
+        })();
+
+    }, [albumOpen, albumMode]);
+
+    const handleAddToExistingAlbum = async () => {
+        if (albumBusy) return;
+
+        setAlbumBusy(true);
+        const result = await AlbumImageAdder(selectedId, existingAlbumName);
+        if (!result.ok) {
+            setAlbumError(await requestErrorToMessage(result.error));
+            setAlbumBusy(false);
+            return;
+        }
+        setAlbumInfo(`Image added to album \"${existingAlbumName}\".`);
+        setAlbumBusy(false);
+    };
+
+    const handleCreateAndAddToAlbum = async () => {
+        if (albumBusy) return;
+
+        const name = newAlbumName.trim();
+        if (name.length === 0) {
+            setAlbumError("Please enter an album name.");
+            return;
+        }
+
+        setAlbumBusy(true);
+        const createResult = await AlbumCreator(
+            name,
+            Number.parseInt(newAlbumVisibility, 10),
+        );
+
+        if (!createResult.ok) {
+            setAlbumError(await requestErrorToMessage(createResult.error));
+            setAlbumBusy(false);
+            return;
+        }
+
+        const addResult = await AlbumImageAdder(selectedId, name);
+        
+        if (!addResult.ok) {
+            setAlbumError(await requestErrorToMessage(addResult.error));
+            setAlbumBusy(false);
+            return;
+        }
+
+        setAlbumError(null);
+        setAlbumInfo(`Created \"${name}\" and added image`);
+
+        setAlbumNames((prev) =>
+            prev.includes(name) ? prev : [...prev, name].sort(),
+        );
+        setImageAlbumNames((prev) =>
+            prev.includes(name) ? prev : [...prev, name].sort(),
+        );
+        setAlbumMode("existing");
+        setAlbumBusy(false);
     };
 
     return (
@@ -856,6 +959,182 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                     )}
                                 </div>
                             </>
+                        )}
+                    </div>
+                </div>
+                
+                <div className={styles.detailRow}>
+                    <div className={styles.detailLabelRow}>
+                        <FolderPlus className={styles.detailLabelIcon} />
+                        <span className={styles.detailLabel}>Albums</span>
+                    </div>
+                    <div className={styles.detailValue}>
+                        <div className={styles.albumCurrentWrap}>
+                            {imageAlbumNames.length === 0 ? (
+                                <span className={styles.inlineMuted}>
+                                    Not in any albums yet.
+                                </span>
+                            ) : (
+                                imageAlbumNames.map((name) => (
+                                    <Pill
+                                        key={name}
+                                        label={name}
+                                        variant="token"
+                                        className={styles.albumTokenPill}
+                                    />
+                                ))
+                            )}
+                        </div>
+
+                        {albumError && (
+                            <div
+                                className={styles.errorBanner}
+                                style={{ marginBottom: 10 }}
+                            >
+                                Album action failed: {albumError}
+                            </div>
+                        )}
+
+                        {albumInfo && !albumError && (
+                            <div className={styles.tagInfoBanner}>
+                                {albumInfo}
+                            </div>
+                        )}
+
+                        {!albumOpen ? (
+                            <button
+                                type="button"
+                                className={styles.albumOpenButton}
+                                onClick={() => setAlbumOpen(true)}
+                                disabled={albumBusy}
+                            >
+                                <FolderPlus className={styles.iconSm} />
+                                Add to album
+                            </button>
+                        ) : (
+                            <div className={styles.albumEditor}>
+                                <div className={styles.albumModeRow}>
+                                    <button
+                                        type="button"
+                                        className={`${styles.albumModeButton} ${albumMode === "existing" ? styles.albumModeButtonActive : ""}`}
+                                        onClick={() =>
+                                            setAlbumMode("existing")
+                                        }
+                                        disabled={albumBusy}
+                                    >
+                                        Existing album
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`${styles.albumModeButton} ${albumMode === "new" ? styles.albumModeButtonActive : ""}`}
+                                        onClick={() => setAlbumMode("new")}
+                                        disabled={albumBusy}
+                                    >
+                                        New album
+                                    </button>
+                                </div>
+
+                                {albumMode === "existing" ? (
+                                    <div className={styles.albumFormRow}>
+                                        <select
+                                            className={styles.albumSelect}
+                                            value={existingAlbumName}
+                                            onChange={(e) =>
+                                                setExistingAlbumName(
+                                                    e.target.value,
+                                                )
+                                            }
+                                        >
+                                            {albumNames.length === 0 ? (
+                                                <option value="">
+                                                    No Albums Available
+                                                </option>
+                                            ) : (
+                                                albumNames.map((name) => (
+                                                    <option key={name} value={name}>
+                                                        {name}
+                                                    </option>
+                                                ))
+                                            )}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            className={styles.albumPrimaryButton}
+                                            onClick={() => {
+                                                void handleAddToExistingAlbum();
+                                            }}
+                                            disabled={
+                                                albumBusy ||
+                                                albumNames.length === 0
+                                            }
+                                        >
+                                            {albumBusy ? "Adding..." : "Add"}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className={styles.albumFormStack}>
+                                        <input
+                                            className={styles.albumInput}
+                                            placeholder="Album name"
+                                            value={newAlbumName}
+                                            onChange={(e) =>
+                                                setNewAlbumName(e.target.value)
+                                            }
+                                            disabled={albumBusy}
+                                        />
+                                        <div className={styles.albumFormRow}>
+                                            <select
+                                                className={styles.albumSelect}
+                                                value={newAlbumVisibility}
+                                                onChange={(e) => {
+                                                    const value = e.target
+                                                        .value as
+                                                        | "0"
+                                                        | "1"
+                                                        | "2";
+                                                    setNewAlbumVisibility(
+                                                        value,
+                                                    );
+                                                }}
+                                                disabled={albumBusy}
+                                            >
+                                                <option value="0">
+                                                    Private
+                                                </option>
+                                                <option value="1">
+                                                    Public
+                                                </option>
+                                                <option value="2">
+                                                    Public Editable
+                                                </option>
+                                            </select>
+                                            <button
+                                                type="button"
+                                                className={
+                                                    styles.albumPrimaryButton
+                                                }
+                                                onClick={() => {
+                                                    void handleCreateAndAddToAlbum();
+                                                }}
+                                                disabled={albumBusy}
+                                            >
+                                                {albumBusy
+                                                    ? "Creating..."
+                                                    : "Create + Add"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="button"
+                                    className={styles.albumSecondaryButton}
+                                    onClick={() => setAlbumOpen(false)}
+                                    disabled={albumBusy}
+                                >
+                                    Close
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
