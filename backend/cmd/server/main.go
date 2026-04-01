@@ -178,6 +178,7 @@ func initAlbumEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		albumGroup.POST("/delete", ae.DeleteAlbum)
 		albumGroup.POST("/set_visibility", ae.SetAlbumVisibility)
 		albumGroup.POST("/set_permission", ae.SetUserAlbumPermission)
+		albumGroup.GET("/list", ae.ListAlbums)
 	}
 }
 

@@ -8,6 +8,11 @@ import (
 type PrivacyLevel uint8
 type VisbilityLevel uint8
 
+type AlbumSharedUser struct {
+	UserID     UserID
+	Permission PrivacyLevel
+}
+
 const (
 	VisPrivate VisbilityLevel = iota
 	VisPublic
@@ -25,7 +30,12 @@ type AlbumDatabase interface {
 	GetAssociatedAlbumIds(ImageId, UserID) ([]AlbumId, error)
 	GetAlbumImages(AlbumId, UserID) ([]ImageId, error)
 	GetAlbumTagCounts(AlbumId, UserID) (map[string]int64, error)
+	GetAlbumNameById(AlbumId, UserID) (string, error)
 	GetAlbumIdByName(string, UserID) (AlbumId, error)
+	CanManageAlbum(AlbumId, UserID) (bool, error)
+	GetAlbumOwner(AlbumId) (UserID, error)
+	GetAlbumSharedUserIDs(AlbumId) ([]UserID, error)
+	GetAlbumSharedUsers(AlbumId) ([]AlbumSharedUser, error)
 	SetAlbumVisibility(AlbumId, PrivacyLevel, UserID) error
 	SetUserAlbumPermission(AlbumId, UserID, PrivacyLevel, UserID) error
 }
@@ -121,8 +131,16 @@ func (db SqliteAlbumDatabase) CreateAlbum(name string, userId UserID, visibility
 }
 
 func (db SqliteAlbumDatabase) SetImageAlbum(imageId ImageId, albumId AlbumId, userID UserID) error {
+	canManage, err := db.CanManageAlbum(albumId, userID)
+	if err != nil {
+		return err
+	}
+	if !canManage {
+		return fmt.Errorf("forbidden: album %v not found or not manageable by %v", albumId, userID)
+	}
+
 	query := "INSERT INTO AlbumImages (albumId, imageId) VALUES (?, ?)"
-	_, err := db.db.Exec(query, albumId, imageId)
+	_, err = db.db.Exec(query, albumId, imageId)
 	return err
 }
 
@@ -368,6 +386,32 @@ func (db SqliteAlbumDatabase) GetAlbumTagCounts(albumId AlbumId, userID UserID) 
 	return counts, rows.Err()
 }
 
+func (db SqliteAlbumDatabase) GetAlbumNameById(albumId AlbumId, userID UserID) (string, error) {
+	var name string
+
+	if userID == 0 {
+		err := db.db.QueryRow("SELECT album_name FROM Albums WHERE id = ?", albumId).Scan(&name)
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return name, err
+	}
+
+	ok, err := db.userAuthorizedForAlbum(albumId, userID)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", nil
+	}
+
+	err = db.db.QueryRow("SELECT album_name FROM Albums WHERE id = ?", albumId).Scan(&name)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	return name, err
+}
+
 func (db SqliteAlbumDatabase) GetAlbumIdByName(name string, userID UserID) (AlbumId, error) {
 	var query string
 	var args []any
@@ -420,6 +464,78 @@ func (db SqliteAlbumDatabase) GetAlbumIdByName(name string, userID UserID) (Albu
 	return AlbumId(id), nil
 }
 
+func (db SqliteAlbumDatabase) CanManageAlbum(albumId AlbumId, userID UserID) (bool, error) {
+	if userID == 0 {
+		return true, nil
+	}
+
+	var count int
+	query := `
+		SELECT COUNT(*) FROM Albums a
+		LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = ?
+		WHERE a.id = ?
+		AND (a.userId = ? OR aa.access_level = 2)
+	`
+	err := db.db.QueryRow(query, userID, albumId, userID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (db SqliteAlbumDatabase) GetAlbumOwner(albumId AlbumId) (UserID, error) {
+	var ownerID int64
+	err := db.db.QueryRow("SELECT userId FROM Albums WHERE id = ?", albumId).Scan(&ownerID)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return UserID(ownerID), nil
+}
+
+func (db SqliteAlbumDatabase) GetAlbumSharedUserIDs(albumId AlbumId) ([]UserID, error) {
+	rows, err := db.db.Query("SELECT userId FROM AlbumAccess WHERE albumId = ? AND access_level > 0 ORDER BY userId ASC", albumId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var userIDs []UserID
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		userIDs = append(userIDs, UserID(id))
+	}
+	return userIDs, rows.Err()
+}
+
+func (db SqliteAlbumDatabase) GetAlbumSharedUsers(albumId AlbumId) ([]AlbumSharedUser, error) {
+	rows, err := db.db.Query("SELECT userId, access_level FROM AlbumAccess WHERE albumId = ? AND access_level > 0 ORDER BY userId ASC", albumId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	sharedUsers := make([]AlbumSharedUser, 0)
+	for rows.Next() {
+		var id int64
+		var permission int
+		if err := rows.Scan(&id, &permission); err != nil {
+			return nil, err
+		}
+		sharedUsers = append(sharedUsers, AlbumSharedUser{
+			UserID:     UserID(id),
+			Permission: PrivacyLevel(permission),
+		})
+	}
+
+	return sharedUsers, rows.Err()
+}
+
 func (db SqliteAlbumDatabase) SetAlbumVisibility(albumId AlbumId, mode PrivacyLevel, userID UserID) error {
 	userVis, err := db.getVisibilityMode(userID)
 	var query string
@@ -447,18 +563,25 @@ func (db SqliteAlbumDatabase) SetAlbumVisibility(albumId AlbumId, mode PrivacyLe
 }
 
 func (db SqliteAlbumDatabase) SetUserAlbumPermission(albumId AlbumId, targetUser UserID, permission PrivacyLevel, requesterID UserID) error {
+	canManage, err := db.CanManageAlbum(albumId, requesterID)
+	if err != nil {
+		return err
+	}
+	if !canManage {
+		return fmt.Errorf("forbidden: album %v not found or not manageable by %v", albumId, requesterID)
+	}
+
 	query := `
         INSERT INTO AlbumAccess (albumId, userId, access_level)
-        SELECT ?, ?, ?
-        WHERE EXISTS (SELECT 1 FROM Albums WHERE id = ? AND userId = ?)
+        VALUES (?, ?, ?)
         ON CONFLICT(albumId, userId) DO UPDATE SET access_level = excluded.access_level`
 
-	res, err := db.db.Exec(query, albumId, targetUser, permission, albumId, requesterID)
+	res, err := db.db.Exec(query, albumId, targetUser, permission)
 	if err != nil {
 		return err
 	}
 	if count, _ := res.RowsAffected(); count == 0 {
-		return fmt.Errorf("forbidden: album %v not found or not owned by %v", albumId, requesterID)
+		return fmt.Errorf("forbidden: failed to update album %v permissions", albumId)
 	}
 	return nil
 }

@@ -29,6 +29,28 @@ type UserAlbumPermissionRequest struct {
 	Permission   database.PrivacyLevel `json:"permission" binding:"oneof=0 1 2"`
 }
 
+type AlbumOwnerResponse struct {
+	OwnerID database.UserID `json:"owner_id"`
+}
+
+type AlbumSharedUsersResponse struct {
+	SharedUserIDs []database.UserID `json:"shared_user_ids"`
+}
+
+type AlbumListItem struct {
+	ID               database.AlbumId  `json:"id"`
+	Name             string            `json:"name"`
+	OwnerID          database.UserID   `json:"owner_id"`
+	CanManageSharing bool              `json:"can_manage_sharing"`
+	SharedUserIDs    []database.UserID `json:"shared_user_ids"`
+	SharedUsers      []SharedUserRole  `json:"shared_users"`
+}
+
+type SharedUserRole struct {
+	UserID     database.UserID       `json:"user_id"`
+	Permission database.PrivacyLevel `json:"permission"`
+}
+
 type AddImageRequest struct {
 	ImageId database.ImageId `json:"image_id"`
 	AlbumId database.AlbumId `json:"album_id"`
@@ -229,6 +251,86 @@ func (ae AlbumEndpoint) SetUserAlbumPermission(c *gin.Context) {
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "User album permission updated successfully"})
 }
 
+// @summary     List visible albums with ids
+// @description Lists visible albums with id, name, owner and explicit shared users (owner only).
+// @tags        albums
+// @router      /album/list [get]
+// @success     200 {array} AlbumListItem
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
+func (ae AlbumEndpoint) ListAlbums(c *gin.Context) {
+	id, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
+		return
+	}
+
+	albumIDs, err := ae.albumRepository.GetAlbumIds(uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+
+	items := make([]AlbumListItem, 0, len(albumIDs))
+	for _, albumID := range albumIDs {
+		name, err := ae.albumRepository.GetAlbumNameById(albumID, uid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+			return
+		}
+		if name == "" {
+			continue
+		}
+
+		ownerID, err := ae.albumRepository.GetAlbumOwner(albumID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+			return
+		}
+
+		canManageSharing, err := ae.albumRepository.CanManageAlbum(albumID, uid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+			return
+		}
+
+		shared := []database.UserID{}
+		sharedUsers := []SharedUserRole{}
+		if canManageSharing {
+			rawSharedUsers, err := ae.albumRepository.GetAlbumSharedUsers(albumID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+				return
+			}
+			shared = make([]database.UserID, 0, len(rawSharedUsers))
+			sharedUsers = make([]SharedUserRole, 0, len(rawSharedUsers))
+			for _, sharedUser := range rawSharedUsers {
+				shared = append(shared, sharedUser.UserID)
+				sharedUsers = append(sharedUsers, SharedUserRole{
+					UserID:     sharedUser.UserID,
+					Permission: sharedUser.Permission,
+				})
+			}
+		}
+
+		items = append(items, AlbumListItem{
+			ID:               albumID,
+			Name:             name,
+			OwnerID:          ownerID,
+			CanManageSharing: canManageSharing,
+			SharedUserIDs:    shared,
+			SharedUsers:      sharedUsers,
+		})
+	}
+
+	c.JSON(http.StatusOK, items)
+}
+
 func (ae AlbumEndpoint) ListVisibleAlbums(c *gin.Context) {
 	id, exists := c.Get("userID")
 	if !exists {
@@ -273,7 +375,6 @@ func (ae AlbumEndpoint) ListImageAlbums(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, albums)
 }
-
 
 func (ae AlbumEndpoint) GetAlbumImagesByName(c *gin.Context) {
 	id, exists := c.Get("userID")

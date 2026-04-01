@@ -133,6 +133,27 @@ func TestGetAlbumImagesPublic(t *testing.T) {
 	assert.Equal(t, []ImageId{imageID}, images)
 }
 
+func TestSetImageAlbumRequiresManageAccess(t *testing.T) {
+	mgr := createTempAlbumDatabase(t)
+	owner := createNamedTestUser(t, mgr.UserDB, "owner_manage_images")
+	manager := createNamedTestUser(t, mgr.UserDB, "rw_manager_images")
+	readOnly := createNamedTestUser(t, mgr.UserDB, "ro_user_images")
+
+	albumID, err := mgr.AlbumDB.CreateAlbum("managed-images", owner, PrivacyLevel(0))
+	require.NoError(t, err)
+	require.NoError(t, mgr.AlbumDB.SetUserAlbumPermission(albumID, manager, PrivacyLevel(2), owner))
+	require.NoError(t, mgr.AlbumDB.SetUserAlbumPermission(albumID, readOnly, PrivacyLevel(1), owner))
+
+	managerImageID, err := mgr.ImageDB.AddImage("manager-add.png", imagedata.Data{Width: 50, Height: 50})
+	require.NoError(t, err)
+	require.NoError(t, mgr.AlbumDB.SetImageAlbum(managerImageID, albumID, manager))
+
+	readOnlyImageID, err := mgr.ImageDB.AddImage("readonly-add.png", imagedata.Data{Width: 60, Height: 60})
+	require.NoError(t, err)
+	err = mgr.AlbumDB.SetImageAlbum(readOnlyImageID, albumID, readOnly)
+	require.Error(t, err)
+}
+
 func TestGetAlbumImagesNotExist(t *testing.T) {
 	mgr := createTempAlbumDatabase(t)
 	user := createNamedTestUser(t, mgr.UserDB, "viewer_missing_album")

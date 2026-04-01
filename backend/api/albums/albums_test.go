@@ -40,6 +40,7 @@ func setupAlbumRouter(t *testing.T, repo database.AlbumDatabase, withUser bool, 
 	albumGroup.POST("/delete", ae.DeleteAlbum)
 	albumGroup.POST("/set_visibility", ae.SetAlbumVisibility)
 	albumGroup.POST("/set_permission", ae.SetUserAlbumPermission)
+	albumGroup.GET("/list", ae.ListAlbums)
 
 	return router
 }
@@ -138,6 +139,31 @@ func TestSetUserAlbumPermissionSuccess(t *testing.T) {
 	var got api.MessageResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, "User album permission updated successfully", got.Message)
+}
+
+func TestListAlbumsSuccess(t *testing.T) {
+	repo := albumMocks.NewMockAlbumDatabase(t)
+	repo.EXPECT().GetAlbumIds(database.UserID(7)).Return([]database.AlbumId{3}, nil).Once()
+	repo.EXPECT().GetAlbumNameById(database.AlbumId(3), database.UserID(7)).Return("shared-album", nil).Once()
+	repo.EXPECT().GetAlbumOwner(database.AlbumId(3)).Return(database.UserID(7), nil).Once()
+	repo.EXPECT().CanManageAlbum(database.AlbumId(3), database.UserID(7)).Return(true, nil).Once()
+	repo.EXPECT().GetAlbumSharedUsers(database.AlbumId(3)).Return([]database.AlbumSharedUser{{UserID: 44, Permission: 2}}, nil).Once()
+
+	router := setupAlbumRouter(t, repo, true, database.UserID(7))
+	w := doJSONRequest(t, router, http.MethodGet, "/album/list", nil)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var got []AlbumListItem
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	require.Len(t, got, 1)
+	assert.Equal(t, database.AlbumId(3), got[0].ID)
+	assert.Equal(t, "shared-album", got[0].Name)
+	assert.Equal(t, database.UserID(7), got[0].OwnerID)
+	assert.True(t, got[0].CanManageSharing)
+	assert.Equal(t, []database.UserID{44}, got[0].SharedUserIDs)
+	require.Len(t, got[0].SharedUsers, 1)
+	assert.Equal(t, database.UserID(44), got[0].SharedUsers[0].UserID)
+	assert.Equal(t, database.PrivacyLevel(2), got[0].SharedUsers[0].Permission)
 }
 
 func TestListVisibleAlbumsSuccess(t *testing.T) {
