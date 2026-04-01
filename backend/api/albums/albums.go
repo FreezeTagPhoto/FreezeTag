@@ -266,7 +266,7 @@ func (ae AlbumEndpoint) ListImageAlbums(c *gin.Context) {
 		return
 	}
 
-	albums, err := ae.albumRepository.GetImageAlbumNames(imageID, uid)
+	albums, err := ae.albumRepository.GetAssociatedAlbumIds(imageID, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return

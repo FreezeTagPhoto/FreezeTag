@@ -76,9 +76,8 @@ CREATE TABLE IF NOT EXISTS Users (
     username TEXT NOT NULL UNIQUE,
     passwordHash TEXT NOT NULL,
     createdAt INTEGER NOT NULL,
-    -- 0: Only see images in albums they have access to
-    -- 1: See most images, but not images in whitelisted albums they dont have access to
-    -- 2: See all images
+    -- 0: disable seeing images by default
+    -- 1: enable seeing images by default  
     visibility_mode INTEGER NOT NULL DEFAULT 1,
     profilePicture BLOB,
     CHECK(visibility_mode IN (0, 1, 2))

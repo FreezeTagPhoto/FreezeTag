@@ -6,11 +6,12 @@ import (
 )
 
 type PrivacyLevel uint8
+type VisbilityLevel uint8
 
 const (
-	Private PrivacyLevel = iota
-	Public
-	PublicEditable
+	VisPrivate VisbilityLevel = iota
+	VisPublic
+	VisAdmin
 )
 
 type AlbumDatabase interface {
@@ -21,9 +22,8 @@ type AlbumDatabase interface {
 	RemoveImageFromAlbum(ImageId, AlbumId, UserID) error
 	GetAlbumIds(UserID) ([]AlbumId, error)
 	GetAlbumNames(UserID) ([]string, error)
-	GetImageAlbumNames(ImageId, UserID) ([]string, error)
+	GetAssociatedAlbumIds(ImageId, UserID) ([]AlbumId, error)
 	GetAlbumImages(AlbumId, UserID) ([]ImageId, error)
-	GetAlbumImageCount(AlbumId, UserID) (int64, error)
 	GetAlbumTagCounts(AlbumId, UserID) (map[string]int64, error)
 	GetAlbumIdByName(string, UserID) (AlbumId, error)
 	SetAlbumVisibility(AlbumId, PrivacyLevel, UserID) error
@@ -44,7 +44,6 @@ const visWhere = `(
 	OR (up.visibility_mode = 1 AND a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
 )`
 
-
 type SqliteAlbumDatabase struct {
 	db *sql.DB
 }
@@ -60,6 +59,56 @@ func InitSQLiteAlbumDatabase(datasource string) (SqliteAlbumDatabase, error) {
 		return SqliteAlbumDatabase{}, err
 	}
 	return SqliteAlbumDatabase{db}, nil
+}
+
+func (db SqliteAlbumDatabase) getVisibilityMode(userID UserID) (VisbilityLevel, error) {
+	var visibility int
+	if userID == 0 {
+		return VisAdmin, nil
+	}
+	err := db.db.QueryRow("SELECT visibility_mode FROM Users WHERE id = ?", userID).Scan(&visibility)
+	return VisbilityLevel(visibility), err
+}
+
+func (db SqliteAlbumDatabase) userAuthorizedForAlbum(albumId AlbumId, userID UserID) (bool, error) {
+	var count int
+
+	userVisibility, err := db.getVisibilityMode(userID)
+	if err != nil {
+		return false, err
+	}
+	switch userVisibility {
+	case VisAdmin:
+		return true, nil
+	case VisPublic:
+		query := ` 
+			SELECT COUNT(*) FROM Albums a
+			LEFT JOIN AlbumAccess aa 
+			ON aa.albumId = a.id AND aa.userId = ?
+			WHERE a.id = ?
+			AND (
+				(a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
+				OR aa.access_level > 0 
+				OR a.userId = ?
+			)
+		`
+		args := []any{userID, albumId, userID}
+		err := db.db.QueryRow(query, args...).Scan(&count)
+		return count > 0, err
+	case VisPrivate:
+		query := ` 
+			SELECT COUNT(*) FROM Albums a
+			LEFT JOIN AlbumAccess aa 
+			ON aa.albumId = a.id AND aa.userId = ?
+			WHERE a.id = ?
+			AND (aa.access_level > 0 OR a.userId = ?)
+		`
+		args := []any{userID, albumId, userID}
+		err := db.db.QueryRow(query, args...).Scan(&count)
+		return count > 0, err
+	default:
+		return false, fmt.Errorf("invalid visibility mode for user %v", userID)
+	}
 }
 
 func (db SqliteAlbumDatabase) CreateAlbum(name string, userId UserID, visibilityMode PrivacyLevel) (AlbumId, error) {
@@ -104,11 +153,34 @@ func (db SqliteAlbumDatabase) GetAlbumIds(userID UserID) ([]AlbumId, error) {
 	var query string
 	var args []any
 
-	if userID == 0 {
-		query = "SELECT id FROM Albums"
-	} else {
-		query = fmt.Sprintf("SELECT a.id FROM Albums a %s WHERE %s", visJoins, visWhere)
-		args = []any{userID, userID, userID}
+	userVisibility, err := db.getVisibilityMode(userID)
+	if err != nil {
+		return nil, err
+	}
+	switch userVisibility {
+	case VisAdmin:
+		query = "SELECT id FROM Albums ORDER BY album_name ASC"
+	case VisPublic: //album is public or user has explicit access or user is owner of the album
+		query = ` 
+			SELECT a.id FROM Albums a 
+			LEFT JOIN AlbumAccess aa 
+			ON aa.albumId = a.id AND aa.userId = :uid
+			WHERE (a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
+			OR aa.access_level > 0 
+			OR a.userId = :uid
+			ORDER BY a.album_name ASC
+		`
+		args = []any{sql.Named("uid", userID)}
+	case VisPrivate: //explicitly invited to the album
+		query = `
+			SELECT a.id FROM Albums a
+			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = :uid
+			WHERE aa.access_level > 0 OR a.userId = :uid
+			ORDER BY album_name ASC
+		`
+		args = []any{sql.Named("uid", userID)}
+	default:
+		return nil, fmt.Errorf("invalid visibility mode for user %v", userID)
 	}
 
 	rows, err := db.db.Query(query, args...)
@@ -132,11 +204,34 @@ func (db SqliteAlbumDatabase) GetAlbumNames(userID UserID) ([]string, error) {
 	var query string
 	var args []any
 
-	if userID == 0 {
+	userVisibility, err := db.getVisibilityMode(userID)
+	if err != nil {
+		return nil, err
+	}
+	switch userVisibility {
+	case VisAdmin:
 		query = "SELECT album_name FROM Albums ORDER BY album_name ASC"
-	} else {
-		query = fmt.Sprintf("SELECT a.album_name FROM Albums a %s WHERE %s ORDER BY a.album_name ASC", visJoins, visWhere)
-		args = []any{userID, userID, userID}
+	case VisPublic: //album is public or user has explicit access or user is owner of the album
+		query = ` 
+			SELECT a.album_name FROM Albums a 
+			LEFT JOIN AlbumAccess aa 
+			ON aa.albumId = a.id AND aa.userId = :uid
+			WHERE (a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
+			OR aa.access_level > 0 
+			OR a.userId = :uid
+			ORDER BY a.album_name ASC
+		`
+		args = []any{sql.Named("uid", userID)}
+	case VisPrivate: //explicitly invited to the album
+		query = `
+			SELECT album_name FROM Albums a
+			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = :uid
+			WHERE aa.access_level > 0 OR a.userId = :uid
+			ORDER BY album_name ASC
+		`
+		args = []any{sql.Named("uid", userID)}
+	default:
+		return nil, fmt.Errorf("invalid visibility mode for user %v", userID)
 	}
 
 	rows, err := db.db.Query(query, args...)
@@ -145,67 +240,79 @@ func (db SqliteAlbumDatabase) GetAlbumNames(userID UserID) ([]string, error) {
 	}
 	defer rows.Close()
 
-	var names []string
+	var albums []string
 	for rows.Next() {
 		var name string
 		if err := rows.Scan(&name); err != nil {
 			return nil, err
 		}
-		names = append(names, name)
+		albums = append(albums, name)
 	}
-	return names, rows.Err()
+	return albums, rows.Err()
 }
 
-func (db SqliteAlbumDatabase) GetImageAlbumNames(imageID ImageId, userID UserID) ([]string, error) {
+func (db SqliteAlbumDatabase) GetAssociatedAlbumIds(imageID ImageId, userID UserID) ([]AlbumId, error) {
 	var query string
 	var args []any
-
-	if userID == 0 {
-		query = `
-			SELECT a.album_name FROM Albums a 
-			JOIN AlbumImages ai ON a.id = ai.albumId 
-			WHERE ai.imageId = ? ORDER BY a.album_name ASC`
-		args = []any{imageID}
-	} else {
-		query = fmt.Sprintf(`
-			SELECT a.album_name FROM Albums a 
-			JOIN AlbumImages ai ON a.id = ai.albumId 
-			%s WHERE ai.imageId = ? AND %s ORDER BY a.album_name ASC`, visJoins, visWhere)
-		args = []any{userID, userID, imageID, userID}
+	userVisibility, err := db.getVisibilityMode(userID)
+	if err != nil {
+		return nil, err
 	}
-
+	switch userVisibility {
+	case VisAdmin:
+		query = "SELECT DISTINCT albumId FROM AlbumImages WHERE imageId = :id"
+		args = []any{sql.Named("id", imageID)}
+	case VisPublic:
+		query = `
+			SELECT DISTINCT ai.albumId FROM AlbumImages ai
+			LEFT JOIN AlbumAccess aa ON aa.albumId = ai.albumId AND aa.userId = :uid
+			WHERE imageId = :id
+			AND ( 
+				(a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
+				OR aa.access_level > 0 
+				OR a.userId = :uid
+			)
+		`
+	case VisPrivate:
+		query = `
+			SELECT DISTINCT ai.albumId FROM AlbumImages ai
+			LEFT JOIN AlbumAccess aa ON aa.albumId = ai.albumId AND aa.userId = :uid
+			WHERE imageId = :id 
+			AND (aa.access_level > 0 OR a.userId = :uid)
+		`
+		args = []any{sql.Named("id", imageID), sql.Named("uid", userID)}
+	default:
+		return nil, fmt.Errorf("invalid visibility mode for user %v", userID)
+	}
 	rows, err := db.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var names []string
+	var albums []AlbumId
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		names = append(names, name)
+		albums = append(albums, AlbumId(id))
 	}
-	return names, rows.Err()
+	return albums, rows.Err()
 }
 
 func (db SqliteAlbumDatabase) GetAlbumImages(albumId AlbumId, userID UserID) ([]ImageId, error) {
-	var query string
-	var args []any
-
-	if userID == 0 {
-		query = "SELECT imageId FROM AlbumImages WHERE albumId = ? ORDER BY imageId ASC"
-		args = []any{albumId}
-	} else {
-		query = fmt.Sprintf(`
-			SELECT ai.imageId FROM AlbumImages ai 
-			JOIN Albums a ON a.id = ai.albumId 
-			%s WHERE ai.albumId = ? AND %s ORDER BY ai.imageId ASC`, visJoins, visWhere)
-		args = []any{userID, userID, albumId, userID}
+	ok, err := db.userAuthorizedForAlbum(albumId, userID)
+	if err != nil {
+		return nil, err
 	}
-
+	if !ok {
+		return nil, fmt.Errorf("forbidden: user %v does not have access to album %v", userID, albumId)
+	}
+	query := ` 
+		SELECT imageId FROM AlbumImages WHERE albumId = :aid
+	`
+	args := []any{sql.Named("aid", albumId)}
 	rows, err := db.db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -223,46 +330,25 @@ func (db SqliteAlbumDatabase) GetAlbumImages(albumId AlbumId, userID UserID) ([]
 	return images, rows.Err()
 }
 
-func (db SqliteAlbumDatabase) GetAlbumImageCount(albumId AlbumId, userID UserID) (int64, error) {
-	var query string
-	var args []any
-	var count int64
-
-	if userID == 0 {
-		query = "SELECT COUNT(*) FROM AlbumImages WHERE albumId = ?"
-		args = []any{albumId}
-	} else {
-		query = fmt.Sprintf(`
-			SELECT COUNT(ai.imageId) FROM AlbumImages ai 
-			JOIN Albums a ON a.id = ai.albumId 
-			%s WHERE ai.albumId = ? AND %s`, visJoins, visWhere)
-		args = []any{userID, userID, albumId, userID}
-	}
-
-	err := db.db.QueryRow(query, args...).Scan(&count)
-	return count, err
-}
-
 func (db SqliteAlbumDatabase) GetAlbumTagCounts(albumId AlbumId, userID UserID) (map[string]int64, error) {
 	var query string
 	var args []any
 
-	if userID == 0 {
-		query = `
-			SELECT Tags.tag, COUNT(Tags.id) FROM Tags
-			LEFT JOIN ImageTags ON Tags.id = ImageTags.tagId
-			LEFT JOIN AlbumImages ON ImageTags.imageId = AlbumImages.imageId
-			WHERE AlbumImages.albumId = ? GROUP BY Tags.tag`
-		args = []any{albumId}
-	} else {
-		query = fmt.Sprintf(`
-			SELECT t.tag, COUNT(t.id) FROM Tags t
-			LEFT JOIN ImageTags it ON t.id = it.tagId
-			LEFT JOIN AlbumImages ai ON it.imageId = ai.imageId
-			JOIN Albums a ON a.id = ai.albumId
-			%s WHERE ai.albumId = ? AND %s GROUP BY t.tag`, visJoins, visWhere)
-		args = []any{userID, userID, albumId, userID}
+	ok, err := db.userAuthorizedForAlbum(albumId, userID)
+	if err != nil {
+		return nil, err
 	}
+	if !ok {
+		return nil, fmt.Errorf("forbidden: user %v does not have access to album %v", userID, albumId)
+	}
+
+	query = `
+		SELECT it.tag, COUNT(*) FROM AlbumImages ai
+		JOIN ImageTags it ON it.imageId = ai.imageId
+		WHERE ai.albumId = :aid
+		GROUP BY it.tag
+	`
+	args = []any{sql.Named("aid", albumId)}
 
 	rows, err := db.db.Query(query, args...)
 	if err != nil {
@@ -287,29 +373,75 @@ func (db SqliteAlbumDatabase) GetAlbumIdByName(name string, userID UserID) (Albu
 	var args []any
 	var id int64
 
-	if userID == 0 {
-		query = "SELECT id FROM Albums WHERE album_name = ? LIMIT 1"
-		args = []any{name}
-	} else {
-		query = fmt.Sprintf("SELECT a.id FROM Albums a %s WHERE a.album_name = ? AND %s LIMIT 1", visJoins, visWhere)
-		args = []any{userID, userID, name, userID}
+	userVisibility, err := db.getVisibilityMode(userID)
+	if err != nil {
+		return 0, err
 	}
 
-	err := db.db.QueryRow(query, args...).Scan(&id)
+	switch userVisibility {
+	case VisAdmin:
+		query = "SELECT id FROM Albums WHERE album_name = ? ORDER BY id ASC LIMIT 1"
+		args = []any{name}
+	case VisPublic:
+		query = `
+			SELECT a.id FROM Albums a
+			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = ?
+			WHERE a.album_name = ?
+			AND (
+				(a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
+				OR aa.access_level > 0
+				OR a.userId = ?
+			)
+			ORDER BY CASE WHEN a.userId = ? THEN 0 ELSE 1 END, a.id ASC
+			LIMIT 1
+		`
+		args = []any{userID, name, userID, userID}
+	case VisPrivate:
+		query = `
+			SELECT a.id FROM Albums a
+			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = ?
+			WHERE a.album_name = ?
+			AND (aa.access_level > 0 OR a.userId = ?)
+			ORDER BY CASE WHEN a.userId = ? THEN 0 ELSE 1 END, a.id ASC
+			LIMIT 1
+		`
+		args = []any{userID, name, userID, userID}
+	default:
+		return 0, fmt.Errorf("invalid visibility mode for user %v", userID)
+	}
+
+	err = db.db.QueryRow(query, args...).Scan(&id)
 	if err == sql.ErrNoRows {
 		return 0, nil
 	}
-	return AlbumId(id), err
+	if err != nil {
+		return 0, err
+	}
+	return AlbumId(id), nil
 }
 
 func (db SqliteAlbumDatabase) SetAlbumVisibility(albumId AlbumId, mode PrivacyLevel, userID UserID) error {
-	res, err := db.db.Exec("UPDATE Albums SET visibility_mode = ? WHERE id = ? AND userId = ?", mode, albumId, userID)
+	userVis, err := db.getVisibilityMode(userID)
+	var query string
 	if err != nil {
 		return err
 	}
-
+	switch userVis {
+	case VisAdmin:
+		query = "UPDATE Albums SET visibility_mode = :vis WHERE id = :aid"
+	default: // user owns the album
+		query = `
+			UPDATE Albums SET visibility_mode = :vis
+			WHERE id = :aid AND userId = :uid
+		`
+	}
+	args := []any{sql.Named("vis", mode), sql.Named("aid", albumId), sql.Named("uid", userID)}
+	res, err := db.db.Exec(query, args...)
+	if err != nil {
+		return err
+	}
 	if count, _ := res.RowsAffected(); count == 0 {
-		return fmt.Errorf("forbidden: album %v not found or not owned by %v", albumId, userID)
+		return fmt.Errorf("album %v not found", albumId)
 	}
 	return nil
 }
