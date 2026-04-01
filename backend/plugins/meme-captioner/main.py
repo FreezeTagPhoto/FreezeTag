@@ -8,7 +8,7 @@ from PIL import ImageDraw, ImageFont
 @single_image
 def make_caption_form(_img, id):
     return SendFormAction(
-        f"""<form><input type="hidden" value="{id}" name="id"></input><label for="top_text">Top Text:</label><input type="text" name="top_text" id="top_text" required></input><label for="bottom_text">Bottom Text:</label><input type="text" name="bottom_text" id="bottom_text" required></input></form>"""
+        f"""<form><div style="display:flex; flex-direction:column;"><input type="hidden" value="{id}" name="id"></input><label for="top_text">Top Text:</label><input type="text" name="top_text" id="top_text" required></input><label for="bottom_text">Bottom Text:</label><input type="text" name="bottom_text" id="bottom_text" required></input><input type="submit" value="Caption Meme!"/></div></form>"""
     )
 
 

@@ -10,6 +10,7 @@ export type ManualRunMenuProps = {
         hook_name: string,
         hook_signature: string,
         hook_type: string,
+        form_receive_hook_name?: string,
     ) => void;
     multipleImages: boolean;
 };
@@ -21,6 +22,7 @@ type PluginHookPair = {
     hook_friendly_name: string;
     hook_signature: string;
     hook_type: "manual_trigger" | "generate_form";
+    form_receive_hook_name?: string;
 };
 
 export default function ManualRunMenu({
@@ -53,20 +55,35 @@ export default function ManualRunMenu({
                     if (multipleImages && hook.signature === "single_image") {
                         return;
                     }
-                    if (
-                        hook.type !== "manual_trigger" &&
-                        hook.type !== "generate_form"
-                    ) {
-                        return;
+                    if (hook.type === "manual_trigger") {
+                        pairs.push({
+                            plugin_friendly_name: plugin.friendly_name,
+                            plugin_name: plugin.name,
+                            hook_name: name,
+                            hook_friendly_name: hook.friendly_name,
+                            hook_signature: hook.signature,
+                            hook_type: hook.type,
+                        });
+                    } else if (hook.type === "generate_form") {
+                        const r = Object.entries(plugin.hooks).find(
+                            ([_name, hook]) => hook.signature === "form_data",
+                        );
+                        if (!r) {
+                            console.error(
+                                "plugins with generate_form hooks should have a form_data hook!",
+                            );
+                            return;
+                        }
+                        pairs.push({
+                            plugin_friendly_name: plugin.friendly_name,
+                            plugin_name: plugin.name,
+                            hook_name: name,
+                            hook_friendly_name: hook.friendly_name,
+                            hook_signature: hook.signature,
+                            hook_type: hook.type,
+                            form_receive_hook_name: r[0],
+                        });
                     }
-                    pairs.push({
-                        plugin_friendly_name: plugin.friendly_name,
-                        plugin_name: plugin.name,
-                        hook_name: name,
-                        hook_friendly_name: hook.friendly_name,
-                        hook_signature: hook.signature,
-                        hook_type: hook.type,
-                    });
                 });
             }
 
@@ -96,6 +113,7 @@ export default function ManualRunMenu({
                                             pair.hook_name,
                                             pair.hook_signature,
                                             pair.hook_type,
+                                            pair.form_receive_hook_name,
                                         )
                                     }
                                     title="Run Plugin"

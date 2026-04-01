@@ -17,6 +17,7 @@ import FreezeTagSet from "@/common/freezetag/freezetagset";
 import PluginRunner from "@/api/plugins/pluginrunner";
 import ManualRunMenu from "@/components/Plugins/ManualRunMenu/ManualRunMenu";
 import JobsDetailer, { JobsDetailResult } from "@/api/jobs/jobsdetailer";
+import FormPanel from "@/components/Plugins/FormPanel/FormPanel";
 
 type TagInfo = { name: string; count?: number };
 
@@ -57,6 +58,11 @@ export default function Home() {
         new FreezeTagSet(),
     );
     const [selectingPlugin, setSelectingPlugin] = useState<boolean>(false);
+    const [answeringForm, setAnsweringForm] = useState<string | undefined>(
+        undefined,
+    );
+    const [answeringPlugin, setAnsweringPlugin] = useState<string>("");
+    const [answeringHook, setAnsweringHook] = useState<string>("");
 
     useEffect(() => {
         const q = searchParams.get("q");
@@ -167,6 +173,7 @@ export default function Home() {
         hook_name: string,
         hook_signature: string,
         hook_type: string,
+        form_receive_hook_name?: string,
     ) => {
         const res_promise = PluginRunner(
             plugin_name,
@@ -177,6 +184,13 @@ export default function Home() {
         );
         if (hook_type !== "generate_form") {
             router.replace("/jobs");
+            return;
+        }
+
+        if (!form_receive_hook_name) {
+            console.error(
+                "Should have returned a hook that we can give the form data to!",
+            );
             return;
         }
 
@@ -210,7 +224,10 @@ export default function Home() {
             console.error(`Did not get valid form! Form received: ${form}`);
             return;
         }
-        console.log(form);
+        setAnsweringForm(form);
+        setAnsweringPlugin(plugin_name);
+        setAnsweringHook(form_receive_hook_name);
+        setSelectingPlugin(false);
     };
 
     return (
@@ -385,6 +402,19 @@ export default function Home() {
                         onClose={() => setSelectingPlugin(false)}
                         onPluginChosen={pluginRunner}
                         multipleImages={selectedIds.size() > 1}
+                    />
+                )}
+
+                {answeringForm && (
+                    <FormPanel
+                        onClose={() => setAnsweringForm(undefined)}
+                        onFormSubmit={() => {
+                            setAnsweringForm(undefined);
+                            router.replace("/jobs");
+                        }}
+                        formString={answeringForm}
+                        plugin={answeringPlugin}
+                        hook={answeringHook}
                     />
                 )}
             </main>
