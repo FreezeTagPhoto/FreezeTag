@@ -22,6 +22,7 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     ChevronsLeft,
+    Album,
 } from "lucide-react";
 
 import { useContext, useEffect, useMemo, useState } from "react";
@@ -61,6 +62,7 @@ const navItems: NavItem[] = [
         permissions: ["read:user"],
     },
     { label: "Settings", href: "/settings", icon: Settings },
+    { label: "Albums", href: "/albums", icon: Album },
 ];
 
 function AccountInfo({
