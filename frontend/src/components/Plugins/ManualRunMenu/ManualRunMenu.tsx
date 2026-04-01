@@ -86,8 +86,13 @@ export default function ManualRunMenu({
                     }
                 });
             }
-
-            setPlugins(pairs);
+            setPlugins(
+                pairs.toSorted((a, b) =>
+                    a.plugin_friendly_name.localeCompare(
+                        b.plugin_friendly_name,
+                    ),
+                ),
+            );
         })();
     }, [multipleImages]);
 
@@ -138,6 +143,14 @@ export default function ManualRunMenu({
                                 </div>
                             </div>
                         ))}
+                    {plugins !== undefined && plugins.length === 0 && (
+                        <p>
+                            No plugins available for the input type of{" "}
+                            {multipleImages
+                                ? "multiple images"
+                                : "single image"}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

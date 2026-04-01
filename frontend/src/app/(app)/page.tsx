@@ -175,6 +175,7 @@ export default function Home() {
         hook_type: string,
         form_receive_hook_name?: string,
     ) => {
+        setSelectingPlugin(false);
         const res_promise = PluginRunner(
             plugin_name,
             hook_name,
@@ -186,6 +187,7 @@ export default function Home() {
             router.replace("/jobs");
             return;
         }
+        setAnsweringForm("<form><p>Waiting for form to load...</p></form>");
 
         if (!form_receive_hook_name) {
             console.error(
@@ -227,7 +229,6 @@ export default function Home() {
         setAnsweringForm(form);
         setAnsweringPlugin(plugin_name);
         setAnsweringHook(form_receive_hook_name);
-        setSelectingPlugin(false);
     };
 
     return (
@@ -302,7 +303,8 @@ export default function Home() {
                                     </button>
                                     <button
                                         type="button"
-                                        className={styles.select_button}
+                                        className={`${styles.select_button} ${selectedIds.size() === 0 ? styles.select_button_disable : ""}`}
+                                        disabled={selectedIds.size() === 0}
                                         onClick={async () => {
                                             setSelectingPlugin(true);
                                         }}
@@ -317,7 +319,8 @@ export default function Home() {
                                     </button>
                                     <button
                                         type="button"
-                                        className={`${styles.select_button} ${styles.select_button_danger}`}
+                                        className={`${styles.select_button} ${styles.select_button_danger} ${selectedIds.size() === 0 ? styles.select_button_disable : ""}`}
+                                        disabled={selectedIds.size() === 0}
                                         onClick={async (e) => {
                                             e.stopPropagation();
 
