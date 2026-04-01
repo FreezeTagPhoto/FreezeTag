@@ -153,7 +153,7 @@ func TestListAlbumsSuccess(t *testing.T) {
 	w := doJSONRequest(t, router, http.MethodGet, "/album/list", nil)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	var got []AlbumListItem
+	var got []AlbumListItemResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	require.Len(t, got, 1)
 	assert.Equal(t, database.AlbumId(3), got[0].ID)

@@ -29,15 +29,7 @@ type UserAlbumPermissionRequest struct {
 	Permission   database.PrivacyLevel `json:"permission" binding:"oneof=0 1 2"`
 }
 
-type AlbumOwnerResponse struct {
-	OwnerID database.UserID `json:"owner_id"`
-}
-
-type AlbumSharedUsersResponse struct {
-	SharedUserIDs []database.UserID `json:"shared_user_ids"`
-}
-
-type AlbumListItem struct {
+type AlbumListItemResponse struct {
 	ID               database.AlbumId  `json:"id"`
 	Name             string            `json:"name"`
 	OwnerID          database.UserID   `json:"owner_id"`
@@ -276,7 +268,7 @@ func (ae AlbumEndpoint) ListAlbums(c *gin.Context) {
 		return
 	}
 
-	items := make([]AlbumListItem, 0, len(albumIDs))
+	items := make([]AlbumListItemResponse, 0, len(albumIDs))
 	for _, albumID := range albumIDs {
 		name, err := ae.albumRepository.GetAlbumNameById(albumID, uid)
 		if err != nil {
@@ -318,7 +310,7 @@ func (ae AlbumEndpoint) ListAlbums(c *gin.Context) {
 			}
 		}
 
-		items = append(items, AlbumListItem{
+		items = append(items, AlbumListItemResponse{
 			ID:               albumID,
 			Name:             name,
 			OwnerID:          ownerID,

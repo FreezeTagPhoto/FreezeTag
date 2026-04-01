@@ -90,6 +90,14 @@ type AlbumCreateResponse struct {
 	AlbumID database.AlbumId `json:"album_id"`
 }
 
+type AlbumOwnerResponse struct {
+	OwnerID database.UserID `json:"owner_id"`
+}
+
+type AlbumSharedUsersResponse struct {
+	SharedUserIDs []database.UserID `json:"shared_user_ids"`
+}
+
 type TagCounts map[string]int64
 
 type PasswordChangeRequest struct {
