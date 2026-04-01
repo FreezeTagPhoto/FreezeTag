@@ -614,3 +614,23 @@
         margin-bottom: 10px;
     }
 }
+
+.plugin_run_button {
+    height: 28px;
+    padding: 0px 12px;
+    border-radius: var(--border-radius);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border: var(--border-info);
+    background: var(--base);
+    color: var(--text);
+
+    cursor: pointer;
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        transform 80ms ease;
+}
