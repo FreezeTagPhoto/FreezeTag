@@ -562,7 +562,7 @@ func (s SqliteUserDatabase) AllUsers() ([]PublicUser, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var users []PublicUser
 	for rows.Next() {

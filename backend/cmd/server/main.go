@@ -180,6 +180,7 @@ func initAlbumEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 			singleAlbum.PATCH("/name", ae.RenameAlbum)
 			singleAlbum.PATCH("/visibility", ae.SetAlbumVisibility)
 
+			singleAlbum.GET("/permissions", ae.GetAlbumPermissions)
 			singleAlbum.PUT("/permissions", ae.SetUserAlbumPermission)
 
 			singleAlbum.POST("/images", ae.AddImageToAlbum)

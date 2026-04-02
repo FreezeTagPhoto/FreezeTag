@@ -9,14 +9,15 @@ type PrivacyLevel uint8
 type VisbilityLevel uint8
 
 type AlbumSharedUser struct {
-	UserID     UserID
-	Permission PrivacyLevel
+	UserID     UserID       `json:"user_id"`
+	Permission PrivacyLevel `json:"permission"`
 }
 
 type Album struct {
-	Id      AlbumID `json:"id"`
-	Name    string  `json:"name"`
-	OwnerId UserID  `json:"owner_id"`
+	Id             AlbumID      `json:"id"`
+	Name           string       `json:"name"`
+	OwnerId        UserID       `json:"owner_id"`
+	VisibilityMode PrivacyLevel `json:"visibility_mode"`
 }
 
 const (
@@ -167,7 +168,7 @@ func (db SqliteAlbumDatabase) GetAlbums(userID UserID) ([]Album, error) {
 	}
 	switch userVisibility {
 	case VisAdmin:
-		query = "SELECT id FROM Albums ORDER BY album_name ASC"
+		query = "SELECT id, album_name, userId FROM Albums ORDER BY album_name ASC"
 	case VisPublic: //album is public or user has explicit access or user is owner of the album
 		query = ` 
 			SELECT a.id, a.album_name, a.userId FROM Albums a 
@@ -465,7 +466,7 @@ func (db SqliteAlbumDatabase) GetAlbumSharedUsers(albumId AlbumID, userId UserID
 		return nil, fmt.Errorf("forbidden: user %v does not have access to album %v", userId, albumId)
 	}
 	query := ` 
-		SELECT userId, access_level FROM AlbumAccess WHERE albumId = ? AND access_level > 0 ORDER BY userId ASC
+		SELECT userId, access_level FROM AlbumAccess WHERE albumId = ? ORDER BY userId ASC
 	`
 	rows, err := db.db.Query(query, albumId)
 	if err != nil {
@@ -542,6 +543,7 @@ func (db SqliteAlbumDatabase) SetUserAlbumPermission(albumId AlbumID, targetUser
 func (db SqliteAlbumDatabase) GetAlbum(albumId AlbumID, userID UserID) (Album, error) {
 	var name string
 	var ownerId UserID
+	var visibilityMode PrivacyLevel
 	ok, err := db.userAuthorizedForAlbum(albumId, userID) // any user can see shared users if they have access to the album
 	if err != nil {
 		return Album{}, err
@@ -549,7 +551,7 @@ func (db SqliteAlbumDatabase) GetAlbum(albumId AlbumID, userID UserID) (Album, e
 	if !ok {
 		return Album{}, fmt.Errorf("forbidden: user %v does not have access to album %v", userID, albumId)
 	}
-	err = db.db.QueryRow("SELECT album_name, userId FROM Albums WHERE id = ?", albumId).Scan(&name, &ownerId)
+	err = db.db.QueryRow("SELECT album_name, userId, visibility_mode FROM Albums WHERE id = ?", albumId).Scan(&name, &ownerId, &visibilityMode)
 	if err == sql.ErrNoRows {
 		return Album{}, nil
 	}
@@ -557,8 +559,9 @@ func (db SqliteAlbumDatabase) GetAlbum(albumId AlbumID, userID UserID) (Album, e
 		return Album{}, err
 	}
 	return Album{
-		Id:      albumId,
-		Name:    name,
-		OwnerId: ownerId,
+		Id:             albumId,
+		Name:           name,
+		OwnerId:        ownerId,
+		VisibilityMode: visibilityMode,
 	}, nil
 }

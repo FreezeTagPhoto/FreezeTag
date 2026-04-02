@@ -374,3 +374,30 @@ func (ae AlbumEndpoint) GetAlbumInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, album)
 }
+
+func (ae AlbumEndpoint) GetAlbumPermissions(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
+		return
+	}
+
+	albumID, err := api.ParseParamIntoID[database.AlbumID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
+
+	sharedUsers, err := ae.albumRepository.GetAlbumSharedUsers(albumID, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, sharedUsers)
+}
