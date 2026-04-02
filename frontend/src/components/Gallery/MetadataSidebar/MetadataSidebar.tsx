@@ -41,6 +41,8 @@ import {
     Loader2,
     FolderPlus,
     PuzzleIcon,
+    Globe,
+    Lock,
 } from "lucide-react";
 import LocationMap from "./LocationMap";
 import {
@@ -429,12 +431,12 @@ const MetadataSidebar = memo(function MetadataSidebar({
 
     // -- Album Support --
     const [albumInput, setAlbumInput] = useState("");
+    const [isPublic, setIsPublic] = useState(true); // default to public for quick add
     const [allAlbums, setAllAlbums] = useState<{ id: number; name: string }[]>(
         [],
     );
-    // const [imageAlbums, setImageAlbums] = useState<
-    //     { id: number; name: string }[]
-    // >([]);
+    // want this later
+    const [_, setImageAlbums] = useState<{ id: number; name: string }[]>([]);
     const [albumBusy, setAlbumBusy] = useState(false);
     const [showAlbumDropdown, setShowAlbumDropdown] = useState(false);
     const filteredAlbums = allAlbums.filter((a) =>
@@ -445,7 +447,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
         AlbumLister().then((res) => {
             if (res.ok) setAllAlbums(res.value);
         });
-        // setImageAlbums([]);
+        setImageAlbums([]);
         setAlbumInput("");
     }, [selectedId]);
 
@@ -463,7 +465,6 @@ const MetadataSidebar = memo(function MetadataSidebar({
         if (existing) {
             targetId = existing.id;
         } else {
-            // Use the toggle state here: 1 for Public, 0 for Private
             const createRes = await AlbumCreator(name, isPublic ? 1 : 0);
             if (createRes.ok) {
                 const listRes = await AlbumLister();
@@ -933,39 +934,12 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     </div>
 
                     <div className={styles.detailValue}>
-                        {/* 
-                        
-                            Add this later, but it requires a bit more backend API work to support 
-                            listing which albums an image is in, 
-                            and the ability to remove from albums from here as well. Ill finish this 
-                            once I get time after code freeze.
-
-                        */}
-
-                        {/* <div className={styles.tagWrap} style={{ marginBottom: "8px" }}>
-                            {imageAlbums.length === 0 ? (
-                                <span className={styles.inlineMuted}>Not in any albums</span>
-                            ) : (
-                                imageAlbums.map(a => (
-                                    <a 
-                                        href={`/albums/${a.id}`} 
-                                        key={a.id} 
-                                        className={styles.tagTokenWrap}
-                                        style={{ textDecoration: 'none' }}
-                                    >
-                                        <Pill label={a.name} variant="token" className={styles.tagPill} />
-                                    </a>
-                                ))
-                            )}
-                        </div> */}
-
-                        <div style={{ display: "flex", gap: "6px" }}>
+                        <div className={styles.albumInputRow}>
                             <div
-                                className={styles.tagAddInputWrap}
-                                style={{ flex: 1, position: "relative" }}
+                                className={`${styles.tagAddInputWrap} ${styles.albumInputWrap}`}
                             >
                                 <input
-                                    className={styles.tagAddInput}
+                                    className={`${styles.tagAddInput} ${styles.albumInputField}`}
                                     placeholder="Type or select..."
                                     value={albumInput}
                                     onChange={(e) => {
@@ -981,37 +955,21 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                         }
                                     }}
                                     disabled={albumBusy}
-                                    style={{
-                                        border: "1px solid var(--border-info)",
-                                        borderRadius: "8px",
-                                        background: "var(--crust)",
-                                    }}
                                 />
 
                                 {showAlbumDropdown && (
                                     <div
-                                        className={styles.tagSuggestDropdown}
-                                        style={{ top: "100%", width: "100%" }}
+                                        className={`${styles.tagSuggestDropdown} ${styles.albumDropdown}`}
                                     >
                                         <div
                                             className={styles.tagSuggestScroll}
                                         >
                                             {filteredAlbums.length === 0 ? (
                                                 <div
-                                                    className={
-                                                        styles.tagSuggestItem
-                                                    }
-                                                    style={{
-                                                        cursor: "default",
-                                                    }}
+                                                    className={`${styles.tagSuggestItem} ${styles.albumSuggestEmpty}`}
                                                 >
                                                     <span
-                                                        className={
-                                                            styles.tagSuggestLabel
-                                                        }
-                                                        style={{
-                                                            color: "var(--subtext0)",
-                                                        }}
+                                                        className={`${styles.tagSuggestLabel} ${styles.albumSuggestLabelNew}`}
                                                     >
                                                         {albumInput
                                                             ? `Create new: "${albumInput}"`
@@ -1026,7 +984,6 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                                         className={
                                                             styles.tagSuggestItem
                                                         }
-                                                        // Prevent default keeps the input from blurring before the click fires
                                                         onMouseDown={(e) =>
                                                             e.preventDefault()
                                                         }
@@ -1053,6 +1010,25 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                     </div>
                                 )}
                             </div>
+
+                            {filteredAlbums.length === 0 && albumInput && (
+                                <button
+                                    type="button"
+                                    className={styles.tagActionBtn}
+                                    onClick={() => setIsPublic((prev) => !prev)}
+                                    disabled={albumBusy}
+                                    aria-label="Toggle Public/Private"
+                                    title={isPublic ? "Public" : "Private"}
+                                >
+                                    {isPublic ? (
+                                        <Globe
+                                            className={`${styles.iconSm} ${styles.publicIcon}`}
+                                        />
+                                    ) : (
+                                        <Lock className={styles.iconSm} />
+                                    )}
+                                </button>
+                            )}
 
                             <button
                                 type="button"

@@ -729,6 +729,40 @@
     align-self: flex-start;
 }
 
+.albumInputRow {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.albumInputWrap {
+    flex: 1;
+    position: relative;
+}
+
+.albumInputField {
+    border: 1px solid var(--border-info) !important;
+    border-radius: 8px !important;
+    background: var(--crust) !important;
+}
+
+.albumDropdown {
+    top: 100%;
+    width: 100%;
+}
+
+.albumSuggestEmpty {
+    cursor: default;
+}
+
+.albumSuggestLabelNew {
+    color: var(--subtext0);
+}
+
+.publicIcon {
+    color: var(--blue);
+}
+
 /* ===========================
    Icon helpers
    =========================== */
