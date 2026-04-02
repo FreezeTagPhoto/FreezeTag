@@ -16,8 +16,8 @@ export default async function AlbumPermissionSetter(
 ): Promise<AlbumPermissionSetResult> {
     return set_album_permission_with_handler(
         ApiHandler<AlbumPermissionSetResponse>(
-            SERVER_ADDRESS + "album/set_permission",
-        )(Method.POST),
+            SERVER_ADDRESS + `album/${album_id}/permissions`,
+        )(Method.PUT),
         album_id,
         target_user_id,
         permission,
