@@ -40,19 +40,6 @@
     line-height: 1.1;
 }
 
-.titleButton:hover .title,
-.titleButton:focus-visible .title {
-    text-decoration: underline;
-}
-
-.titleHint {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: var(--subtext1);
-}
-
 .renameRow {
     display: flex;
     align-items: center;
@@ -73,15 +60,6 @@
 
 .shareWrap {
     position: relative;
-}
-
-.input {
-    min-width: 220px;
-    padding: 9px 10px;
-    border-radius: var(--border-radius);
-    border: var(--border-info);
-    background: var(--mantle);
-    color: var(--text);
 }
 
 .button {
@@ -144,13 +122,6 @@
     font-weight: 700;
 }
 
-.shareSubtitle {
-    margin: 3px 0 0;
-    color: var(--subtext1);
-    font-size: 13px;
-    line-height: 1.3;
-}
-
 .shareCloseButton {
     display: inline-flex;
     align-items: center;
@@ -203,12 +174,6 @@
     background: var(--surface0);
 }
 
-.shareAvatarButton {
-    padding: 0;
-    background: transparent;
-    border-radius: 999px;
-}
-
 .shareAvatar,
 .shareAvatarFallback {
     width: 42px;
@@ -249,11 +214,6 @@
     max-width: 100%;
 }
 
-.shareUserStatus {
-    font-size: 12px;
-    color: var(--subtext1);
-}
-
 .sharePermissionControl {
     display: inline-flex;
     align-items: center;
@@ -272,18 +232,6 @@
 
 .shareRoleSelect:disabled {
     opacity: 0.7;
-}
-
-.srOnly {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
 }
 
 .spinningIcon {
@@ -370,9 +318,6 @@
         font-size: 28px;
     }
     .settings {
-        width: 100%;
-    }
-    .input {
         width: 100%;
     }
     .shareDropdown {

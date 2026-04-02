@@ -11,7 +11,7 @@ export default async function AlbumCreator(
     visibility_mode: number,
 ): Promise<Result<AlbumCreateResponse, RequestError>> {
     return create_album_with_handler(
-        ApiHandler<AlbumCreateResponse>(SERVER_ADDRESS + "album/create")(
+        ApiHandler<AlbumCreateResponse>(SERVER_ADDRESS + "album/")(
             Method.POST,
         ),
         name,
