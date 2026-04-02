@@ -28,7 +28,7 @@ const (
 type AlbumDatabase interface {
 	CreateAlbum(string, UserID, PrivacyLevel) (AlbumID, error)
 	SetImageAlbum(ImageId, AlbumID, UserID) error
-	RemoveAlbum(string, UserID) error
+	RemoveAlbum(AlbumID, UserID) error
 	RenameAlbum(AlbumID, string, UserID) error
 	RemoveImageFromAlbum(ImageId, AlbumID, UserID) error
 	GetAssociatedAlbums(ImageId, UserID) ([]Album, error)
@@ -134,8 +134,8 @@ func (db SqliteAlbumDatabase) SetImageAlbum(imageId ImageId, albumId AlbumID, us
 	return err
 }
 
-func (db SqliteAlbumDatabase) RemoveAlbum(name string, userID UserID) error {
-	_, err := db.db.Exec("DELETE FROM Albums WHERE album_name = ? AND userId = ?", name, userID)
+func (db SqliteAlbumDatabase) RemoveAlbum(albumId AlbumID, userID UserID) error {
+	_, err := db.db.Exec("DELETE FROM Albums WHERE id = ? AND userId = ?", albumId, userID)
 	return err
 }
 

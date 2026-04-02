@@ -317,7 +317,6 @@ func (ae AlbumEndpoint) RenameAlbum(c *gin.Context) {
 // @description Delete an album by providing the album name. User must be an owner of the album.
 // @tags        albums
 // @router      /album/delete [delete]
-// @param request body DeleteAlbumRequest true "Delete Album Payload"
 // @success     200 {object} api.MessageResponse
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
@@ -334,13 +333,10 @@ func (ae AlbumEndpoint) DeleteAlbum(c *gin.Context) {
 		return
 	}
 
-	var req DeleteAlbumRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
-		return
-	}
+	albumId := c.Param("id")
+	albumID, err := api.ParseParamIntoID[database.AlbumID](albumId)
 
-	err = ae.albumRepository.RemoveAlbum(req.AlbumName, uid)
+	err = ae.albumRepository.RemoveAlbum(albumID, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
