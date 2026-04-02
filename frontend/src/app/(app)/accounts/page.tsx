@@ -4,11 +4,20 @@ import styles from "./page.module.css";
 import UserLister, { User } from "@/api/users/userlister";
 import { UserContext } from "@/components/Auth/AuthGate";
 import CreateUser from "@/components/ManageUsers/CreateUser/CreateUser";
-import { CakeSlice, SquarePen, Trash, UserPlus } from "lucide-react";
+import {
+    CakeSlice,
+    SquarePen,
+    Trash,
+    UserPlus,
+    Eye,
+    EyeOff,
+    Lock,
+} from "lucide-react";
 import DeleteUser from "@/components/ManageUsers/DeleteUser/DeleteUser";
 import ModifyPerms from "@/components/ManageUsers/ModifyPerms/ModifyPerms";
 import { formatLongDate, formatShortDate } from "@/common/dateformat";
 import { UserHasPerm } from "@/api/permissions/permshelpers";
+import UserVisibilitySetter from "@/api/users/uservisibilitysetter";
 
 export default function Home() {
     const [users, setUsers] = useState<User[]>([]);
@@ -18,6 +27,7 @@ export default function Home() {
     const [modifyingPerms, setModifyingPerms] = useState<number>(-1);
     const [deletingUser, setDeletingUser] = useState<number>(-1);
     const [username, setUsername] = useState<string>("");
+    const [togglingVisibility, setTogglingVisibility] = useState<number>(-1);
 
     const currentUser = useContext(UserContext);
     const isCurrent = (id: number) => id === currentUser?.user_id;
@@ -35,7 +45,7 @@ export default function Home() {
                 console.error(`User Lister Error! ${result.error.message}`);
             }
         })();
-    }, [creatingUser, modifyingPerms, deletingUser]);
+    }, [creatingUser, modifyingPerms, deletingUser, togglingVisibility]);
 
     return (
         <main className={styles.main}>
@@ -77,6 +87,51 @@ export default function Home() {
                         >
                             <SquarePen className={styles.icon} />
                             <p className={styles.account_item_label}>Perms</p>
+                        </button>
+                        
+                        {/* visibility toggle */}
+
+                        <button
+                            type="button"
+                            className={`${styles.account_item} ${styles.account_item_button}`}
+                            disabled={!UserHasPerm(currentUser, "write:user")}
+                            onClick={async () => {
+                                setTogglingVisibility(user.id);
+                                const nextMode =
+                                    ((user.visibility_mode ?? 1) + 1) % 3;
+                                const result = await UserVisibilitySetter(
+                                    user.id,
+                                    nextMode,
+                                );
+                                if (result.ok) {
+                                    setUsers((prev) =>
+                                        prev.map((u) =>
+                                            u.id === user.id
+                                                ? {
+                                                      ...u,
+                                                      visibility_mode: nextMode,
+                                                  }
+                                                : u,
+                                        ),
+                                    );
+                                }
+                                setTogglingVisibility(-1);
+                            }}
+                        >
+                            {user.visibility_mode === 0 ? (
+                                <Lock className={styles.icon} />
+                            ) : user.visibility_mode === 2 ? (
+                                <Eye className={styles.icon} />
+                            ) : (
+                                <EyeOff className={styles.icon} />
+                            )}
+                            <p className={styles.account_item_label}>
+                                {user.visibility_mode === 0
+                                    ? "Private"
+                                    : user.visibility_mode === 2
+                                      ? "Public"
+                                      : "Followers"}
+                            </p>
                         </button>
                         <button
                             type="button"
