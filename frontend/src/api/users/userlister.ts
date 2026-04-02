@@ -2,7 +2,12 @@ import SERVER_ADDRESS from "@/api/common/serveraddress";
 import { ApiHandler, Method, RequestError } from "@/api/common/apihandler";
 import { Result, Err } from "@/common/result";
 
-export type User = { created_at: number; id: number; username: string };
+export type User = {
+    created_at: number;
+    id: number;
+    username: string;
+    visibility_mode?: number;
+};
 export type UserListResult = Result<
     User[],
     { status: number; message: string }
