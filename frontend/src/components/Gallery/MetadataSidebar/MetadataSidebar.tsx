@@ -445,7 +445,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
         AlbumLister().then((res) => {
             if (res.ok) setAllAlbums(res.value);
         });
-        setImageAlbums([]);
+        // setImageAlbums([]);
         setAlbumInput("");
     }, [selectedId]);
 
