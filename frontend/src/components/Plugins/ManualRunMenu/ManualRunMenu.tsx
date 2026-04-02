@@ -5,8 +5,14 @@ import { Play } from "lucide-react";
 
 export type ManualRunMenuProps = {
     onClose: () => void;
-    onPluginChosen: (plugin_name: string, hook_name: string) => void;
-    hookSignature: "single_image" | "image_batch";
+    onPluginChosen: (
+        plugin_name: string,
+        hook_name: string,
+        hook_signature: string,
+        hook_type: string,
+        form_receive_hook_name?: string,
+    ) => void;
+    multipleImages: boolean;
 };
 
 type PluginHookPair = {
@@ -14,12 +20,15 @@ type PluginHookPair = {
     plugin_friendly_name: string;
     hook_name: string;
     hook_friendly_name: string;
+    hook_signature: string;
+    hook_type: "manual_trigger" | "generate_form";
+    form_receive_hook_name?: string;
 };
 
 export default function ManualRunMenu({
     onClose,
     onPluginChosen,
-    hookSignature,
+    multipleImages,
 }: ManualRunMenuProps) {
     const [plugins, setPlugins] = useState<PluginHookPair[] | undefined>(
         undefined,
@@ -40,30 +49,62 @@ export default function ManualRunMenu({
 
             for (const plugin of plugins) {
                 Object.entries(plugin.hooks).forEach(([name, hook]) => {
-                    if (hook.signature !== hookSignature) {
+                    if (hook.signature === "form_data") {
                         return;
                     }
-                    if (hook.type !== "manual_trigger") {
+                    if (multipleImages && hook.signature === "single_image") {
                         return;
                     }
-                    pairs.push({
-                        plugin_friendly_name: plugin.friendly_name,
-                        plugin_name: plugin.name,
-                        hook_name: name,
-                        hook_friendly_name: hook.friendly_name,
-                    });
+                    if (hook.type === "manual_trigger") {
+                        pairs.push({
+                            plugin_friendly_name: plugin.friendly_name,
+                            plugin_name: plugin.name,
+                            hook_name: name,
+                            hook_friendly_name: hook.friendly_name,
+                            hook_signature: hook.signature,
+                            hook_type: hook.type,
+                        });
+                    } else if (hook.type === "generate_form") {
+                        const r = Object.entries(plugin.hooks).find(
+                            ([_name, hook]) => hook.signature === "form_data",
+                        );
+                        if (!r) {
+                            console.error(
+                                "plugins with generate_form hooks should have a form_data hook!",
+                            );
+                            return;
+                        }
+                        pairs.push({
+                            plugin_friendly_name: plugin.friendly_name,
+                            plugin_name: plugin.name,
+                            hook_name: name,
+                            hook_friendly_name: hook.friendly_name,
+                            hook_signature: hook.signature,
+                            hook_type: hook.type,
+                            form_receive_hook_name: r[0],
+                        });
+                    }
                 });
             }
-
-            setPlugins(pairs);
+            setPlugins(
+                pairs.toSorted((a, b) =>
+                    a.plugin_friendly_name.localeCompare(
+                        b.plugin_friendly_name,
+                    ),
+                ),
+            );
         })();
-    }, [hookSignature]);
+    }, [multipleImages]);
 
     return (
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>
             <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
                 <header className={styles.header}>
-                    <h1 className={styles.h1}>Apply Plugins to Group</h1>
+                    <h1 className={styles.h1}>
+                        {multipleImages
+                            ? "Apply Plugins to Group"
+                            : "Apply Plugins to Image"}
+                    </h1>
                 </header>
                 <div className={styles.perms_container}>
                     {plugins !== undefined &&
@@ -79,6 +120,9 @@ export default function ManualRunMenu({
                                         onPluginChosen(
                                             pair.plugin_name,
                                             pair.hook_name,
+                                            pair.hook_signature,
+                                            pair.hook_type,
+                                            pair.form_receive_hook_name,
                                         )
                                     }
                                     title="Run Plugin"
@@ -103,6 +147,14 @@ export default function ManualRunMenu({
                                 </div>
                             </div>
                         ))}
+                    {plugins !== undefined && plugins.length === 0 && (
+                        <p>
+                            No plugins available for the input type of{" "}
+                            {multipleImages
+                                ? "multiple images"
+                                : "single image"}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

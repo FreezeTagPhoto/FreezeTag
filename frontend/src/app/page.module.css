@@ -216,3 +216,18 @@
     color: var(--base);
     border-color: var(--red);
 }
+
+.select_button_disable {
+    border-color: transparent;
+    filter: none;
+    background-color: var(--crust);
+    color: var(--subtext0);
+
+    cursor: default;
+}
+
+.select_button_disable:hover {
+    background-color: var(--crust);
+    border-color: transparent;
+    color: var(--subtext0);
+}

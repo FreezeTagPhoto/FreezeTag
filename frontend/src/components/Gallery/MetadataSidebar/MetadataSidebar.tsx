@@ -39,7 +39,13 @@ import {
     Download,
     Trash2,
     Loader2,
+    PuzzleIcon,
 } from "lucide-react";
+import ManualRunMenu from "@/components/Plugins/ManualRunMenu/ManualRunMenu";
+import FormPanel from "@/components/Plugins/FormPanel/FormPanel";
+import PluginRunner from "@/api/plugins/pluginrunner";
+import JobsDetailer, { JobsDetailResult } from "@/api/jobs/jobsdetailer";
+import { useRouter } from "next/navigation";
 
 // memoized so individual pills don't re-render when unrelated sidebar state changes
 type TagTokenProps = {
@@ -329,12 +335,90 @@ const MetadataSidebar = memo(function MetadataSidebar({
         setFileBusy(null);
     };
 
+    const router = useRouter();
+    const [selectingPlugin, setSelectingPlugin] = useState<boolean>(false);
+    const [answeringForm, setAnsweringForm] = useState<string | undefined>(
+        undefined,
+    );
+    const [answeringPlugin, setAnsweringPlugin] = useState<string>("");
+    const [answeringHook, setAnsweringHook] = useState<string>("");
+
+    const pluginRunner = async (
+        plugin_name: string,
+        hook_name: string,
+        _hook_signature: string,
+        hook_type: string,
+        form_receive_hook_name?: string,
+    ) => {
+        setSelectingPlugin(false);
+        const res_promise = PluginRunner(plugin_name, hook_name, selectedId);
+        if (hook_type !== "generate_form") {
+            router.replace("/jobs");
+            return;
+        }
+        setAnsweringForm("<form><p>Waiting for form to load...</p></form>");
+
+        if (!form_receive_hook_name) {
+            console.error(
+                "Should have returned a hook that we can give the form data to!",
+            );
+            return;
+        }
+
+        const res = await res_promise;
+        if (!res.ok) {
+            console.error(res.error);
+            return;
+        }
+
+        const uuid = res.value;
+        let job_output: JobsDetailResult | undefined = undefined;
+        while (true) {
+            job_output = await JobsDetailer(uuid);
+            if (!job_output.ok) {
+                console.error(job_output.error);
+                return;
+            }
+            if (job_output.value.completed?.length === 1) {
+                break;
+            }
+            // Wait 1 second before asking again
+            await new Promise((r) => setTimeout(r, 1000));
+        }
+
+        const form: string | undefined = job_output.value.completed[0]?.form;
+        if (!form) {
+            console.error(`Did not get form out of plugin! Job UUID: ${uuid}`);
+            return;
+        }
+        if (!form.startsWith("<form>") || !form.endsWith("</form>")) {
+            console.error(`Did not get valid form! Form received: ${form}`);
+            return;
+        }
+        setAnsweringForm(form);
+        setAnsweringPlugin(plugin_name);
+        setAnsweringHook(form_receive_hook_name);
+    };
+
     return (
         <aside className={styles.viewerSidebar}>
             <div className={styles.detailsHeaderRow}>
                 <h2 className={styles.sidebarTitle}>Image details</h2>
 
                 <div className={styles.headerRight} onClick={stopClick}>
+                    <button
+                        type="button"
+                        className={styles.headerIconButton}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectingPlugin(true);
+                        }}
+                        aria-label="Run Plugins"
+                        title="Run Plugins"
+                    >
+                        <PuzzleIcon className={styles.icon} />
+                    </button>
                     <button
                         type="button"
                         className={styles.headerIconButton}
@@ -747,6 +831,26 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     </div>
                 </div>
             </div>
+            {selectingPlugin && (
+                <ManualRunMenu
+                    onClose={() => setSelectingPlugin(false)}
+                    onPluginChosen={pluginRunner}
+                    multipleImages={false}
+                />
+            )}
+
+            {answeringForm && (
+                <FormPanel
+                    onClose={() => setAnsweringForm(undefined)}
+                    onFormSubmit={() => {
+                        setAnsweringForm(undefined);
+                        router.replace("/jobs");
+                    }}
+                    formString={answeringForm}
+                    plugin={answeringPlugin}
+                    hook={answeringHook}
+                />
+            )}
         </aside>
     );
 });

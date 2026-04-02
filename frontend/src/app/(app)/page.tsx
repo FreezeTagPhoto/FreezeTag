@@ -16,6 +16,8 @@ import FileDeleter from "@/api/files/filedeleter";
 import FreezeTagSet from "@/common/freezetag/freezetagset";
 import PluginRunner from "@/api/plugins/pluginrunner";
 import ManualRunMenu from "@/components/Plugins/ManualRunMenu/ManualRunMenu";
+import JobsDetailer, { JobsDetailResult } from "@/api/jobs/jobsdetailer";
+import FormPanel from "@/components/Plugins/FormPanel/FormPanel";
 
 type TagInfo = { name: string; count?: number };
 
@@ -56,6 +58,11 @@ export default function Home() {
         new FreezeTagSet(),
     );
     const [selectingPlugin, setSelectingPlugin] = useState<boolean>(false);
+    const [answeringForm, setAnsweringForm] = useState<string | undefined>(
+        undefined,
+    );
+    const [answeringPlugin, setAnsweringPlugin] = useState<string>("");
+    const [answeringHook, setAnsweringHook] = useState<string>("");
 
     useEffect(() => {
         const q = searchParams.get("q");
@@ -161,6 +168,69 @@ export default function Home() {
         [allTags, tagCounts],
     );
 
+    const pluginRunner = async (
+        plugin_name: string,
+        hook_name: string,
+        hook_signature: string,
+        hook_type: string,
+        form_receive_hook_name?: string,
+    ) => {
+        setSelectingPlugin(false);
+        const res_promise = PluginRunner(
+            plugin_name,
+            hook_name,
+            hook_signature === "image_batch"
+                ? selectedIds.toArray()
+                : selectedIds.toArray()[0],
+        );
+        if (hook_type !== "generate_form") {
+            router.replace("/jobs");
+            return;
+        }
+        setAnsweringForm("<form><p>Waiting for form to load...</p></form>");
+
+        if (!form_receive_hook_name) {
+            console.error(
+                "Should have returned a hook that we can give the form data to!",
+            );
+            return;
+        }
+
+        const res = await res_promise;
+        if (!res.ok) {
+            console.error(res.error);
+            return;
+        }
+
+        const uuid = res.value;
+        let job_output: JobsDetailResult | undefined = undefined;
+        while (true) {
+            job_output = await JobsDetailer(uuid);
+            if (!job_output.ok) {
+                console.error(job_output.error);
+                return;
+            }
+            if (job_output.value.completed?.length === 1) {
+                break;
+            }
+            // Wait 1 second before asking again
+            await new Promise((r) => setTimeout(r, 1000));
+        }
+
+        const form: string | undefined = job_output.value.completed[0]?.form;
+        if (!form) {
+            console.error(`Did not get form out of plugin! Job UUID: ${uuid}`);
+            return;
+        }
+        if (!form.startsWith("<form>") || !form.endsWith("</form>")) {
+            console.error(`Did not get valid form! Form received: ${form}`);
+            return;
+        }
+        setAnsweringForm(form);
+        setAnsweringPlugin(plugin_name);
+        setAnsweringHook(form_receive_hook_name);
+    };
+
     return (
         <>
             <TopBar
@@ -233,7 +303,8 @@ export default function Home() {
                                     </button>
                                     <button
                                         type="button"
-                                        className={styles.select_button}
+                                        className={`${styles.select_button} ${selectedIds.size() === 0 ? styles.select_button_disable : ""}`}
+                                        disabled={selectedIds.size() === 0}
                                         onClick={async () => {
                                             setSelectingPlugin(true);
                                         }}
@@ -248,7 +319,8 @@ export default function Home() {
                                     </button>
                                     <button
                                         type="button"
-                                        className={`${styles.select_button} ${styles.select_button_danger}`}
+                                        className={`${styles.select_button} ${styles.select_button_danger} ${selectedIds.size() === 0 ? styles.select_button_disable : ""}`}
+                                        disabled={selectedIds.size() === 0}
                                         onClick={async (e) => {
                                             e.stopPropagation();
 
@@ -331,15 +403,21 @@ export default function Home() {
                 {selectingPlugin && (
                     <ManualRunMenu
                         onClose={() => setSelectingPlugin(false)}
-                        onPluginChosen={(plugin_name, hook_name) => {
-                            PluginRunner(
-                                plugin_name,
-                                hook_name,
-                                selectedIds.toArray(),
-                            );
+                        onPluginChosen={pluginRunner}
+                        multipleImages={selectedIds.size() > 1}
+                    />
+                )}
+
+                {answeringForm && (
+                    <FormPanel
+                        onClose={() => setAnsweringForm(undefined)}
+                        onFormSubmit={() => {
+                            setAnsweringForm(undefined);
                             router.replace("/jobs");
                         }}
-                        hookSignature="image_batch"
+                        formString={answeringForm}
+                        plugin={answeringPlugin}
+                        hook={answeringHook}
                     />
                 )}
             </main>
