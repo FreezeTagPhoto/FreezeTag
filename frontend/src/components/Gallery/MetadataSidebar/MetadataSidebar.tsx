@@ -41,7 +41,6 @@ import {
     Loader2,
     FolderPlus,
     PuzzleIcon,
-    Link,
 } from "lucide-react";
 import LocationMap from "./LocationMap";
 import {
@@ -109,7 +108,6 @@ const TagToken = memo(function TagToken({
 import AlbumCreator from "@/api/albums/albumcreator";
 import AlbumImageAdder from "@/api/albums/albumimageadder";
 import AlbumLister from "@/api/albums/albumlister";
-
 
 export type MetadataSidebarProps = {
     selectedId: number;
@@ -318,7 +316,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
             ro.disconnect();
         };
     }, [currentTags, syncTagPillsFade]);
-    
+
     const stopClick = (e: ReactMouseEvent<HTMLElement>) => e.stopPropagation();
 
     const downloadBusy = fileBusy === "download";
@@ -363,7 +361,6 @@ const MetadataSidebar = memo(function MetadataSidebar({
 
         setFileBusy(null);
     };
-
     const router = useRouter();
     const [selectingPlugin, setSelectingPlugin] = useState<boolean>(false);
     const [answeringForm, setAnsweringForm] = useState<string | undefined>(
@@ -430,19 +427,22 @@ const MetadataSidebar = memo(function MetadataSidebar({
     };
 
 
-    // -- Album Support -- 
-    const [isPublic, setIsPublic] = useState(false);
+    // -- Album Support --
     const [albumInput, setAlbumInput] = useState("");
-    const [allAlbums, setAllAlbums] = useState<{ id: number, name: string }[]>([]);
-    const [imageAlbums, setImageAlbums] = useState<{ id: number, name: string }[]>([]);
+    const [allAlbums, setAllAlbums] = useState<{ id: number; name: string }[]>(
+        [],
+    );
+    // const [imageAlbums, setImageAlbums] = useState<
+    //     { id: number; name: string }[]
+    // >([]);
     const [albumBusy, setAlbumBusy] = useState(false);
     const [showAlbumDropdown, setShowAlbumDropdown] = useState(false);
-    const filteredAlbums = allAlbums.filter(a =>
-        a.name.toLowerCase().includes(albumInput.toLowerCase())
+    const filteredAlbums = allAlbums.filter((a) =>
+        a.name.toLowerCase().includes(albumInput.toLowerCase()),
     );
 
     useEffect(() => {
-        AlbumLister().then(res => {
+        AlbumLister().then((res) => {
             if (res.ok) setAllAlbums(res.value);
         });
         setImageAlbums([]);
@@ -456,7 +456,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
         setAlbumBusy(true);
         let targetId: number | null = null;
 
-        const existing = allAlbums.find(a => a.name.toLowerCase() === name.toLowerCase());
+        const existing = allAlbums.find(
+            (a) => a.name.toLowerCase() === name.toLowerCase(),
+        );
 
         if (existing) {
             targetId = existing.id;
@@ -467,7 +469,8 @@ const MetadataSidebar = memo(function MetadataSidebar({
                 const listRes = await AlbumLister();
                 if (listRes.ok) {
                     setAllAlbums(listRes.value);
-                    targetId = listRes.value.find(a => a.name === name)?.id || null;
+                    targetId =
+                        listRes.value.find((a) => a.name === name)?.id || null;
                 }
             }
         }
@@ -475,7 +478,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
         if (targetId) {
             const addRes = await AlbumImageAdder(selectedId, targetId);
             if (addRes.ok) {
-                setImageAlbums(prev => [...prev, { id: targetId, name }]);
+                setImageAlbums((prev) => [...prev, { id: targetId, name }]);
                 setAlbumInput("");
             }
         }
@@ -562,9 +565,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatResultion(
-                                currentMetadata.width,
-                                currentMetadata.height,
-                            )
+                                  currentMetadata.width,
+                                  currentMetadata.height,
+                              )
                             : "—"}
                     </div>
                 </div>
@@ -577,8 +580,8 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLongDate(currentMetadata.dateTaken, {
-                                timeZone: "UTC",
-                            })
+                                  timeZone: "UTC",
+                              })
                             : "—"}
                     </div>
                 </div>
@@ -605,9 +608,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLocation(
-                                currentMetadata.latitude,
-                                currentMetadata.longitude,
-                            )
+                                  currentMetadata.latitude,
+                                  currentMetadata.longitude,
+                              )
                             : "—"}
                     </div>
                     {mapEnabled &&
@@ -628,9 +631,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatCamera(
-                                currentMetadata.cameraMake,
-                                currentMetadata.cameraModel,
-                            )
+                                  currentMetadata.cameraMake,
+                                  currentMetadata.cameraModel,
+                              )
                             : "—"}
                     </div>
                 </div>
@@ -752,9 +755,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                                     onKeyDown={(e) => {
                                                         if (
                                                             e.key ===
-                                                            "ArrowDown" ||
+                                                                "ArrowDown" ||
                                                             e.key ===
-                                                            "ArrowUp" ||
+                                                                "ArrowUp" ||
                                                             e.key === "Enter"
                                                         ) {
                                                             e.preventDefault();
@@ -833,12 +836,14 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                                                                 t
                                                                             }
                                                                             type="button"
-                                                                            className={`${styles.tagSuggestItem
-                                                                                } ${idx ===
-                                                                                    tagSuggestIndex
+                                                                            className={`${
+                                                                                styles.tagSuggestItem
+                                                                            } ${
+                                                                                idx ===
+                                                                                tagSuggestIndex
                                                                                     ? styles.tagSuggestActive
                                                                                     : ""
-                                                                                }`}
+                                                                            }`}
                                                                             onMouseDown={(
                                                                                 ev,
                                                                             ) =>
@@ -928,7 +933,6 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     </div>
 
                     <div className={styles.detailValue}>
-                        
                         {/* 
                         
                             Add this later, but it requires a bit more backend API work to support 
@@ -937,7 +941,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
                             once I get time after code freeze.
 
                         */}
-                        
+
                         {/* <div className={styles.tagWrap} style={{ marginBottom: "8px" }}>
                             {imageAlbums.length === 0 ? (
                                 <span className={styles.inlineMuted}>Not in any albums</span>
@@ -956,7 +960,10 @@ const MetadataSidebar = memo(function MetadataSidebar({
                         </div> */}
 
                         <div style={{ display: "flex", gap: "6px" }}>
-                            <div className={styles.tagAddInputWrap} style={{ flex: 1, position: "relative" }}>
+                            <div
+                                className={styles.tagAddInputWrap}
+                                style={{ flex: 1, position: "relative" }}
+                            >
                                 <input
                                     className={styles.tagAddInput}
                                     placeholder="Type or select..."
@@ -974,32 +981,71 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                         }
                                     }}
                                     disabled={albumBusy}
-                                    style={{ border: "1px solid var(--border-info)", borderRadius: "8px", background: "var(--crust)" }}
+                                    style={{
+                                        border: "1px solid var(--border-info)",
+                                        borderRadius: "8px",
+                                        background: "var(--crust)",
+                                    }}
                                 />
 
                                 {showAlbumDropdown && (
-                                    <div className={styles.tagSuggestDropdown} style={{ top: "100%", width: "100%" }}>
-                                        <div className={styles.tagSuggestScroll}>
+                                    <div
+                                        className={styles.tagSuggestDropdown}
+                                        style={{ top: "100%", width: "100%" }}
+                                    >
+                                        <div
+                                            className={styles.tagSuggestScroll}
+                                        >
                                             {filteredAlbums.length === 0 ? (
-                                                <div className={styles.tagSuggestItem} style={{ cursor: "default" }}>
-                                                    <span className={styles.tagSuggestLabel} style={{ color: "var(--subtext0)" }}>
-                                                        {albumInput ? `Create new: "${albumInput}"` : "No albums found"}
+                                                <div
+                                                    className={
+                                                        styles.tagSuggestItem
+                                                    }
+                                                    style={{
+                                                        cursor: "default",
+                                                    }}
+                                                >
+                                                    <span
+                                                        className={
+                                                            styles.tagSuggestLabel
+                                                        }
+                                                        style={{
+                                                            color: "var(--subtext0)",
+                                                        }}
+                                                    >
+                                                        {albumInput
+                                                            ? `Create new: "${albumInput}"`
+                                                            : "No albums found"}
                                                     </span>
                                                 </div>
                                             ) : (
-                                                filteredAlbums.map(a => (
+                                                filteredAlbums.map((a) => (
                                                     <button
                                                         key={a.id}
                                                         type="button"
-                                                        className={styles.tagSuggestItem}
+                                                        className={
+                                                            styles.tagSuggestItem
+                                                        }
                                                         // Prevent default keeps the input from blurring before the click fires
-                                                        onMouseDown={(e) => e.preventDefault()}
+                                                        onMouseDown={(e) =>
+                                                            e.preventDefault()
+                                                        }
                                                         onClick={() => {
-                                                            setAlbumInput(a.name);
-                                                            setShowAlbumDropdown(false);
+                                                            setAlbumInput(
+                                                                a.name,
+                                                            );
+                                                            setShowAlbumDropdown(
+                                                                false,
+                                                            );
                                                         }}
                                                     >
-                                                        <span className={styles.tagSuggestLabel}>{a.name}</span>
+                                                        <span
+                                                            className={
+                                                                styles.tagSuggestLabel
+                                                            }
+                                                        >
+                                                            {a.name}
+                                                        </span>
                                                     </button>
                                                 ))
                                             )}
@@ -1015,7 +1061,13 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                 disabled={albumBusy || !albumInput.trim()}
                                 aria-label="Add to Album"
                             >
-                                {albumBusy ? <Loader2 className={`${styles.iconSm} ${styles.spinning}`} /> : <Plus className={styles.iconSm} />}
+                                {albumBusy ? (
+                                    <Loader2
+                                        className={`${styles.iconSm} ${styles.spinning}`}
+                                    />
+                                ) : (
+                                    <Plus className={styles.iconSm} />
+                                )}
                             </button>
                         </div>
                     </div>

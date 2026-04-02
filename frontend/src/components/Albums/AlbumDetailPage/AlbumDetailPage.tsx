@@ -2,7 +2,17 @@
 
 import { useCallback, useContext, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Plus, Trash2, Globe, Lock, UserIcon, Share2, ChevronDown, Loader2, X } from "lucide-react";
+import {
+    ArrowLeft,
+    Check,
+    Plus,
+    Trash2,
+    UserIcon,
+    Share2,
+    ChevronDown,
+    Loader2,
+    X,
+} from "lucide-react";
 import AlbumImagesGetter from "@/api/albums/albumimagesgetter";
 import MainGallery from "@/components/Gallery/MainGallery/MainGallery";
 import styles from "./AlbumDetailPage.module.css";
@@ -166,13 +176,7 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
     }
 
     type PermissionLevel = "owner" | "share" | "none";
-    function ShareMenu({
-        albumId,
-        busy,
-    }: {
-        albumId: number;
-        busy: boolean;
-    }) {
+    function ShareMenu({ albumId, busy }: { albumId: number; busy: boolean }) {
         const currentUser = useContext(UserContext);
         const canViewUsers = UserHasPerm(currentUser, "read:user");
 
@@ -257,7 +261,9 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                             </button>
                         </div>
 
-                        {shareError && <p className={styles.error}>{shareError}</p>}
+                        {shareError && (
+                            <p className={styles.error}>{shareError}</p>
+                        )}
 
                         {shareLoading ? (
                             <p className={styles.shareLoadingRow}>
@@ -310,7 +316,9 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                 <UserAvatar userId={user.id} username={user.username} />
 
                 <div className={styles.shareUserMeta}>
-                    <span className={styles.shareUserName}>{user.username}</span>
+                    <span className={styles.shareUserName}>
+                        {user.username}
+                    </span>
                 </div>
 
                 <div className={styles.sharePermissionControl}>
@@ -366,7 +374,11 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
 
         if (pfpUrl) {
             return (
-                <img src={pfpUrl} alt={username} className={styles.shareAvatar} />
+                <img
+                    src={pfpUrl}
+                    alt={username}
+                    className={styles.shareAvatar}
+                />
             );
         }
 
