@@ -1,0 +1,69 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--surface0);
+}
+
+.navSection {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.searchArea {
+    flex: 1;
+    max-width: 500px;
+    position: relative;
+}
+
+.saveBtn {
+    background: var(--accent2) !important;
+    color: var(--base) !important;
+    font-weight: 600;
+}
+
+.filterBar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: var(--mantle);
+    padding: 12px;
+    border-radius: var(--border-radius);
+}
+
+.tagPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: var(--border-info);
+    background: var(--base);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.tagPillActive {
+    background: var(--surface2);
+    border-color: var(--accent2);
+}
+
+.gridArea {
+    min-height: 400px;
+}
+
+@media screen and (max-width: 600px) {
+    .header { flex-direction: column; align-items: flex-start; }
+    .searchArea { width: 100%; max-width: none; }
+}

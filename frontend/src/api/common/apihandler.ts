@@ -5,6 +5,8 @@ export const enum Method {
     GET = "GET",
     POST = "POST",
     DELETE = "DELETE",
+    PUT = "PUT",
+    PATCH = "PATCH",
 }
 
 export type RequestError = { status_code: number; response: Response };
@@ -26,7 +28,8 @@ export function ApiHandler<T>(
     };
 
     return (method: Method) => {
-        if (method === Method.POST && body_request) {
+        const isBodyMethod = method === Method.POST || method === Method.PUT || method === Method.PATCH;
+        if (isBodyMethod && body_request) {
             return async (data: BodyInit): Promise<Result<T, RequestError>> => {
                 let response;
                 try {

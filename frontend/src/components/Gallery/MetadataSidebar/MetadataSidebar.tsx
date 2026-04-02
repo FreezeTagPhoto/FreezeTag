@@ -26,7 +26,7 @@ import FileDownloader from "@/api/files/filedownloader";
 import FileDeleter from "@/api/files/filedeleter";
 import AlbumCreator from "@/api/albums/albumcreator";
 import AlbumImageAdder from "@/api/albums/albumimageadder";
-import AlbumNamesLister from "@/api/albums/albumnameslister";
+import AlbumLister from "@/api/albums/albumlister";
 import {
     MoreHorizontal,
     PlusCircle,
@@ -456,14 +456,14 @@ const MetadataSidebar = memo(function MetadataSidebar({
     useEffect(() => {
         if (!albumOpen || albumMode !== "existing") return;
         (async () => {
-            const result = await AlbumNamesLister();
+            const result = await AlbumLister();
             if (!result.ok) {
                 setAlbumError(result.error.message || "Failed to load albums.");
                 setExistingAlbumName("");
                 return;
             }
-            const names = result.value ?? [];
-            setAlbumNames(names);
+            const albums = result.value ?? [];
+            setAlbumNames(albums.map((album) => album.name));
         })();
 
     }, [albumOpen, albumMode]);
