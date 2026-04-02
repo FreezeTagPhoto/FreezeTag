@@ -127,7 +127,7 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 // @produce     application/json
 // @router      /plugins/config [get]
 // @param       plugin query string true "plugin to read configuration from"
-// @success     200 {object} map[string]any "plugin configuration"
+// @success     200 {object} map[string]services.PublicConfigField "plugin configuration"
 // @failure     404 {object} api.NotFoundResponse
 // @failure     500 {object} api.ServerErrorResponse
 func (pe PluginEndpoint) ReadConfig(c *gin.Context) {
@@ -143,7 +143,7 @@ func (pe PluginEndpoint) ReadConfig(c *gin.Context) {
 		return
 	}
 	if config == nil {
-		config = map[string]any{}
+		config = map[string]services.PublicConfigField{}
 	}
 	c.JSON(http.StatusOK, config)
 }

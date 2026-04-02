@@ -11,6 +11,5 @@
     },
     "version": "1.0.0",
     "requirements": "requirements.txt",
-    "python_version": "3.10",
-    "config_file": "config.toml"
+    "python_version": "3.10"
 }

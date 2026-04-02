@@ -17,7 +17,7 @@ type PluginService interface {
 	Plugins() []plugins.PluginInfo
 	PluginInfo(plugin string) *plugins.PluginInfo
 	SetEnabled(plugin string, enabled bool)
-	ReadConfiguration(plugin string) (map[string]any, error)
+	ReadConfiguration(plugin string) (map[string]PublicConfigField, error)
 	ChangeConfiguration(plugin string, changes map[string]any) error
 	LaunchPlugin(plugin string, ctx context.Context) (*plugins.HookedPlugin, error)
 }
@@ -58,6 +58,11 @@ func InitDefaultPluginService(dir string, repo repositories.ImageRepository) (de
 			}
 		}
 	}
+	service := defaultPluginService{repo, baseDir, manifests}
+	// make sure all configs are initialized
+	for _, plugin := range service.Plugins() {
+		_, _ = service.ReadConfiguration(plugin.Name)
+	}
 	return defaultPluginService{repo, baseDir, manifests}, nil
 }
 
@@ -70,7 +75,7 @@ func (ps defaultPluginService) Plugins() []plugins.PluginInfo {
 			Version:      v.Version,
 			Enabled:      !v.Disabled,
 			Hooks:        v.Hooks,
-			Configurable: v.ConfigFile != nil,
+			Configurable: v.Config != nil,
 		})
 	}
 	return info
@@ -103,14 +108,26 @@ func (ps defaultPluginService) getConfigFile(plugin string) (string, error) {
 	if !exists {
 		return "", fmt.Errorf("plugin %v doesn't exist", plugin)
 	}
-	if manifest.ConfigFile == nil {
+	if manifest.Config == nil {
 		return "", nil
 	}
-	return path.Join(manifest.AbsPath, *manifest.ConfigFile), nil
+	return path.Join(manifest.AbsPath, manifest.Config.File), nil
 }
 
-func readConfig(file string) (map[string]any, error) {
+func readConfig(file string, layout []plugins.PluginConfigField) (map[string]any, error) {
 	configContents, err := os.ReadFile(file)
+	if os.IsNotExist(err) {
+		defaultConfig := make(map[string]any)
+		for _, field := range layout {
+			if field.DefaultValue != nil {
+				defaultConfig[field.Name] = field.DefaultValue
+			} else {
+				defaultConfig[field.Name] = ""
+			}
+		}
+		writeConfig(file, defaultConfig)
+		configContents, err = os.ReadFile(file)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to read plugin config: %w", err)
 	}
@@ -140,9 +157,10 @@ func (ps defaultPluginService) ChangeConfiguration(plugin string, changes map[st
 		return err
 	}
 	if configFile == "" {
-		return fmt.Errorf("plugin doesn't have any config fields")
+		return fmt.Errorf("plugin isn't configurable")
 	}
-	config, err := readConfig(configFile)
+	layout := ps.plugins[plugin].Config.Fields
+	config, err := readConfig(configFile, layout)
 	if err != nil {
 		return err
 	}
@@ -160,7 +178,15 @@ func (ps defaultPluginService) ChangeConfiguration(plugin string, changes map[st
 	return nil
 }
 
-func (ps defaultPluginService) ReadConfiguration(plugin string) (map[string]any, error) {
+type PublicConfigField struct {
+	Value        any     `json:"value"`
+	DefaultValue any     `json:"default,omitempty"`
+	Protected    bool    `json:"protected"`
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+}
+
+func (ps defaultPluginService) ReadConfiguration(plugin string) (map[string]PublicConfigField, error) {
 	configFile, err := ps.getConfigFile(plugin)
 	if err != nil {
 		return nil, err
@@ -168,26 +194,28 @@ func (ps defaultPluginService) ReadConfiguration(plugin string) (map[string]any,
 	if configFile == "" {
 		return nil, nil
 	}
-	config, err := readConfig(configFile)
+	layout := ps.plugins[plugin].Config.Fields
+	config, err := readConfig(configFile, layout)
 	if err != nil {
 		return nil, err
 	}
-	// put protection on fields
-	protection, exists := config["protected_fields"]
-	if exists {
-		fields, ok := protection.([]any)
-		if !ok {
-			return nil, fmt.Errorf("protected fields wasn't a list")
+	publicConfig := make(map[string]PublicConfigField)
+	for _, field := range layout {
+		var publicValue any
+		if field.Protected {
+			publicValue = nil
+		} else {
+			publicValue = config[field.Name]
 		}
-		for _, field := range fields {
-			protected_field, ok := field.(string)
-			if !ok {
-				return nil, fmt.Errorf("protected field wasn't a string")
-			}
-			delete(config, protected_field)
+		publicConfig[field.Name] = PublicConfigField{
+			Value:        publicValue,
+			DefaultValue: field.DefaultValue,
+			Protected:    field.Protected,
+			Name:         field.FriendlyName,
+			Description:  field.Description,
 		}
 	}
-	return config, nil
+	return publicConfig, nil
 }
 
 func (ps defaultPluginService) LaunchPlugin(plugin string, ctx context.Context) (*plugins.HookedPlugin, error) {
