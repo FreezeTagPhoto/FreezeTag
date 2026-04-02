@@ -21,9 +21,9 @@ func InitAlbumEndpoint(repository database.AlbumDatabase) AlbumEndpoint {
 // @summary     Create album
 // @description Create a new album with a given name and visibility mode
 // @tags        albums
-// @router      /album/create [post]
+// @router      /album [post]
 // @param request body AlbumCreateRequest true "Create Album Payload"
-// @success     200 {object} api.MessageResponse
+// @success     200 {object} api.AlbumCreateResponse
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
@@ -57,7 +57,8 @@ func (ae AlbumEndpoint) CreateAlbum(c *gin.Context) {
 // @summary     Add image to album, user must have write access to the album
 // @description Add an image to an album
 // @tags        albums
-// @router      /album/add_image [post]
+// @router      /album/{id}/images [post]
+// @param id path int true "Album ID"
 // @param request body AlbumImageRequest true "Add Image to Album Payload"
 // @success     200 {object} api.MessageResponse
 // @failure     400 {object} api.BadRequestResponse
@@ -90,7 +91,9 @@ func (ae AlbumEndpoint) AddImageToAlbum(c *gin.Context) {
 // @summary     Remove image from album, user must have write access to the album
 // @description Remove an image from an album
 // @tags        albums
-// @router      /album/remove_image [post]
+// @router      /album/{id}/images/{image_id} [delete]
+// @param id path int true "Album ID"
+// @param image_id path int true "Image ID"
 // @param request body AlbumImageRequest true "Remove Image from Album Payload"
 // @success     200 {object} api.MessageResponse
 // @failure     400 {object} api.BadRequestResponse
@@ -123,7 +126,8 @@ func (ae AlbumEndpoint) RemoveImageFromAlbum(c *gin.Context) {
 // @summary     Set album visibility
 // @description Set the visibility mode of an album
 // @tags        albums
-// @router      /album/set_visibility [post]
+// @router      /album/{id}/visibility [patch]
+// @param id path int true "Album ID"
 // @param request body AlbumModifyRequest true "Set Album Visibility Payload"
 // @success     200 {object} api.MessageResponse
 // @failure     400 {object} api.BadRequestResponse
@@ -160,7 +164,8 @@ func (ae AlbumEndpoint) SetAlbumVisibility(c *gin.Context) {
 // @summary     Set user album permission
 // @description Set the permission level of a user for a specific album
 // @tags        albums
-// @router      /album/set_permission [post]
+// @router      /album/{id}/permissions [put]
+// @param id path int true "Album ID"
 // @param request body UserAlbumPermissionRequest true "Set User Album Permission Payload"
 // @success     200 {object} api.MessageResponse
 // @failure     400 {object} api.BadRequestResponse
@@ -190,10 +195,10 @@ func (ae AlbumEndpoint) SetUserAlbumPermission(c *gin.Context) {
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "User album permission updated successfully"})
 }
 
-// @summary     List visible albums with ids
+// @summary     List visible albums
 // @description Lists visible albums with id, name, owner and explicit shared users (owner only).
 // @tags        albums
-// @router      /album/list [get]
+// @router      /album [get]
 // @success     200 {array} database.Album
 // @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
@@ -216,6 +221,15 @@ func (ae AlbumEndpoint) ListAlbums(c *gin.Context) {
 	c.JSON(http.StatusOK, albums)
 }
 
+// @summary     List images in album
+// @description Lists image IDs in an album visible to the requesting user.
+// @tags        albums
+// @router      /album/{id}/images [get]
+// @param id path int true "Album ID"
+// @success     200 {array} int
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
 func (ae AlbumEndpoint) ListAlbumImages(c *gin.Context) {
 	id, exists := c.Get("userID")
 	if !exists {
@@ -245,7 +259,7 @@ func (ae AlbumEndpoint) ListAlbumImages(c *gin.Context) {
 // @summary    	List albums associated with image
 // @description List albums associated with an image, including id, name and owner of each album.
 // @tags       	albums
-// @router     	/album/list_by_image/{id} [get]
+// @router     	/album/image/{id} [get]
 // @param id path int true "Image ID"
 // @success    	200 {array} database.Album
 // @failure    	400 {object} api.BadRequestResponse
@@ -278,9 +292,10 @@ func (ae AlbumEndpoint) ListImageAlbums(c *gin.Context) {
 }
 
 // @summary     Rename album
-// @description Rename an album by providing the old name and new name. User must be an owner of the album.
+// @description Rename an album. User must be an owner of the album.
 // @tags        albums
-// @router      /album/rename [post]
+// @router      /album/{id}/name [patch]
+// @param id path int true "Album ID"
 // @param request body RenameAlbumRequest true "Rename Album Payload"
 // @success     200 {object} api.MessageResponse
 // @failure     400 {object} api.BadRequestResponse
@@ -314,9 +329,10 @@ func (ae AlbumEndpoint) RenameAlbum(c *gin.Context) {
 }
 
 // @summary     Delete album
-// @description Delete an album by providing the album name. User must be an owner of the album.
+// @description Delete an album by ID. User must be an owner of the album.
 // @tags        albums
-// @router      /album/delete [delete]
+// @router      /album/{id} [delete]
+// @param id path int true "Album ID"
 // @success     200 {object} api.MessageResponse
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
@@ -348,6 +364,15 @@ func (ae AlbumEndpoint) DeleteAlbum(c *gin.Context) {
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "Album deleted successfully"})
 }
 
+// @summary     Get album details
+// @description Get album information for a specific album ID.
+// @tags        albums
+// @router      /album/{id} [get]
+// @param id path int true "Album ID"
+// @success     200 {object} database.Album
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
 func (ae AlbumEndpoint) GetAlbumInfo(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -375,6 +400,15 @@ func (ae AlbumEndpoint) GetAlbumInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, album)
 }
 
+// @summary     Get album permissions
+// @description Get explicit per-user permissions for an album.
+// @tags        albums
+// @router      /album/{id}/permissions [get]
+// @param id path int true "Album ID"
+// @success     200 {array} database.AlbumSharedUser
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
 func (ae AlbumEndpoint) GetAlbumPermissions(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
