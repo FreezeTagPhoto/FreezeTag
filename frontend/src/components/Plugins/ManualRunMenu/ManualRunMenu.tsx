@@ -100,7 +100,11 @@ export default function ManualRunMenu({
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>
             <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
                 <header className={styles.header}>
-                    <h1 className={styles.h1}>Apply Plugins to Group</h1>
+                    <h1 className={styles.h1}>
+                        {multipleImages
+                            ? "Apply Plugins to Group"
+                            : "Apply Plugins to Image"}
+                    </h1>
                 </header>
                 <div className={styles.perms_container}>
                     {plugins !== undefined &&

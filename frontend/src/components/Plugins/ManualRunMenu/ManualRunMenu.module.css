@@ -97,21 +97,15 @@
     flex-shrink: 0;
 }
 
-.description {
-    flex-grow: 1;
-    min-width: 0;
-}
-
 .text_preview {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.checkbox {
-    width: 2rem;
-    height: 2rem;
-    outline: var(--border-info);
-    filter: var(--dropshadow);
-    align-self: center;
+.icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    color: var(--text);
 }

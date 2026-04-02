@@ -409,6 +409,19 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <button
                         type="button"
                         className={styles.headerIconButton}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectingPlugin(true);
+                        }}
+                        aria-label="Run Plugins"
+                        title="Run Plugins"
+                    >
+                        <PuzzleIcon className={styles.icon} />
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.headerIconButton}
                         onClick={handleDownload}
                         disabled={anyBusy}
                         aria-label="Download image"
@@ -815,28 +828,6 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                 </div>
                             </>
                         )}
-                    </div>
-                </div>
-
-                <div className={styles.detailRow}>
-                    <div className={styles.detailLabelRow}>
-                        <PuzzleIcon className={styles.detailLabelIcon} />
-                        <span className={styles.detailLabel}>Plugins</span>
-                    </div>
-                    <div className={styles.detailValue}>
-                        <button
-                            type="button"
-                            className={`${styles.plugin_run_button}`}
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectingPlugin(true);
-                            }}
-                            aria-label="Run Plugins"
-                            title="Run Plugins"
-                        >
-                            Run Plugins
-                        </button>
                     </div>
                 </div>
             </div>

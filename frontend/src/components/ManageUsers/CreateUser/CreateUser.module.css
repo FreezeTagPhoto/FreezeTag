@@ -124,6 +124,7 @@
     width: 18px;
     height: 18px;
     flex: 0 0 auto;
+    color: var(--subtext0);
 }
 
 .iconBtn:hover {
