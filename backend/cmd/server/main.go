@@ -165,21 +165,27 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 }
 
 func initAlbumEndpoints(baseGroup gin.IRouter, deps *dependencies) {
-	albumGroup := baseGroup.Group("/album")
-	{
-		ae := albums.InitAlbumEndpoint(deps.albumRepository)
-		albumGroup.POST("/create", ae.CreateAlbum)
-		albumGroup.POST("/add_image", ae.AddImageToAlbum)
-		albumGroup.POST("/add_image_by_name", ae.AddImageToAlbumByName)
-		albumGroup.GET("/names", ae.ListVisibleAlbums)
-		albumGroup.GET("/images/:name", ae.GetAlbumImagesByName)
-		albumGroup.GET("/album_names/:id", ae.ListImageAlbums)
-		albumGroup.POST("/rename", ae.RenameAlbum)
-		albumGroup.POST("/delete", ae.DeleteAlbum)
-		albumGroup.POST("/set_visibility", ae.SetAlbumVisibility)
-		albumGroup.POST("/set_permission", ae.SetUserAlbumPermission)
-		albumGroup.GET("/list", ae.ListAlbums)
-	}
+    ae := albums.InitAlbumEndpoint(deps.albumRepository)
+    
+    albumGroup := baseGroup.Group("/album")
+    {
+        albumGroup.GET("", ae.ListAlbums)
+        albumGroup.POST("", ae.CreateAlbum)
+        albumGroup.GET("/image/:id", ae.ListImageAlbums) 
+
+        singleAlbum := albumGroup.Group("/:id")
+        {
+            singleAlbum.DELETE("", ae.DeleteAlbum)
+			singleAlbum.GET("", ae.GetAlbumInfo)
+            singleAlbum.PATCH("/name", ae.RenameAlbum)
+            singleAlbum.PATCH("/visibility", ae.SetAlbumVisibility)
+            singleAlbum.PUT("/permissions", ae.SetUserAlbumPermission)
+
+			singleAlbum.POST("/images", ae.AddImageToAlbum)
+            singleAlbum.GET("/images", ae.ListAlbumImages)
+			singleAlbum.DELETE("/images/:image_id", ae.RemoveImageFromAlbum)
+        }
+    }
 }
 
 func initApiKeyEndpoints(baseGroup gin.IRouter, deps *dependencies) {
@@ -188,7 +194,6 @@ func initApiKeyEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		te := tokens.InitTokenEndpoint(deps.authService)
 		apiKeyGroup.POST("/revoke/:id", middleware.RequirePermission(data.WriteToken), te.RevokeUserToken)
 		apiKeyGroup.POST("/create", middleware.RequirePermission(data.WriteToken), te.CreateUserToken)
-
 		apiKeyGroup.POST("/admin/revoke/:id", middleware.RequirePermission(data.WriteAnyToken), te.AdminRevokeToken)
 		apiKeyGroup.DELETE("/admin/delete/:id", middleware.RequirePermission(data.WriteAnyToken), te.AdminDeleteUserToken)
 	}

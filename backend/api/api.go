@@ -87,7 +87,11 @@ type LoginCredentials struct {
 }
 
 type AlbumCreateResponse struct {
-	AlbumID database.AlbumId `json:"album_id"`
+	AlbumID database.AlbumID `json:"album_id"`
+}
+
+type AlbumNameResponse struct {
+	Name string `json:"name"`
 }
 
 type AlbumOwnerResponse struct {

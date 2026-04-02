@@ -15,7 +15,7 @@ import (
 
 type ImageId uint64
 type TagId uint64
-type AlbumId uint64
+type AlbumID uint64
 
 type ImageDatabase interface {
 	// Get a list of all image IDs corresponding to the

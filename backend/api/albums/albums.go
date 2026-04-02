@@ -12,56 +12,6 @@ type AlbumEndpoint struct {
 	albumRepository database.AlbumDatabase
 }
 
-type AlbumCreateRequest struct {
-	Name           string                `json:"name" binding:"required"`
-	VisibilityMode database.PrivacyLevel `json:"visibility_mode" binding:"oneof=0 1 2"`
-}
-
-type AlbumModifyRequest struct {
-	AlbumId        database.AlbumId       `json:"album_id" binding:"required"`
-	Name           *string                `json:"name,omitempty"`
-	VisibilityMode *database.PrivacyLevel `json:"visibility_mode,omitempty" binding:"omitempty,oneof=0 1"`
-}
-
-type UserAlbumPermissionRequest struct {
-	AlbumId      database.AlbumId      `json:"album_id" binding:"required"`
-	TargetUserId database.UserID       `json:"target_user_id" binding:"required"`
-	Permission   database.PrivacyLevel `json:"permission" binding:"oneof=0 1 2"`
-}
-
-type AlbumListItemResponse struct {
-	ID               database.AlbumId  `json:"id"`
-	Name             string            `json:"name"`
-	OwnerID          database.UserID   `json:"owner_id"`
-	CanManageSharing bool              `json:"can_manage_sharing"`
-	SharedUserIDs    []database.UserID `json:"shared_user_ids"`
-	SharedUsers      []SharedUserRole  `json:"shared_users"`
-}
-
-type SharedUserRole struct {
-	UserID     database.UserID       `json:"user_id"`
-	Permission database.PrivacyLevel `json:"permission"`
-}
-
-type AddImageRequest struct {
-	ImageId database.ImageId `json:"image_id"`
-	AlbumId database.AlbumId `json:"album_id"`
-}
-
-type AddImageByNameRequest struct {
-	ImageId   database.ImageId `json:"image_id"`
-	AlbumName string           `json:"album_name" binding:"required"`
-}
-
-type RenameAlbumRequest struct {
-	OldName string `json:"old_name" binding:"required"`
-	NewName string `json:"new_name" binding:"required"`
-}
-
-type DeleteAlbumRequest struct {
-	AlbumName string `json:"album_name" binding:"required"`
-}
-
 func InitAlbumEndpoint(repository database.AlbumDatabase) AlbumEndpoint {
 	return AlbumEndpoint{
 		albumRepository: repository,
@@ -104,11 +54,11 @@ func (ae AlbumEndpoint) CreateAlbum(c *gin.Context) {
 	c.JSON(http.StatusOK, api.AlbumCreateResponse{AlbumID: albumID})
 }
 
-// @summary     Add image to album
+// @summary     Add image to album, user must have write access to the album
 // @description Add an image to an album
 // @tags        albums
 // @router      /album/add_image [post]
-// @param request body AddImageRequest true "Add Image to Album Payload"
+// @param request body AlbumImageRequest true "Add Image to Album Payload"
 // @success     200 {object} api.MessageResponse
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
@@ -124,12 +74,12 @@ func (ae AlbumEndpoint) AddImageToAlbum(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
 		return
 	}
-	var req AddImageRequest
+	var req AlbumImageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
 		return
 	}
-	err = ae.albumRepository.SetImageAlbum(database.ImageId(req.ImageId), database.AlbumId(req.AlbumId), uid)
+	err = ae.albumRepository.SetImageAlbum(database.ImageId(req.ImageId), database.AlbumID(req.AlbumId), uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
@@ -137,7 +87,16 @@ func (ae AlbumEndpoint) AddImageToAlbum(c *gin.Context) {
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "Image added to album successfully"})
 }
 
-func (ae AlbumEndpoint) AddImageToAlbumByName(c *gin.Context) {
+// @summary     Remove image from album, user must have write access to the album
+// @description Remove an image from an album
+// @tags        albums
+// @router      /album/remove_image [post]
+// @param request body AlbumImageRequest true "Remove Image from Album Payload"
+// @success     200 {object} api.MessageResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
+func (ae AlbumEndpoint) RemoveImageFromAlbum(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
@@ -148,30 +107,17 @@ func (ae AlbumEndpoint) AddImageToAlbumByName(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
 		return
 	}
-
-	var req AddImageByNameRequest
+	var req AlbumImageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
 		return
 	}
-
-	albumID, err := ae.albumRepository.GetAlbumIdByName(req.AlbumName, uid)
+	err = ae.albumRepository.RemoveImageFromAlbum(database.ImageId(req.ImageId), database.AlbumID(req.AlbumId), uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
-	if albumID == 0 {
-		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "album not found"})
-		return
-	}
-
-	err = ae.albumRepository.SetImageAlbum(req.ImageId, albumID, uid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, api.MessageResponse{Message: "Image added to album successfully"})
+	c.JSON(http.StatusOK, api.MessageResponse{Message: "Image removed from album successfully"})
 }
 
 // @summary     Set album visibility
@@ -208,6 +154,7 @@ func (ae AlbumEndpoint) SetAlbumVisibility(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
+	c.JSON(http.StatusOK, api.MessageResponse{Message: "Album visibility updated successfully"})
 }
 
 // @summary     Set user album permission
@@ -247,7 +194,7 @@ func (ae AlbumEndpoint) SetUserAlbumPermission(c *gin.Context) {
 // @description Lists visible albums with id, name, owner and explicit shared users (owner only).
 // @tags        albums
 // @router      /album/list [get]
-// @success     200 {array} AlbumListItem
+// @success     200 {array} database.Album
 // @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
 func (ae AlbumEndpoint) ListAlbums(c *gin.Context) {
@@ -261,69 +208,15 @@ func (ae AlbumEndpoint) ListAlbums(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
 		return
 	}
-
-	albumIDs, err := ae.albumRepository.GetAlbumIds(uid)
+	albums, err := ae.albumRepository.GetAlbums(uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
-
-	items := make([]AlbumListItemResponse, 0, len(albumIDs))
-	for _, albumID := range albumIDs {
-		name, err := ae.albumRepository.GetAlbumNameById(albumID, uid)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
-			return
-		}
-		if name == "" {
-			continue
-		}
-
-		ownerID, err := ae.albumRepository.GetAlbumOwner(albumID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
-			return
-		}
-
-		canManageSharing, err := ae.albumRepository.CanManageAlbum(albumID, uid)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
-			return
-		}
-
-		shared := []database.UserID{}
-		sharedUsers := []SharedUserRole{}
-		if canManageSharing {
-			rawSharedUsers, err := ae.albumRepository.GetAlbumSharedUsers(albumID)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
-				return
-			}
-			shared = make([]database.UserID, 0, len(rawSharedUsers))
-			sharedUsers = make([]SharedUserRole, 0, len(rawSharedUsers))
-			for _, sharedUser := range rawSharedUsers {
-				shared = append(shared, sharedUser.UserID)
-				sharedUsers = append(sharedUsers, SharedUserRole{
-					UserID:     sharedUser.UserID,
-					Permission: sharedUser.Permission,
-				})
-			}
-		}
-
-		items = append(items, AlbumListItemResponse{
-			ID:               albumID,
-			Name:             name,
-			OwnerID:          ownerID,
-			CanManageSharing: canManageSharing,
-			SharedUserIDs:    shared,
-			SharedUsers:      sharedUsers,
-		})
-	}
-
-	c.JSON(http.StatusOK, items)
+	c.JSON(http.StatusOK, albums)
 }
 
-func (ae AlbumEndpoint) ListVisibleAlbums(c *gin.Context) {
+func (ae AlbumEndpoint) ListAlbumImages(c *gin.Context) {
 	id, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
@@ -334,14 +227,30 @@ func (ae AlbumEndpoint) ListVisibleAlbums(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
 		return
 	}
-	albums, err := ae.albumRepository.GetAlbumNames(uid)
+
+	albumID, err := api.ParseParamIntoID[database.AlbumID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
+
+	imageIDs, err := ae.albumRepository.GetAlbumImages(albumID, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, albums)
+	c.JSON(http.StatusOK, imageIDs)
 }
 
+// @summary    	List albums associated with image
+// @description List albums associated with an image, including id, name and owner of each album.
+// @tags       	albums
+// @router     	/album/list_by_image/{id} [get]
+// @param id path int true "Image ID"
+// @success    	200 {array} database.Album
+// @failure    	400 {object} api.BadRequestResponse
+// @failure    	500 {object} api.ServerErrorResponse
+// @produce    	application/json
 func (ae AlbumEndpoint) ListImageAlbums(c *gin.Context) {
 	id, exists := c.Get("userID")
 	if !exists {
@@ -360,7 +269,7 @@ func (ae AlbumEndpoint) ListImageAlbums(c *gin.Context) {
 		return
 	}
 
-	albums, err := ae.albumRepository.GetAssociatedAlbumIds(imageID, uid)
+	albums, err := ae.albumRepository.GetAssociatedAlbums(imageID, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
@@ -368,43 +277,15 @@ func (ae AlbumEndpoint) ListImageAlbums(c *gin.Context) {
 	c.JSON(http.StatusOK, albums)
 }
 
-func (ae AlbumEndpoint) GetAlbumImagesByName(c *gin.Context) {
-	id, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
-		return
-	}
-	uid, err := api.ParseParamIntoID[database.UserID](id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
-		return
-	}
-
-	albumName := c.Param("name")
-	if albumName == "" {
-		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "album name is required"})
-		return
-	}
-
-	albumID, err := ae.albumRepository.GetAlbumIdByName(albumName, uid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
-		return
-	}
-	if albumID == 0 {
-		c.JSON(http.StatusNotFound, api.BadRequestResponse{Error: "album not found"})
-		return
-	}
-
-	images, err := ae.albumRepository.GetAlbumImages(albumID, uid)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, images)
-}
-
+// @summary     Rename album
+// @description Rename an album by providing the old name and new name. User must be an owner of the album.
+// @tags        albums
+// @router      /album/rename [post]
+// @param request body RenameAlbumRequest true "Rename Album Payload"
+// @success     200 {object} api.MessageResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
 func (ae AlbumEndpoint) RenameAlbum(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -423,7 +304,7 @@ func (ae AlbumEndpoint) RenameAlbum(c *gin.Context) {
 		return
 	}
 
-	err = ae.albumRepository.RenameAlbum(req.OldName, req.NewName, uid)
+	err = ae.albumRepository.RenameAlbum(req.AlbumID, req.NewName, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
@@ -432,6 +313,15 @@ func (ae AlbumEndpoint) RenameAlbum(c *gin.Context) {
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "Album renamed successfully"})
 }
 
+// @summary     Delete album
+// @description Delete an album by providing the album name. User must be an owner of the album.
+// @tags        albums
+// @router      /album/delete [delete]
+// @param request body DeleteAlbumRequest true "Delete Album Payload"
+// @success     200 {object} api.MessageResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+// @produce     application/json
 func (ae AlbumEndpoint) DeleteAlbum(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -457,4 +347,31 @@ func (ae AlbumEndpoint) DeleteAlbum(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "Album deleted successfully"})
+}
+
+func (ae AlbumEndpoint) GetAlbumInfo(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
+		return
+	}
+
+	albumID, err := api.ParseParamIntoID[database.AlbumID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
+
+	album, err := ae.albumRepository.GetAlbum(albumID, uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, album)
 }
