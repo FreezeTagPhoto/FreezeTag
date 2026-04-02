@@ -206,9 +206,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
     const [fileError, setFileError] = useState<string | null>(null);
 
     const [albumOpen, setAlbumOpen] = useState<boolean>(false);
-    const [albumMode, setAlbumMode] = useState<"existing" | "new">(
-        "existing",
-    );
+    const [albumMode, setAlbumMode] = useState<"existing" | "new">("existing");
     const [existingAlbumName, setExistingAlbumName] = useState<string>("");
     const [albumNames, setAlbumNames] = useState<string[]>([]);
     const [imageAlbumNames, setImageAlbumNames] = useState<string[]>([]);
@@ -465,7 +463,6 @@ const MetadataSidebar = memo(function MetadataSidebar({
             const albums = result.value ?? [];
             setAlbumNames(albums.map((album) => album.name));
         })();
-
     }, [albumOpen, albumMode]);
 
     const handleAddToExistingAlbum = async () => {
@@ -504,7 +501,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
         }
 
         const addResult = await AlbumImageAdder(selectedId, name);
-        
+
         if (!addResult.ok) {
             setAlbumError(await requestErrorToMessage(addResult.error));
             setAlbumBusy(false);
@@ -1017,9 +1014,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                     <button
                                         type="button"
                                         className={`${styles.albumModeButton} ${albumMode === "existing" ? styles.albumModeButtonActive : ""}`}
-                                        onClick={() =>
-                                            setAlbumMode("existing")
-                                        }
+                                        onClick={() => setAlbumMode("existing")}
                                         disabled={albumBusy}
                                     >
                                         Existing album
@@ -1051,7 +1046,10 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                                 </option>
                                             ) : (
                                                 albumNames.map((name) => (
-                                                    <option key={name} value={name}>
+                                                    <option
+                                                        key={name}
+                                                        value={name}
+                                                    >
                                                         {name}
                                                     </option>
                                                 ))
@@ -1059,7 +1057,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                         </select>
                                         <button
                                             type="button"
-                                            className={styles.albumPrimaryButton}
+                                            className={
+                                                styles.albumPrimaryButton
+                                            }
                                             onClick={() => {
                                                 void handleAddToExistingAlbum();
                                             }}

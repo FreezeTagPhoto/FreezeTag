@@ -40,7 +40,9 @@ export default function AlbumsPage() {
                                 className={styles.card}
                             >
                                 <FolderOpen className={styles.icon} />
-                                <span className={styles.name}>{album.name}</span>
+                                <span className={styles.name}>
+                                    {album.name}
+                                </span>
                             </Link>
                         </li>
                     ))}

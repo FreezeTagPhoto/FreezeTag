@@ -154,7 +154,7 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 	}
 	if !ok {
 		return 0, fmt.Errorf("database returned false when adding thumbnail")
-	}	
+	}
 
 	// 0644 is rw-r--r-- permissions for this new file
 	// 0755 is rwxr-xr-x permissions for this new directory (if it doesn't exist)

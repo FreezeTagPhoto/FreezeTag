@@ -335,7 +335,10 @@ func (ae AlbumEndpoint) DeleteAlbum(c *gin.Context) {
 
 	albumId := c.Param("id")
 	albumID, err := api.ParseParamIntoID[database.AlbumID](albumId)
-
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
 	err = ae.albumRepository.RemoveAlbum(albumID, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})

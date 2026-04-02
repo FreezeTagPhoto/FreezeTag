@@ -34,11 +34,11 @@ type AlbumDatabase interface {
 	GetAssociatedAlbums(ImageId, UserID) ([]Album, error)
 	GetAlbumImages(AlbumID, UserID) ([]ImageId, error)
 	GetAlbumTagCounts(AlbumID, UserID) (map[string]int64, error)
-	
+
 	GetAlbums(UserID) ([]Album, error)
 	GetAlbum(AlbumID, UserID) (Album, error)
 	// SetAlbumName(AlbumID, string, UserID) error
-	
+
 	GetAlbumSharedUsers(AlbumID, UserID) ([]AlbumSharedUser, error)
 	SetAlbumVisibility(AlbumID, PrivacyLevel, UserID) error
 	SetUserAlbumPermission(AlbumID, UserID, PrivacyLevel, UserID) error
@@ -48,18 +48,18 @@ type SqliteAlbumDatabase struct {
 	db *sql.DB
 }
 
-func InitSQLiteAlbumDatabase(datasource string) (SqliteAlbumDatabase, error) {
-	registerExtendedSqlite("sqlite3_extrafunc")
-	db, err := sql.Open("sqlite3_extrafunc", datasource)
-	if err != nil {
-		return SqliteAlbumDatabase{}, err
-	}
-	_, err = db.Exec(schema)
-	if err != nil {
-		return SqliteAlbumDatabase{}, err
-	}
-	return SqliteAlbumDatabase{db}, nil
-}
+// func InitSQLiteAlbumDatabase(datasource string) (SqliteAlbumDatabase, error) {
+// 	registerExtendedSqlite("sqlite3_extrafunc")
+// 	db, err := sql.Open("sqlite3_extrafunc", datasource)
+// 	if err != nil {
+// 		return SqliteAlbumDatabase{}, err
+// 	}
+// 	_, err = db.Exec(schema)
+// 	if err != nil {
+// 		return SqliteAlbumDatabase{}, err
+// 	}
+// 	return SqliteAlbumDatabase{db}, nil
+// }
 
 func (db SqliteAlbumDatabase) getVisibilityMode(userID UserID) (VisbilityLevel, error) {
 	var visibility int
@@ -195,7 +195,7 @@ func (db SqliteAlbumDatabase) GetAlbums(userID UserID) ([]Album, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var albums []Album
 	for rows.Next() {
@@ -247,7 +247,7 @@ func (db SqliteAlbumDatabase) GetAssociatedAlbums(imageID ImageId, userID UserID
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var albums []Album
 	for rows.Next() {
@@ -278,7 +278,7 @@ func (db SqliteAlbumDatabase) GetAlbumImages(albumId AlbumID, userID UserID) ([]
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var images []ImageId
 	for rows.Next() {
@@ -315,7 +315,7 @@ func (db SqliteAlbumDatabase) GetAlbumTagCounts(albumId AlbumID, userID UserID) 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	counts := make(map[string]int64)
 	for rows.Next() {
@@ -443,7 +443,7 @@ func (db SqliteAlbumDatabase) GetAlbumSharedUserIDs(albumId AlbumID) ([]UserID, 
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var userIDs []UserID
 	for rows.Next() {
@@ -471,7 +471,7 @@ func (db SqliteAlbumDatabase) GetAlbumSharedUsers(albumId AlbumID, userId UserID
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	sharedUsers := make([]AlbumSharedUser, 0)
 	for rows.Next() {

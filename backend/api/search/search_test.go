@@ -196,67 +196,67 @@ func TestSearchNearBadDistance(t *testing.T) {
 }
 
 func TestSearchNearSuccess(t *testing.T) {
-    expectedQuery := queries.CreateImageQuery()
-    expectedQuery.WithLocation(1, 2, 3)
-    params := url.Values{}
-    params.Add("near", "1,2,3")
-    reqURL := "/search?" + params.Encode()
+	expectedQuery := queries.CreateImageQuery()
+	expectedQuery.WithLocation(1, 2, 3)
+	params := url.Values{}
+	params.Add("near", "1,2,3")
+	reqURL := "/search?" + params.Encode()
 
-    m := mocks.NewMockImageRepository(t)
-    m.EXPECT().
-        SearchImageOrderedPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-        RunAndReturn(
-            func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint, _ database.UserID) ([]database.ImageId, error) {
-                assert.Equal(t, expectedQuery, actualQuery)
-                return []database.ImageId{1}, nil
-            })
+	m := mocks.NewMockImageRepository(t)
+	m.EXPECT().
+		SearchImageOrderedPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(
+			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint, _ database.UserID) ([]database.ImageId, error) {
+				assert.Equal(t, expectedQuery, actualQuery)
+				return []database.ImageId{1}, nil
+			})
 
-    router := gin.Default()
-    router.Use(func(c *gin.Context) {
-        c.Set("userID", "1") 
-        c.Next()
-    })
-    InitSearchEndpoint(m).RegisterEndpoints(router)
+	router := gin.Default()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
+	InitSearchEndpoint(m).RegisterEndpoints(router)
 
-    w := httptest.NewRecorder()
-    req, _ := http.NewRequest("GET", reqURL, nil)
-    router.ServeHTTP(w, req)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
 
-    assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 
-    expected := []database.ImageId{1}
-    var got []database.ImageId
-    require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-    assert.Equal(t, expected, got)
+	expected := []database.ImageId{1}
+	var got []database.ImageId
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
 }
 
 func runBadTakenXTest(t *testing.T, query, location, expectedErr string) {
-    t.Helper()
+	t.Helper()
 
-    params := url.Values{}
-    params.Add(query, location)
-    reqURL := "/search?" + params.Encode()
+	params := url.Values{}
+	params.Add(query, location)
+	reqURL := "/search?" + params.Encode()
 
-    m := mocks.NewMockImageRepository(t)
+	m := mocks.NewMockImageRepository(t)
 
-    router := gin.Default()
-    router.Use(func(c *gin.Context) {
-        c.Set("userID", "1") 
-        c.Next()
-    })
-    InitSearchEndpoint(m).RegisterEndpoints(router)
+	router := gin.Default()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
+	InitSearchEndpoint(m).RegisterEndpoints(router)
 
-    w := httptest.NewRecorder()
-    req, _ := http.NewRequest("GET", reqURL, nil)
-    router.ServeHTTP(w, req)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
 
-    assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-    expected := api.BadRequestResponse{Error: expectedErr}
-    var got api.BadRequestResponse
+	expected := api.BadRequestResponse{Error: expectedErr}
+	var got api.BadRequestResponse
 
-    require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-    assert.Equal(t, expected, got)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expected, got)
 }
 
 func TestBadTakenBefore(t *testing.T) {
@@ -289,7 +289,7 @@ func TestSearchImageFail(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/search", nil)
 	router.ServeHTTP(w, req)
-	
+
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	expected := api.ServerErrorResponse{Error: "mock error"}
 	var got api.ServerErrorResponse
@@ -298,32 +298,32 @@ func TestSearchImageFail(t *testing.T) {
 }
 
 func runBadSortTest(t *testing.T, param string, value string, expected string) {
-    t.Helper()
+	t.Helper()
 
-    params := url.Values{}
-    params.Add(param, value)
-    reqURL := "/search?" + params.Encode()
+	params := url.Values{}
+	params.Add(param, value)
+	reqURL := "/search?" + params.Encode()
 
-    m := mocks.NewMockImageRepository(t)
+	m := mocks.NewMockImageRepository(t)
 
-    router := gin.Default()
-    router.Use(func(c *gin.Context) {
-        c.Set("userID", "1")
-        c.Next()
-    })
-    InitSearchEndpoint(m).RegisterEndpoints(router)
+	router := gin.Default()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
+	InitSearchEndpoint(m).RegisterEndpoints(router)
 
-    w := httptest.NewRecorder()
-    req, _ := http.NewRequest("GET", reqURL, nil)
-    router.ServeHTTP(w, req)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", reqURL, nil)
+	router.ServeHTTP(w, req)
 
-    assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 
-    expectedErr := api.BadRequestResponse{Error: expected}
-    var got api.BadRequestResponse
+	expectedErr := api.BadRequestResponse{Error: expected}
+	var got api.BadRequestResponse
 
-    require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
-    assert.Equal(t, expectedErr, got)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	assert.Equal(t, expectedErr, got)
 }
 func TestSearchImageBadSort(t *testing.T) {
 	runBadSortTest(t, "sortBy", "foo", "bad sortBy parameter")

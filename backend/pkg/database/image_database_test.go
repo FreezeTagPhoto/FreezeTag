@@ -18,11 +18,11 @@ func createTempFile(t *testing.T) *os.File {
 	tmp, err := os.CreateTemp("", "*.db")
 	require.NoError(t, err)
 	t.Cleanup(func() {
-        err := os.Remove(tmp.Name())
-        if err != nil {
-            t.Logf("failed to remove temp database %s: %v", tmp.Name(), err)
-        }
-    })
+		err := os.Remove(tmp.Name())
+		if err != nil {
+			t.Logf("failed to remove temp database %s: %v", tmp.Name(), err)
+		}
+	})
 	return tmp
 }
 

@@ -98,22 +98,6 @@ type SqliteImageDatabase struct {
 	db *sql.DB
 }
 
-//go:embed schema.sql
-var schema string
-
-// func InitSQLiteImageDatabase(datasource string) (SqliteImageDatabase, error) {
-// 	registerExtendedSqlite("sqlite3_extrafunc")
-// 	db, err := sql.Open("sqlite3_extrafunc", datasource)
-// 	if err != nil {
-// 		return SqliteImageDatabase{}, err
-// 	}
-// 	_, err = db.Exec(schema)
-// 	if err != nil {
-// 		return SqliteImageDatabase{}, err
-// 	}
-// 	return SqliteImageDatabase{db}, nil
-// }
-
 func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery, UserID UserID) ([]ImageId, error) {
 	return db.GetImagesOrder(q, queries.DateAdded, queries.Descending, UserID)
 }

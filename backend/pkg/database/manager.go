@@ -5,16 +5,16 @@ import _ "embed"
 import "database/sql"
 
 type Manager struct {
-	db *sql.DB
+	db      *sql.DB
 	ImageDB ImageDatabase
 	UserDB  UserDatabase
 	AlbumDB AlbumDatabase
 }
 
 //go:embed schema.sql
-var path string
+var schema string
 
-func NewDefaultManager(dbPath string) (*Manager, error) { 
+func NewDefaultManager(dbPath string) (*Manager, error) {
 	registerExtendedSqlite("sqlite3_extrafunc")
 	db, err := sql.Open("sqlite3_extrafunc", dbPath)
 	if err != nil {

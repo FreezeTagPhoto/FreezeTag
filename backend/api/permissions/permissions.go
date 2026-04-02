@@ -21,6 +21,6 @@ func InitPermissionEndpoint() *PermissionEndpoint {
 // @success 200 {array} data.Permission "List of permission names"
 func (p *PermissionEndpoint) ListPermissions(c *gin.Context) {
 	permissions := data.AllPermissions()
-	
+
 	c.JSON(http.StatusOK, permissions)
 }

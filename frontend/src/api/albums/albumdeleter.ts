@@ -16,7 +16,6 @@ export default async function AlbumDeleter(
         ApiHandler<AlbumDeleteResponse>(SERVER_ADDRESS + `album/${albumId}`)(
             Method.DELETE,
         ),
-        albumId,
     );
 }
 
@@ -24,7 +23,6 @@ async function delete_album_with_handler(
     handler: (
         data: BodyInit,
     ) => Promise<Result<AlbumDeleteResponse, RequestError>>,
-    albumId: number,
 ): Promise<AlbumDeleteResult> {
     const result = await handler("");
 

@@ -343,4 +343,3 @@ func (s *DefaultAuthService) ResetProfilePicture(userID database.UserID) error {
 func hashToken(token string) [32]byte {
 	return sha256.Sum256([]byte(token))
 }
-

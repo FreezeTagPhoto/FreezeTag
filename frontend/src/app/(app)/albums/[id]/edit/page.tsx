@@ -1,13 +1,13 @@
 "use client";
 
 import { use } from "react";
-import AlbumEditPage from "@/components/Albums/AlbumUpdatePage/AlbumUpdatePage";
+import AlbumEditPage from "@/components/Albums/AlbumEditPage/AlbumEditPage";
 
 interface PageProps {
-  params: Promise<{ albumName: string }>;
+    params: Promise<{ albumName: string }>;
 }
 
 export default function Page({ params }: PageProps) {
-  const { albumName } = use(params);
-  return <AlbumEditPage albumName={decodeURIComponent(albumName)} />;
+    const { albumName } = use(params);
+    return <AlbumEditPage albumName={decodeURIComponent(albumName)} />;
 }

@@ -94,25 +94,6 @@ type SqliteUserDatabase struct {
 	db *sql.DB
 }
 
-//go:embed schema.sql
-var user_schema string
-
-// func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
-// 	db, err := sql.Open("sqlite3", datasource)
-// 	if err != nil {
-// 		return SqliteUserDatabase{}, err
-// 	}
-// 	_, err = db.Exec(user_schema)
-// 	if err != nil {
-// 		return SqliteUserDatabase{}, err
-// 	}
-// 	defaultDB := SqliteUserDatabase{db}
-// 	if err := defaultDB.seedPermissions(); err != nil {
-// 		return SqliteUserDatabase{}, err
-// 	}
-// 	return defaultDB, nil
-// }
-
 // Seed the App_Permissions table with all defined permissions
 func (s SqliteUserDatabase) seedPermissions() error {
 	tx, err := s.db.Begin()

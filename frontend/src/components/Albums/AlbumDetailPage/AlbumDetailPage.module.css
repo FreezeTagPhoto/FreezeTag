@@ -15,7 +15,9 @@
     font-size: 14px;
 }
 
-.backLink:hover { text-decoration: underline; }
+.backLink:hover {
+    text-decoration: underline;
+}
 
 .header {
     display: flex;
@@ -96,11 +98,15 @@
     transition: background 0.2s;
 }
 
-.button:hover:not(:disabled) { background: var(--surface0); }
+.button:hover:not(:disabled) {
+    background: var(--surface0);
+}
 
-.buttonDanger { color: var(--red); }
-.buttonDanger:hover:not(:disabled) { 
-    background: color-mix(in srgb, var(--red) 14%, var(--base)); 
+.buttonDanger {
+    color: var(--red);
+}
+.buttonDanger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--red) 14%, var(--base));
 }
 
 .button:disabled {
@@ -285,12 +291,22 @@
 }
 
 @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.info { color: var(--subtext1); margin: 0; }
-.error { color: var(--red); margin: 0; }
+.info {
+    color: var(--subtext1);
+    margin: 0;
+}
+.error {
+    color: var(--red);
+    margin: 0;
+}
 
 .empty {
     border: var(--border-info);
@@ -301,7 +317,7 @@
     color: var(--subtext1);
 }
 
- .titleField {
+.titleField {
     font-size: 34px;
     line-height: 1.1;
     font-weight: bold;
@@ -315,15 +331,15 @@
     cursor: pointer;
 }
 
-
 .titleField:focus {
     cursor: text;
     border-bottom: 2px solid var(--text);
 }
 
 .titleField:hover:not(:focus) {
-    border-bottom: 2px solid color-mix(in srgb, var(--subtext1) 50%, transparent);
-} 
+    border-bottom: 2px solid
+        color-mix(in srgb, var(--subtext1) 50%, transparent);
+}
 
 .confirmButton {
     display: inline-flex;
@@ -331,11 +347,13 @@
     justify-content: center;
     background: transparent;
     border: none;
-    color: var(--text); 
+    color: var(--text);
     cursor: pointer;
     padding: 4px;
     border-radius: var(--border-radius);
-    transition: background 0.2s, color 0.2s;
+    transition:
+        background 0.2s,
+        color 0.2s;
 }
 
 .confirmButton:hover:not(:disabled) {
@@ -348,9 +366,15 @@
 }
 
 @media screen and (max-width: 760px) {
-    .title { font-size: 28px; }
-    .settings { width: 100%; }
-    .input { width: 100%; }
+    .title {
+        font-size: 28px;
+    }
+    .settings {
+        width: 100%;
+    }
+    .input {
+        width: 100%;
+    }
     .shareDropdown {
         width: min(360px, calc(100vw - 24px));
         right: 0;

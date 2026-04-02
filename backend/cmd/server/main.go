@@ -165,28 +165,28 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 }
 
 func initAlbumEndpoints(baseGroup gin.IRouter, deps *dependencies) {
-    ae := albums.InitAlbumEndpoint(deps.albumRepository)
-    
-    albumGroup := baseGroup.Group("/album")
-    {
-        albumGroup.GET("", ae.ListAlbums)
-        albumGroup.POST("", ae.CreateAlbum)
-        albumGroup.GET("/image/:id", ae.ListImageAlbums) 
+	ae := albums.InitAlbumEndpoint(deps.albumRepository)
 
-        singleAlbum := albumGroup.Group("/:id")
-        {
-            singleAlbum.DELETE("", ae.DeleteAlbum)
+	albumGroup := baseGroup.Group("/album")
+	{
+		albumGroup.GET("", ae.ListAlbums)
+		albumGroup.POST("", ae.CreateAlbum)
+		albumGroup.GET("/image/:id", ae.ListImageAlbums)
+
+		singleAlbum := albumGroup.Group("/:id")
+		{
+			singleAlbum.DELETE("", ae.DeleteAlbum)
 			singleAlbum.GET("", ae.GetAlbumInfo)
-            singleAlbum.PATCH("/name", ae.RenameAlbum)
-            singleAlbum.PATCH("/visibility", ae.SetAlbumVisibility)
+			singleAlbum.PATCH("/name", ae.RenameAlbum)
+			singleAlbum.PATCH("/visibility", ae.SetAlbumVisibility)
 
 			singleAlbum.PUT("/permissions", ae.SetUserAlbumPermission)
 
 			singleAlbum.POST("/images", ae.AddImageToAlbum)
-            singleAlbum.GET("/images", ae.ListAlbumImages)
+			singleAlbum.GET("/images", ae.ListAlbumImages)
 			singleAlbum.DELETE("/images/:image_id", ae.RemoveImageFromAlbum)
-        }
-    }
+		}
+	}
 }
 
 func initApiKeyEndpoints(baseGroup gin.IRouter, deps *dependencies) {
