@@ -321,7 +321,8 @@ func (s *DefaultAuthService) GetUserProfilePicture(userID database.UserID) (data
 }
 
 func (s *DefaultAuthService) SetUserVisibilityMode(userID database.UserID, visibility int) error {
-	if visibility < 0 || visibility > 1 {
+	if visibility < 0 || visibility > 2 {
+		log.Printf("[WARN] User with ID %d attempted to set invalid visibility mode: %d", userID, visibility)
 		return fmt.Errorf("invalid visibility mode: %d", visibility)
 	}
 	return s.userDatabase.SetUserVisibilityMode(userID, visibility)
