@@ -5,6 +5,8 @@ import Link from "next/link";
 import {
     ArrowLeft,
     Check,
+    Globe,
+    Lock,
     Plus,
     Trash2,
     UserIcon,
@@ -19,6 +21,9 @@ import styles from "./AlbumDetailPage.module.css";
 import AlbumGetter from "@/api/albums/albumgetter";
 import AlbumRenamer from "@/api/albums/albumrenamer";
 import AlbumDeleter from "@/api/albums/albumdeleter";
+import AlbumPermissionSetter from "@/api/albums/albumpermissionsetter";
+import AlbumPermissionsGetter from "@/api/albums/albumpermissionsgetter";
+import AlbumVisibilitySetter from "@/api/albums/albumvisibilitysetter";
 import ProfilePictureGetter from "@/api/users/profilepicturegetter";
 import UserLister, { User } from "@/api/users/userlister";
 import { UserContext } from "@/components/Auth/AuthGate";
@@ -29,9 +34,15 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
     const [imageIds, setImageIds] = useState<number[]>([]);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
+    const [visibilityMode, setVisibilityMode] = useState<number>(0);
+    const [visibilitySaving, setVisibilitySaving] = useState(false);
 
     const canShowShare = true;
     const canManageSharing = true;
+
+    const currentUser = useContext(UserContext);
+    const [ownerId, setOwnerId] = useState<number | null>(null);
+    const isOwner = ownerId !== null && currentUser?.user_id === ownerId;
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -40,7 +51,11 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
             AlbumGetter(albumId),
             AlbumImagesGetter(albumId),
         ]);
-        if (albumRes.ok) setName(albumRes.value.name);
+        if (albumRes.ok) {
+            setName(albumRes.value.name);
+            setOwnerId(albumRes.value.owner_id);
+            setVisibilityMode(albumRes.value.visibility_mode);
+        }
         if (imagesRes.ok) setImageIds(imagesRes.value);
 
         setLoading(false);
@@ -75,6 +90,22 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
         }
     };
 
+    const handleToggleGlobalVisibility = async () => {
+        if (!isOwner || visibilitySaving) return;
+
+        const nextVisibilityMode = visibilityMode >= 1 ? 0 : 1;
+        setVisibilitySaving(true);
+        const result = await AlbumVisibilitySetter(albumId, nextVisibilityMode);
+        if (result.ok) {
+            setVisibilityMode(nextVisibilityMode);
+        } else {
+            window.alert(
+                result.error.message || "Failed to update album visibility.",
+            );
+        }
+        setVisibilitySaving(false);
+    };
+
     return (
         <section className={styles.wrap}>
             <nav>
@@ -97,8 +128,27 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                 </div>
 
                 <div className={styles.settings}>
-                    {canShowShare && (
-                        <ShareMenu busy={busy} albumId={albumId} />
+                    {canShowShare && isOwner && (
+                        <>
+                            <button
+                                type="button"
+                                className={styles.button}
+                                onClick={handleToggleGlobalVisibility}
+                                disabled={busy || visibilitySaving}
+                            >
+                                {visibilityMode >= 1 ? (
+                                    <Globe size={16} />
+                                ) : (
+                                    <Lock size={16} />
+                                )}
+                                {visibilityMode >= 1 ? "Public" : "Private"}
+                            </button>
+                            <ShareMenu
+                                busy={busy}
+                                albumId={albumId}
+                                albumVisibilityMode={visibilityMode}
+                            />
+                        </>
                     )}
 
                     <button
@@ -175,8 +225,16 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
         );
     }
 
-    type PermissionLevel = "owner" | "share" | "none";
-    function ShareMenu({ albumId, busy }: { albumId: number; busy: boolean }) {
+    type PermissionLevel = "whitelist" | "blacklist";
+    function ShareMenu({
+        albumId,
+        busy,
+        albumVisibilityMode,
+    }: {
+        albumId: number;
+        busy: boolean;
+        albumVisibilityMode: number;
+    }) {
         const currentUser = useContext(UserContext);
         const canViewUsers = UserHasPerm(currentUser, "read:user");
 
@@ -186,6 +244,9 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
             Map<number, PermissionLevel>
         >(new Map());
         const [shareLoading, setShareLoading] = useState(false);
+        const [shareSavingUserId, setShareSavingUserId] = useState<
+            number | null
+        >(null);
         const [shareError, setShareError] = useState<string | null>(null);
 
         useEffect(() => {
@@ -196,11 +257,19 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                 setShareLoading(true);
                 setShareError(null);
 
-                const [usersRes] = await Promise.all([UserLister()]);
+                const [usersRes, permsRes] = await Promise.all([
+                    UserLister(),
+                    AlbumPermissionsGetter(albumId),
+                ]);
 
                 if (mounted) {
                     if (usersRes.ok) {
-                        setShareableUsers(usersRes.value);
+                        setShareableUsers(
+                            usersRes.value.filter(
+                                (user) =>
+                                    ownerId === null || user.id !== ownerId,
+                            ),
+                        );
                     } else {
                         if (
                             usersRes.error.status === 401 ||
@@ -213,7 +282,25 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                             setShareError("Failed to load user list.");
                         }
                     }
-                    setPermissions(new Map());
+
+                    if (permsRes.ok) {
+                        const nextPermissions = new Map<
+                            number,
+                            PermissionLevel
+                        >();
+                        for (const entry of permsRes.value) {
+                            nextPermissions.set(
+                                entry.user_id,
+                                entry.permission > 0
+                                    ? "whitelist"
+                                    : "blacklist",
+                            );
+                        }
+                        setPermissions(nextPermissions);
+                    } else {
+                        setPermissions(new Map());
+                    }
+
                     setShareLoading(false);
                 }
             };
@@ -230,11 +317,30 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
             userId: number,
             newLevel: PermissionLevel,
         ) => {
+            const previousLevel = permissions.get(userId) || "blacklist";
             const updatedMap = new Map(permissions);
-            if (newLevel === "none") updatedMap.delete(userId);
-            else updatedMap.set(userId, newLevel);
+            updatedMap.set(userId, newLevel);
             setPermissions(updatedMap);
-            // await UpdateAlbumPermission(albumId, userId, newLevel);
+            setShareSavingUserId(userId);
+            setShareError(null);
+
+            const backendPermission = newLevel === "whitelist" ? 1 : 0;
+            const result = await AlbumPermissionSetter(
+                albumId,
+                userId,
+                backendPermission,
+            );
+
+            if (!result.ok) {
+                const rollbackMap = new Map(permissions);
+                rollbackMap.set(userId, previousLevel);
+                setPermissions(rollbackMap);
+                setShareError(
+                    result.error.message || "Failed to update sharing.",
+                );
+            }
+
+            setShareSavingUserId(null);
         };
 
         return (
@@ -245,13 +351,13 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                     onClick={() => setIsOpen(!isOpen)}
                     disabled={busy}
                 >
-                    <Share2 size={16} /> Share <ChevronDown size={16} />
+                    <Share2 size={16} /> Access <ChevronDown size={16} />
                 </button>
 
                 {isOpen && (
                     <div className={styles.shareDropdown}>
                         <div className={styles.shareHeaderRow}>
-                            <p className={styles.shareTitle}>Share album</p>
+                            <p className={styles.shareTitle}>Manage access</p>
                             <button
                                 type="button"
                                 className={styles.shareCloseButton}
@@ -284,8 +390,12 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                                         key={user.id}
                                         user={user}
                                         currentLevel={
-                                            permissions.get(user.id) || "none"
+                                            permissions.get(user.id) ||
+                                            (albumVisibilityMode >= 1
+                                                ? "whitelist"
+                                                : "blacklist")
                                         }
+                                        saving={shareSavingUserId === user.id}
                                         onChange={(newLevel) =>
                                             handlePermissionChange(
                                                 user.id,
@@ -305,10 +415,12 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
     function UserShareRow({
         user,
         currentLevel,
+        saving,
         onChange,
     }: {
         user: User;
         currentLevel: PermissionLevel;
+        saving: boolean;
         onChange: (level: PermissionLevel) => void;
     }) {
         return (
@@ -324,18 +436,14 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                 <div className={styles.sharePermissionControl}>
                     <select
                         className={styles.shareRoleSelect}
-                        value={currentLevel}
+                        value={currentLevel || "blacklist"}
                         onChange={(e) =>
                             onChange(e.target.value as PermissionLevel)
                         }
-                        disabled={currentLevel === "owner"}
+                        disabled={saving}
                     >
-                        {currentLevel === "owner" && (
-                            <option value="owner">Owner</option>
-                        )}
-                        <option value="owner">Owner</option>
-                        <option value="viewer">Viewer</option>
-                        <option value="none">No Access</option>
+                        <option value="whitelist">Viewer</option>
+                        <option value="blacklist">Blocked</option>
                     </select>
                 </div>
             </div>
