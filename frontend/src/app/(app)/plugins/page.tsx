@@ -8,7 +8,7 @@ import { UserHasPerm } from "@/api/permissions/permshelpers";
 import PluginsAbler from "@/api/plugins/pluginsabler";
 import { FishingHook, History, Power, Settings } from "lucide-react";
 import Hooks from "@/components/Plugins/Hooks/Hooks";
-import Config from "@/components/Plugins/Configuration/Configuration"
+import Config from "@/components/Plugins/Configuration/Configuration";
 
 export default function Home() {
     const [plugins, setPlugins] = useState<Plugin[]>([]);
@@ -96,17 +96,18 @@ export default function Home() {
                             <FishingHook className={styles.icon} />
                             <p className={styles.plugin_item_label}>Hooks</p>
                         </button>
-                        {
-                            plugin.configurable &&
+                        {plugin.configurable && (
                             <button
                                 type="button"
                                 className={`${styles.plugin_item} ${styles.plugin_item_button}`}
                                 onClick={() => setViewingConfig(plugin)}
                             >
                                 <Settings className={styles.icon} />
-                                <p className={styles.plugin_item_label}>Configure</p>
+                                <p className={styles.plugin_item_label}>
+                                    Configure
+                                </p>
                             </button>
-                        }
+                        )}
                     </div>
                 ))}
             </div>

@@ -69,7 +69,7 @@ label.plugin_item {
 
 label.plugin_item > p {
     font-size: 10pt;
-    color: var(--subtext0)
+    color: var(--subtext0);
 }
 
 .plugin_item_button {
