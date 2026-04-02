@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"freezetag/backend/api"
 	"freezetag/backend/pkg/database"
-	plugs "freezetag/backend/pkg/plugins"
+	"freezetag/backend/pkg/plugins"
 	"freezetag/backend/pkg/services"
 	"net/http"
 
@@ -85,20 +85,21 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("plugin %v has no hook '%s'", plug, hook)})
 		return
 	}
-	if (sig.Type != plugs.ManualTrigger) && (sig.Type != plugs.GenerateForm) {
+	if (sig.Type != plugins.ManualTrigger) && (sig.Type != plugins.GenerateForm) {
+
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("hook %s:%s is not a manual hook", plug, hook)})
 		return
 	}
 	var input any
 	switch sig.Signature {
-	case plugs.ProcessOneImage:
+	case plugins.ProcessOneImage:
 		var id int64
 		if err := c.BindJSON(&id); err != nil {
 			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("failed to parse request body (expected an ID): %v", err)})
 			return
 		}
 		input = database.ImageId(id)
-	case plugs.ProcessImageBatch:
+	case plugins.ProcessImageBatch:
 		var in []int64
 		if err := c.BindJSON(&in); err != nil {
 			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("failed to parse request body (expected an array of IDs): %v", err)})
@@ -109,7 +110,7 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 			ids[i] = database.ImageId(id)
 		}
 		input = ids
-	case plugs.ProcessFormData:
+	case plugins.ProcessFormData:
 		var data map[string]any
 		if err := c.BindJSON(&data); err != nil {
 			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("failed to parse request body (expected json object): %v", err)})
@@ -119,4 +120,62 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 	}
 	id := pe.jobs.SchedulePluginHook(plug, hook, input)
 	c.JSON(http.StatusAccepted, id)
+}
+
+// @summary     Get Plugin Configuration
+// @description Get the configuration fields of a plugin
+// @tags        plugins
+// @produce     application/json
+// @router      /plugins/config [get]
+// @param       plugin query string true "plugin to read configuration from"
+// @success     200 {object} map[string]plugins.PublicConfigField "plugin configuration"
+// @failure     404 {object} api.NotFoundResponse
+// @failure     500 {object} api.ServerErrorResponse
+func (pe PluginEndpoint) ReadConfig(c *gin.Context) {
+	plug := c.Query("plugin")
+	plugin := pe.service.PluginInfo(plug)
+	if plugin == nil {
+		c.JSON(http.StatusNotFound, api.NotFoundResponse{Error: fmt.Sprintf("plugin %v doesn't exist", plug)})
+		return
+	}
+	config, err := pe.service.ReadConfiguration(plug)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	if config == nil {
+		config = map[string]plugins.PublicConfigField{}
+	}
+	c.JSON(http.StatusOK, config)
+}
+
+// @summary     Change Plugin Config
+// @description Change a map of plugin config values
+// @tags        plugins
+// @produce     application/json
+// @router      /plugins/config [post]
+// @param       plugin query string true "plugin to change"
+// @param       updates body map[string]any true "field updates"
+// @success     200 {object} string
+// @failure     404 {object} api.NotFoundResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+func (pe PluginEndpoint) ChangeConfig(c *gin.Context) {
+	plug := c.Query("plugin")
+	plugin := pe.service.PluginInfo(plug)
+	if plugin == nil {
+		c.JSON(http.StatusNotFound, api.NotFoundResponse{Error: fmt.Sprintf("plugin %v doesn't exist", plug)})
+		return
+	}
+	var changes map[string]any
+	if err := c.BindJSON(&changes); err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to parse changes, expected a map of new values"})
+		return
+	}
+	err := pe.service.ChangeConfiguration(plug, changes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, "changed configuration")
 }

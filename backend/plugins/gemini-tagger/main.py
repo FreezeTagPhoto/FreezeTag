@@ -4,9 +4,8 @@ from PIL import Image
 
 import freezetag
 from freezetag.hooks import single_image, init_func, AddTagsAction, Error
-from freezetag.message import log
+from freezetag.message import log, read_config
 from google import genai
-from dotenv import load_dotenv, find_dotenv
 from google.genai import types
 from pydantic import BaseModel, Field
 from enum import Enum
@@ -45,10 +44,9 @@ def init():
     global model, device, transform
     log("Initializing Gemini Tagger plugin...")
     try:
-        load_dotenv(find_dotenv())
-        api_token = os.getenv("GEMINI_API_KEY")
-        if not api_token:
-            return Error("GEMINI_API_KEY not found in environment variables.")
+        api_token = read_config("config.toml")["gemini_key"]
+        if not api_token or api_token == "":
+            return Error("'gemini_key' not set in config.toml")
         client = genai.Client(api_key=api_token)
     except Exception as e:
         log(f"Error initializing Gemini client: {e}")

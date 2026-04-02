@@ -14,6 +14,27 @@ type PluginHook struct {
 	Signature    HookSignature `json:"signature"`
 }
 
+type PluginConfigField struct {
+	Name         string  `json:"name"`
+	FriendlyName *string `json:"friendly_name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	DefaultValue any     `json:"default,omitempty"`
+	Protected    bool    `json:"protected"`
+}
+
+type PublicConfigField struct {
+	Value        any     `json:"value"`
+	DefaultValue any     `json:"default,omitempty"`
+	Protected    bool    `json:"protected"`
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+}
+
+type PluginConfig struct {
+	File   string              `json:"file"`
+	Fields []PluginConfigField `json:"fields"`
+}
+
 type PluginManifest struct {
 	Name          string                `json:"name"`
 	FriendlyName  *string               `json:"friendly_name,omitempty"`
@@ -21,8 +42,9 @@ type PluginManifest struct {
 	Hooks         map[string]PluginHook `json:"hooks"`
 	AbsPath       string                `json:"-"`
 	MainFile      string                `json:"main_file"`
-	Requirements  *string               `json:"requirements"`
-	PythonVersion *string               `json:"python_version"`
+	Requirements  *string               `json:"requirements,omitempty"`
+	PythonVersion *string               `json:"python_version,omitempty"`
+	Config        *PluginConfig         `json:"config,omitempty"`
 	Disabled      bool                  `json:"default_disabled"`
 }
 
@@ -32,6 +54,7 @@ type PluginInfo struct {
 	Version      string                `json:"version"`
 	Enabled      bool                  `json:"enabled"`
 	Hooks        map[string]PluginHook `json:"hooks"`
+	Configurable bool                  `json:"configurable"`
 }
 
 type HookInfo struct {

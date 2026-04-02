@@ -12,6 +12,16 @@
     "version": "1.0.0",
     "requirements": "requirements.txt",
     "python_version": "3.10",
-    "default_disabled": true
-
+    "default_disabled": true,
+    "config": {
+        "file": "config.toml",
+        "fields": [
+            {
+                "name": "gemini_key",
+                "friendly_name": "Gemini API Key",
+                "description": "The Gemini API key to use during requests.",
+                "protected": true
+            }
+        ]
+    }
 }

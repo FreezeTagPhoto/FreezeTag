@@ -7,5 +7,6 @@ export type Plugin = {
     name: string;
     friendly_name: string;
     version: string;
+    configurable: boolean;
     hooks: Hooks;
 };
