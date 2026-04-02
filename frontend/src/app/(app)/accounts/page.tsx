@@ -88,7 +88,7 @@ export default function Home() {
                             <SquarePen className={styles.icon} />
                             <p className={styles.account_item_label}>Perms</p>
                         </button>
-                        
+
                         {/* visibility toggle */}
 
                         <button
