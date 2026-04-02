@@ -22,6 +22,14 @@ type PluginConfigField struct {
 	Protected    bool    `json:"protected"`
 }
 
+type PublicConfigField struct {
+	Value        any     `json:"value"`
+	DefaultValue any     `json:"default,omitempty"`
+	Protected    bool    `json:"protected"`
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+}
+
 type PluginConfig struct {
 	File   string              `json:"file"`
 	Fields []PluginConfigField `json:"fields"`

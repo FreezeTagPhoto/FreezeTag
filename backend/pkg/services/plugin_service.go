@@ -17,7 +17,7 @@ type PluginService interface {
 	Plugins() []plugins.PluginInfo
 	PluginInfo(plugin string) *plugins.PluginInfo
 	SetEnabled(plugin string, enabled bool)
-	ReadConfiguration(plugin string) (map[string]PublicConfigField, error)
+	ReadConfiguration(plugin string) (map[string]plugins.PublicConfigField, error)
 	ChangeConfiguration(plugin string, changes map[string]any) error
 	LaunchPlugin(plugin string, ctx context.Context) (*plugins.HookedPlugin, error)
 }
@@ -125,7 +125,10 @@ func readConfig(file string, layout []plugins.PluginConfigField) (map[string]any
 				defaultConfig[field.Name] = ""
 			}
 		}
-		writeConfig(file, defaultConfig)
+		err = writeConfig(file, defaultConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write default config: %w", err)
+		}
 		configContents, err = os.ReadFile(file)
 	}
 	if err != nil {
@@ -178,15 +181,7 @@ func (ps defaultPluginService) ChangeConfiguration(plugin string, changes map[st
 	return nil
 }
 
-type PublicConfigField struct {
-	Value        any     `json:"value"`
-	DefaultValue any     `json:"default,omitempty"`
-	Protected    bool    `json:"protected"`
-	Name         *string `json:"name,omitempty"`
-	Description  *string `json:"description,omitempty"`
-}
-
-func (ps defaultPluginService) ReadConfiguration(plugin string) (map[string]PublicConfigField, error) {
+func (ps defaultPluginService) ReadConfiguration(plugin string) (map[string]plugins.PublicConfigField, error) {
 	configFile, err := ps.getConfigFile(plugin)
 	if err != nil {
 		return nil, err
@@ -199,7 +194,7 @@ func (ps defaultPluginService) ReadConfiguration(plugin string) (map[string]Publ
 	if err != nil {
 		return nil, err
 	}
-	publicConfig := make(map[string]PublicConfigField)
+	publicConfig := make(map[string]plugins.PublicConfigField)
 	for _, field := range layout {
 		var publicValue any
 		if field.Protected {
@@ -207,7 +202,7 @@ func (ps defaultPluginService) ReadConfiguration(plugin string) (map[string]Publ
 		} else {
 			publicValue = config[field.Name]
 		}
-		publicConfig[field.Name] = PublicConfigField{
+		publicConfig[field.Name] = plugins.PublicConfigField{
 			Value:        publicValue,
 			DefaultValue: field.DefaultValue,
 			Protected:    field.Protected,
