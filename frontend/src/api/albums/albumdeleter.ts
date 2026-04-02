@@ -10,13 +10,13 @@ export type AlbumDeleteResult = Result<
 type AlbumDeleteResponse = { message: string };
 
 export default async function AlbumDeleter(
-    albumName: string,
+    albumId: number,
 ): Promise<AlbumDeleteResult> {
     return delete_album_with_handler(
-        ApiHandler<AlbumDeleteResponse>(SERVER_ADDRESS + "album/delete")(
-            Method.POST,
+        ApiHandler<AlbumDeleteResponse>(SERVER_ADDRESS + `album/${albumId}`)(
+            Method.DELETE,
         ),
-        albumName,
+        albumId,
     );
 }
 
@@ -24,9 +24,9 @@ async function delete_album_with_handler(
     handler: (
         data: BodyInit,
     ) => Promise<Result<AlbumDeleteResponse, RequestError>>,
-    albumName: string,
+    albumId: number,
 ): Promise<AlbumDeleteResult> {
-    const result = await handler(JSON.stringify({ album_name: albumName }));
+    const result = await handler("");
 
     if (!result.ok) {
         const status = result.error.status_code;
@@ -34,11 +34,10 @@ async function delete_album_with_handler(
         if (status === 400) {
             let message = bodyText;
             try {
-                message = (JSON.parse(bodyText) as { error?: string }).error ||
+                message =
+                    (JSON.parse(bodyText) as { error?: string }).error ||
                     bodyText;
-            } catch {
-                // noop? other files do it ig
-            }
+            } catch {}
             return Err({
                 status,
                 message,

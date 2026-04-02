@@ -28,7 +28,10 @@ export function ApiHandler<T>(
     };
 
     return (method: Method) => {
-        const isBodyMethod = method === Method.POST || method === Method.PUT || method === Method.PATCH;
+        const isBodyMethod =
+            method === Method.POST ||
+            method === Method.PUT ||
+            method === Method.PATCH;
         if (isBodyMethod && body_request) {
             return async (data: BodyInit): Promise<Result<T, RequestError>> => {
                 let response;

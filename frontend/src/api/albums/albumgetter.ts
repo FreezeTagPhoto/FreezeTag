@@ -9,11 +9,13 @@ export type AlbumData = {
 };
 
 export type AlbumResult = Result<
-    AlbumData, 
+    AlbumData,
     { status: number; message: string }
 >;
 
-export default async function AlbumGetter(albumID: number): Promise<AlbumResult> {
+export default async function AlbumGetter(
+    albumID: number,
+): Promise<AlbumResult> {
     const url = `${SERVER_ADDRESS}album/${albumID}`;
     const handler = ApiHandler<AlbumData>(url, false)(Method.GET);
     const result = await handler("");

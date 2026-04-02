@@ -8,14 +8,14 @@ export type AlbumImageAddResponse = {
 
 export default async function AlbumImageAdder(
     image_id: number,
-    album_name: string,
+    album_id: number,
 ): Promise<Result<AlbumImageAddResponse, RequestError>> {
     return add_image_to_album_with_handler(
         ApiHandler<AlbumImageAddResponse>(
-            SERVER_ADDRESS + "album/add_image_by_name",
+            SERVER_ADDRESS + "album/" + album_id + "/images",
         )(Method.POST),
         image_id,
-        album_name,
+        album_id,
     );
 }
 
@@ -24,12 +24,12 @@ async function add_image_to_album_with_handler(
         data: BodyInit,
     ) => Promise<Result<AlbumImageAddResponse, RequestError>>,
     image_id: number,
-    album_name: string,
+    album_id: number,
 ): Promise<Result<AlbumImageAddResponse, RequestError>> {
     const result = await handler(
         JSON.stringify({
             image_id,
-            album_name,
+            album_id,
         }),
     );
     if (!result.ok) return result;

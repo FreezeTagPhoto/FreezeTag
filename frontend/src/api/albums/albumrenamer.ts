@@ -13,10 +13,12 @@ export default async function AlbumRenamer(
 ): Promise<AlbumRenameResult> {
     const url = `${SERVER_ADDRESS}album/${albumId}/name`;
     const handler = ApiHandler<{ message: string }>(url, true)(Method.PATCH);
-    const result = await handler(JSON.stringify({ 
-        album_id: albumId, 
-        new_name: newName 
-    }));
+    const result = await handler(
+        JSON.stringify({
+            album_id: albumId,
+            new_name: newName,
+        }),
+    );
 
     if (!result.ok) {
         const status = result.error.status_code;
@@ -26,7 +28,9 @@ export default async function AlbumRenamer(
         try {
             const parsed = JSON.parse(bodyText);
             message = parsed.error || parsed.message || bodyText;
-        } catch { /* use raw text */ }
+        } catch {
+            /* use raw text */
+        }
 
         return Err({ status, message });
     }
