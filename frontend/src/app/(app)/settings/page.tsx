@@ -8,6 +8,16 @@ import {
     ThemeGetter,
     ThemeSetter,
     ApplyTheme,
+    ACCENT_VARIABLES,
+    UI_ACCENT_VARIABLES,
+    type AccentVariable,
+    type UIAccentVariable,
+    type CustomColors,
+    MOCHA_ACCENT_DEFAULTS,
+    LATTE_ACCENT_DEFAULTS,
+    CustomColorsGetter,
+    CustomColorsSetter,
+    ApplyCustomThemeColors,
 } from "@/themes/ThemeManager";
 import {
     ApplyUnits,
@@ -30,6 +40,109 @@ type ThemeName =
     | (typeof DarkThemeRegistry)[number];
 
 type PwKey = "current" | "new" | "confirm";
+
+// palette accent variables
+const ACCENT_LABEL: Record<AccentVariable, string> = {
+    rosewater: "Rosewater",
+    flamingo: "Flamingo",
+    pink: "Pink",
+    mauve: "Mauve",
+    red: "Red",
+    maroon: "Maroon",
+    peach: "Peach",
+    yellow: "Yellow",
+    green: "Green",
+    teal: "Teal",
+    sky: "Sky",
+    sapphire: "Sapphire",
+    blue: "Blue",
+    lavender: "Lavender",
+};
+
+// ui accent variables
+const UI_ACCENT_LABEL: Record<UIAccentVariable, string> = {
+    accent1: "Primary",
+    accent2: "Secondary",
+    accent3: "Tertiary",
+};
+
+const CustomThemeEditor = ({
+    colors,
+    onColorChange,
+    onReset,
+}: {
+    colors: CustomColors;
+    onColorChange: (variable: AccentVariable | UIAccentVariable, value: string) => void;
+    onReset: () => void;
+}) => (
+    <div className={styles.customThemeEditor}>
+        <p className={styles.hint}>
+            Customize accent colors. Neutral surface shades (backgrounds,
+            borders, text) inherit from the Catppuccin base palette.
+        </p>
+
+        <div className={styles.colorSectionRow}>
+            <span className={styles.colorSectionLabel}>UI accents</span>
+            <p className={styles.colorSectionHint}>
+                Used for buttons, selected states, and interactive highlights.
+            </p>
+        </div>
+        <div className={styles.uiAccentGrid}>
+            {UI_ACCENT_VARIABLES.map((v) => (
+                <div key={v} className={styles.colorPickerItem}>
+                    <input
+                        type="color"
+                        className={styles.colorSwatch}
+                        value={colors[v]}
+                        onChange={(e) => onColorChange(v, e.target.value)}
+                        title={UI_ACCENT_LABEL[v]}
+                        aria-label={`${UI_ACCENT_LABEL[v]} accent color`}
+                    />
+                    <span className={styles.colorSwatchLabel} aria-hidden>
+                        {UI_ACCENT_LABEL[v]}
+                    </span>
+                </div>
+            ))}
+        </div>
+
+        <div className={styles.colorSectionRow}>
+            <span className={styles.colorSectionLabel}>Palette</span>
+            <p className={styles.colorSectionHint}>
+                Semantic colors used for tags, status indicators, and accents
+                throughout the app.
+            </p>
+        </div>
+        <div className={styles.colorGrid}>
+            {ACCENT_VARIABLES.map((v) => (
+                <div key={v} className={styles.colorPickerItem}>
+                    <input
+                        type="color"
+                        className={styles.colorSwatch}
+                        value={colors[v]}
+                        onChange={(e) => onColorChange(v, e.target.value)}
+                        title={ACCENT_LABEL[v]}
+                        aria-label={`${ACCENT_LABEL[v]} color`}
+                    />
+                    <span className={styles.colorSwatchLabel} aria-hidden>
+                        {ACCENT_LABEL[v]}
+                    </span>
+                </div>
+            ))}
+        </div>
+
+        <div className={styles.customThemeActions}>
+            <button
+                type="button"
+                className={`${styles.button} ${styles.buttonInline} ${styles.avatarUploadBtn}`}
+                onClick={onReset}
+                title="Reset all colors to Catppuccin defaults"
+            >
+                <RotateCcw className={styles.btnLeadIcon} aria-hidden />
+                Reset to defaults
+            </button>
+        </div>
+    </div>
+);
 
 const PasswordField = ({
     id,
@@ -191,6 +304,18 @@ export default function SettingsPage() {
     const [theme, setTheme] = useState<ThemeName>("Catppuccin Mocha");
     const [units, setUnits] = useState<UnitSystem>("metric");
 
+    const [customDarkColors, setCustomDarkColors] = useState<CustomColors>({
+        ...MOCHA_ACCENT_DEFAULTS,
+    });
+    const [customLightColors, setCustomLightColors] = useState<CustomColors>({
+        ...LATTE_ACCENT_DEFAULTS,
+    });
+
+    const isCustomTheme =
+        theme === "Custom Dark" || theme === "Custom Light";
+    const currentCustomColors =
+        theme === "Custom Dark" ? customDarkColors : customLightColors;
+
     const [isEditingPassword, setIsEditingPassword] = useState(false);
 
     const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
@@ -207,6 +332,9 @@ export default function SettingsPage() {
         const initialTheme = ThemeGetter() as ThemeName;
         setTheme(initialTheme);
         ApplyTheme(initialTheme);
+
+        setCustomDarkColors(CustomColorsGetter("dark"));
+        setCustomLightColors(CustomColorsGetter("light"));
 
         const initialUnits = UnitsGetter();
         setUnits(initialUnits);
@@ -231,6 +359,40 @@ export default function SettingsPage() {
 
     const toggleShow = (key: PwKey) =>
         setPwShow((prev) => ({ ...prev, [key]: !prev[key] }));
+
+    const handleCustomColorChange = (
+        variable: AccentVariable | UIAccentVariable,
+        value: string,
+    ) => {
+        const isCustomDark = theme === "Custom Dark";
+        const type: "dark" | "light" = isCustomDark ? "dark" : "light";
+        const newColors = {
+            ...(isCustomDark ? customDarkColors : customLightColors),
+            [variable]: value,
+        };
+        if (isCustomDark) setCustomDarkColors(newColors);
+        else setCustomLightColors(newColors);
+        CustomColorsSetter(type, newColors);
+        ApplyCustomThemeColors(
+            theme as "Custom Dark" | "Custom Light",
+            newColors,
+        );
+    };
+
+    const handleResetCustomColors = () => {
+        const isCustomDark = theme === "Custom Dark";
+        const type: "dark" | "light" = isCustomDark ? "dark" : "light";
+        const newColors = {
+            ...(isCustomDark ? MOCHA_ACCENT_DEFAULTS : LATTE_ACCENT_DEFAULTS),
+        };
+        if (isCustomDark) setCustomDarkColors(newColors);
+        else setCustomLightColors(newColors);
+        CustomColorsSetter(type, newColors);
+        ApplyCustomThemeColors(
+            theme as "Custom Dark" | "Custom Light",
+            newColors,
+        );
+    };
 
     const onChangePassword: React.FormEventHandler<HTMLFormElement> = async (
         e,
@@ -477,23 +639,48 @@ export default function SettingsPage() {
                                 }}
                             >
                                 <optgroup label="Light Themes">
-                                    {[...LightThemeRegistry].sort().map((t) => (
-                                        <option key={t} value={t}>
-                                            {t}
-                                        </option>
-                                    ))}
+                                    {[...LightThemeRegistry]
+                                        .filter((t) => !t.startsWith("Custom"))
+                                        .sort()
+                                        .map((t) => (
+                                            <option key={t} value={t}>
+                                                {t}
+                                            </option>
+                                        ))}
                                 </optgroup>
 
                                 <optgroup label="Dark Themes">
-                                    {[...DarkThemeRegistry].sort().map((t) => (
-                                        <option key={t} value={t}>
-                                            {t}
-                                        </option>
-                                    ))}
+                                    {[...DarkThemeRegistry]
+                                        .filter((t) => !t.startsWith("Custom"))
+                                        .sort()
+                                        .map((t) => (
+                                            <option key={t} value={t}>
+                                                {t}
+                                            </option>
+                                        ))}
+                                </optgroup>
+
+                                <optgroup label="Custom">
+                                    <option value="Custom Light">
+                                        Custom Light
+                                    </option>
+                                    <option value="Custom Dark">
+                                        Custom Dark
+                                    </option>
                                 </optgroup>
                             </select>
                         </div>
                     </div>
+
+                    {isCustomTheme && (
+                        <div className={styles.expandedForm}>
+                            <CustomThemeEditor
+                                colors={currentCustomColors}
+                                onColorChange={handleCustomColorChange}
+                                onReset={handleResetCustomColors}
+                            />
+                        </div>
+                    )}
 
                     <div className={styles.fieldRow}>
                         <div className={styles.fieldText}>

@@ -119,6 +119,7 @@
     color: var(--text);
     outline: none;
     filter: var(--dropshadow);
+    justify-content: center;
 }
 
 .select:hover,
@@ -425,6 +426,10 @@
     .passwordActions {
         justify-content: stretch;
     }
+
+    .colorGrid {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }
 
 @media (max-width: 560px) {
@@ -451,6 +456,16 @@
 
     .passwordActions {
         justify-content: stretch;
+    }
+
+    .colorGrid {
+        grid-template-columns: repeat(7, 1fr);
+    }
+}
+
+@container (max-width: 500px) {
+    .colorGrid {
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
@@ -542,6 +557,113 @@
 
 .hiddenFileInput {
     display: none;
+}
+
+.customThemeEditor {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-bottom: 18px;
+    border-bottom: var(--border-info);
+}
+
+.colorGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px 8px;
+    margin-top: 14px;
+}
+
+.colorPickerItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.colorSwatch {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: var(--border-info);
+    cursor: pointer;
+    padding: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    overflow: hidden;
+    background: none;
+    filter: var(--dropshadow);
+    transition:
+        transform 120ms ease,
+        filter 120ms ease;
+}
+
+.colorSwatch:hover {
+    transform: scale(1.12);
+    filter: var(--dropshadow);
+}
+
+.colorSwatch::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.colorSwatch::-webkit-color-swatch {
+    border: none;
+    border-radius: 50%;
+}
+
+.colorSwatch::-moz-color-swatch {
+    border: none;
+    border-radius: 50%;
+}
+
+.colorSwatchLabel {
+    font-size: 0.625rem;
+    color: var(--subtext1);
+    text-align: center;
+    line-height: 1.2;
+    font-weight: 500;
+    user-select: none;
+}
+
+.colorSectionRow {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 14px;
+    margin-bottom: 2px;
+}
+
+.colorSectionLabel {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.colorSectionHint {
+    font-size: 12px;
+    color: var(--subtext1);
+    line-height: 1.35;
+}
+
+.uiAccentGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px 8px;
+    margin-top: 14px;
+    justify-items: center;
+}
+
+/* 7-column grid for UI accent grid to line up with accent grid */
+.uiAccentGrid .colorPickerItem:nth-child(1) { grid-column: 3; }
+.uiAccentGrid .colorPickerItem:nth-child(2) { grid-column: 4; }
+.uiAccentGrid .colorPickerItem:nth-child(3) { grid-column: 5; }
+
+.customThemeActions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
 }
 
 .avatarUploadBtn {
