@@ -4,6 +4,7 @@ import {
     ThemeGetter,
     ThemeTypeGetter,
     THEME_STORAGE_KEY,
+    ApplyTheme,
 } from "@/themes/ThemeManager";
 import {
     UNIT_STORAGE_KEY,
@@ -28,8 +29,10 @@ export default function InnerLayout({
 
     useEffect(() => {
         const refreshTheme = () => {
-            setTheme(ThemeGetter());
+            const t = ThemeGetter();
+            setTheme(t);
             setThemeType(ThemeTypeGetter());
+            ApplyTheme(t);
         };
 
         const refreshUnits = () => {
