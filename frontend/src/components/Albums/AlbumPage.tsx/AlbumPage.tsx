@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FolderOpen } from "lucide-react";
 import AlbumLister, { AlbumItem } from "@/api/albums/albumlister";
@@ -11,18 +11,18 @@ export default function AlbumsPage() {
     const [error, setError] = useState<string>("");
 
     useEffect(() => {
-    const loadAlbums = async () => {
-        const result = await AlbumLister();
-        if (!result.ok) {
-            setError(result.error.message || "Failed to load albums.");
-        } else {
-            setError("");
-            setAlbums(result.value);
-        }
-    };
+        const loadAlbums = async () => {
+            const result = await AlbumLister();
+            if (!result.ok) {
+                setError(result.error.message || "Failed to load albums.");
+            } else {
+                setError("");
+                setAlbums(result.value);
+            }
+        };
 
-    loadAlbums();
-    }, []); 
+        loadAlbums();
+    }, []);
 
     return (
         <section aria-label="Albums Management" className={styles.wrap}>
