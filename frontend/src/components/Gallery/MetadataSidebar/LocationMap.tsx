@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { ExternalLink, MapPin } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import styles from "./LocationMap.module.css";
 
 type LocationMapProps = {
@@ -28,7 +27,10 @@ interface LeafletDivIconOptions {
 interface LeafletStatic {
     map(el: HTMLElement, options: Record<string, unknown>): LeafletMap;
     tileLayer(url: string, options: Record<string, unknown>): LeafletLayer;
-    marker(latlng: [number, number], options?: Record<string, unknown>): LeafletLayer;
+    marker(
+        latlng: [number, number],
+        options?: Record<string, unknown>,
+    ): LeafletLayer;
     divIcon(options: LeafletDivIconOptions): Record<string, unknown>;
 }
 

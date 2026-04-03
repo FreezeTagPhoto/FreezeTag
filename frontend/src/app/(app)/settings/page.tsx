@@ -773,7 +773,8 @@ export default function SettingsPage() {
                                 </a>
                                 {". "}
                                 <br />
-                                Disable this feature if you don&apos;t want that.
+                                Disable this feature if you don&apos;t want
+                                that.
                             </p>
                         </div>
 
