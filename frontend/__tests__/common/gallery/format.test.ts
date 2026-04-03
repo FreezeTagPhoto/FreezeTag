@@ -54,7 +54,7 @@ describe("common/format", () => {
 
     it("formatLocation formats 5 decimals", () => {
         expect(formatLocation(40.1234567, -111.9876543)).toBe(
-            "40.12346, -111.98765",
+            "40.12346°N, 111.98765°W",
         );
     });
 

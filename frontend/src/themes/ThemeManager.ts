@@ -88,7 +88,7 @@ export const LATTE_ACCENT_DEFAULTS: CustomColors = {
     lavender: "#7287fd",
 
     // light theme ui accents
-    accent1: "#aedbf0",
+    accent1: "#79c5d3",
     accent2: "#579dd7",
     accent3: "#ffffff",
 };

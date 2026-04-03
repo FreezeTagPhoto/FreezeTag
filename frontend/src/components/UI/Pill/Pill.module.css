@@ -36,7 +36,7 @@
 
 .pill:focus-visible {
     outline: none;
-    border-color: var(--blue);
+    border-color: var(--accent2);
 }
 
 .pill.open {

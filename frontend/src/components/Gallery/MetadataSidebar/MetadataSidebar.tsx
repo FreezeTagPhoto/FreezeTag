@@ -41,6 +41,12 @@ import {
     Loader2,
     PuzzleIcon,
 } from "lucide-react";
+import LocationMap from "./LocationMap";
+import {
+    MapEnabledGetter,
+    MAP_CHANGED_EVENT,
+    MAP_ENABLED_STORAGE_KEY,
+} from "@/common/map/MapManager";
 import ManualRunMenu from "@/components/Plugins/ManualRunMenu/ManualRunMenu";
 import FormPanel from "@/components/Plugins/FormPanel/FormPanel";
 import PluginRunner from "@/api/plugins/pluginrunner";
@@ -174,6 +180,21 @@ const MetadataSidebar = memo(function MetadataSidebar({
     const currentTags: string[] | null = tags.current.some
         ? tags.current.value
         : null;
+
+    const [mapEnabled, setMapEnabled] = useState(() => MapEnabledGetter());
+
+    useEffect(() => {
+        const refresh = () => setMapEnabled(MapEnabledGetter());
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === MAP_ENABLED_STORAGE_KEY) refresh();
+        };
+        window.addEventListener(MAP_CHANGED_EVENT, refresh);
+        window.addEventListener("storage", onStorage);
+        return () => {
+            window.removeEventListener(MAP_CHANGED_EVENT, refresh);
+            window.removeEventListener("storage", onStorage);
+        };
+    }, []);
 
     const [fileBusy, setFileBusy] = useState<null | "download" | "delete">(
         null,
@@ -528,6 +549,14 @@ const MetadataSidebar = memo(function MetadataSidebar({
                               )
                             : "—"}
                     </div>
+                    {mapEnabled &&
+                        currentMetadata?.latitude != null &&
+                        currentMetadata?.longitude != null && (
+                            <LocationMap
+                                lat={currentMetadata.latitude}
+                                lon={currentMetadata.longitude}
+                            />
+                        )}
                 </div>
 
                 <div className={styles.detailRow}>

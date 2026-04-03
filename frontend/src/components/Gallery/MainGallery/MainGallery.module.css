@@ -7,11 +7,13 @@
     flex-wrap: wrap;
     gap: 8px;
     padding-top: 12px;
+    padding-bottom: 12px;
+    padding-inline: 6px;
     justify-content: space-between;
     align-content: flex-start;
     width: 100%;
-    overflow-y: scroll;
-    max-height: 10%;
+    box-sizing: border-box;
+    overflow: visible;
 }
 
 .grid::after {
@@ -28,6 +30,7 @@
     .grid {
         gap: 6px;
         padding-top: 8px;
+        padding-bottom: 8px;
         justify-content: flex-start;
     }
 }

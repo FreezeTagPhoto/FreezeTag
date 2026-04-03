@@ -14,7 +14,7 @@ body {
 
 [data-theme-type="light"] {
     --dropshadow: drop-shadow(0.5px 0.5px 0.5px #888888);
-    --accent1: #aedbf0;
+    --accent1: #79c5d3;
     --accent2: #579dd7;
     --accent3: #ffffff;
     --backdrop: rgba(0, 0, 0, 0.15);
