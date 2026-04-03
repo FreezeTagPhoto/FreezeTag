@@ -30,8 +30,8 @@
     gap: 4px;
     margin-top: 6px;
     font-size: 0.78rem;
-    /* color: var(--accent1); */
-    color: color-mix(in srgb, var(--accent1) 75%, var(--text));
+    color: var(--accent1);
+    /* color: color-mix(in srgb, var(--accent1) 75%, var(--text)); */
     text-decoration: underline;
     transition: color 120ms ease;
 }

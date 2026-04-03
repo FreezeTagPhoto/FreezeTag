@@ -426,6 +426,16 @@
     .colorGrid {
         grid-template-columns: repeat(4, 1fr);
     }
+
+    .uiAccentGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .uiAccentGrid .colorPickerItem:nth-child(1),
+    .uiAccentGrid .colorPickerItem:nth-child(2),
+    .uiAccentGrid .colorPickerItem:nth-child(3) {
+        grid-column: auto;
+    }
 }
 
 @media (max-width: 560px) {
@@ -455,13 +465,27 @@
     }
 
     .colorGrid {
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .uiAccentGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .uiAccentGrid .colorPickerItem:nth-child(1),
+    .uiAccentGrid .colorPickerItem:nth-child(2),
+    .uiAccentGrid .colorPickerItem:nth-child(3) {
+        grid-column: auto;
     }
 }
 
 @container (max-width: 500px) {
     .colorGrid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .uiAccentGrid {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
@@ -682,7 +706,8 @@
 }
 
 .osmLink {
-    color: color-mix(in srgb, var(--accent1) 75%, var(--text));
+    color: var(--accent1);
+    /* color: color-mix(in srgb, var(--accent1) 75%, var(--text)); */
     text-decoration: underline;
 }
 
@@ -699,3 +724,139 @@
 .osmLink:hover {
     color: var(--accent1);
 } */
+
+@media (max-width: 560px) {
+    .main {
+        padding: 20px 16px;
+    }
+
+    .panel {
+        padding: 14px;
+    }
+
+    .avatarInnerGrid {
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+
+    .avatarActions {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .avatarBtnsGroup {
+        width: 100%;
+    }
+
+    .avatarBtns {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .avatarBtns .iconBtn {
+        width: 100%;
+    }
+
+    .avatarUploadBtn {
+        white-space: normal;
+        text-align: center;
+    }
+
+    .customThemeActions {
+        justify-content: stretch;
+    }
+
+    .colorGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px 6px;
+    }
+
+    .uiAccentGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px 6px;
+    }
+
+    .uiAccentGrid .colorPickerItem:nth-child(1),
+    .uiAccentGrid .colorPickerItem:nth-child(2),
+    .uiAccentGrid .colorPickerItem:nth-child(3) {
+        grid-column: auto;
+    }
+
+    .colorPickerItem {
+        min-width: 0;
+    }
+
+    .colorSwatch {
+        width: 40px;
+        height: 40px;
+    }
+
+    .colorSwatchLabel {
+        overflow-wrap: anywhere;
+    }
+}
+
+@container (max-width: 500px) {
+    .avatarInnerGrid {
+        grid-template-columns: 1fr;
+        width: 100%;
+    }
+
+    .avatarActions {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .avatarBtnsGroup {
+        width: 100%;
+    }
+
+    .avatarBtns {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .avatarBtns .iconBtn {
+        width: 100%;
+    }
+
+    .avatarUploadBtn {
+        white-space: normal;
+        text-align: center;
+    }
+
+    .customThemeActions {
+        justify-content: stretch;
+    }
+
+    .colorGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px 6px;
+    }
+
+    .uiAccentGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px 6px;
+    }
+
+    .uiAccentGrid .colorPickerItem:nth-child(1),
+    .uiAccentGrid .colorPickerItem:nth-child(2),
+    .uiAccentGrid .colorPickerItem:nth-child(3) {
+        grid-column: auto;
+    }
+
+    .colorPickerItem {
+        min-width: 0;
+    }
+
+    .colorSwatch {
+        width: 40px;
+        height: 40px;
+    }
+
+    .colorSwatchLabel {
+        overflow-wrap: anywhere;
+    }
+}
