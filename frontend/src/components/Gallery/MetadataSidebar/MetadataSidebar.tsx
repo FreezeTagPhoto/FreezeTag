@@ -174,7 +174,20 @@ const MetadataSidebar = memo(function MetadataSidebar({
     const currentMetadata: ImageMetadata | null = metadata.current.some
         ? metadata.current.value
         : null;
+    const [mapEnabled, setMapEnabled] = useState(() => MapEnabledGetter());
 
+    useEffect(() => {
+        const refresh = () => setMapEnabled(MapEnabledGetter());
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === MAP_ENABLED_STORAGE_KEY) refresh();
+        };
+        window.addEventListener(MAP_CHANGED_EVENT, refresh);
+        window.addEventListener("storage", onStorage);
+        return () => {
+            window.removeEventListener(MAP_CHANGED_EVENT, refresh);
+            window.removeEventListener("storage", onStorage);
+        };
+    }, []);
     const [fileBusy, setFileBusy] = useState<null | "download" | "delete">(
         null,
     );
