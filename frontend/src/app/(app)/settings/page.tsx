@@ -72,7 +72,10 @@ const CustomThemeEditor = ({
     onReset,
 }: {
     colors: CustomColors;
-    onColorChange: (variable: AccentVariable | UIAccentVariable, value: string) => void;
+    onColorChange: (
+        variable: AccentVariable | UIAccentVariable,
+        value: string,
+    ) => void;
     onReset: () => void;
 }) => (
     <div className={styles.customThemeEditor}>
@@ -311,8 +314,7 @@ export default function SettingsPage() {
         ...LATTE_ACCENT_DEFAULTS,
     });
 
-    const isCustomTheme =
-        theme === "Custom Dark" || theme === "Custom Light";
+    const isCustomTheme = theme === "Custom Dark" || theme === "Custom Light";
     const currentCustomColors =
         theme === "Custom Dark" ? customDarkColors : customLightColors;
 

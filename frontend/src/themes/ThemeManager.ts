@@ -48,7 +48,6 @@ export type AllCustomVariable = AccentVariable | UIAccentVariable;
 export type CustomColors = Record<AllCustomVariable, string>;
 
 export const MOCHA_ACCENT_DEFAULTS: CustomColors = {
-    
     // catppuccin mocha
     rosewater: "#f5e0dc",
     flamingo: "#f2cdcd",
@@ -64,15 +63,14 @@ export const MOCHA_ACCENT_DEFAULTS: CustomColors = {
     sapphire: "#74c7ec",
     blue: "#89b4fa",
     lavender: "#b4befe",
-    
-    // dark theme ui accents 
+
+    // dark theme ui accents
     accent1: "#579dd7",
     accent2: "#aedbf0",
     accent3: "#ffffff",
 };
 
 export const LATTE_ACCENT_DEFAULTS: CustomColors = {
-    
     // catppuccin latte
     rosewater: "#dc8a78",
     flamingo: "#dd7878",
@@ -88,7 +86,7 @@ export const LATTE_ACCENT_DEFAULTS: CustomColors = {
     sapphire: "#209fb5",
     blue: "#1e66f5",
     lavender: "#7287fd",
-    
+
     // light theme ui accents
     accent1: "#aedbf0",
     accent2: "#579dd7",
@@ -236,7 +234,7 @@ export const ApplyTheme = (theme: string) => {
 
     const type = DarkThemeRegistry.includes(theme) ? "dark" : "light";
     document.documentElement.setAttribute("data-theme-type", type);
-    
+
     if (theme === "Custom Dark" || theme === "Custom Light") {
         const colorType = theme === "Custom Dark" ? "dark" : "light";
         const colors = CustomColorsGetter(colorType);
