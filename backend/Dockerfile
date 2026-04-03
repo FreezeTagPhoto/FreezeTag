@@ -4,6 +4,8 @@ FROM debian:trixie-slim
 ARG BUILDTAGS=sqlite_math_functions,sqlite_foreign_keys
 
 RUN --mount=type=bind,source=./,target=/backend,rw <<EOF
+#!/bin/bash
+echo $PWD
 set -e
 # install basic packages
 export DEBIAN_FRONTEND=noninteractive
@@ -31,7 +33,7 @@ EOF
 RUN mkdir -p /backend
 
 COPY <<EOT /backend/entrypoint.sh
-#!/bin/sh
+#!/bin/bash
 export PATH="$(go env GOPATH)/bin:$PATH"
 server
 EOT
