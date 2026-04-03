@@ -438,9 +438,10 @@ const MetadataSidebar = memo(function MetadataSidebar({
     const [_, setImageAlbums] = useState<{ id: number; name: string }[]>([]);
     const [albumBusy, setAlbumBusy] = useState(false);
     const [showAlbumDropdown, setShowAlbumDropdown] = useState(false);
-    const filteredAlbums = allAlbums.filter((a) =>
-        a.name.toLowerCase().includes(albumInput.toLowerCase()),
-    );
+    const filteredAlbums =
+        allAlbums?.filter((a) =>
+            a.name.toLowerCase().includes(albumInput.toLowerCase()),
+        ) || [];
 
     useEffect(() => {
         AlbumLister().then((res) => {
@@ -457,9 +458,10 @@ const MetadataSidebar = memo(function MetadataSidebar({
         setAlbumBusy(true);
         let targetId: number | null = null;
 
-        const existing = allAlbums.find(
-            (a) => a.name.toLowerCase() === name.toLowerCase(),
-        );
+        const existing =
+            allAlbums?.find(
+                (a) => a.name.toLowerCase() === name.toLowerCase(),
+            ) || null;
 
         if (existing) {
             targetId = existing.id;

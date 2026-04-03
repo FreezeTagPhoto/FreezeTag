@@ -75,7 +75,6 @@ export default function Config({ onClose, plugin }: ConfigProps) {
         });
     };
 
-
     const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
         event.preventDefault();
         const result = await SetPluginConfig(plugin.name, formData);
