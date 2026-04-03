@@ -44,7 +44,6 @@ func (ae AlbumEndpoint) CreateAlbum(c *gin.Context) {
 		return
 	}
 
-	// Call the repository method to create the album
 	albumID, err := ae.albumRepository.CreateAlbum(req.Name, uid, req.VisibilityMode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
@@ -110,12 +109,22 @@ func (ae AlbumEndpoint) RemoveImageFromAlbum(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
 		return
 	}
-	var req AlbumImageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
+
+	albumId := c.Param("id")
+	albumID, err := api.ParseParamIntoID[database.AlbumID](albumId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
 	}
-	err = ae.albumRepository.RemoveImageFromAlbum(database.ImageId(req.ImageId), database.AlbumID(req.AlbumId), uid)
+
+	imageId := c.Param("image_id")
+	imageID, err := api.ParseParamIntoID[database.ImageId](imageId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
+
+	err = ae.albumRepository.RemoveImageFromAlbum(imageID, albumID, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
@@ -128,12 +137,12 @@ func (ae AlbumEndpoint) RemoveImageFromAlbum(c *gin.Context) {
 // @tags        albums
 // @router      /album/{id}/visibility [patch]
 // @param id path int true "Album ID"
-// @param request body AlbumModifyRequest true "Set Album Visibility Payload"
+// @param request body AlbumModifyRequest true "Change Album Visibility Payload"
 // @success     200 {object} api.MessageResponse
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
-func (ae AlbumEndpoint) SetAlbumVisibility(c *gin.Context) {
+func (ae AlbumEndpoint) ChangeAlbumVisibility(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
@@ -314,12 +323,18 @@ func (ae AlbumEndpoint) RenameAlbum(c *gin.Context) {
 	}
 
 	var req RenameAlbumRequest
+	albumId := c.Param("id")
+	albumID, err := api.ParseParamIntoID[database.AlbumID](albumId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
 		return
 	}
 
-	err = ae.albumRepository.RenameAlbum(req.AlbumID, req.NewName, uid)
+	err = ae.albumRepository.RenameAlbum(albumID, req.NewName, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
@@ -349,8 +364,7 @@ func (ae AlbumEndpoint) DeleteAlbum(c *gin.Context) {
 		return
 	}
 
-	albumId := c.Param("id")
-	albumID, err := api.ParseParamIntoID[database.AlbumID](albumId)
+	albumID, err := api.ParseParamIntoID[database.AlbumID](c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return

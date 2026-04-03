@@ -1,10 +1,5 @@
 package albums
 
-// I hate getting stuff out of query params,
-// so I am trying out a new approach where all the album related endpoints take a json body with the relevant info.
-// This is the file that defines the structs for those json bodies.
-// pretty easy to change back to the way we do it now if this doesn't work out the way I want it to
-
 import (
 	"freezetag/backend/pkg/database"
 )
@@ -32,7 +27,6 @@ type AlbumImageRequest struct {
 }
 
 type RenameAlbumRequest struct {
-	AlbumID database.AlbumID `json:"album_id" binding:"required"`
 	NewName string           `json:"new_name" binding:"required"`
 }
 

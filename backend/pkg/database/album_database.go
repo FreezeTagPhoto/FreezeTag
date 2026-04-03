@@ -38,7 +38,6 @@ type AlbumDatabase interface {
 
 	GetAlbums(UserID) ([]Album, error)
 	GetAlbum(AlbumID, UserID) (Album, error)
-	// SetAlbumName(AlbumID, string, UserID) error
 
 	GetAlbumSharedUsers(AlbumID, UserID) ([]AlbumSharedUser, error)
 	SetAlbumVisibility(AlbumID, PrivacyLevel, UserID) error
@@ -48,19 +47,6 @@ type AlbumDatabase interface {
 type SqliteAlbumDatabase struct {
 	db *sql.DB
 }
-
-// func InitSQLiteAlbumDatabase(datasource string) (SqliteAlbumDatabase, error) {
-// 	registerExtendedSqlite("sqlite3_extrafunc")
-// 	db, err := sql.Open("sqlite3_extrafunc", datasource)
-// 	if err != nil {
-// 		return SqliteAlbumDatabase{}, err
-// 	}
-// 	_, err = db.Exec(schema)
-// 	if err != nil {
-// 		return SqliteAlbumDatabase{}, err
-// 	}
-// 	return SqliteAlbumDatabase{db}, nil
-// }
 
 func (db SqliteAlbumDatabase) getVisibilityMode(userID UserID) (VisbilityLevel, error) {
 	var visibility int

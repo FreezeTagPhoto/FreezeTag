@@ -435,57 +435,14 @@ const MetadataSidebar = memo(function MetadataSidebar({
         [],
     );
     // want this later
-    const [_, setImageAlbums] = useState<{ id: number; name: string }[]>([]);
     const [albumBusy, setAlbumBusy] = useState(false);
-    const [showAlbumDropdown, setShowAlbumDropdown] = useState(false);
-    const filteredAlbums =
-        allAlbums?.filter((a) =>
-            a.name.toLowerCase().includes(albumInput.toLowerCase()),
-        ) || [];
 
     useEffect(() => {
         AlbumLister().then((res) => {
             if (res.ok) setAllAlbums(res.value);
         });
-        setImageAlbums([]);
         setAlbumInput("");
     }, [selectedId]);
-
-    const handleQuickAddAlbum = async () => {
-        const name = albumInput.trim();
-        if (!name || albumBusy) return;
-
-        setAlbumBusy(true);
-        let targetId: number | null = null;
-
-        const existing =
-            allAlbums?.find(
-                (a) => a.name.toLowerCase() === name.toLowerCase(),
-            ) || null;
-
-        if (existing) {
-            targetId = existing.id;
-        } else {
-            const createRes = await AlbumCreator(name, isPublic ? 1 : 0);
-            if (createRes.ok) {
-                const listRes = await AlbumLister();
-                if (listRes.ok) {
-                    setAllAlbums(listRes.value);
-                    targetId =
-                        listRes.value.find((a) => a.name === name)?.id || null;
-                }
-            }
-        }
-
-        if (targetId) {
-            const addRes = await AlbumImageAdder(selectedId, targetId);
-            if (addRes.ok) {
-                setImageAlbums((prev) => [...prev, { id: targetId, name }]);
-                setAlbumInput("");
-            }
-        }
-        setAlbumBusy(false);
-    };
 
     return (
         <aside className={styles.viewerSidebar}>
@@ -567,9 +524,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatResultion(
-                                  currentMetadata.width,
-                                  currentMetadata.height,
-                              )
+                                currentMetadata.width,
+                                currentMetadata.height,
+                            )
                             : "—"}
                     </div>
                 </div>
@@ -582,8 +539,8 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLongDate(currentMetadata.dateTaken, {
-                                  timeZone: "UTC",
-                              })
+                                timeZone: "UTC",
+                            })
                             : "—"}
                     </div>
                 </div>
@@ -610,9 +567,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLocation(
-                                  currentMetadata.latitude,
-                                  currentMetadata.longitude,
-                              )
+                                currentMetadata.latitude,
+                                currentMetadata.longitude,
+                            )
                             : "—"}
                     </div>
                     {mapEnabled &&
@@ -633,9 +590,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatCamera(
-                                  currentMetadata.cameraMake,
-                                  currentMetadata.cameraModel,
-                              )
+                                currentMetadata.cameraMake,
+                                currentMetadata.cameraModel,
+                            )
                             : "—"}
                     </div>
                 </div>
@@ -757,9 +714,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                                     onKeyDown={(e) => {
                                                         if (
                                                             e.key ===
-                                                                "ArrowDown" ||
+                                                            "ArrowDown" ||
                                                             e.key ===
-                                                                "ArrowUp" ||
+                                                            "ArrowUp" ||
                                                             e.key === "Enter"
                                                         ) {
                                                             e.preventDefault();
@@ -838,14 +795,12 @@ const MetadataSidebar = memo(function MetadataSidebar({
                                                                                 t
                                                                             }
                                                                             type="button"
-                                                                            className={`${
-                                                                                styles.tagSuggestItem
-                                                                            } ${
-                                                                                idx ===
-                                                                                tagSuggestIndex
+                                                                            className={`${styles.tagSuggestItem
+                                                                                } ${idx ===
+                                                                                    tagSuggestIndex
                                                                                     ? styles.tagSuggestActive
                                                                                     : ""
-                                                                            }`}
+                                                                                }`}
                                                                             onMouseDown={(
                                                                                 ev,
                                                                             ) =>
@@ -925,130 +880,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
                         )}
                     </div>
                 </div>
-
-                {/* Album section */}
-
-                <div className={styles.detailRow}>
-                    <div className={styles.detailLabelRow}>
-                        <FolderPlus className={styles.detailLabelIcon} />
-                        <span className={styles.detailLabel}>Albums</span>
-                    </div>
-
-                    <div className={styles.detailValue}>
-                        <div className={styles.albumInputRow}>
-                            <div
-                                className={`${styles.tagAddInputWrap} ${styles.albumInputWrap}`}
-                            >
-                                <input
-                                    className={`${styles.tagAddInput} ${styles.albumInputField}`}
-                                    placeholder="Type or select..."
-                                    value={albumInput}
-                                    onChange={(e) => {
-                                        setAlbumInput(e.target.value);
-                                        setShowAlbumDropdown(true);
-                                    }}
-                                    onFocus={() => setShowAlbumDropdown(true)}
-                                    onBlur={() => setShowAlbumDropdown(false)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                            setShowAlbumDropdown(false);
-                                            handleQuickAddAlbum();
-                                        }
-                                    }}
-                                    disabled={albumBusy}
-                                />
-
-                                {showAlbumDropdown && (
-                                    <div
-                                        className={`${styles.tagSuggestDropdown} ${styles.albumDropdown}`}
-                                    >
-                                        <div
-                                            className={styles.tagSuggestScroll}
-                                        >
-                                            {filteredAlbums.length === 0 ? (
-                                                <div
-                                                    className={`${styles.tagSuggestItem} ${styles.albumSuggestEmpty}`}
-                                                >
-                                                    <span
-                                                        className={`${styles.tagSuggestLabel} ${styles.albumSuggestLabelNew}`}
-                                                    >
-                                                        {albumInput
-                                                            ? `Create new: "${albumInput}"`
-                                                            : "No albums found"}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                filteredAlbums.map((a) => (
-                                                    <button
-                                                        key={a.id}
-                                                        type="button"
-                                                        className={
-                                                            styles.tagSuggestItem
-                                                        }
-                                                        onMouseDown={(e) =>
-                                                            e.preventDefault()
-                                                        }
-                                                        onClick={() => {
-                                                            setAlbumInput(
-                                                                a.name,
-                                                            );
-                                                            setShowAlbumDropdown(
-                                                                false,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <span
-                                                            className={
-                                                                styles.tagSuggestLabel
-                                                            }
-                                                        >
-                                                            {a.name}
-                                                        </span>
-                                                    </button>
-                                                ))
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {filteredAlbums.length === 0 && albumInput && (
-                                <button
-                                    type="button"
-                                    className={styles.tagActionBtn}
-                                    onClick={() => setIsPublic((prev) => !prev)}
-                                    disabled={albumBusy}
-                                    aria-label="Toggle Public/Private"
-                                    title={isPublic ? "Public" : "Private"}
-                                >
-                                    {isPublic ? (
-                                        <Globe
-                                            className={`${styles.iconSm} ${styles.publicIcon}`}
-                                        />
-                                    ) : (
-                                        <Lock className={styles.iconSm} />
-                                    )}
-                                </button>
-                            )}
-
-                            <button
-                                type="button"
-                                className={styles.tagActionBtn}
-                                onClick={handleQuickAddAlbum}
-                                disabled={albumBusy || !albumInput.trim()}
-                                aria-label="Add to Album"
-                            >
-                                {albumBusy ? (
-                                    <Loader2
-                                        className={`${styles.iconSm} ${styles.spinning}`}
-                                    />
-                                ) : (
-                                    <Plus className={styles.iconSm} />
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <AlbumSection selectedId={selectedId} />
             </div>
             {selectingPlugin && (
                 <ManualRunMenu
@@ -1071,6 +903,163 @@ const MetadataSidebar = memo(function MetadataSidebar({
                 />
             )}
         </aside>
+    );
+});
+
+type AlbumSectionProps = {
+    selectedId: number;
+};
+
+const AlbumSection = memo(function AlbumSection({ selectedId }: AlbumSectionProps) {
+    const [albumInput, setAlbumInput] = useState("");
+    const [isPublic, setIsPublic] = useState(true);
+    const [allAlbums, setAllAlbums] = useState<{ id: number; name: string }[]>([]);
+    const [albumBusy, setAlbumBusy] = useState(false);
+    const [showAlbumDropdown, setShowAlbumDropdown] = useState(false);
+
+    const filteredAlbums =
+        allAlbums?.filter((a) =>
+            a.name.toLowerCase().includes(albumInput.toLowerCase()),
+        ) || [];
+
+    useEffect(() => {
+        AlbumLister().then((res) => {
+            if (res.ok) setAllAlbums(res.value);
+        });
+        setAlbumInput("");
+    }, [selectedId]);
+
+    const handleQuickAddAlbum = async () => {
+        const name = albumInput.trim();
+        if (!name || albumBusy) return;
+
+        setAlbumBusy(true);
+        let targetId: number | null = null;
+
+        const existing =
+            allAlbums?.find(
+                (a) => a.name.toLowerCase() === name.toLowerCase(),
+            ) || null;
+
+        if (existing) {
+            targetId = existing.id;
+        } else {
+            const createRes = await AlbumCreator(name, isPublic ? 1 : 0);
+            if (createRes.ok) {
+                const listRes = await AlbumLister();
+                if (listRes.ok) {
+                    setAllAlbums(listRes.value);
+                    targetId =
+                        listRes.value.find((a) => a.name === name)?.id || null;
+                }
+            }
+        }
+
+        if (targetId) {
+            const addRes = await AlbumImageAdder(selectedId, targetId);
+            if (addRes.ok) {
+                setAlbumInput("");
+            }
+        }
+        setAlbumBusy(false);
+    };
+
+    return (
+        <div className={styles.detailRow}>
+            <div className={styles.detailLabelRow}>
+                <FolderPlus className={styles.detailLabelIcon} />
+                <span className={styles.detailLabel}>Albums</span>
+            </div>
+
+            <div className={styles.detailValue}>
+                <div className={styles.albumInputRow}>
+                    <div className={`${styles.tagAddInputWrap} ${styles.albumInputWrap}`}>
+                        <input
+                            className={`${styles.tagAddInput} ${styles.albumInputField}`}
+                            placeholder="Type or select..."
+                            value={albumInput}
+                            onChange={(e) => {
+                                setAlbumInput(e.target.value);
+                                setShowAlbumDropdown(true);
+                            }}
+                            onFocus={() => setShowAlbumDropdown(true)}
+                            onBlur={() => setShowAlbumDropdown(false)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    setShowAlbumDropdown(false);
+                                    handleQuickAddAlbum();
+                                }
+                            }}
+                            disabled={albumBusy}
+                        />
+
+                        {showAlbumDropdown && (
+                            <div className={`${styles.tagSuggestDropdown} ${styles.albumDropdown}`}>
+                                <div className={styles.tagSuggestScroll}>
+                                    {filteredAlbums.length === 0 ? (
+                                        <div className={`${styles.tagSuggestItem} ${styles.albumSuggestEmpty}`}>
+                                            <span className={`${styles.tagSuggestLabel} ${styles.albumSuggestLabelNew}`}>
+                                                {albumInput
+                                                    ? `Create new: "${albumInput}"`
+                                                    : "No albums found"}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        filteredAlbums.map((a) => (
+                                            <button
+                                                key={a.id}
+                                                type="button"
+                                                className={styles.tagSuggestItem}
+                                                onMouseDown={(e) => e.preventDefault()}
+                                                onClick={() => {
+                                                    setAlbumInput(a.name);
+                                                    setShowAlbumDropdown(false);
+                                                }}
+                                            >
+                                                <span className={styles.tagSuggestLabel}>
+                                                    {a.name}
+                                                </span>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {filteredAlbums.length === 0 && albumInput && (
+                        <button
+                            type="button"
+                            className={styles.tagActionBtn}
+                            onClick={() => setIsPublic((prev) => !prev)}
+                            disabled={albumBusy}
+                            aria-label="Toggle Public/Private"
+                            title={isPublic ? "Public" : "Private"}
+                        >
+                            {isPublic ? (
+                                <Globe className={`${styles.iconSm} ${styles.publicIcon}`} />
+                            ) : (
+                                <Lock className={styles.iconSm} />
+                            )}
+                        </button>
+                    )}
+
+                    <button
+                        type="button"
+                        className={styles.tagActionBtn}
+                        onClick={handleQuickAddAlbum}
+                        disabled={albumBusy || !albumInput.trim()}
+                        aria-label="Add to Album"
+                    >
+                        {albumBusy ? (
+                            <Loader2 className={`${styles.iconSm} ${styles.spinning}`} />
+                        ) : (
+                            <Plus className={styles.iconSm} />
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 });
 

@@ -10,7 +10,8 @@ export default function AlbumsPage() {
     const [albums, setAlbums] = useState<AlbumItem[] | null>(null);
     const [error, setError] = useState<string>("");
 
-    const loadAlbums = useCallback(async () => {
+    useEffect(() => {
+    const loadAlbums = async () => {
         const result = await AlbumLister();
         if (!result.ok) {
             setError(result.error.message || "Failed to load albums.");
@@ -18,11 +19,10 @@ export default function AlbumsPage() {
             setError("");
             setAlbums(result.value);
         }
-    }, []);
+    };
 
-    useEffect(() => {
-        loadAlbums();
-    }, [loadAlbums]);
+    loadAlbums();
+    }, []); 
 
     return (
         <section aria-label="Albums Management" className={styles.wrap}>
