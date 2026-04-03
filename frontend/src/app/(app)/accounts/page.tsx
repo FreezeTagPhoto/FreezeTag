@@ -94,7 +94,7 @@ export default function Home() {
                         <button
                             type="button"
                             className={`${styles.account_item} ${styles.account_item_button}`}
-                            disabled={!UserHasPerm(currentUser, "write:user")}
+                            disabled={!UserHasPerm(currentUser, "write:user") || isCurrent(user.id)}
                             onClick={async () => {
                                 setTogglingVisibility(user.id);
                                 const nextMode =
@@ -120,15 +120,15 @@ export default function Home() {
                         >
                             {user.visibility_mode === 0 ? (
                                 <Lock className={styles.icon} />
-                            ) : user.visibility_mode === 2 ? (
+                            ) : user.visibility_mode === 1 ? (
                                 <Eye className={styles.icon} />
                             ) : (
                                 <EyeOff className={styles.icon} />
                             )}
-                            <p className={styles.account_item_label}>
+                            <p className={`${styles.account_item_label} ${styles.visibility_label}`}>
                                 {user.visibility_mode === 0
                                     ? "Whitelisted"
-                                    : user.visibility_mode === 2
+                                    : user.visibility_mode === 1
                                       ? "Blacklisted"
                                       : "All"}
                             </p>
