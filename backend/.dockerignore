@@ -1,0 +1,8 @@
+/coverage
+/gl-codequality.json
+/mocks/
+/data/
+/cmd/docs/
+.env
+**/.venv/
+/.vscode
