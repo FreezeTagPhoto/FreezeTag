@@ -127,10 +127,10 @@ export default function Home() {
                             )}
                             <p className={styles.account_item_label}>
                                 {user.visibility_mode === 0
-                                    ? "Private"
+                                    ? "Whitelisted"
                                     : user.visibility_mode === 2
-                                      ? "Public"
-                                      : "Followers"}
+                                      ? "Blacklisted"
+                                      : "All"}
                             </p>
                         </button>
                         <button
