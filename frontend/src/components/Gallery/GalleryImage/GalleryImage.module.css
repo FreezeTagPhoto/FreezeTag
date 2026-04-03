@@ -15,14 +15,14 @@
 .image_container:focus-visible,
 .image_container_fake_focus {
     outline: none;
-    box-shadow: 0px 0px 2px 4px var(--accent1);
+    box-shadow: 0px 0px 2px 2px var(--accent2);
 }
 
 /* special case for visibility */
 [data-theme-type="light"] .image_container:focus-visible,
 [data-theme-type="light"] .image_container_fake_focus {
     outline: none;
-    box-shadow: 0px 0px 2px 4px var(--accent2);
+    box-shadow: 0px 0px 2px 2px var(--accent2);
 }
 
 .image {

@@ -1,7 +1,7 @@
 .mapWrap {
     margin-top: 10px;
     border-radius: var(--border-radius);
-    overflow: hidden;
+    overflow: visible;
     position: relative;
 }
 
@@ -10,6 +10,7 @@
     height: 140px;
     border-radius: var(--border-radius);
     isolation: isolate;
+    overflow: hidden;
 }
 
 .mapContainer :global(.leaflet-container) {
@@ -29,9 +30,15 @@
     gap: 4px;
     margin-top: 6px;
     font-size: 0.78rem;
-    color: var(--accent2);
+    /* color: var(--accent1); */
+    color: color-mix(in srgb, var(--accent1) 75%, var(--text));
     text-decoration: underline;
     transition: color 120ms ease;
+}
+
+.osmLink:hover {
+    color: var(--accent2);
+    text-decoration: underline;
 }
 
 .osmLinkIcon {

@@ -27,6 +27,10 @@
     background-clip: content-box;
 }
 
+.viewerSidebar :is(button, a, input, select, textarea):focus-visible {
+    outline: 1px solid var(--accent2);
+}
+
 .sidebarTitle {
     margin: 0 0 16px;
     font-size: 0.95rem;
@@ -81,7 +85,6 @@
 
 .headerIconButton:focus-visible {
     outline: 2px solid var(--accent2);
-    outline-offset: 2px;
 }
 
 .headerIconButton:disabled {
@@ -100,10 +103,6 @@
 .dangerButton:hover {
     background: var(--red);
     color: var(--base);
-}
-
-.dangerButton:focus-visible {
-    outline-color: var(--red);
 }
 
 .spinning {
@@ -279,8 +278,10 @@
     gap: 8px;
     align-items: center;
     padding-top: 10px;
-    /* margin-top: -5px; */
-    margin-top: 0px;
+    padding-right: 4px;
+    padding-bottom: 4px;
+    padding-left: 4px;
+    margin-top: 0;
     max-height: calc(10px + 50px + 15px + 35px);
     overflow: hidden auto;
 
@@ -288,6 +289,7 @@
     overflow-wrap: normal;
     min-width: 0;
     max-width: 100%;
+    box-sizing: border-box;
 
     scrollbar-width: thin;
     scrollbar-color: var(--surface1) var(--mantle);
@@ -301,9 +303,17 @@
     border-radius: 999px;
 }
 
+.tagPillsWrap:focus-visible {
+    outline: none;
+}
+
 .tagPill {
     height: 28px;
     padding: 0 10px;
+}
+
+.tagPill:focus-visible {
+    outline: none;
 }
 
 .tagTokenWrap {

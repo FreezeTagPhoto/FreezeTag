@@ -682,6 +682,20 @@
 }
 
 .osmLink {
+    color: color-mix(in srgb, var(--accent1) 75%, var(--text));
+    text-decoration: underline;
+}
+
+.osmLink:hover {
     color: var(--accent2);
     text-decoration: underline;
 }
+
+/* .osmLink {
+    color: var(--accent2);
+    text-decoration: underline;
+}
+
+.osmLink:hover {
+    color: var(--accent1);
+} */
