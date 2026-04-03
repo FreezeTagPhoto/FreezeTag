@@ -149,7 +149,7 @@
     transform: translateY(-50%);
     width: 18px;
     height: 18px;
-    color: var(--blue);
+    color: var(--accent2);
     pointer-events: none;
 }
 

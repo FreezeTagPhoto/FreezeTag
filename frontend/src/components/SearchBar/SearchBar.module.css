@@ -36,7 +36,7 @@
 
     border: var(--border-info);
     background: var(--base);
-    color: var(--blue);
+    color: var(--accent2);
 
     display: grid;
     place-items: center;
@@ -54,7 +54,7 @@
 }
 
 .iconOn {
-    color: var(--blue);
+    color: var(--accent2);
 }
 
 .iconDisabled {
@@ -98,7 +98,7 @@
 }
 
 .search:focus {
-    border-color: var(--blue);
+    border-color: var(--accent1);
     /* box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 20%, transparent); */
 }
 

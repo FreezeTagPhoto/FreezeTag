@@ -205,12 +205,11 @@
 .pillChoice:focus-visible {
     outline: none;
     border-color: var(--accent2);
-    box-shadow: 0 0 0 4px var(--accent1);
 }
 
 .pillChoiceActive {
     background: var(--surface1);
-    border-color: var(--accent2);
+    border-color: var(--accent1);
 }
 
 .pillChoiceActive:hover {
@@ -302,12 +301,11 @@
 .sortCell:focus-visible {
     outline: none;
     border-color: var(--accent2);
-    box-shadow: 0 0 0 4px var(--accent1);
 }
 
 .sortCellActive {
     background: var(--surface1);
-    border-color: var(--accent2);
+    border-color: var(--accent1);
 }
 
 .sortCellActive:hover {
