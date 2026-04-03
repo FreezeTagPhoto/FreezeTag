@@ -1,0 +1,42 @@
+.mapWrap {
+    margin-top: 10px;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    position: relative;
+}
+
+.mapContainer {
+    width: 100%;
+    height: 140px;
+    border-radius: var(--border-radius);
+    isolation: isolate;
+}
+
+.mapContainer :global(.leaflet-container) {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--border-radius);
+    background: var(--surface0);
+}
+
+.mapContainer :global(.leaflet-control-attribution) {
+    display: none;
+}
+
+.osmLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 0.78rem;
+    color: var(--accent2);
+    text-decoration: underline;
+    transition: color 120ms ease;
+}
+
+.osmLinkIcon {
+    width: 11px;
+    height: 11px;
+    flex: 0 0 11px;
+    display: block;
+}
