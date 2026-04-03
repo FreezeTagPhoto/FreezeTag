@@ -25,6 +25,11 @@ import {
     UnitsSetter,
     type UnitSystem,
 } from "@/common/units/UnitManager";
+import {
+    MapEnabledGetter,
+    MapEnabledSetter,
+    MAP_CHANGED_EVENT,
+} from "@/common/map/MapManager";
 import PasswordChanger from "@/api/auth/passwordchanger";
 import ProfilePictureGetter from "@/api/users/profilepicturegetter";
 import ProfilePictureSetter from "@/api/users/profilepicturesetter";
@@ -306,6 +311,7 @@ export default function SettingsPage() {
 
     const [theme, setTheme] = useState<ThemeName>("Catppuccin Mocha");
     const [units, setUnits] = useState<UnitSystem>("metric");
+    const [mapEnabled, setMapEnabled] = useState(true);
 
     const [customDarkColors, setCustomDarkColors] = useState<CustomColors>({
         ...MOCHA_ACCENT_DEFAULTS,
@@ -341,6 +347,8 @@ export default function SettingsPage() {
         const initialUnits = UnitsGetter();
         setUnits(initialUnits);
         ApplyUnits(initialUnits);
+
+        setMapEnabled(MapEnabledGetter());
     }, []);
 
     const resetPw = () => {
@@ -743,6 +751,73 @@ export default function SettingsPage() {
                                     />
                                     <span className={styles.segmentText}>
                                         Imperial
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={styles.fieldRow}>
+                        <div className={styles.fieldText}>
+                            <div id="map-label" className={styles.label}>
+                                Map widget
+                            </div>
+                            <p className={styles.hint}>
+                                Note: This feature sends requests to{" "}
+                                <a
+                                    className={styles.osmLink}
+                                    href="https://www.openstreetmap.org"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    OpenStreetMap
+                                </a>
+                                {". "}
+                                <br />
+                                Disable this feature if you don&apos;t want that.
+                            </p>
+                        </div>
+
+                        <div className={styles.control}>
+                            <div
+                                className={styles.segmented}
+                                role="radiogroup"
+                                aria-labelledby="map-label"
+                            >
+                                <label className={styles.segment}>
+                                    <input
+                                        type="radio"
+                                        name="map"
+                                        value="on"
+                                        checked={mapEnabled}
+                                        onChange={() => {
+                                            setMapEnabled(true);
+                                            MapEnabledSetter(true);
+                                            window.dispatchEvent(
+                                                new Event(MAP_CHANGED_EVENT),
+                                            );
+                                        }}
+                                    />
+                                    <span className={styles.segmentText}>
+                                        On
+                                    </span>
+                                </label>
+
+                                <label className={styles.segment}>
+                                    <input
+                                        type="radio"
+                                        name="map"
+                                        value="off"
+                                        checked={!mapEnabled}
+                                        onChange={() => {
+                                            setMapEnabled(false);
+                                            MapEnabledSetter(false);
+                                            window.dispatchEvent(
+                                                new Event(MAP_CHANGED_EVENT),
+                                            );
+                                        }}
+                                    />
+                                    <span className={styles.segmentText}>
+                                        Off
                                     </span>
                                 </label>
                             </div>

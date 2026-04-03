@@ -684,3 +684,8 @@
     height: 16px;
     flex: 0 0 auto;
 }
+
+.osmLink {
+    color: var(--accent2);
+    text-decoration: underline;
+}
