@@ -60,7 +60,13 @@ export default function Config({ onClose, plugin }: ConfigProps) {
 
     const resetDefaultField = (field: string) => {
         setFormData((prevState) => {
-            const newState = { ...prevState, [field]: fields[field].default };
+            let newState;
+            if (fields[field].default) {
+                newState = { ...prevState, [field]: fields[field].default };
+            } else {
+                const { [field]: _, ...removed } = prevState;
+                newState = removed;
+            }
             if (fields[field]?.value === newState[field]) {
                 const { [field]: _, ...newerState } = newState;
                 return newerState;
