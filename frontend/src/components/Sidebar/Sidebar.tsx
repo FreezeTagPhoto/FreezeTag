@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import logoUrl from "@/icons/freezetag+text.svg";
-import cubeLogoUrl from "@/icons/freezetag.svg";
+import logo from "@/icons/freezetag+text.svg";
+import logoLight from "@/icons/freezetag+text+light.svg";
+import cubeLogo from "@/icons/freezetag.svg";
 import styles from "./Sidebar.module.css";
 import LogoutHandler from "@/api/auth/logouthandler";
 
@@ -181,10 +182,25 @@ export default function Sidebar({
     const { profilePictureVersion } = useContext(ProfilePictureContext);
     const userPerms = useMemo(() => ExtractPermsList(user) ?? [], [user]);
 
+    const [isLightTheme, setIsLightTheme] = useState(false);
+
     const [username, setUsername] = useState<string>("");
     const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
         null,
     );
+
+    useEffect(() => {
+        const update = () => {
+            setIsLightTheme(
+                document.documentElement.getAttribute("data-theme-type") ===
+                    "light",
+            );
+        };
+        update();
+        window.addEventListener("freezetag:theme-changed", update);
+        return () =>
+            window.removeEventListener("freezetag:theme-changed", update);
+    }, []);
 
     useEffect(() => {
         if (!user) return;
@@ -256,7 +272,13 @@ export default function Sidebar({
                     onClick={() => onMobileClose?.()}
                 >
                     <Image
-                        src={collapsed ? cubeLogoUrl : logoUrl}
+                        src={
+                            collapsed
+                                ? cubeLogo
+                                : isLightTheme
+                                  ? logoLight
+                                  : logo
+                        }
                         alt="FreezeTag"
                         fill
                         priority
