@@ -1,4 +1,7 @@
 #!/bin/sh
+SCRIPT=$(readlink -f "$0")
+SCRIPTPATH=$(dirname "$SCRIPT")
+
 if ! command -v docker >/dev/null 2>&1
 then
     echo "docker could not be found. Please install docker: https://docs.docker.com/engine/install/" >&2
@@ -19,13 +22,13 @@ then
         echo "Found docker-compose."
         echo "warning: docker-compose is a legacy version of docker compose, and may not work correctly" >&2
         echo "Consider updating: https://docs.docker.com/compose/install/" >&2
+
+        echo "Building the app."
+        docker-compose -f $SCRIPTPATH/../compose.yaml build
     fi
 else
     echo "Found docker compose."
+
+    echo "Building the app."
+    docker compose -f $SCRIPTPATH/../compose.yaml build
 fi
-
-echo "Building the app."
-SCRIPT=$(readlink -f "$0")
-SCRIPTPATH=$(dirname "$SCRIPT")
-
-docker compose -f $SCRIPTPATH/../compose.yaml build
