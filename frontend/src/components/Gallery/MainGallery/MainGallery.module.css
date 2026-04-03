@@ -13,8 +13,7 @@
     align-content: flex-start;
     width: 100%;
     box-sizing: border-box;
-    overflow-y: scroll;
-    max-height: 10%;
+    overflow: visible;
 }
 
 .grid::after {

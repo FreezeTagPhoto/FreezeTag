@@ -17,8 +17,10 @@
     border-bottom: var(--border-info);
     background: var(--base);
     z-index: 20;
-    position: absolute;
+    position: relative;
     width: 100%;
+    box-sizing: border-box;
+    flex: 0 0 auto;
 }
 
 .bar > * {
