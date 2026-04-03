@@ -167,12 +167,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
     viewerRef,
     onDeleted,
 }: MetadataSidebarProps) {
-    const comboRef = useRef<HTMLDivElement | null>(null);
-    const [tagDropdownMaxHeight, setTagDropdownMaxHeight] =
-        useState<number>(240);
-
     const metadata = useCachedById<ImageMetadata>(selectedId, MetadataGetter);
-    const tags = useCachedById<string[]>(selectedId, TagGetter);
 
     const metadataLoading = metadata.loading;
     const metadataError = metadata.error.some ? metadata.error.value : null;
@@ -180,144 +175,10 @@ const MetadataSidebar = memo(function MetadataSidebar({
         ? metadata.current.value
         : null;
 
-    const tagsById = tags.byId;
-    const setTagsById = tags.setById;
-    const tagsLoading = tags.loading;
-    const tagsError = tags.error.some ? tags.error.value : null;
-
-    const currentTags: string[] | null = tags.current.some
-        ? tags.current.value
-        : null;
-
-    const [mapEnabled, setMapEnabled] = useState(() => MapEnabledGetter());
-
-    useEffect(() => {
-        const refresh = () => setMapEnabled(MapEnabledGetter());
-        const onStorage = (e: StorageEvent) => {
-            if (e.key === MAP_ENABLED_STORAGE_KEY) refresh();
-        };
-        window.addEventListener(MAP_CHANGED_EVENT, refresh);
-        window.addEventListener("storage", onStorage);
-        return () => {
-            window.removeEventListener(MAP_CHANGED_EVENT, refresh);
-            window.removeEventListener("storage", onStorage);
-        };
-    }, []);
-
     const [fileBusy, setFileBusy] = useState<null | "download" | "delete">(
         null,
     );
     const [fileError, setFileError] = useState<string | null>(null);
-
-    const {
-        tagMutating,
-        tagMutateError,
-        tagMutateInfo,
-
-        addOpen,
-        addValue,
-        addInputRef,
-        addEditorRef,
-
-        allTagsLoading,
-        tagSuggestPinned,
-        tagSuggestIndex,
-
-        tagSuggestions,
-        showTagDropdown,
-
-        openAddEditor,
-        closeAddEditor,
-
-        removeTagFromSelected,
-        addTagToSelected,
-
-        toggleSuggestions,
-
-        onAddValueChange,
-        onAddInputFocusOrClick,
-        onAddInputKeyDown,
-
-        setTagSuggestIndex,
-    } = useTagEditor({
-        selectedId,
-        tagsById,
-        setTagsById,
-        currentTags,
-    });
-
-    useLayoutEffect(() => {
-        if (!showTagDropdown) return;
-
-        const compute = () => {
-            const viewerEl = viewerRef.current;
-            const comboEl = comboRef.current;
-            if (!viewerEl || !comboEl) return;
-
-            const viewerRect = viewerEl.getBoundingClientRect();
-            const comboRect = comboEl.getBoundingClientRect();
-            const dropdownTop = comboRect.bottom + 8;
-            const bottomPad = 12;
-            const available = viewerRect.bottom - dropdownTop - bottomPad;
-
-            const clamped = Math.max(120, Math.min(240, Math.floor(available)));
-            setTagDropdownMaxHeight(clamped);
-        };
-
-        compute();
-        window.addEventListener("resize", compute);
-        return () => window.removeEventListener("resize", compute);
-    }, [showTagDropdown, viewerRef]);
-
-    const tagPillsScrollRef = useRef<HTMLDivElement>(null);
-    const [tagPillsFade, setTagPillsFade] = useState({
-        top: false,
-        bottom: false,
-    });
-    const syncRafRef = useRef<number | null>(null);
-
-    // schedules at most one RAF per frame so rapid scroll events don't queue up multiple state updates
-    const syncTagPillsFade = useCallback(() => {
-        if (syncRafRef.current !== null)
-            cancelAnimationFrame(syncRafRef.current);
-        syncRafRef.current = requestAnimationFrame(() => {
-            syncRafRef.current = null;
-            const el = tagPillsScrollRef.current;
-            if (!el) {
-                setTagPillsFade({ top: false, bottom: false });
-                return;
-            }
-            const overflow = el.scrollHeight > el.clientHeight + 1;
-            if (!overflow) {
-                setTagPillsFade({ top: false, bottom: false });
-                return;
-            }
-            const atTop = el.scrollTop <= 1;
-            const atBottom =
-                el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-            setTagPillsFade((prev) => {
-                const next = { top: !atTop, bottom: !atBottom };
-                return prev.top === next.top && prev.bottom === next.bottom
-                    ? prev
-                    : next;
-            });
-        });
-    }, []);
-
-    useEffect(() => {
-        const el = tagPillsScrollRef.current;
-        if (!el) return;
-        syncTagPillsFade();
-        const ro = new ResizeObserver(() => syncTagPillsFade());
-        ro.observe(el);
-        return () => {
-            if (syncRafRef.current !== null) {
-                cancelAnimationFrame(syncRafRef.current);
-                syncRafRef.current = null;
-            }
-            ro.disconnect();
-        };
-    }, [currentTags, syncTagPillsFade]);
 
     const stopClick = (e: ReactMouseEvent<HTMLElement>) => e.stopPropagation();
 
@@ -428,22 +289,6 @@ const MetadataSidebar = memo(function MetadataSidebar({
         setAnsweringHook(form_receive_hook_name);
     };
 
-    // -- Album Support --
-    const [albumInput, setAlbumInput] = useState("");
-    const [isPublic, setIsPublic] = useState(true); // default to public for quick add
-    const [allAlbums, setAllAlbums] = useState<{ id: number; name: string }[]>(
-        [],
-    );
-    // want this later
-    const [albumBusy, setAlbumBusy] = useState(false);
-
-    useEffect(() => {
-        AlbumLister().then((res) => {
-            if (res.ok) setAllAlbums(res.value);
-        });
-        setAlbumInput("");
-    }, [selectedId]);
-
     return (
         <aside className={styles.viewerSidebar}>
             <div className={styles.detailsHeaderRow}>
@@ -524,9 +369,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatResultion(
-                                currentMetadata.width,
-                                currentMetadata.height,
-                            )
+                                  currentMetadata.width,
+                                  currentMetadata.height,
+                              )
                             : "—"}
                     </div>
                 </div>
@@ -539,8 +384,8 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLongDate(currentMetadata.dateTaken, {
-                                timeZone: "UTC",
-                            })
+                                  timeZone: "UTC",
+                              })
                             : "—"}
                     </div>
                 </div>
@@ -567,9 +412,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLocation(
-                                currentMetadata.latitude,
-                                currentMetadata.longitude,
-                            )
+                                  currentMetadata.latitude,
+                                  currentMetadata.longitude,
+                              )
                             : "—"}
                     </div>
                     {mapEnabled &&
@@ -590,296 +435,18 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatCamera(
-                                currentMetadata.cameraMake,
-                                currentMetadata.cameraModel,
-                            )
+                                  currentMetadata.cameraMake,
+                                  currentMetadata.cameraModel,
+                              )
                             : "—"}
                     </div>
                 </div>
 
-                <div className={styles.detailRow}>
-                    <div className={styles.detailLabelRow}>
-                        <Tag className={styles.detailLabelIcon} />
-                        <span className={styles.detailLabel}>Tags</span>
-                    </div>
-
-                    <div className={styles.detailValue}>
-                        {tagsError ? (
-                            <span className={styles.inlineError}>
-                                {tagsError}
-                            </span>
-                        ) : tagsLoading && currentTags === null ? (
-                            "Loading…"
-                        ) : (
-                            <>
-                                {tagMutateError && (
-                                    <div
-                                        className={styles.errorBanner}
-                                        style={{ marginBottom: 10 }}
-                                    >
-                                        Tag update failed: {tagMutateError}
-                                    </div>
-                                )}
-
-                                {tagMutateInfo && !tagMutateError && (
-                                    <div className={styles.tagInfoBanner}>
-                                        {tagMutateInfo}
-                                    </div>
-                                )}
-
-                                <div className={styles.tagWrap}>
-                                    <div
-                                        className={styles.tagPillsFadeWrap}
-                                        data-fade-top={
-                                            tagPillsFade.top ? "1" : "0"
-                                        }
-                                        data-fade-bottom={
-                                            tagPillsFade.bottom ? "1" : "0"
-                                        }
-                                    >
-                                        <div
-                                            ref={tagPillsScrollRef}
-                                            className={styles.tagPillsWrap}
-                                            onScroll={syncTagPillsFade}
-                                        >
-                                            {(currentTags ?? []).map((t) => (
-                                                <TagToken
-                                                    key={t}
-                                                    tag={t}
-                                                    disabled={tagMutating}
-                                                    onSearch={onSearchTag}
-                                                    onRemove={
-                                                        removeTagFromSelected
-                                                    }
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {!addOpen ? (
-                                        <button
-                                            type="button"
-                                            className={`${styles.tagAddIconPill} ${styles.tagAddPill}`}
-                                            onMouseDown={(e) =>
-                                                e.preventDefault()
-                                            }
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                void openAddEditor();
-                                            }}
-                                            aria-label="Add tag"
-                                            title="Add tag"
-                                        >
-                                            <Plus className={styles.iconSm} />
-                                        </button>
-                                    ) : (
-                                        <div
-                                            ref={addEditorRef}
-                                            className={styles.tagAddEditor}
-                                            onClick={stopClick}
-                                        >
-                                            <div
-                                                ref={comboRef}
-                                                className={
-                                                    styles.tagAddInputWrap
-                                                }
-                                                role="combobox"
-                                                aria-label="New tag"
-                                                aria-haspopup="listbox"
-                                                aria-expanded={showTagDropdown}
-                                                aria-controls="tag-suggest-dropdown"
-                                            >
-                                                <input
-                                                    ref={addInputRef}
-                                                    className={
-                                                        styles.tagAddInput
-                                                    }
-                                                    placeholder={
-                                                        allTagsLoading
-                                                            ? "Loading tags..."
-                                                            : "Add tag..."
-                                                    }
-                                                    value={addValue}
-                                                    onChange={(e) =>
-                                                        onAddValueChange(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    onFocus={
-                                                        onAddInputFocusOrClick
-                                                    }
-                                                    onClick={
-                                                        onAddInputFocusOrClick
-                                                    }
-                                                    onKeyDown={(e) => {
-                                                        if (
-                                                            e.key ===
-                                                            "ArrowDown" ||
-                                                            e.key ===
-                                                            "ArrowUp" ||
-                                                            e.key === "Enter"
-                                                        ) {
-                                                            e.preventDefault();
-                                                            void onAddInputKeyDown(
-                                                                e.key,
-                                                            );
-                                                        }
-                                                    }}
-                                                    aria-autocomplete="list"
-                                                />
-
-                                                <button
-                                                    type="button"
-                                                    className={
-                                                        styles.tagSuggestToggle
-                                                    }
-                                                    aria-label={
-                                                        tagSuggestPinned
-                                                            ? "Hide tag suggestions"
-                                                            : "Show tag suggestions"
-                                                    }
-                                                    aria-pressed={
-                                                        tagSuggestPinned
-                                                    }
-                                                    onMouseDown={(e) =>
-                                                        e.preventDefault()
-                                                    }
-                                                    onClick={async () => {
-                                                        await toggleSuggestions();
-                                                    }}
-                                                    title={
-                                                        tagSuggestPinned
-                                                            ? "Hide suggestions"
-                                                            : "Show suggestions"
-                                                    }
-                                                >
-                                                    <MoreHorizontal
-                                                        className={styles.icon}
-                                                    />
-                                                </button>
-
-                                                {showTagDropdown && (
-                                                    <div
-                                                        id="tag-suggest-dropdown"
-                                                        className={
-                                                            styles.tagSuggestDropdown
-                                                        }
-                                                        role="listbox"
-                                                        aria-label="Tag suggestions"
-                                                    >
-                                                        <div
-                                                            className={
-                                                                styles.tagSuggestScroll
-                                                            }
-                                                            style={{
-                                                                maxHeight:
-                                                                    tagDropdownMaxHeight,
-                                                            }}
-                                                        >
-                                                            {allTagsLoading ? (
-                                                                <div
-                                                                    className={
-                                                                        styles.tagSuggestLoading
-                                                                    }
-                                                                >
-                                                                    Loading…
-                                                                </div>
-                                                            ) : (
-                                                                tagSuggestions.map(
-                                                                    (
-                                                                        t,
-                                                                        idx,
-                                                                    ) => (
-                                                                        <button
-                                                                            key={
-                                                                                t
-                                                                            }
-                                                                            type="button"
-                                                                            className={`${styles.tagSuggestItem
-                                                                                } ${idx ===
-                                                                                    tagSuggestIndex
-                                                                                    ? styles.tagSuggestActive
-                                                                                    : ""
-                                                                                }`}
-                                                                            onMouseDown={(
-                                                                                ev,
-                                                                            ) =>
-                                                                                ev.preventDefault()
-                                                                            }
-                                                                            onMouseEnter={() =>
-                                                                                setTagSuggestIndex(
-                                                                                    idx,
-                                                                                )
-                                                                            }
-                                                                            onClick={() => {
-                                                                                void addTagToSelected(
-                                                                                    t,
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            <span
-                                                                                className={
-                                                                                    styles.tagSuggestLabel
-                                                                                }
-                                                                            >
-                                                                                {
-                                                                                    t
-                                                                                }
-                                                                            </span>
-                                                                        </button>
-                                                                    ),
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* icon-only add */}
-                                            <button
-                                                type="button"
-                                                className={`${styles.tagActionBtn}`}
-                                                onMouseDown={(e) =>
-                                                    e.preventDefault()
-                                                }
-                                                onClick={() => {
-                                                    void addTagToSelected();
-                                                }}
-                                                disabled={
-                                                    tagMutating ||
-                                                    addValue.trim().length === 0
-                                                }
-                                                aria-label="Add tag"
-                                                title="Add"
-                                            >
-                                                <PlusCircle
-                                                    className={styles.icon}
-                                                />
-                                            </button>
-
-                                            {/* icon-only cancel */}
-                                            <button
-                                                type="button"
-                                                className={`${styles.tagActionBtn}`}
-                                                onMouseDown={(e) =>
-                                                    e.preventDefault()
-                                                }
-                                                onClick={closeAddEditor}
-                                                disabled={tagMutating}
-                                                aria-label="Cancel"
-                                                title="Cancel"
-                                            >
-                                                <XCircle
-                                                    className={styles.icon}
-                                                />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
+                <TagSection
+                    selectedId={selectedId}
+                    viewerRef={viewerRef}
+                    onSearchTag={onSearchTag}
+                />
                 <AlbumSection selectedId={selectedId} />
             </div>
             {selectingPlugin && (
@@ -910,10 +477,14 @@ type AlbumSectionProps = {
     selectedId: number;
 };
 
-const AlbumSection = memo(function AlbumSection({ selectedId }: AlbumSectionProps) {
+const AlbumSection = memo(function AlbumSection({
+    selectedId,
+}: AlbumSectionProps) {
     const [albumInput, setAlbumInput] = useState("");
     const [isPublic, setIsPublic] = useState(true);
-    const [allAlbums, setAllAlbums] = useState<{ id: number; name: string }[]>([]);
+    const [allAlbums, setAllAlbums] = useState<{ id: number; name: string }[]>(
+        [],
+    );
     const [albumBusy, setAlbumBusy] = useState(false);
     const [showAlbumDropdown, setShowAlbumDropdown] = useState(false);
 
@@ -973,7 +544,9 @@ const AlbumSection = memo(function AlbumSection({ selectedId }: AlbumSectionProp
 
             <div className={styles.detailValue}>
                 <div className={styles.albumInputRow}>
-                    <div className={`${styles.tagAddInputWrap} ${styles.albumInputWrap}`}>
+                    <div
+                        className={`${styles.tagAddInputWrap} ${styles.albumInputWrap}`}
+                    >
                         <input
                             className={`${styles.tagAddInput} ${styles.albumInputField}`}
                             placeholder="Type or select..."
@@ -994,11 +567,17 @@ const AlbumSection = memo(function AlbumSection({ selectedId }: AlbumSectionProp
                         />
 
                         {showAlbumDropdown && (
-                            <div className={`${styles.tagSuggestDropdown} ${styles.albumDropdown}`}>
+                            <div
+                                className={`${styles.tagSuggestDropdown} ${styles.albumDropdown}`}
+                            >
                                 <div className={styles.tagSuggestScroll}>
                                     {filteredAlbums.length === 0 ? (
-                                        <div className={`${styles.tagSuggestItem} ${styles.albumSuggestEmpty}`}>
-                                            <span className={`${styles.tagSuggestLabel} ${styles.albumSuggestLabelNew}`}>
+                                        <div
+                                            className={`${styles.tagSuggestItem} ${styles.albumSuggestEmpty}`}
+                                        >
+                                            <span
+                                                className={`${styles.tagSuggestLabel} ${styles.albumSuggestLabelNew}`}
+                                            >
                                                 {albumInput
                                                     ? `Create new: "${albumInput}"`
                                                     : "No albums found"}
@@ -1009,14 +588,22 @@ const AlbumSection = memo(function AlbumSection({ selectedId }: AlbumSectionProp
                                             <button
                                                 key={a.id}
                                                 type="button"
-                                                className={styles.tagSuggestItem}
-                                                onMouseDown={(e) => e.preventDefault()}
+                                                className={
+                                                    styles.tagSuggestItem
+                                                }
+                                                onMouseDown={(e) =>
+                                                    e.preventDefault()
+                                                }
                                                 onClick={() => {
                                                     setAlbumInput(a.name);
                                                     setShowAlbumDropdown(false);
                                                 }}
                                             >
-                                                <span className={styles.tagSuggestLabel}>
+                                                <span
+                                                    className={
+                                                        styles.tagSuggestLabel
+                                                    }
+                                                >
                                                     {a.name}
                                                 </span>
                                             </button>
@@ -1037,7 +624,9 @@ const AlbumSection = memo(function AlbumSection({ selectedId }: AlbumSectionProp
                             title={isPublic ? "Public" : "Private"}
                         >
                             {isPublic ? (
-                                <Globe className={`${styles.iconSm} ${styles.publicIcon}`} />
+                                <Globe
+                                    className={`${styles.iconSm} ${styles.publicIcon}`}
+                                />
                             ) : (
                                 <Lock className={styles.iconSm} />
                             )}
@@ -1052,12 +641,387 @@ const AlbumSection = memo(function AlbumSection({ selectedId }: AlbumSectionProp
                         aria-label="Add to Album"
                     >
                         {albumBusy ? (
-                            <Loader2 className={`${styles.iconSm} ${styles.spinning}`} />
+                            <Loader2
+                                className={`${styles.iconSm} ${styles.spinning}`}
+                            />
                         ) : (
                             <Plus className={styles.iconSm} />
                         )}
                     </button>
                 </div>
+            </div>
+        </div>
+    );
+});
+
+type TagSectionProps = {
+    selectedId: number;
+    viewerRef: RefObject<HTMLDivElement | null>;
+    onSearchTag?: (tag: string) => void;
+};
+
+const TagSection = memo(function TagSection({
+    selectedId,
+    viewerRef,
+    onSearchTag,
+}: TagSectionProps) {
+    const tags = useCachedById<string[]>(selectedId, TagGetter);
+    const tagsById = tags.byId;
+    const setTagsById = tags.setById;
+    const tagsLoading = tags.loading;
+    const tagsError = tags.error.some ? tags.error.value : null;
+    const currentTags: string[] | null = tags.current.some
+        ? tags.current.value
+        : null;
+
+    const {
+        tagMutating,
+        tagMutateError,
+        tagMutateInfo,
+        addOpen,
+        addValue,
+        addInputRef,
+        addEditorRef,
+        allTagsLoading,
+        tagSuggestPinned,
+        tagSuggestIndex,
+        tagSuggestions,
+        showTagDropdown,
+        openAddEditor,
+        closeAddEditor,
+        removeTagFromSelected,
+        addTagToSelected,
+        toggleSuggestions,
+        onAddValueChange,
+        onAddInputFocusOrClick,
+        onAddInputKeyDown,
+        setTagSuggestIndex,
+    } = useTagEditor({
+        selectedId,
+        tagsById,
+        setTagsById,
+        currentTags,
+    });
+
+    // Layout calculation for dropdown
+    const comboRef = useRef<HTMLDivElement | null>(null);
+    const [tagDropdownMaxHeight, setTagDropdownMaxHeight] =
+        useState<number>(240);
+
+    useLayoutEffect(() => {
+        if (!showTagDropdown) return;
+
+        const compute = () => {
+            const viewerEl = viewerRef.current;
+            const comboEl = comboRef.current;
+            if (!viewerEl || !comboEl) return;
+
+            const viewerRect = viewerEl.getBoundingClientRect();
+            const comboRect = comboEl.getBoundingClientRect();
+            const dropdownTop = comboRect.bottom + 8;
+            const bottomPad = 12;
+            const available = viewerRect.bottom - dropdownTop - bottomPad;
+
+            const clamped = Math.max(120, Math.min(240, Math.floor(available)));
+            setTagDropdownMaxHeight(clamped);
+        };
+
+        compute();
+        window.addEventListener("resize", compute);
+        return () => window.removeEventListener("resize", compute);
+    }, [showTagDropdown, viewerRef]);
+
+    // Scroll fade logic
+    const tagPillsScrollRef = useRef<HTMLDivElement>(null);
+    const [tagPillsFade, setTagPillsFade] = useState({
+        top: false,
+        bottom: false,
+    });
+    const syncRafRef = useRef<number | null>(null);
+
+    const syncTagPillsFade = useCallback(() => {
+        if (syncRafRef.current !== null)
+            cancelAnimationFrame(syncRafRef.current);
+        syncRafRef.current = requestAnimationFrame(() => {
+            syncRafRef.current = null;
+            const el = tagPillsScrollRef.current;
+            if (!el) {
+                setTagPillsFade({ top: false, bottom: false });
+                return;
+            }
+            const overflow = el.scrollHeight > el.clientHeight + 1;
+            if (!overflow) {
+                setTagPillsFade({ top: false, bottom: false });
+                return;
+            }
+            const atTop = el.scrollTop <= 1;
+            const atBottom =
+                el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+            setTagPillsFade((prev) => {
+                const next = { top: !atTop, bottom: !atBottom };
+                return prev.top === next.top && prev.bottom === next.bottom
+                    ? prev
+                    : next;
+            });
+        });
+    }, []);
+
+    useEffect(() => {
+        const el = tagPillsScrollRef.current;
+        if (!el) return;
+        syncTagPillsFade();
+        const ro = new ResizeObserver(() => syncTagPillsFade());
+        ro.observe(el);
+        return () => {
+            if (syncRafRef.current !== null) {
+                cancelAnimationFrame(syncRafRef.current);
+                syncRafRef.current = null;
+            }
+            ro.disconnect();
+        };
+    }, [currentTags, syncTagPillsFade]);
+
+    const stopClick = (e: ReactMouseEvent<HTMLElement>) => e.stopPropagation();
+
+    return (
+        <div className={styles.detailRow}>
+            <div className={styles.detailLabelRow}>
+                <Tag className={styles.detailLabelIcon} />
+                <span className={styles.detailLabel}>Tags</span>
+            </div>
+
+            <div className={styles.detailValue}>
+                {tagsError ? (
+                    <span className={styles.inlineError}>{tagsError}</span>
+                ) : tagsLoading && currentTags === null ? (
+                    "Loading…"
+                ) : (
+                    <>
+                        {tagMutateError && (
+                            <div
+                                className={styles.errorBanner}
+                                style={{ marginBottom: 10 }}
+                            >
+                                Tag update failed: {tagMutateError}
+                            </div>
+                        )}
+
+                        {tagMutateInfo && !tagMutateError && (
+                            <div className={styles.tagInfoBanner}>
+                                {tagMutateInfo}
+                            </div>
+                        )}
+
+                        <div className={styles.tagWrap}>
+                            <div
+                                className={styles.tagPillsFadeWrap}
+                                data-fade-top={tagPillsFade.top ? "1" : "0"}
+                                data-fade-bottom={
+                                    tagPillsFade.bottom ? "1" : "0"
+                                }
+                            >
+                                <div
+                                    ref={tagPillsScrollRef}
+                                    className={styles.tagPillsWrap}
+                                    onScroll={syncTagPillsFade}
+                                >
+                                    {(currentTags ?? []).map((t) => (
+                                        <TagToken
+                                            key={t}
+                                            tag={t}
+                                            disabled={tagMutating}
+                                            onSearch={onSearchTag}
+                                            onRemove={removeTagFromSelected}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {!addOpen ? (
+                                <button
+                                    type="button"
+                                    className={`${styles.tagAddIconPill} ${styles.tagAddPill}`}
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        void openAddEditor();
+                                    }}
+                                    aria-label="Add tag"
+                                    title="Add tag"
+                                >
+                                    <Plus className={styles.iconSm} />
+                                </button>
+                            ) : (
+                                <div
+                                    ref={addEditorRef}
+                                    className={styles.tagAddEditor}
+                                    onClick={stopClick}
+                                >
+                                    <div
+                                        ref={comboRef}
+                                        className={styles.tagAddInputWrap}
+                                        role="combobox"
+                                        aria-label="New tag"
+                                        aria-haspopup="listbox"
+                                        aria-expanded={showTagDropdown}
+                                        aria-controls="tag-suggest-dropdown"
+                                    >
+                                        <input
+                                            ref={addInputRef}
+                                            className={styles.tagAddInput}
+                                            placeholder={
+                                                allTagsLoading
+                                                    ? "Loading tags..."
+                                                    : "Add tag..."
+                                            }
+                                            value={addValue}
+                                            onChange={(e) =>
+                                                onAddValueChange(e.target.value)
+                                            }
+                                            onFocus={onAddInputFocusOrClick}
+                                            onClick={onAddInputFocusOrClick}
+                                            onKeyDown={(e) => {
+                                                if (
+                                                    e.key === "ArrowDown" ||
+                                                    e.key === "ArrowUp" ||
+                                                    e.key === "Enter"
+                                                ) {
+                                                    e.preventDefault();
+                                                    void onAddInputKeyDown(
+                                                        e.key,
+                                                    );
+                                                }
+                                            }}
+                                            aria-autocomplete="list"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            className={styles.tagSuggestToggle}
+                                            aria-label={
+                                                tagSuggestPinned
+                                                    ? "Hide tag suggestions"
+                                                    : "Show tag suggestions"
+                                            }
+                                            aria-pressed={tagSuggestPinned}
+                                            onMouseDown={(e) =>
+                                                e.preventDefault()
+                                            }
+                                            onClick={async () => {
+                                                await toggleSuggestions();
+                                            }}
+                                            title={
+                                                tagSuggestPinned
+                                                    ? "Hide suggestions"
+                                                    : "Show suggestions"
+                                            }
+                                        >
+                                            <MoreHorizontal
+                                                className={styles.icon}
+                                            />
+                                        </button>
+
+                                        {showTagDropdown && (
+                                            <div
+                                                id="tag-suggest-dropdown"
+                                                className={
+                                                    styles.tagSuggestDropdown
+                                                }
+                                                role="listbox"
+                                                aria-label="Tag suggestions"
+                                            >
+                                                <div
+                                                    className={
+                                                        styles.tagSuggestScroll
+                                                    }
+                                                    style={{
+                                                        maxHeight:
+                                                            tagDropdownMaxHeight,
+                                                    }}
+                                                >
+                                                    {allTagsLoading ? (
+                                                        <div
+                                                            className={
+                                                                styles.tagSuggestLoading
+                                                            }
+                                                        >
+                                                            Loading…
+                                                        </div>
+                                                    ) : (
+                                                        tagSuggestions.map(
+                                                            (t, idx) => (
+                                                                <button
+                                                                    key={t}
+                                                                    type="button"
+                                                                    className={`${styles.tagSuggestItem} ${
+                                                                        idx ===
+                                                                        tagSuggestIndex
+                                                                            ? styles.tagSuggestActive
+                                                                            : ""
+                                                                    }`}
+                                                                    onMouseDown={(
+                                                                        ev,
+                                                                    ) =>
+                                                                        ev.preventDefault()
+                                                                    }
+                                                                    onMouseEnter={() =>
+                                                                        setTagSuggestIndex(
+                                                                            idx,
+                                                                        )
+                                                                    }
+                                                                    onClick={() => {
+                                                                        void addTagToSelected(
+                                                                            t,
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    <span
+                                                                        className={
+                                                                            styles.tagSuggestLabel
+                                                                        }
+                                                                    >
+                                                                        {t}
+                                                                    </span>
+                                                                </button>
+                                                            ),
+                                                        )
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        className={styles.tagActionBtn}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => void addTagToSelected()}
+                                        disabled={
+                                            tagMutating ||
+                                            addValue.trim().length === 0
+                                        }
+                                        aria-label="Add tag"
+                                        title="Add"
+                                    >
+                                        <PlusCircle className={styles.icon} />
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className={styles.tagActionBtn}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={closeAddEditor}
+                                        disabled={tagMutating}
+                                        aria-label="Cancel"
+                                        title="Cancel"
+                                    >
+                                        <XCircle className={styles.icon} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
