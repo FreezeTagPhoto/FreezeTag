@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import logo from "@/icons/freezetag+text.svg";
+import logoLight from "@/icons/freezetag+text+light.svg";
 
 import LoginHandler from "@/api/auth/loginhandler";
 import UserCreator from "@/api/users/usercreator";
@@ -135,10 +136,25 @@ export function normalizeErrorMessage(raw: string, status?: number) {
 type Mode = "login" | "create";
 
 export function Logo() {
+    const [isLight, setIsLight] = useState(false);
+
+    useEffect(() => {
+        const update = () => {
+            setIsLight(
+                document.documentElement.getAttribute("data-theme-type") ===
+                    "light",
+            );
+        };
+        update();
+        window.addEventListener("freezetag:theme-changed", update);
+        return () =>
+            window.removeEventListener("freezetag:theme-changed", update);
+    }, []);
+
     return (
         <div className={styles.logoWrap} aria-label="FreezeTag">
             <Image
-                src={logo}
+                src={isLight ? logoLight : logo}
                 alt="FreezeTag"
                 fill
                 priority
