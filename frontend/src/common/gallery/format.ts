@@ -1,6 +1,8 @@
 export function formatLocation(lat: number | null, lon: number | null): string {
     if (lat === null || lon === null) return "—";
-    return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    const latDir = lat >= 0 ? "N" : "S";
+    const lonDir = lon >= 0 ? "E" : "W";
+    return `${Math.abs(lat).toFixed(5)}°${latDir}, ${Math.abs(lon).toFixed(5)}°${lonDir}`;
 }
 
 export function formatCamera(
