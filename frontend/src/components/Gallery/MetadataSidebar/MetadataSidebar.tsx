@@ -428,7 +428,6 @@ const MetadataSidebar = memo(function MetadataSidebar({
         setAnsweringHook(form_receive_hook_name);
     };
 
-
     // -- Album Support --
     const [albumInput, setAlbumInput] = useState("");
     const [isPublic, setIsPublic] = useState(true); // default to public for quick add
