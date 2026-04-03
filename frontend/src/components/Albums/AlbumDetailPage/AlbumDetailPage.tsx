@@ -188,9 +188,11 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
 
         if (!rename) {
             return (
+                /* only the album owner can rename */
                 <button
                     className={styles.titleField}
                     onClick={() => setRename(true)}
+                    disabled={!isOwner || busy}
                 >
                     <h1 className={styles.title}>{name}</h1>
                 </button>
