@@ -6,19 +6,19 @@ import (
 
 type AlbumCreateRequest struct {
 	Name           string                `json:"name" binding:"required"`
-	VisibilityMode database.PrivacyLevel `json:"visibility_mode" binding:"oneof=0 1 2"`
+	VisibilityMode database.GlobalPrivacy `json:"visibility_mode" binding:"oneof=0 1 2"`
 }
 
 type AlbumModifyRequest struct {
 	AlbumId        database.AlbumID       `json:"album_id" binding:"required"`
 	Name           *string                `json:"name,omitempty"`
-	VisibilityMode *database.PrivacyLevel `json:"visibility_mode,omitempty" binding:"omitempty,oneof=0 1"`
+	VisibilityMode *database.GlobalPrivacy `json:"visibility_mode,omitempty" binding:"omitempty,oneof=0 1"`
 }
 
 type UserAlbumPermissionRequest struct {
 	AlbumId      database.AlbumID      `json:"album_id" binding:"required"`
 	TargetUserId database.UserID       `json:"target_user_id" binding:"required"`
-	Permission   database.PrivacyLevel `json:"permission" binding:"oneof=0 1 2"`
+	Permission   database.GlobalPrivacy `json:"permission" binding:"oneof=0 1 2"`
 }
 
 type AlbumImageRequest struct {
