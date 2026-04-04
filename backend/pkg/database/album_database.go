@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
 )
 
 type GlobalPrivacy uint8
@@ -515,10 +516,23 @@ func (db SqliteAlbumDatabase) GetAlbumSharedUsers(albumId AlbumID, userId UserID
 		return nil, fmt.Errorf("forbidden: user %v does not have access to album %v", userId, albumId)
 	}
 	query := ` 
-		SELECT userId, access_level FROM AlbumAccess WHERE albumId = ? ORDER BY userId ASC
+		SELECT u.id,
+			CASE 
+				WHEN a.userId = u.id THEN 2 
+				WHEN aa.access_level IS NOT NULL THEN aa.access_level 
+				WHEN u.visibility_mode = 0 THEN 0 
+				WHEN a.visibility_mode = 0 THEN 0 
+				WHEN a.visibility_mode = 1 THEN 1 
+				ELSE 0 
+			END AS permission
+		FROM Users u
+		JOIN Albums a ON a.id = ?
+		LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = u.id
+		ORDER BY u.id ASC
 	`
 	rows, err := db.db.Query(query, albumId)
 	if err != nil {
+		log.Printf("Error querying shared users for album %v: %v", albumId, err)
 		return nil, err
 	}
 	defer rows.Close() //nolint:errcheck

@@ -503,7 +503,7 @@ const AlbumSection = memo(function AlbumSection({
     const currentUser = useContext(UserContext);
     useEffect(() => {
         AlbumLister().then((res) => {
-            if (res.ok) setAllAlbums(res.value.filter((album) => album.user_privacy === 2 || album.owner_id === currentUser?.user_id ));
+            if (res.ok) setAllAlbums(res.value?.filter((album) => album.user_privacy === 2 || album.owner_id === currentUser?.user_id ));
         });
         setAlbumInput("");
     }, [selectedId]);
