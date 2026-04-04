@@ -1,0 +1,21 @@
+{
+  "name": "image-generator",
+  "friendly_name": "Image Prompt Generator",
+  "main_file": "main.py",
+  "hooks": {
+    "get_prompt_form": {
+      "friendly_name": "Get Form for Prompt",
+      "type": "generate_form",
+      "signature": "image_batch"
+    },
+    "process_prompt_form": {
+      "friendly_name": "Make Image from Prompt",
+      "type": "manual_trigger",
+      "signature": "form_data"
+    }
+  },
+  "version": "1.0.0",
+  "requirements": "requirements.txt",
+  "python_version": "3.13",
+  "default_disabled": true
+}
