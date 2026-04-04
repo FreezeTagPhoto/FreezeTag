@@ -404,14 +404,27 @@ const MetadataSidebar = memo(function MetadataSidebar({
                 console.error(job_output.error);
                 return;
             }
-            if (job_output.value.completed?.length === 1) {
+            if (!job_output.value.in_progress?.length) {
                 break;
             }
             // Wait 1 second before asking again
             await new Promise((r) => setTimeout(r, 1000));
         }
 
-        const form: string | undefined = job_output.value.completed[0]?.form;
+        if (job_output.value.failed?.length) {
+            console.error(
+                `Job failed! Reasons: ${JSON.stringify(job_output.value.failed)}`,
+            );
+            return;
+        }
+
+        if (!job_output.value.completed) {
+            console.error(`No completed jobs for some reason!`);
+            return;
+        }
+
+        const form: string | undefined = job_output.value.completed[0].form;
+
         if (!form) {
             console.error(`Did not get form out of plugin! Job UUID: ${uuid}`);
             return;
