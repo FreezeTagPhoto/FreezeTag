@@ -26,7 +26,7 @@ def process_prompt_form(data):
         device_map="balanced",
     )
 
-    image = image = pipeline(prompt).images[0]
+    image = pipeline(prompt).images[0]
 
     return AddImageAction("".join(prompt.split()), "png", image)
 
