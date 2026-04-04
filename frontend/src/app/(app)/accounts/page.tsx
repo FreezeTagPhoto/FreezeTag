@@ -9,9 +9,9 @@ import {
     SquarePen,
     Trash,
     UserPlus,
-    Eye,
-    EyeOff,
-    Lock,
+    BookCheck,
+    BookLock,
+    BookMinus
 } from "lucide-react";
 import DeleteUser from "@/components/ManageUsers/DeleteUser/DeleteUser";
 import ModifyPerms from "@/components/ManageUsers/ModifyPerms/ModifyPerms";
@@ -119,11 +119,11 @@ export default function Home() {
                             }}
                         >
                             {user.visibility_mode === 0 ? (
-                                <Lock className={styles.icon} />
+                                <BookLock className={styles.icon} />
                             ) : user.visibility_mode === 1 ? (
-                                <Eye className={styles.icon} />
+                                <BookMinus className={styles.icon} />
                             ) : (
-                                <EyeOff className={styles.icon} />
+                                <BookCheck className={styles.icon} />
                             )}
                             <p className={`${styles.account_item_label} ${styles.visibility_label}`}>
                                 {user.visibility_mode === 0
