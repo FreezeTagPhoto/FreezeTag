@@ -47,6 +47,7 @@ const navItems: NavItem[] = [
         icon: Upload,
         permissions: ["write:files"],
     },
+    { label: "Albums", href: "/albums", icon: Album },
     { label: "Jobs", href: "/jobs", icon: Briefcase },
     {
         label: "Tags",
@@ -62,7 +63,6 @@ const navItems: NavItem[] = [
         permissions: ["read:user"],
     },
     { label: "Settings", href: "/settings", icon: Settings },
-    { label: "Albums", href: "/albums", icon: Album },
 ];
 
 function AccountInfo({

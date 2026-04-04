@@ -25,11 +25,11 @@ type AlbumSharedUser struct {
 }
 
 type Album struct {
-	Id             AlbumID        `json:"id"`
-	Name           string         `json:"name"`
-	OwnerId        UserID         `json:"owner_id"`
-	AlbumPrivacy   GlobalPrivacy  `json:"album_privacy"`
-	VisbilityLevel UserPrivacy `json:"visibility_level"`
+	Id             AlbumID       `json:"id"`
+	Name           string        `json:"name"`
+	OwnerId        UserID        `json:"owner_id"`
+	AlbumPrivacy   GlobalPrivacy `json:"album_privacy"`
+	VisbilityLevel UserPrivacy   `json:"visibility_level"`
 }
 
 type AlbumDatabase interface {
@@ -202,7 +202,7 @@ func (db SqliteAlbumDatabase) GetAlbums(userID UserID) ([]Album, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var albums []Album
 	for rows.Next() {
@@ -288,7 +288,7 @@ func (db SqliteAlbumDatabase) GetAssociatedAlbums(imageID ImageId, userID UserID
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var albums []Album
 	for rows.Next() {
