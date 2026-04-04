@@ -1,4 +1,5 @@
 build-essential
+git
 libmagickwand-7.q16-dev
 wget
 cmake

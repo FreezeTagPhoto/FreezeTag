@@ -3,7 +3,9 @@ FROM debian:trixie-slim
 
 ARG BUILDTAGS=sqlite_math_functions,sqlite_foreign_keys
 
-RUN --mount=type=bind,source=./,target=/backend <<EOF
+RUN --mount=type=bind,source=./,target=/backend,rw <<EOF
+#!/bin/bash
+echo $PWD
 set -e
 # install basic packages
 export DEBIAN_FRONTEND=noninteractive
@@ -21,6 +23,7 @@ cd /backend
 # install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 # install server
+make docs
 go mod tidy -diff
 go install -tags=$BUILDTAGS ./cmd/server
 go clean -cache
@@ -30,7 +33,7 @@ EOF
 RUN mkdir -p /backend
 
 COPY <<EOT /backend/entrypoint.sh
-#!/bin/sh
+#!/bin/bash
 export PATH="$(go env GOPATH)/bin:$PATH"
 server
 EOT
