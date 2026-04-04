@@ -837,3 +837,8 @@
         border-color 120ms ease,
         transform 80ms ease;
 }
+
+.viewerSidebar input:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
