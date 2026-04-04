@@ -54,7 +54,7 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
             setName(albumRes.value.name);
             setOwnerId(albumRes.value.owner_id);
             setVisibilityMode(albumRes.value.album_privacy);
-            setCanWrite((albumRes.value.user_privacy === 2) || isOwner);
+            setCanWrite(albumRes.value.user_privacy === 2 || isOwner);
         }
         if (imagesRes.ok) setImageIds(imagesRes.value);
 
@@ -290,7 +290,6 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                             PermissionLevel
                         >();
                         for (const entry of permsRes.value) {
-                            console.log(`User ${entry.user_id} has permission ${entry.permission}`);
                             nextPermissions.set(
                                 entry.user_id,
                                 entry.permission > 0
@@ -391,7 +390,12 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                                     <UserShareRow
                                         key={user.id}
                                         user={user}
-                                        currentLevel={permissions.get(user.id) ?? (albumVisibilityMode >= 1 ? "whitelist" : "blacklist")}
+                                        currentLevel={
+                                            permissions.get(user.id) ??
+                                            (albumVisibilityMode >= 1
+                                                ? "whitelist"
+                                                : "blacklist")
+                                        }
                                         saving={shareSavingUserId === user.id}
                                         onChange={(newLevel) =>
                                             handlePermissionChange(

@@ -384,9 +384,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatResultion(
-                                currentMetadata.width,
-                                currentMetadata.height,
-                            )
+                                  currentMetadata.width,
+                                  currentMetadata.height,
+                              )
                             : "—"}
                     </div>
                 </div>
@@ -399,8 +399,8 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLongDate(currentMetadata.dateTaken, {
-                                timeZone: "UTC",
-                            })
+                                  timeZone: "UTC",
+                              })
                             : "—"}
                     </div>
                 </div>
@@ -427,9 +427,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLocation(
-                                currentMetadata.latitude,
-                                currentMetadata.longitude,
-                            )
+                                  currentMetadata.latitude,
+                                  currentMetadata.longitude,
+                              )
                             : "—"}
                     </div>
                     {mapEnabled &&
@@ -450,9 +450,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatCamera(
-                                currentMetadata.cameraMake,
-                                currentMetadata.cameraModel,
-                            )
+                                  currentMetadata.cameraMake,
+                                  currentMetadata.cameraModel,
+                              )
                             : "—"}
                     </div>
                 </div>
@@ -503,11 +503,18 @@ const AlbumSection = memo(function AlbumSection({
     const currentUser = useContext(UserContext);
     useEffect(() => {
         AlbumLister().then((res) => {
-            if (res.ok) setAllAlbums(res.value?.filter((album) => album.user_privacy === 2 || album.owner_id === currentUser?.user_id ));
+            if (res.ok) {
+                setAllAlbums(
+                    res.value?.filter(
+                        (album) =>
+                            album.user_privacy === 2 ||
+                            album.owner_id === currentUser?.user_id,
+                    ),
+                );
+            }
         });
         setAlbumInput("");
-    }, [selectedId]);
-
+    }, [selectedId, currentUser?.user_id]);
 
     const [albumBusy, setAlbumBusy] = useState(false);
     const [showAlbumDropdown, setShowAlbumDropdown] = useState(false);
@@ -516,7 +523,6 @@ const AlbumSection = memo(function AlbumSection({
         allAlbums?.filter((a) =>
             a.name.toLowerCase().includes(albumInput.toLowerCase()),
         ) || [];
-
 
     const handleQuickAddAlbum = async () => {
         const name = albumInput.trim();
@@ -971,11 +977,12 @@ const TagSection = memo(function TagSection({
                                                                 <button
                                                                     key={t}
                                                                     type="button"
-                                                                    className={`${styles.tagSuggestItem} ${idx ===
-                                                                            tagSuggestIndex
+                                                                    className={`${styles.tagSuggestItem} ${
+                                                                        idx ===
+                                                                        tagSuggestIndex
                                                                             ? styles.tagSuggestActive
                                                                             : ""
-                                                                        }`}
+                                                                    }`}
                                                                     onMouseDown={(
                                                                         ev,
                                                                     ) =>

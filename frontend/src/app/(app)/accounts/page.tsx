@@ -11,7 +11,7 @@ import {
     UserPlus,
     BookCheck,
     BookLock,
-    BookMinus
+    BookMinus,
 } from "lucide-react";
 import DeleteUser from "@/components/ManageUsers/DeleteUser/DeleteUser";
 import ModifyPerms from "@/components/ManageUsers/ModifyPerms/ModifyPerms";
@@ -94,7 +94,10 @@ export default function Home() {
                         <button
                             type="button"
                             className={`${styles.account_item} ${styles.account_item_button}`}
-                            disabled={!UserHasPerm(currentUser, "write:user") || isCurrent(user.id)}
+                            disabled={
+                                !UserHasPerm(currentUser, "write:user") ||
+                                isCurrent(user.id)
+                            }
                             onClick={async () => {
                                 setTogglingVisibility(user.id);
                                 const nextMode =
@@ -125,7 +128,9 @@ export default function Home() {
                             ) : (
                                 <BookCheck className={styles.icon} />
                             )}
-                            <p className={`${styles.account_item_label} ${styles.visibility_label}`}>
+                            <p
+                                className={`${styles.account_item_label} ${styles.visibility_label}`}
+                            >
                                 {user.visibility_mode === 0
                                     ? "Whitelisted"
                                     : user.visibility_mode === 1

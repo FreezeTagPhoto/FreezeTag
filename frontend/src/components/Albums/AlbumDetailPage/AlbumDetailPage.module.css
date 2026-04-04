@@ -291,7 +291,7 @@
     border-bottom: 2px solid var(--text);
 }
 
-.titleField:hover:not(:focus,:disabled) {
+.titleField:hover:not(:focus, :disabled) {
     border-bottom: 2px solid
         color-mix(in srgb, var(--subtext1) 50%, transparent);
 }
