@@ -6,7 +6,8 @@ export type AlbumData = {
     id: number;
     name: string;
     owner_id: number;
-    visibility_mode: number;
+    album_privacy: number;
+    user_privacy: number;
 };
 
 export type AlbumResult = Result<
