@@ -38,7 +38,7 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
     const [visibilitySaving, setVisibilitySaving] = useState(false);
 
     const canShowShare = true;
-    const canManageSharing = true;
+    const [canWrite, setCanWrite] = useState(false);
 
     const currentUser = useContext(UserContext);
     const [ownerId, setOwnerId] = useState<number | null>(null);
@@ -54,20 +54,24 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
         if (albumRes.ok) {
             setName(albumRes.value.name);
             setOwnerId(albumRes.value.owner_id);
-            setVisibilityMode(albumRes.value.visibility_mode);
+            setVisibilityMode(albumRes.value.album_privacy);
+            setCanWrite(albumRes.value.user_privacy === 2);
         }
         if (imagesRes.ok) setImageIds(imagesRes.value);
 
         setLoading(false);
     }, [albumId]);
 
-    const handleRename = async (newName: string) => {
+    const handleRename = async (newName: string, oldName: string) => {
         if (!newName.trim() || newName === name) return;
+        setName(newName);
         setBusy(true);
         const result = await AlbumRenamer(albumId, newName);
         if (result.ok) {
             setName(newName);
         } else {
+            setName(oldName);
+            
             console.error("Failed to rename album:", result.error);
         }
         setBusy(false);
@@ -119,7 +123,7 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                     <RenameableTitle
                         key={name}
                         name={name}
-                        onRename={handleRename}
+                        onRename={(newName) => handleRename(newName, name)}
                         busy={busy}
                     />
                     {!loading && (
@@ -148,24 +152,25 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                                 albumId={albumId}
                                 albumVisibilityMode={visibilityMode}
                             />
+                            <button
+                                className={`${styles.button} ${styles.buttonDanger}`}
+                                onClick={handleDelete}
+                                disabled={busy}
+                            >
+                                <Trash2 size={16} /> Delete
+                            </button>
+                            <Link
+                                href={`/albums/${encodeURIComponent(albumId.toString())}/edit`}
+                                className={styles.button}
+                            >
+                                <Plus size={16} /> Manage Images
+                            </Link>
                         </>
                     )}
+                    {canWrite && (
+                        <div>
 
-                    <button
-                        className={`${styles.button} ${styles.buttonDanger}`}
-                        onClick={handleDelete}
-                        disabled={busy}
-                    >
-                        <Trash2 size={16} /> Delete
-                    </button>
-
-                    {canManageSharing && (
-                        <Link
-                            href={`/albums/${encodeURIComponent(albumId.toString())}/edit`}
-                            className={styles.button}
-                        >
-                            <Plus size={16} /> Manage Images
-                        </Link>
+                        </div>
                     )}
                 </div>
             </header>
