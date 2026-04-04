@@ -41,13 +41,13 @@ type NavItem = {
 
 const navItems: NavItem[] = [
     { label: "Gallery", href: "/", icon: Images },
+    { label: "Albums", href: "/albums", icon: Album },
     {
         label: "Upload",
         href: "/upload",
         icon: Upload,
         permissions: ["write:files"],
     },
-    { label: "Albums", href: "/albums", icon: Album },
     { label: "Jobs", href: "/jobs", icon: Briefcase },
     {
         label: "Tags",

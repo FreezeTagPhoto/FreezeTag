@@ -9,6 +9,7 @@ import {
     memo,
     RefObject,
     MouseEvent as ReactMouseEvent,
+    useContext,
 } from "react";
 import styles from "./MetadataSidebar.module.css";
 import MetadataGetter, { ImageMetadata } from "@/api/metadata/metadatagetter";
@@ -110,6 +111,7 @@ const TagToken = memo(function TagToken({
 import AlbumCreator from "@/api/albums/albumcreator";
 import AlbumImageAdder from "@/api/albums/albumimageadder";
 import AlbumLister from "@/api/albums/albumlister";
+import { UserContext } from "@/components/Auth/AuthGate";
 
 export type MetadataSidebarProps = {
     selectedId: number;
@@ -382,9 +384,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatResultion(
-                                  currentMetadata.width,
-                                  currentMetadata.height,
-                              )
+                                currentMetadata.width,
+                                currentMetadata.height,
+                            )
                             : "—"}
                     </div>
                 </div>
@@ -397,8 +399,8 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLongDate(currentMetadata.dateTaken, {
-                                  timeZone: "UTC",
-                              })
+                                timeZone: "UTC",
+                            })
                             : "—"}
                     </div>
                 </div>
@@ -425,9 +427,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatLocation(
-                                  currentMetadata.latitude,
-                                  currentMetadata.longitude,
-                              )
+                                currentMetadata.latitude,
+                                currentMetadata.longitude,
+                            )
                             : "—"}
                     </div>
                     {mapEnabled &&
@@ -448,9 +450,9 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     <div className={styles.detailValue}>
                         {currentMetadata
                             ? formatCamera(
-                                  currentMetadata.cameraMake,
-                                  currentMetadata.cameraModel,
-                              )
+                                currentMetadata.cameraMake,
+                                currentMetadata.cameraModel,
+                            )
                             : "—"}
                     </div>
                 </div>
@@ -498,6 +500,15 @@ const AlbumSection = memo(function AlbumSection({
     const [allAlbums, setAllAlbums] = useState<{ id: number; name: string }[]>(
         [],
     );
+    const currentUser = useContext(UserContext);
+    useEffect(() => {
+        AlbumLister().then((res) => {
+            if (res.ok) setAllAlbums(res.value.filter((album) => album.user_privacy === 2 || album.owner_id === currentUser?.user_id ));
+        });
+        setAlbumInput("");
+    }, [selectedId]);
+
+
     const [albumBusy, setAlbumBusy] = useState(false);
     const [showAlbumDropdown, setShowAlbumDropdown] = useState(false);
 
@@ -506,12 +517,6 @@ const AlbumSection = memo(function AlbumSection({
             a.name.toLowerCase().includes(albumInput.toLowerCase()),
         ) || [];
 
-    useEffect(() => {
-        AlbumLister().then((res) => {
-            if (res.ok) setAllAlbums(res.value);
-        });
-        setAlbumInput("");
-    }, [selectedId]);
 
     const handleQuickAddAlbum = async () => {
         const name = albumInput.trim();
@@ -966,12 +971,11 @@ const TagSection = memo(function TagSection({
                                                                 <button
                                                                     key={t}
                                                                     type="button"
-                                                                    className={`${styles.tagSuggestItem} ${
-                                                                        idx ===
-                                                                        tagSuggestIndex
+                                                                    className={`${styles.tagSuggestItem} ${idx ===
+                                                                            tagSuggestIndex
                                                                             ? styles.tagSuggestActive
                                                                             : ""
-                                                                    }`}
+                                                                        }`}
                                                                     onMouseDown={(
                                                                         ev,
                                                                     ) =>

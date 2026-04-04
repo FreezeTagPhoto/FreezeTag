@@ -6,6 +6,8 @@ export type AlbumItem = {
     id: number;
     name: string;
     owner_id: number;
+    album_privacy: number;
+    user_privacy: number;
 };
 
 export type AlbumListResult = Result<
@@ -36,6 +38,5 @@ async function list_albums_with_handler(
             message: bodyText || "Failed to load albums.",
         });
     }
-
     return result;
 }

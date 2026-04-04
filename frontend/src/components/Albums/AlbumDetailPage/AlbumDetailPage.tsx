@@ -37,7 +37,6 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
     const [visibilityMode, setVisibilityMode] = useState<number>(0);
     const [visibilitySaving, setVisibilitySaving] = useState(false);
 
-    const canShowShare = true;
     const [canWrite, setCanWrite] = useState(false);
 
     const currentUser = useContext(UserContext);
@@ -55,12 +54,12 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
             setName(albumRes.value.name);
             setOwnerId(albumRes.value.owner_id);
             setVisibilityMode(albumRes.value.album_privacy);
-            setCanWrite(albumRes.value.user_privacy === 2);
+            setCanWrite((albumRes.value.user_privacy === 2) || isOwner);
         }
         if (imagesRes.ok) setImageIds(imagesRes.value);
 
         setLoading(false);
-    }, [albumId]);
+    }, [albumId, isOwner]);
 
     const handleRename = async (newName: string, oldName: string) => {
         if (!newName.trim() || newName === name) return;
@@ -71,7 +70,7 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
             setName(newName);
         } else {
             setName(oldName);
-            
+
             console.error("Failed to rename album:", result.error);
         }
         setBusy(false);
@@ -127,12 +126,12 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                         busy={busy}
                     />
                     {!loading && (
-                        <p className={styles.meta}>{imageIds.length} images</p>
+                        <p className={styles.meta}>{imageIds?.length} images</p>
                     )}
                 </div>
 
                 <div className={styles.settings}>
-                    {canShowShare && isOwner && (
+                    {canWrite && (
                         <>
                             <button
                                 type="button"
@@ -166,11 +165,6 @@ export default function AlbumDetailPage({ albumId }: { albumId: number }) {
                                 <Plus size={16} /> Manage Images
                             </Link>
                         </>
-                    )}
-                    {canWrite && (
-                        <div>
-
-                        </div>
                     )}
                 </div>
             </header>
