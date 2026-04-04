@@ -9,7 +9,6 @@ export type FormDataPluginRunnerResult = Result<
 
 export type FormDataPluginRunnerResponse = string;
 
-// Pass in a single ID as a number if you want to use a single_image signature hook, otherwise use the array for image_batch
 export default async function FormDataPluginRunner(
     plugin: string,
     hook: string,

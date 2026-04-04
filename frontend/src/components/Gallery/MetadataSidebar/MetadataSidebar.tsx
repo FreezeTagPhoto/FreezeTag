@@ -367,12 +367,16 @@ const MetadataSidebar = memo(function MetadataSidebar({
     const pluginRunner = async (
         plugin_name: string,
         hook_name: string,
-        _hook_signature: string,
+        hook_signature: string,
         hook_type: string,
         form_receive_hook_name?: string,
     ) => {
         setSelectingPlugin(false);
-        const res_promise = PluginRunner(plugin_name, hook_name, selectedId);
+        const res_promise = PluginRunner(
+            plugin_name,
+            hook_name,
+            hook_signature === "image_batch" ? [selectedId] : selectedId,
+        );
         if (hook_type !== "generate_form") {
             router.replace("/jobs");
             return;
