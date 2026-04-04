@@ -5,29 +5,35 @@ import (
 	"fmt"
 )
 
-type PrivacyLevel uint8
-type VisbilityLevel uint8
+type GlobalPrivacy uint8
+type UserPrivacy uint8
+
+const (
+	VIS_PRIVATE UserPrivacy = iota
+	VIS_PUBLIC
+	VIS_ADMIN
+)
+
+const (
+	ALBUM_PRIVATE GlobalPrivacy = iota
+	ALBUM_PUBLIC
+)
 
 type AlbumSharedUser struct {
-	UserID     UserID       `json:"user_id"`
-	Permission PrivacyLevel `json:"permission"`
+	UserID     UserID        `json:"user_id"`
+	Permission GlobalPrivacy `json:"permission"`
 }
 
 type Album struct {
-	Id             AlbumID      `json:"id"`
-	Name           string       `json:"name"`
-	OwnerId        UserID       `json:"owner_id"`
-	VisibilityMode PrivacyLevel `json:"visibility_mode"`
+	Id             AlbumID        `json:"id"`
+	Name           string         `json:"name"`
+	OwnerId        UserID         `json:"owner_id"`
+	AlbumPrivacy   GlobalPrivacy  `json:"album_privacy"`
+	VisbilityLevel UserPrivacy `json:"visibility_level"`
 }
 
-const (
-	VisPrivate VisbilityLevel = iota
-	VisPublic
-	VisAdmin
-)
-
 type AlbumDatabase interface {
-	CreateAlbum(string, UserID, PrivacyLevel) (AlbumID, error)
+	CreateAlbum(string, UserID, GlobalPrivacy) (AlbumID, error)
 	SetImageAlbum(ImageId, AlbumID, UserID) error
 	RemoveAlbum(AlbumID, UserID) error
 	RenameAlbum(AlbumID, string, UserID) error
@@ -40,21 +46,21 @@ type AlbumDatabase interface {
 	GetAlbum(AlbumID, UserID) (Album, error)
 
 	GetAlbumSharedUsers(AlbumID, UserID) ([]AlbumSharedUser, error)
-	SetAlbumVisibility(AlbumID, PrivacyLevel, UserID) error
-	SetUserAlbumPermission(AlbumID, UserID, PrivacyLevel, UserID) error
+	SetAlbumVisibility(AlbumID, GlobalPrivacy, UserID) error
+	SetUserAlbumPermission(AlbumID, UserID, GlobalPrivacy, UserID) error
 }
 
 type SqliteAlbumDatabase struct {
 	db *sql.DB
 }
 
-func (db SqliteAlbumDatabase) getVisibilityMode(userID UserID) (VisbilityLevel, error) {
+func (db SqliteAlbumDatabase) getVisibilityMode(userID UserID) (UserPrivacy, error) {
 	var visibility int
 	if userID == 0 {
-		return VisAdmin, nil
+		return VIS_ADMIN, nil
 	}
 	err := db.db.QueryRow("SELECT visibility_mode FROM Users WHERE id = ?", userID).Scan(&visibility)
-	return VisbilityLevel(visibility), err
+	return UserPrivacy(visibility), err
 }
 
 func (db SqliteAlbumDatabase) userAuthorizedForAlbum(albumId AlbumID, userID UserID) (bool, error) {
@@ -65,9 +71,9 @@ func (db SqliteAlbumDatabase) userAuthorizedForAlbum(albumId AlbumID, userID Use
 		return false, err
 	}
 	switch userVisibility {
-	case VisAdmin:
+	case VIS_ADMIN:
 		return true, nil
-	case VisPublic:
+	case VIS_PUBLIC:
 		query := ` 
 			SELECT COUNT(*) FROM Albums a
 			LEFT JOIN AlbumAccess aa 
@@ -82,7 +88,7 @@ func (db SqliteAlbumDatabase) userAuthorizedForAlbum(albumId AlbumID, userID Use
 		args := []any{userID, albumId, userID}
 		err := db.db.QueryRow(query, args...).Scan(&count)
 		return count > 0, err
-	case VisPrivate:
+	case VIS_PRIVATE:
 		query := ` 
 			SELECT COUNT(*) FROM Albums a
 			LEFT JOIN AlbumAccess aa 
@@ -98,7 +104,7 @@ func (db SqliteAlbumDatabase) userAuthorizedForAlbum(albumId AlbumID, userID Use
 	}
 }
 
-func (db SqliteAlbumDatabase) CreateAlbum(name string, userId UserID, visibilityMode PrivacyLevel) (AlbumID, error) {
+func (db SqliteAlbumDatabase) CreateAlbum(name string, userId UserID, visibilityMode GlobalPrivacy) (AlbumID, error) {
 	var id int64
 	err := db.db.QueryRow("INSERT INTO Albums (album_name, userId, visibility_mode) VALUES (?, ?, ?) RETURNING id", name, userId, visibilityMode).Scan(&id)
 	if err != nil {
@@ -152,26 +158,40 @@ func (db SqliteAlbumDatabase) GetAlbums(userID UserID) ([]Album, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	switch userVisibility {
-	case VisAdmin:
-		query = "SELECT id, album_name, userId FROM Albums ORDER BY album_name ASC"
-	case VisPublic: //album is public or user has explicit access or user is owner of the album
+	case VIS_ADMIN:
+		query = "SELECT id, album_name, userId, visibility_mode, 2 AS vis_level FROM Albums ORDER BY album_name ASC"
+	case VIS_PUBLIC:
 		query = ` 
-			SELECT a.id, a.album_name, a.userId FROM Albums a 
-			LEFT JOIN AlbumAccess aa 
-			ON aa.albumId = a.id AND aa.userId = :uid
+			SELECT a.id, a.album_name, a.userId, a.visibility_mode,
+				   CASE 
+					   WHEN a.userId = :uid THEN 2
+					   WHEN aa.access_level IS NOT NULL THEN aa.access_level
+					   WHEN a.visibility_mode = 2 THEN 2
+					   WHEN a.visibility_mode = 1 THEN 1
+					   ELSE 0 
+				   END AS vis_level
+			FROM Albums a 
+			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = :uid
 			WHERE (a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
-			OR aa.access_level > 0 
-			OR a.userId = :uid
+			   OR aa.access_level > 0 
+			   OR a.userId = :uid
 			ORDER BY a.album_name ASC
 		`
 		args = []any{sql.Named("uid", userID)}
-	case VisPrivate: //explicitly invited to the album
+	case VIS_PRIVATE:
 		query = `
-			SELECT a.id, a.album_name, a.userId FROM Albums a
+			SELECT a.id, a.album_name, a.userId, a.visibility_mode,
+				   CASE 
+					   WHEN a.userId = :uid THEN 2
+					   WHEN aa.access_level IS NOT NULL THEN aa.access_level
+					   ELSE 0 
+				   END AS vis_level
+			FROM Albums a
 			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = :uid
 			WHERE aa.access_level > 0 OR a.userId = :uid
-			ORDER BY album_name ASC
+			ORDER BY a.album_name ASC
 		`
 		args = []any{sql.Named("uid", userID)}
 	default:
@@ -182,17 +202,26 @@ func (db SqliteAlbumDatabase) GetAlbums(userID UserID) ([]Album, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close() //nolint:errcheck
+	defer rows.Close()
 
 	var albums []Album
 	for rows.Next() {
 		var id AlbumID
 		var name string
 		var ownerId UserID
-		if err := rows.Scan(&id, &name, &ownerId); err != nil {
+		var albumPrivacy int
+		var visLevel int
+
+		if err := rows.Scan(&id, &name, &ownerId, &albumPrivacy, &visLevel); err != nil {
 			return nil, err
 		}
-		albums = append(albums, Album{Id: id, Name: name, OwnerId: ownerId})
+		albums = append(albums, Album{
+			Id:             id,
+			Name:           name,
+			OwnerId:        ownerId,
+			AlbumPrivacy:   GlobalPrivacy(albumPrivacy),
+			VisbilityLevel: UserPrivacy(visLevel),
+		})
 	}
 	return albums, rows.Err()
 }
@@ -200,51 +229,85 @@ func (db SqliteAlbumDatabase) GetAlbums(userID UserID) ([]Album, error) {
 func (db SqliteAlbumDatabase) GetAssociatedAlbums(imageID ImageId, userID UserID) ([]Album, error) {
 	var query string
 	var args []any
+
 	userVisibility, err := db.getVisibilityMode(userID)
 	if err != nil {
 		return nil, err
 	}
+
 	switch userVisibility {
-	case VisAdmin:
-		query = "SELECT DISTINCT albumId FROM AlbumImages WHERE imageId = :id"
-		args = []any{sql.Named("id", imageID)}
-	case VisPublic:
+	case VIS_ADMIN:
 		query = `
-			SELECT DISTINCT ai.albumId FROM AlbumImages ai
-			LEFT JOIN AlbumAccess aa ON aa.albumId = ai.albumId AND aa.userId = :uid
-			WHERE imageId = :id
-			AND ( 
-				(a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
-				OR aa.access_level > 0 
-				OR a.userId = :uid
-			)
+			SELECT a.id, a.album_name, a.userId, a.visibility_mode, 2 AS vis_level
+			FROM AlbumImages ai
+			JOIN Albums a ON ai.albumId = a.id
+			WHERE ai.imageId = :id
 		`
-	case VisPrivate:
+		args = []any{sql.Named("id", imageID)}
+	case VIS_PUBLIC:
 		query = `
-			SELECT DISTINCT ai.albumId FROM AlbumImages ai
-			LEFT JOIN AlbumAccess aa ON aa.albumId = ai.albumId AND aa.userId = :uid
-			WHERE imageId = :id 
-			AND (aa.access_level > 0 OR a.userId = :uid)
+			SELECT a.id, a.album_name, a.userId, a.visibility_mode,
+				   CASE 
+					   WHEN a.userId = :uid THEN 2
+					   WHEN aa.access_level IS NOT NULL THEN aa.access_level
+					   WHEN a.visibility_mode = 2 THEN 2
+					   WHEN a.visibility_mode = 1 THEN 1
+					   ELSE 0 
+				   END AS vis_level
+			FROM AlbumImages ai
+			JOIN Albums a ON ai.albumId = a.id
+			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = :uid
+			WHERE ai.imageId = :id
+			  AND ( 
+				  (a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
+				  OR aa.access_level > 0 
+				  OR a.userId = :uid
+			  )
+		`
+		args = []any{sql.Named("id", imageID), sql.Named("uid", userID)}
+	case VIS_PRIVATE:
+		query = `
+			SELECT a.id, a.album_name, a.userId, a.visibility_mode,
+				   CASE 
+					   WHEN a.userId = :uid THEN 2
+					   WHEN aa.access_level IS NOT NULL THEN aa.access_level
+					   ELSE 0 
+				   END AS vis_level
+			FROM AlbumImages ai
+			JOIN Albums a ON ai.albumId = a.id
+			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = :uid
+			WHERE ai.imageId = :id 
+			  AND (aa.access_level > 0 OR a.userId = :uid)
 		`
 		args = []any{sql.Named("id", imageID), sql.Named("uid", userID)}
 	default:
 		return nil, fmt.Errorf("invalid visibility mode for user %v", userID)
 	}
+
 	rows, err := db.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close() //nolint:errcheck
+	defer rows.Close()
 
 	var albums []Album
 	for rows.Next() {
 		var id AlbumID
 		var name string
 		var ownerId UserID
-		if err := rows.Scan(&id, &name, &ownerId); err != nil {
+		var albumPrivacy int
+		var visLevel int
+
+		if err := rows.Scan(&id, &name, &ownerId, &albumPrivacy, &visLevel); err != nil {
 			return nil, err
 		}
-		albums = append(albums, Album{Id: id, Name: name, OwnerId: ownerId})
+		albums = append(albums, Album{
+			Id:             id,
+			Name:           name,
+			OwnerId:        ownerId,
+			AlbumPrivacy:   GlobalPrivacy(albumPrivacy),
+			VisbilityLevel: UserPrivacy(visLevel),
+		})
 	}
 	return albums, rows.Err()
 }
@@ -353,10 +416,10 @@ func (db SqliteAlbumDatabase) GetAlbumIdByName(name string, userID UserID) (Albu
 	}
 
 	switch userVisibility {
-	case VisAdmin:
+	case VIS_ADMIN:
 		query = "SELECT id FROM Albums WHERE album_name = ? ORDER BY id ASC LIMIT 1"
 		args = []any{name}
-	case VisPublic:
+	case VIS_PUBLIC:
 		query = `
 			SELECT a.id FROM Albums a
 			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = ?
@@ -370,7 +433,7 @@ func (db SqliteAlbumDatabase) GetAlbumIdByName(name string, userID UserID) (Albu
 			LIMIT 1
 		`
 		args = []any{userID, name, userID, userID}
-	case VisPrivate:
+	case VIS_PRIVATE:
 		query = `
 			SELECT a.id FROM Albums a
 			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = ?
@@ -469,21 +532,21 @@ func (db SqliteAlbumDatabase) GetAlbumSharedUsers(albumId AlbumID, userId UserID
 		}
 		sharedUsers = append(sharedUsers, AlbumSharedUser{
 			UserID:     UserID(id),
-			Permission: PrivacyLevel(permission),
+			Permission: GlobalPrivacy(permission),
 		})
 	}
 
 	return sharedUsers, rows.Err()
 }
 
-func (db SqliteAlbumDatabase) SetAlbumVisibility(albumId AlbumID, mode PrivacyLevel, userID UserID) error {
+func (db SqliteAlbumDatabase) SetAlbumVisibility(albumId AlbumID, mode GlobalPrivacy, userID UserID) error {
 	userVis, err := db.getVisibilityMode(userID)
 	var query string
 	if err != nil {
 		return err
 	}
 	switch userVis {
-	case VisAdmin:
+	case VIS_ADMIN:
 		query = "UPDATE Albums SET visibility_mode = :vis WHERE id = :aid"
 	default: // user owns the album
 		query = `
@@ -502,7 +565,7 @@ func (db SqliteAlbumDatabase) SetAlbumVisibility(albumId AlbumID, mode PrivacyLe
 	return nil
 }
 
-func (db SqliteAlbumDatabase) SetUserAlbumPermission(albumId AlbumID, targetUser UserID, permission PrivacyLevel, requesterID UserID) error {
+func (db SqliteAlbumDatabase) SetUserAlbumPermission(albumId AlbumID, targetUser UserID, permission GlobalPrivacy, requesterID UserID) error {
 	canManage, err := db.CanManageAlbum(albumId, requesterID)
 	if err != nil {
 		return err
@@ -527,27 +590,61 @@ func (db SqliteAlbumDatabase) SetUserAlbumPermission(albumId AlbumID, targetUser
 }
 
 func (db SqliteAlbumDatabase) GetAlbum(albumId AlbumID, userID UserID) (Album, error) {
-	var name string
-	var ownerId UserID
-	var visibilityMode PrivacyLevel
-	ok, err := db.userAuthorizedForAlbum(albumId, userID) // any user can see shared users if they have access to the album
+	ok, err := db.userAuthorizedForAlbum(albumId, userID)
 	if err != nil {
 		return Album{}, err
 	}
 	if !ok {
 		return Album{}, fmt.Errorf("forbidden: user %v does not have access to album %v", userID, albumId)
 	}
-	err = db.db.QueryRow("SELECT album_name, userId, visibility_mode FROM Albums WHERE id = ?", albumId).Scan(&name, &ownerId, &visibilityMode)
+
+	userVis, err := db.getVisibilityMode(userID)
+	if err != nil {
+		return Album{}, err
+	}
+
+	var query string
+	if userVis == VIS_ADMIN {
+		query = "SELECT album_name, userId, visibility_mode, 2 AS vis_level FROM Albums WHERE id = ?"
+	} else {
+		query = `
+			SELECT a.album_name, a.userId, a.visibility_mode,
+				   CASE 
+					   WHEN a.userId = ? THEN 2
+					   WHEN aa.access_level IS NOT NULL THEN aa.access_level
+					   WHEN a.visibility_mode = 2 THEN 2
+					   WHEN a.visibility_mode = 1 THEN 1
+					   ELSE 0 
+				   END AS vis_level
+			FROM Albums a
+			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = ?
+			WHERE a.id = ?
+		`
+	}
+
+	var name string
+	var ownerId UserID
+	var albumPrivacy int
+	var visLevel int
+
+	if userVis == VIS_ADMIN {
+		err = db.db.QueryRow(query, albumId).Scan(&name, &ownerId, &albumPrivacy, &visLevel)
+	} else {
+		err = db.db.QueryRow(query, userID, userID, albumId).Scan(&name, &ownerId, &albumPrivacy, &visLevel)
+	}
+
 	if err == sql.ErrNoRows {
 		return Album{}, nil
 	}
 	if err != nil {
 		return Album{}, err
 	}
+
 	return Album{
 		Id:             albumId,
 		Name:           name,
 		OwnerId:        ownerId,
-		VisibilityMode: visibilityMode,
+		AlbumPrivacy:   GlobalPrivacy(albumPrivacy),
+		VisbilityLevel: UserPrivacy(visLevel),
 	}, nil
 }
