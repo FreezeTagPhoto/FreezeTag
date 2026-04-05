@@ -202,6 +202,29 @@ export default function PreviewWindow({
         setPendingPan(null);
     }, [zoom, pendingPan]);
 
+    // preserve focal point so visible image content doesn't shift under sidebar column
+    // (when toggling sidebar)
+    const handleSidebarToggle = (e: ReactMouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+
+        if (zoom !== 1 && scrollRef.current) {
+            const scroller = scrollRef.current;
+            const fx =
+                scroller.scrollWidth > 0
+                    ? (scroller.scrollLeft + scroller.clientWidth / 2) /
+                      scroller.scrollWidth
+                    : 0.5;
+            const fy =
+                scroller.scrollHeight > 0
+                    ? (scroller.scrollTop + scroller.clientHeight / 2) /
+                      scroller.scrollHeight
+                    : 0.5;
+            setPendingPan({ fx, fy });
+        }
+
+        setSidebarOpen((v) => !v);
+    };
+
     const zoomed = zoom !== 1;
 
     const cursor = hoveringImage
@@ -277,10 +300,7 @@ export default function PreviewWindow({
                     <button
                         type="button"
                         className={styles.infoButton}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setSidebarOpen((v) => !v);
-                        }}
+                        onClick={handleSidebarToggle}
                         aria-label={sidebarOpen ? "Hide info" : "Show info"}
                         title={sidebarOpen ? "Hide info" : "Show info"}
                     >
