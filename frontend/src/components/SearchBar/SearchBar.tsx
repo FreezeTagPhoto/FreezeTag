@@ -125,7 +125,9 @@ function removeTokenFromQuery(
     return `${cleaned.replace(/\s*;\s*$/, "").trim()}; `;
 }
 
-function tokenToParts(token: Token):
+function tokenToParts(
+    token: Token,
+):
     | { kind: "tag"; value: string }
     | { kind: "field"; key: string; value: string } {
     if (token.kind === "tag") {
@@ -469,7 +471,9 @@ export default function SearchBar({
                                     >
                                         {parts.kind === "field" ? (
                                             <span
-                                                className={styles.inlineTokenKey}
+                                                className={
+                                                    styles.inlineTokenKey
+                                                }
                                             >{`${parts.key}:`}</span>
                                         ) : null}
 
@@ -503,7 +507,9 @@ export default function SearchBar({
                                             }}
                                         >
                                             <X
-                                                className={styles.tokenCloseIcon}
+                                                className={
+                                                    styles.tokenCloseIcon
+                                                }
                                                 aria-hidden="true"
                                             />
                                         </button>
@@ -666,7 +672,10 @@ export default function SearchBar({
                                     }}
                                     onKeyUp={() => {
                                         const nextCaret = updateCaret();
-                                        maybeOpenDropdown(draftValue, nextCaret);
+                                        maybeOpenDropdown(
+                                            draftValue,
+                                            nextCaret,
+                                        );
                                     }}
                                 />
                             </span>

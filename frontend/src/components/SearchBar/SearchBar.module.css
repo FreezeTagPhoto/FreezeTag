@@ -150,11 +150,7 @@
 
 .inputInnerFadeWrap::after {
     bottom: 0;
-    background: linear-gradient(
-        to top,
-        var(--crust) 0%,
-        rgba(0, 0, 0, 0) 100%
-    );
+    background: linear-gradient(to top, var(--crust) 0%, rgba(0, 0, 0, 0) 100%);
 }
 
 .inputInnerFadeWrap[data-fade-top="1"]::before {
