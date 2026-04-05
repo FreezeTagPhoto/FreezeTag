@@ -409,7 +409,9 @@ export default function Home() {
                                     addTagToQuery(prev, tag),
                                 )
                             }
-                            onDelete={(_deletedId) => setRefreshNonce((n) => n + 1)}
+                            onDelete={(_deletedId) =>
+                                setRefreshNonce((n) => n + 1)
+                            }
                         />
                     </div>
                 )}

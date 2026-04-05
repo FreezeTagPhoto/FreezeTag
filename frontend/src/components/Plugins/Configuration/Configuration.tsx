@@ -2,6 +2,7 @@
 import {
     useEffect,
     useState,
+    useCallback,
     SubmitEvent,
     ChangeEvent,
     KeyboardEvent as ReactKeyboardEvent,
@@ -25,7 +26,7 @@ export default function Config({ onClose, plugin }: ConfigProps) {
     const [formData, setFormData] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
 
-    const fetchFields = async () => {
+    const fetchFields = useCallback(async () => {
         const result = await GetPluginConfig(plugin.name);
         if (result.ok) {
             setFields(result.value);
@@ -33,7 +34,7 @@ export default function Config({ onClose, plugin }: ConfigProps) {
             console.error(`Plugin Config Error! ${result.error.message}`);
         }
         setLoading(false);
-    };
+    }, [plugin.name]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
@@ -90,7 +91,7 @@ export default function Config({ onClose, plugin }: ConfigProps) {
     // why is this a lint error twin :bro:
     useEffect(() => {
         fetchFields();
-    }, []); // eslint-disable-line
+    }, [fetchFields]);
 
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
