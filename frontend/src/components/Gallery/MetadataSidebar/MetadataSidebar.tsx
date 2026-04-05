@@ -408,31 +408,33 @@ const MetadataSidebar = memo(function MetadataSidebar({
                     </div>
                 </div>
 
-                <div className={styles.detailRow}>
-                    <div className={styles.detailLabelRow}>
-                        <Calendar className={styles.detailLabelIcon} />
-                        <span className={styles.detailLabel}>Date taken</span>
+                <div className={styles.dateRow}>
+                    <div className={styles.detailRow}>
+                        <div className={styles.detailLabelRow}>
+                            <CloudUpload className={styles.detailLabelIcon} />
+                            <span className={styles.detailLabel}>
+                                Date Added
+                            </span>
+                        </div>
+                        <div className={styles.detailValue}>
+                            {currentMetadata
+                                ? formatLongDate(currentMetadata.dateUploaded)
+                                : "—"}
+                        </div>
                     </div>
-                    <div className={styles.detailValue}>
-                        {currentMetadata
-                            ? formatLongDate(currentMetadata.dateTaken, {
-                                  timeZone: "UTC",
-                              })
-                            : "—"}
-                    </div>
-                </div>
 
-                <div className={styles.detailRow}>
-                    <div className={styles.detailLabelRow}>
-                        <CloudUpload className={styles.detailLabelIcon} />
-                        <span className={styles.detailLabel}>
-                            Date uploaded
-                        </span>
-                    </div>
-                    <div className={styles.detailValue}>
-                        {currentMetadata
-                            ? formatLongDate(currentMetadata.dateUploaded)
-                            : "—"}
+                    <div className={styles.detailRow}>
+                        <div className={styles.detailLabelRow}>
+                            <Calendar className={styles.detailLabelIcon} />
+                            <span className={styles.detailLabel}>Date taken</span>
+                        </div>
+                        <div className={styles.detailValue}>
+                            {currentMetadata
+                                ? formatLongDate(currentMetadata.dateTaken, {
+                                      timeZone: "UTC",
+                                  })
+                                : "—"}
+                        </div>
                     </div>
                 </div>
 
