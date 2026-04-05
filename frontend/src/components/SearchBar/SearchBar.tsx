@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./SearchBar.module.css";
 import Pill from "@/components/UI/Pill/Pill";
 import { parseUserQuery } from "@/common/search/parse";
@@ -84,6 +84,27 @@ function buildSuggestions(
     return [...keyMatches, ...tagMatches];
 }
 
+function buildTagSuggestionSuffix(after: string): {
+    suffix: string;
+    caretOffset: number;
+} {
+    if (after.trim().length === 0) {
+        return { suffix: "; ", caretOffset: 2 };
+    }
+
+    if (/^\s*;\s*/.test(after)) {
+        return {
+            suffix: after.replace(/^\s*;\s*/, "; "),
+            caretOffset: 2,
+        };
+    }
+
+    return {
+        suffix: `; ${after.replace(/^\s+/, "")}`,
+        caretOffset: 2,
+    };
+}
+
 function removeTokenFromQuery(
     input: string,
     start: number,
@@ -103,13 +124,10 @@ function removeTokenFromQuery(
     if (out.length > 0 && after.trim().length > 0) out += "; ";
     out += after.replace(/^\s+/, "");
 
-    // Final cleanup
-    out = out
-        .replace(/^\s*;\s*/, "")
-        .replace(/\s*;\s*$/, "")
-        .trim();
-
-    return out;
+    // Final cleanup: preserve "; " when there is still at least one token.
+    const cleaned = out.replace(/^\s*;\s*/, "").trim();
+    if (!cleaned) return "";
+    return `${cleaned.replace(/\s*;\s*$/, "").trim()}; `;
 }
 
 export default function SearchBar({
@@ -121,8 +139,13 @@ export default function SearchBar({
 }: Props) {
     const wrapRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const [draftValue, setDraftValue] = useState(value);
 
-    const tokens = useMemo(() => parseUserQuery(value), [value]);
+    useEffect(() => {
+        setDraftValue(value);
+    }, [value]);
+
+    const tokens = useMemo(() => parseUserQuery(draftValue), [draftValue]);
 
     const [caret, setCaret] = useState(0);
 
@@ -132,20 +155,29 @@ export default function SearchBar({
 
     const [manualClosed, setManualClosed] = useState(false);
 
-    const hasValue = value.length > 0;
+    const hasValue = draftValue.length > 0;
 
     const rawSuggestions = useMemo(() => {
         if (!suggestionsEnabled) return [];
         if (manualClosed) return [];
-        return buildSuggestions(value, caret, allTags);
-    }, [suggestionsEnabled, manualClosed, value, caret, allTags]);
+        return buildSuggestions(draftValue, caret, allTags);
+    }, [suggestionsEnabled, manualClosed, draftValue, caret, allTags]);
 
     const suggestions = dropdownOpen ? rawSuggestions : [];
 
-    const maybeOpenDropdown = () => {
+    const maybeOpenDropdown = (nextInput = draftValue, nextCaret = caret) => {
         if (!suggestionsEnabled) return;
         if (manualClosed) return;
-        setDropdownOpen(rawSuggestions.length > 0);
+        setDropdownOpen(
+            buildSuggestions(nextInput, nextCaret, allTags).length > 0,
+        );
+    };
+
+    const commitValue = (next: string) => {
+        setDraftValue(next);
+        startTransition(() => {
+            onChange(next);
+        });
     };
 
     useEffect(() => {
@@ -178,17 +210,23 @@ export default function SearchBar({
         if (!el) return;
 
         const c = el.selectionStart ?? 0;
-        const seg = getActiveSegment(value, c);
+        const seg = getActiveSegment(draftValue, c);
 
-        const before = value.slice(0, seg.trimmedStart);
-        const after = value.slice(seg.segEnd);
+        const before = draftValue.slice(0, seg.trimmedStart);
+        const after = draftValue.slice(seg.segEnd);
 
-        const next = `${before}${s.insert}${after}`;
+        let next = `${before}${s.insert}${after}`;
+        let pos = (before + s.insert).length;
 
-        onChange(next);
+        if (s.kind === "tag") {
+            const { suffix, caretOffset } = buildTagSuggestionSuffix(after);
+            next = `${before}${s.insert}${suffix}`;
+            pos = (before + s.insert).length + caretOffset;
+        }
+
+        commitValue(next);
         requestAnimationFrame(() => {
             el.focus();
-            const pos = (before + s.insert).length;
             el.setSelectionRange(pos, pos);
             setCaret(pos);
             setDropdownOpen(false);
@@ -198,8 +236,10 @@ export default function SearchBar({
 
     const updateCaret = () => {
         const el = inputRef.current;
-        if (!el) return;
-        setCaret(el.selectionStart ?? 0);
+        if (!el) return 0;
+        const nextCaret = el.selectionStart ?? 0;
+        setCaret(nextCaret);
+        return nextCaret;
     };
 
     return (
@@ -238,32 +278,47 @@ export default function SearchBar({
                     className={styles.search}
                     placeholder={placeholder}
                     aria-label="Search"
-                    value={value}
+                    value={draftValue}
                     disabled={!enabled}
                     onChange={(e) => {
-                        onChange(e.target.value);
+                        const next = e.target.value;
+                        const nextCaret =
+                            e.target.selectionStart ?? next.length;
+                        commitValue(next);
+                        setCaret(nextCaret);
                         setManualClosed(false);
+                        maybeOpenDropdown(next, nextCaret);
                     }}
                     onFocus={() => {
-                        updateCaret();
+                        const el = inputRef.current;
+                        const nextCaret = el?.selectionStart ?? 0;
+                        setCaret(nextCaret);
                         setManualClosed(false);
-                        maybeOpenDropdown();
+                        maybeOpenDropdown(el?.value ?? draftValue, nextCaret);
                     }}
                     onClick={() => {
-                        updateCaret();
+                        const el = inputRef.current;
+                        const nextCaret = el?.selectionStart ?? 0;
+                        setCaret(nextCaret);
                         setManualClosed(false);
-                        maybeOpenDropdown();
+                        maybeOpenDropdown(el?.value ?? draftValue, nextCaret);
                     }}
                     onKeyUp={() => {
-                        updateCaret();
-                        maybeOpenDropdown();
+                        const el = inputRef.current;
+                        const nextCaret = updateCaret();
+                        maybeOpenDropdown(el?.value ?? draftValue, nextCaret);
                     }}
                 />
                 {hasValue ? (
                     <button
                         className={`${styles.clear} ${styles.iconOn}`}
                         aria-label="Clear"
-                        onClick={() => onChange("")}
+                        onClick={() => {
+                            commitValue("");
+                            setCaret(0);
+                            setDropdownOpen(false);
+                            setManualClosed(false);
+                        }}
                         type="button"
                         disabled={!enabled}
                         title="Clear"
@@ -298,6 +353,76 @@ export default function SearchBar({
                 )}
             </div>
 
+            {/* {tokens.length > 0 ? (
+                <div className={styles.tokenRow} aria-label="Parsed filters">
+                    {tokens.map((t, idx) => {
+                        const label =
+                            t.kind === "tag"
+                                ? `tag: ${t.value}`
+                                : `${t.key}: ${
+                                      t.key === "takenBefore" ||
+                                      t.key === "takenAfter" ||
+                                      t.key === "uploadedBefore" ||
+                                      t.key === "uploadedAfter"
+                                          ? (t.valueRaw ?? t.value)
+                                          : t.value
+                                  }`;
+
+                        return (
+                            <span
+                                key={idx}
+                                className={`${styles.tokenWrap} ${
+                                    t.error ? styles.tokenError : ""
+                                }`}
+                                title={t.error ?? ""}
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    const el = inputRef.current;
+                                    if (!el) return;
+                                    el.focus();
+                                    el.setSelectionRange(
+                                        t.range.start,
+                                        t.range.end,
+                                    );
+                                }}
+                            >
+                                <Pill
+                                    label={label}
+                                    caret={false}
+                                    variant={t.error ? "error" : "token"}
+                                />
+                                <button
+                                    className={styles.tokenClose}
+                                    type="button"
+                                    aria-label="Remove filter"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        const next = removeTokenFromQuery(
+                                            draftValue,
+                                            t.range.start,
+                                            t.range.end,
+                                        );
+                                        commitValue(next);
+                                    }}
+                                    // title="Remove"
+                                >
+                                    <X
+                                        className={styles.tokenCloseIcon}
+                                        aria-hidden="true"
+                                    />
+                                </button>
+                            </span>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className={styles.hintRow}>
+                    <span>Try:</span>
+                    <code>make=&quot;Toyota&quot;;</code>
+                    <code>model=Camry;</code>
+                </div>
+            )} */}
             {tokens.length > 0 ? (
                 <div className={styles.tokenRow} aria-label="Parsed filters">
                     {tokens.map((t, idx) => {
@@ -343,13 +468,12 @@ export default function SearchBar({
                                     onMouseDown={(e) => e.preventDefault()}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        onChange(
-                                            removeTokenFromQuery(
-                                                value,
-                                                t.range.start,
-                                                t.range.end,
-                                            ),
+                                        const next = removeTokenFromQuery(
+                                            draftValue,
+                                            t.range.start,
+                                            t.range.end,
                                         );
+                                        commitValue(next);
                                     }}
                                     // title="Remove"
                                 >
@@ -362,13 +486,7 @@ export default function SearchBar({
                         );
                     })}
                 </div>
-            ) : (
-                <div className={styles.hintRow}>
-                    <span>Try:</span>
-                    <code>make=&quot;Toyota&quot;;</code>
-                    <code>model=Camry;</code>
-                </div>
-            )}
+            ) : null}
         </div>
     );
 }
