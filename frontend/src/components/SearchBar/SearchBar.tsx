@@ -1,10 +1,18 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import {
+    startTransition,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import styles from "./SearchBar.module.css";
-import Pill from "@/components/UI/Pill/Pill";
 import { parseUserQuery } from "@/common/search/parse";
-import { FIELD_KEYS, isSearchValueKey } from "@/common/search/keys";
+import { FIELD_KEYS, isFieldKey, isSearchValueKey } from "@/common/search/keys";
+import { splitBySemicolonOutsideQuotes } from "@/common/search/querysplit";
+import type { Token } from "@/common/search/tokens";
 import { Search, X } from "lucide-react";
 
 type Props = {
@@ -43,7 +51,6 @@ function buildSuggestions(
     const { trimmed } = getActiveSegment(input, caret);
 
     if (!trimmed) return [];
-
     if (trimmed.includes("=") || trimmed.startsWith(`"`)) return [];
 
     const needle = trimmed.toLowerCase();
@@ -64,6 +71,7 @@ function buildSuggestions(
             !t.toLowerCase().startsWith(needle) &&
             t.toLowerCase().includes(needle),
     );
+
     const tagMatches = [...prefixMatches, ...substringMatches]
         .slice(0, Math.max(0, 8 - keyMatches.length))
         .map((t) => ({
@@ -72,15 +80,6 @@ function buildSuggestions(
             insert: t,
         }));
 
-    // const hasExactMatch = tagMatches.some(
-    //     (t) => t.insert.toLowerCase() === needle,
-    // );
-    // const freeTextSuggestion =
-    //     allTags.length === 0 || !hasExactMatch
-    //         ? [{ kind: "tag" as const, label: `tag: ${trimmed}`, insert: trimmed }]
-    //         : [];
-
-    // return [...keyMatches, ...tagMatches, ...freeTextSuggestion];
     return [...keyMatches, ...tagMatches];
 }
 
@@ -113,21 +112,55 @@ function removeTokenFromQuery(
     let before = input.slice(0, start);
     let after = input.slice(end);
 
-    // Prefer removing the trailing semicolon if it exists
     after = after.replace(/^\s*;\s*/, "");
-
-    // Otherwise remove a preceding semicolon if present
     before = before.replace(/;\s*$/, "");
 
-    // Join cleanly
     let out = before.replace(/\s+$/, "");
     if (out.length > 0 && after.trim().length > 0) out += "; ";
     out += after.replace(/^\s+/, "");
 
-    // Final cleanup: preserve "; " when there is still at least one token.
     const cleaned = out.replace(/^\s*;\s*/, "").trim();
     if (!cleaned) return "";
     return `${cleaned.replace(/\s*;\s*$/, "").trim()}; `;
+}
+
+function tokenToParts(token: Token):
+    | { kind: "tag"; value: string }
+    | { kind: "field"; key: string; value: string } {
+    if (token.kind === "tag") {
+        return { kind: "tag", value: token.value };
+    }
+
+    const showRawValue =
+        token.key === "takenBefore" ||
+        token.key === "takenAfter" ||
+        token.key === "uploadedBefore" ||
+        token.key === "uploadedAfter";
+
+    return {
+        kind: "field",
+        key: token.key,
+        value: showRawValue ? token.valueRaw.trim() : token.value,
+    };
+}
+
+function parseActiveField(
+    activeRaw: string,
+): { key: string; value: string; valueOffset: number } | null {
+    const leadingSpaces = activeRaw.length - activeRaw.trimStart().length;
+    const withoutLeading = activeRaw.slice(leadingSpaces);
+    const equalsAt = withoutLeading.indexOf("=");
+    if (equalsAt === -1) return null;
+
+    const keyRaw = withoutLeading.slice(0, equalsAt).trim();
+    if (!isFieldKey(keyRaw)) return null;
+
+    const valueOffset = leadingSpaces + equalsAt + 1;
+    return {
+        key: keyRaw,
+        value: activeRaw.slice(valueOffset),
+        valueOffset,
+    };
 }
 
 export default function SearchBar({
@@ -146,13 +179,38 @@ export default function SearchBar({
     }, [value]);
 
     const tokens = useMemo(() => parseUserQuery(draftValue), [draftValue]);
+    const chunks = useMemo(
+        () => splitBySemicolonOutsideQuotes(draftValue),
+        [draftValue],
+    );
+
+    const activeChunk = chunks[chunks.length - 1] ?? {
+        raw: "",
+        start: 0,
+        end: 0,
+    };
+
+    const activeStart = activeChunk.start;
+    const activeInputValue = draftValue.slice(activeStart);
+    const committedPrefix = draftValue.slice(0, activeStart);
+
+    const activeField = useMemo(
+        () => parseActiveField(activeInputValue),
+        [activeInputValue],
+    );
+
+    const activeInputOffset = activeField?.valueOffset ?? 0;
+    const activeInputPrefix = activeInputValue.slice(0, activeInputOffset);
+    const editableValue = activeField ? activeField.value : activeInputValue;
+
+    const committedTokens = useMemo(
+        () => tokens.filter((t) => t.range.start < activeStart),
+        [tokens, activeStart],
+    );
 
     const [caret, setCaret] = useState(0);
-
     const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
-
     const [dropdownOpen, setDropdownOpen] = useState(false);
-
     const [manualClosed, setManualClosed] = useState(false);
 
     const hasValue = draftValue.length > 0;
@@ -189,6 +247,7 @@ export default function SearchBar({
                 setManualClosed(false);
             }
         };
+
         document.addEventListener("mousedown", onMouseDown);
         return () => document.removeEventListener("mousedown", onMouseDown);
     }, []);
@@ -201,6 +260,7 @@ export default function SearchBar({
             setDropdownOpen(false);
             setManualClosed(true);
         };
+
         document.addEventListener("keydown", onKeyDown);
         return () => document.removeEventListener("keydown", onKeyDown);
     }, []);
@@ -209,7 +269,7 @@ export default function SearchBar({
         const el = inputRef.current;
         if (!el) return;
 
-        const c = el.selectionStart ?? 0;
+        const c = activeStart + activeInputOffset + (el.selectionStart ?? 0);
         const seg = getActiveSegment(draftValue, c);
 
         const before = draftValue.slice(0, seg.trimmedStart);
@@ -225,9 +285,21 @@ export default function SearchBar({
         }
 
         commitValue(next);
+
         requestAnimationFrame(() => {
+            const nextChunks = splitBySemicolonOutsideQuotes(next);
+            const nextActiveStart =
+                nextChunks[nextChunks.length - 1]?.start ?? 0;
+            const nextActiveRaw = next.slice(nextActiveStart);
+            const nextActiveOffset =
+                parseActiveField(nextActiveRaw)?.valueOffset ?? 0;
+            const tailPos = Math.max(
+                0,
+                pos - (nextActiveStart + nextActiveOffset),
+            );
+
             el.focus();
-            el.setSelectionRange(pos, pos);
+            el.setSelectionRange(tailPos, tailPos);
             setCaret(pos);
             setDropdownOpen(false);
             setManualClosed(false);
@@ -237,10 +309,32 @@ export default function SearchBar({
     const updateCaret = () => {
         const el = inputRef.current;
         if (!el) return 0;
-        const nextCaret = el.selectionStart ?? 0;
+        const nextCaret =
+            activeStart + activeInputOffset + (el.selectionStart ?? 0);
         setCaret(nextCaret);
         return nextCaret;
     };
+
+    useLayoutEffect(() => {
+        const el = inputRef.current;
+        if (!el) return;
+        if (document.activeElement !== el) return;
+
+        const localCaret = Math.max(
+            0,
+            Math.min(
+                editableValue.length,
+                caret - (activeStart + activeInputOffset),
+            ),
+        );
+
+        if (
+            el.selectionStart !== localCaret ||
+            el.selectionEnd !== localCaret
+        ) {
+            el.setSelectionRange(localCaret, localCaret);
+        }
+    }, [caret, activeStart, activeInputOffset, editableValue]);
 
     return (
         <div ref={wrapRef} className={styles.wrap}>
@@ -273,42 +367,220 @@ export default function SearchBar({
                     <Search className={styles.btnIcon} aria-hidden="true" />
                 </button>
 
-                <input
-                    ref={inputRef}
-                    className={styles.search}
-                    placeholder={placeholder}
-                    aria-label="Search"
-                    value={draftValue}
-                    disabled={!enabled}
-                    onChange={(e) => {
-                        const next = e.target.value;
-                        const nextCaret =
-                            e.target.selectionStart ?? next.length;
-                        commitValue(next);
-                        setCaret(nextCaret);
-                        setManualClosed(false);
-                        maybeOpenDropdown(next, nextCaret);
+                <div
+                    className={`${styles.searchField} ${
+                        !enabled ? styles.searchFieldDisabled : ""
+                    }`}
+                    onMouseDown={() => {
+                        if (enabled) inputRef.current?.focus();
                     }}
-                    onFocus={() => {
-                        const el = inputRef.current;
-                        const nextCaret = el?.selectionStart ?? 0;
-                        setCaret(nextCaret);
-                        setManualClosed(false);
-                        maybeOpenDropdown(el?.value ?? draftValue, nextCaret);
-                    }}
-                    onClick={() => {
-                        const el = inputRef.current;
-                        const nextCaret = el?.selectionStart ?? 0;
-                        setCaret(nextCaret);
-                        setManualClosed(false);
-                        maybeOpenDropdown(el?.value ?? draftValue, nextCaret);
-                    }}
-                    onKeyUp={() => {
-                        const el = inputRef.current;
-                        const nextCaret = updateCaret();
-                        maybeOpenDropdown(el?.value ?? draftValue, nextCaret);
-                    }}
-                />
+                >
+                    <div className={styles.inputInner}>
+                        {committedTokens.map((token, idx) => {
+                            const parts = tokenToParts(token);
+
+                            return (
+                                <span
+                                    key={`${token.range.start}-${token.range.end}-${idx}`}
+                                    className={`${styles.inlineToken} ${
+                                        parts.kind === "tag"
+                                            ? styles.inlineTagToken
+                                            : ""
+                                    } ${
+                                        token.error
+                                            ? styles.inlineTokenError
+                                            : ""
+                                    }`}
+                                    title={token.error ?? ""}
+                                >
+                                    {parts.kind === "field" ? (
+                                        <span
+                                            className={styles.inlineTokenKey}
+                                        >{`${parts.key}:`}</span>
+                                    ) : null}
+
+                                    <span className={styles.inlineTokenValue}>
+                                        {parts.value}
+                                    </span>
+
+                                    <button
+                                        className={styles.inlineTokenClose}
+                                        type="button"
+                                        aria-label={
+                                            parts.kind === "field"
+                                                ? `Remove ${parts.key} filter`
+                                                : `Remove ${parts.value} tag`
+                                        }
+                                        disabled={!enabled}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const next = removeTokenFromQuery(
+                                                draftValue,
+                                                token.range.start,
+                                                token.range.end,
+                                            );
+                                            commitValue(next);
+                                        }}
+                                    >
+                                        <X
+                                            className={styles.tokenCloseIcon}
+                                            aria-hidden="true"
+                                        />
+                                    </button>
+                                </span>
+                            );
+                        })}
+
+                        <span
+                            className={`${styles.activeInputShell} ${
+                                activeField
+                                    ? `${styles.inlineToken} ${styles.inlineTokenActive} ${styles.activeInputShellActive}`
+                                    : ""
+                            }`}
+                        >
+                            {activeField ? (
+                                <span className={styles.inlineTokenKey}>
+                                    {activeField.key}:
+                                </span>
+                            ) : null}
+
+                            <input
+                                ref={inputRef}
+                                className={
+                                    activeField
+                                        ? styles.inlineTokenInput
+                                        : styles.inlineInput
+                                }
+                                style={
+                                    activeField
+                                        ? {
+                                              width: `${Math.max(
+                                                  1,
+                                                  editableValue.length + 1,
+                                              )}ch`,
+                                          }
+                                        : undefined
+                                }
+                                placeholder={
+                                    !activeField && committedTokens.length === 0
+                                        ? placeholder
+                                        : undefined
+                                }
+                                aria-label={
+                                    activeField
+                                        ? `${activeField.key} filter`
+                                        : "Search"
+                                }
+                                value={editableValue}
+                                disabled={!enabled}
+                                onChange={(e) => {
+                                    const nextEditable = e.target.value;
+                                    const nextCaretInEditable =
+                                        e.target.selectionStart ??
+                                        nextEditable.length;
+                                    const nextActive = `${activeInputPrefix}${nextEditable}`;
+                                    const next = `${committedPrefix}${nextActive}`;
+                                    const nextCaret =
+                                        committedPrefix.length +
+                                        activeInputOffset +
+                                        nextCaretInEditable;
+
+                                    commitValue(next);
+                                    setCaret(nextCaret);
+                                    setManualClosed(false);
+                                    maybeOpenDropdown(next, nextCaret);
+                                }}
+                                onFocus={() => {
+                                    const el = inputRef.current;
+                                    const nextCaret =
+                                        activeStart +
+                                        activeInputOffset +
+                                        (el?.selectionStart ?? 0);
+                                    setCaret(nextCaret);
+                                    setManualClosed(false);
+                                    maybeOpenDropdown(draftValue, nextCaret);
+                                }}
+                                onClick={() => {
+                                    const el = inputRef.current;
+                                    const nextCaret =
+                                        activeStart +
+                                        activeInputOffset +
+                                        (el?.selectionStart ?? 0);
+                                    setCaret(nextCaret);
+                                    setManualClosed(false);
+                                    maybeOpenDropdown(draftValue, nextCaret);
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key !== "Backspace") return;
+
+                                    const selStart =
+                                        e.currentTarget.selectionStart ?? 0;
+                                    const selEnd =
+                                        e.currentTarget.selectionEnd ?? 0;
+                                    if (selStart !== 0 || selEnd !== 0) return;
+
+                                    if (activeInputOffset > 0) {
+                                        const removeAt =
+                                            activeStart + activeInputOffset - 1;
+                                        if (removeAt < 0) return;
+
+                                        const next =
+                                            draftValue.slice(0, removeAt) +
+                                            draftValue.slice(removeAt + 1);
+                                        const nextCaret = removeAt;
+                                        commitValue(next);
+                                        setCaret(nextCaret);
+                                        setManualClosed(false);
+                                        maybeOpenDropdown(next, nextCaret);
+                                        e.preventDefault();
+                                        return;
+                                    }
+
+                                    if (
+                                        committedTokens.length === 0 ||
+                                        editableValue.trim().length > 0
+                                    ) {
+                                        return;
+                                    }
+
+                                    const lastToken =
+                                        committedTokens[
+                                            committedTokens.length - 1
+                                        ];
+                                    const next = removeTokenFromQuery(
+                                        draftValue,
+                                        lastToken.range.start,
+                                        lastToken.range.end,
+                                    );
+                                    commitValue(next);
+                                    setDropdownOpen(false);
+                                    setManualClosed(false);
+                                    e.preventDefault();
+
+                                    requestAnimationFrame(() => {
+                                        const nextChunks =
+                                            splitBySemicolonOutsideQuotes(next);
+                                        const nextActiveStart =
+                                            nextChunks[nextChunks.length - 1]
+                                                ?.start ?? 0;
+                                        setCaret(nextActiveStart);
+                                        inputRef.current?.focus();
+                                        inputRef.current?.setSelectionRange(
+                                            0,
+                                            0,
+                                        );
+                                    });
+                                }}
+                                onKeyUp={() => {
+                                    const nextCaret = updateCaret();
+                                    maybeOpenDropdown(draftValue, nextCaret);
+                                }}
+                            />
+                        </span>
+                    </div>
+                </div>
+
                 {hasValue ? (
                     <button
                         className={`${styles.clear} ${styles.iconOn}`}
@@ -352,141 +624,6 @@ export default function SearchBar({
                     </div>
                 )}
             </div>
-
-            {/* {tokens.length > 0 ? (
-                <div className={styles.tokenRow} aria-label="Parsed filters">
-                    {tokens.map((t, idx) => {
-                        const label =
-                            t.kind === "tag"
-                                ? `tag: ${t.value}`
-                                : `${t.key}: ${
-                                      t.key === "takenBefore" ||
-                                      t.key === "takenAfter" ||
-                                      t.key === "uploadedBefore" ||
-                                      t.key === "uploadedAfter"
-                                          ? (t.valueRaw ?? t.value)
-                                          : t.value
-                                  }`;
-
-                        return (
-                            <span
-                                key={idx}
-                                className={`${styles.tokenWrap} ${
-                                    t.error ? styles.tokenError : ""
-                                }`}
-                                title={t.error ?? ""}
-                                onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    const el = inputRef.current;
-                                    if (!el) return;
-                                    el.focus();
-                                    el.setSelectionRange(
-                                        t.range.start,
-                                        t.range.end,
-                                    );
-                                }}
-                            >
-                                <Pill
-                                    label={label}
-                                    caret={false}
-                                    variant={t.error ? "error" : "token"}
-                                />
-                                <button
-                                    className={styles.tokenClose}
-                                    type="button"
-                                    aria-label="Remove filter"
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const next = removeTokenFromQuery(
-                                            draftValue,
-                                            t.range.start,
-                                            t.range.end,
-                                        );
-                                        commitValue(next);
-                                    }}
-                                    // title="Remove"
-                                >
-                                    <X
-                                        className={styles.tokenCloseIcon}
-                                        aria-hidden="true"
-                                    />
-                                </button>
-                            </span>
-                        );
-                    })}
-                </div>
-            ) : (
-                <div className={styles.hintRow}>
-                    <span>Try:</span>
-                    <code>make=&quot;Toyota&quot;;</code>
-                    <code>model=Camry;</code>
-                </div>
-            )} */}
-            {tokens.length > 0 ? (
-                <div className={styles.tokenRow} aria-label="Parsed filters">
-                    {tokens.map((t, idx) => {
-                        const label =
-                            t.kind === "tag"
-                                ? `tag: ${t.value}`
-                                : `${t.key}: ${
-                                      t.key === "takenBefore" ||
-                                      t.key === "takenAfter" ||
-                                      t.key === "uploadedBefore" ||
-                                      t.key === "uploadedAfter"
-                                          ? (t.valueRaw ?? t.value)
-                                          : t.value
-                                  }`;
-
-                        return (
-                            <span
-                                key={idx}
-                                className={`${styles.tokenWrap} ${
-                                    t.error ? styles.tokenError : ""
-                                }`}
-                                title={t.error ?? ""}
-                                onMouseDown={(e) => {
-                                    e.preventDefault();
-                                    const el = inputRef.current;
-                                    if (!el) return;
-                                    el.focus();
-                                    el.setSelectionRange(
-                                        t.range.start,
-                                        t.range.end,
-                                    );
-                                }}
-                            >
-                                <Pill
-                                    label={label}
-                                    caret={false}
-                                    variant={t.error ? "error" : "token"}
-                                />
-                                <button
-                                    className={styles.tokenClose}
-                                    type="button"
-                                    aria-label="Remove filter"
-                                    onMouseDown={(e) => e.preventDefault()}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const next = removeTokenFromQuery(
-                                            draftValue,
-                                            t.range.start,
-                                            t.range.end,
-                                        );
-                                        commitValue(next);
-                                    }}
-                                    // title="Remove"
-                                >
-                                    <X
-                                        className={styles.tokenCloseIcon}
-                                        aria-hidden="true"
-                                    />
-                                </button>
-                            </span>
-                        );
-                    })}
-                </div>
-            ) : null}
         </div>
     );
 }
