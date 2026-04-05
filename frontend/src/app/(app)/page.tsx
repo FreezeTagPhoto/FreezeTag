@@ -53,6 +53,8 @@ export default function Home() {
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
     const lastAppliedQRef = useRef<string | null>(null);
 
+    const [refreshNonce, setRefreshNonce] = useState(0);
+
     const [multiSelect, setMultiSelect] = useState<boolean>(false);
     const [selectedIds, setSelectedIds] = useState<FreezeTagSet<number>>(
         new FreezeTagSet(),
@@ -83,7 +85,7 @@ export default function Home() {
 
     const reqIdRef = useRef(0);
 
-    // Load images when the query changes
+    // Load images when the query changes (or a refresh is forced, e.g. after delete)
     useEffect(() => {
         let cancelled = false;
         const myReqId = ++reqIdRef.current;
@@ -106,7 +108,7 @@ export default function Home() {
         return () => {
             cancelled = true;
         };
-    }, [query]);
+    }, [query, refreshNonce]);
 
     // Load all tags for the top bar
     useEffect(() => {
@@ -160,7 +162,7 @@ export default function Home() {
         return () => {
             cancelled = true;
         };
-    }, [query]);
+    }, [query, refreshNonce]);
 
     // Prepare tags for the top bar
     const tagsForTopBar: TagInfo[] = useMemo(
@@ -407,7 +409,7 @@ export default function Home() {
                                     addTagToQuery(prev, tag),
                                 )
                             }
-                            onDelete={(_deletedId) => setSearchTerm("" + query)} // Forces the query to recompute and fetch new IDs
+                            onDelete={(_deletedId) => setRefreshNonce((n) => n + 1)}
                         />
                     </div>
                 )}
