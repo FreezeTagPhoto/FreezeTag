@@ -97,6 +97,72 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
+
+    max-height: 120px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface1) var(--crust);
+}
+
+.inputInner::-webkit-scrollbar {
+    width: 10px;
+}
+
+.inputInner::-webkit-scrollbar-thumb {
+    background: var(--surface1);
+    border-radius: 999px;
+    border: 3px solid var(--crust);
+    background-clip: content-box;
+}
+
+.inputInnerFadeWrap {
+    position: relative;
+    width: 100%;
+}
+
+.inputInnerFadeWrap::before,
+.inputInnerFadeWrap::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 10px;
+    height: 22px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+    z-index: 2;
+}
+
+.inputInnerFadeWrap::before {
+    top: 0;
+    background: linear-gradient(
+        to bottom,
+        var(--crust) 0%,
+        rgba(0, 0, 0, 0) 100%
+    );
+}
+
+.inputInnerFadeWrap::after {
+    bottom: 0;
+    background: linear-gradient(
+        to top,
+        var(--crust) 0%,
+        rgba(0, 0, 0, 0) 100%
+    );
+}
+
+.inputInnerFadeWrap[data-fade-top="1"]::before {
+    opacity: 1;
+}
+
+.inputInnerFadeWrap[data-fade-bottom="1"]::after {
+    opacity: 1;
 }
 
 .activeInputShell {

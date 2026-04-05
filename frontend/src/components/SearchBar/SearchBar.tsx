@@ -2,6 +2,7 @@
 
 import {
     startTransition,
+    useCallback,
     useEffect,
     useLayoutEffect,
     useMemo,
@@ -172,6 +173,8 @@ export default function SearchBar({
 }: Props) {
     const wrapRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const chipsScrollRef = useRef<HTMLDivElement>(null);
+    const chipsFadeRafRef = useRef<number | null>(null);
     const [draftValue, setDraftValue] = useState(value);
 
     useEffect(() => {
@@ -212,6 +215,10 @@ export default function SearchBar({
     const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [manualClosed, setManualClosed] = useState(false);
+    const [chipsFade, setChipsFade] = useState({
+        top: false,
+        bottom: false,
+    });
 
     const hasValue = draftValue.length > 0;
 
@@ -237,6 +244,38 @@ export default function SearchBar({
             onChange(next);
         });
     };
+
+    const syncChipsFade = useCallback(() => {
+        if (chipsFadeRafRef.current !== null) {
+            cancelAnimationFrame(chipsFadeRafRef.current);
+        }
+
+        chipsFadeRafRef.current = requestAnimationFrame(() => {
+            chipsFadeRafRef.current = null;
+            const el = chipsScrollRef.current;
+
+            if (!el) {
+                setChipsFade({ top: false, bottom: false });
+                return;
+            }
+
+            const overflow = el.scrollHeight > el.clientHeight + 1;
+            if (!overflow) {
+                setChipsFade({ top: false, bottom: false });
+                return;
+            }
+
+            const atTop = el.scrollTop <= 1;
+            const atBottom =
+                el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+            const next = { top: !atTop, bottom: !atBottom };
+            setChipsFade((prev) =>
+                prev.top === next.top && prev.bottom === next.bottom
+                    ? prev
+                    : next,
+            );
+        });
+    }, []);
 
     useEffect(() => {
         const onMouseDown = (e: MouseEvent) => {
@@ -264,6 +303,32 @@ export default function SearchBar({
         document.addEventListener("keydown", onKeyDown);
         return () => document.removeEventListener("keydown", onKeyDown);
     }, []);
+
+    useEffect(() => {
+        const el = chipsScrollRef.current;
+        if (!el) return;
+
+        syncChipsFade();
+
+        const ro = new ResizeObserver(() => syncChipsFade());
+        ro.observe(el);
+
+        const onResize = () => syncChipsFade();
+        window.addEventListener("resize", onResize);
+
+        return () => {
+            window.removeEventListener("resize", onResize);
+            ro.disconnect();
+            if (chipsFadeRafRef.current !== null) {
+                cancelAnimationFrame(chipsFadeRafRef.current);
+                chipsFadeRafRef.current = null;
+            }
+        };
+    }, [syncChipsFade]);
+
+    useEffect(() => {
+        syncChipsFade();
+    }, [draftValue, syncChipsFade]);
 
     const applySuggestion = (s: Suggestion) => {
         const el = inputRef.current;
@@ -375,209 +440,237 @@ export default function SearchBar({
                         if (enabled) inputRef.current?.focus();
                     }}
                 >
-                    <div className={styles.inputInner}>
-                        {committedTokens.map((token, idx) => {
-                            const parts = tokenToParts(token);
-
-                            return (
-                                <span
-                                    key={`${token.range.start}-${token.range.end}-${idx}`}
-                                    className={`${styles.inlineToken} ${
-                                        parts.kind === "tag"
-                                            ? styles.inlineTagToken
-                                            : ""
-                                    } ${
-                                        token.error
-                                            ? styles.inlineTokenError
-                                            : ""
-                                    }`}
-                                    title={token.error ?? ""}
-                                >
-                                    {parts.kind === "field" ? (
-                                        <span
-                                            className={styles.inlineTokenKey}
-                                        >{`${parts.key}:`}</span>
-                                    ) : null}
-
-                                    <span className={styles.inlineTokenValue}>
-                                        {parts.value}
-                                    </span>
-
-                                    <button
-                                        className={styles.inlineTokenClose}
-                                        type="button"
-                                        aria-label={
-                                            parts.kind === "field"
-                                                ? `Remove ${parts.key} filter`
-                                                : `Remove ${parts.value} tag`
-                                        }
-                                        disabled={!enabled}
-                                        onMouseDown={(e) => e.preventDefault()}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const next = removeTokenFromQuery(
-                                                draftValue,
-                                                token.range.start,
-                                                token.range.end,
-                                            );
-                                            commitValue(next);
-                                        }}
-                                    >
-                                        <X
-                                            className={styles.tokenCloseIcon}
-                                            aria-hidden="true"
-                                        />
-                                    </button>
-                                </span>
-                            );
-                        })}
-
-                        <span
-                            className={`${styles.activeInputShell} ${
-                                activeField
-                                    ? `${styles.inlineToken} ${styles.inlineTokenActive} ${styles.activeInputShellActive}`
-                                    : ""
-                            }`}
+                    <div
+                        className={styles.inputInnerFadeWrap}
+                        data-fade-top={chipsFade.top ? "1" : "0"}
+                        data-fade-bottom={chipsFade.bottom ? "1" : "0"}
+                    >
+                        <div
+                            ref={chipsScrollRef}
+                            className={styles.inputInner}
+                            onScroll={syncChipsFade}
                         >
-                            {activeField ? (
-                                <span className={styles.inlineTokenKey}>
-                                    {activeField.key}:
-                                </span>
-                            ) : null}
+                            {committedTokens.map((token, idx) => {
+                                const parts = tokenToParts(token);
 
-                            <input
-                                ref={inputRef}
-                                className={
+                                return (
+                                    <span
+                                        key={`${token.range.start}-${token.range.end}-${idx}`}
+                                        className={`${styles.inlineToken} ${
+                                            parts.kind === "tag"
+                                                ? styles.inlineTagToken
+                                                : ""
+                                        } ${
+                                            token.error
+                                                ? styles.inlineTokenError
+                                                : ""
+                                        }`}
+                                        title={token.error ?? ""}
+                                    >
+                                        {parts.kind === "field" ? (
+                                            <span
+                                                className={styles.inlineTokenKey}
+                                            >{`${parts.key}:`}</span>
+                                        ) : null}
+
+                                        <span
+                                            className={styles.inlineTokenValue}
+                                        >
+                                            {parts.value}
+                                        </span>
+
+                                        <button
+                                            className={styles.inlineTokenClose}
+                                            type="button"
+                                            aria-label={
+                                                parts.kind === "field"
+                                                    ? `Remove ${parts.key} filter`
+                                                    : `Remove ${parts.value} tag`
+                                            }
+                                            disabled={!enabled}
+                                            onMouseDown={(e) =>
+                                                e.preventDefault()
+                                            }
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const next =
+                                                    removeTokenFromQuery(
+                                                        draftValue,
+                                                        token.range.start,
+                                                        token.range.end,
+                                                    );
+                                                commitValue(next);
+                                            }}
+                                        >
+                                            <X
+                                                className={styles.tokenCloseIcon}
+                                                aria-hidden="true"
+                                            />
+                                        </button>
+                                    </span>
+                                );
+                            })}
+
+                            <span
+                                className={`${styles.activeInputShell} ${
                                     activeField
-                                        ? styles.inlineTokenInput
-                                        : styles.inlineInput
-                                }
-                                style={
-                                    activeField
-                                        ? {
-                                              width: `${Math.max(
-                                                  1,
-                                                  editableValue.length + 1,
-                                              )}ch`,
-                                          }
-                                        : undefined
-                                }
-                                placeholder={
-                                    !activeField && committedTokens.length === 0
-                                        ? placeholder
-                                        : undefined
-                                }
-                                aria-label={
-                                    activeField
-                                        ? `${activeField.key} filter`
-                                        : "Search"
-                                }
-                                value={editableValue}
-                                disabled={!enabled}
-                                onChange={(e) => {
-                                    const nextEditable = e.target.value;
-                                    const nextCaretInEditable =
-                                        e.target.selectionStart ??
-                                        nextEditable.length;
-                                    const nextActive = `${activeInputPrefix}${nextEditable}`;
-                                    const next = `${committedPrefix}${nextActive}`;
-                                    const nextCaret =
-                                        committedPrefix.length +
-                                        activeInputOffset +
-                                        nextCaretInEditable;
+                                        ? `${styles.inlineToken} ${styles.inlineTokenActive} ${styles.activeInputShellActive}`
+                                        : ""
+                                }`}
+                            >
+                                {activeField ? (
+                                    <span className={styles.inlineTokenKey}>
+                                        {activeField.key}:
+                                    </span>
+                                ) : null}
 
-                                    commitValue(next);
-                                    setCaret(nextCaret);
-                                    setManualClosed(false);
-                                    maybeOpenDropdown(next, nextCaret);
-                                }}
-                                onFocus={() => {
-                                    const el = inputRef.current;
-                                    const nextCaret =
-                                        activeStart +
-                                        activeInputOffset +
-                                        (el?.selectionStart ?? 0);
-                                    setCaret(nextCaret);
-                                    setManualClosed(false);
-                                    maybeOpenDropdown(draftValue, nextCaret);
-                                }}
-                                onClick={() => {
-                                    const el = inputRef.current;
-                                    const nextCaret =
-                                        activeStart +
-                                        activeInputOffset +
-                                        (el?.selectionStart ?? 0);
-                                    setCaret(nextCaret);
-                                    setManualClosed(false);
-                                    maybeOpenDropdown(draftValue, nextCaret);
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key !== "Backspace") return;
+                                <input
+                                    ref={inputRef}
+                                    className={
+                                        activeField
+                                            ? styles.inlineTokenInput
+                                            : styles.inlineInput
+                                    }
+                                    style={
+                                        activeField
+                                            ? {
+                                                  width: `${Math.max(
+                                                      1,
+                                                      editableValue.length + 1,
+                                                  )}ch`,
+                                              }
+                                            : undefined
+                                    }
+                                    placeholder={
+                                        !activeField &&
+                                        committedTokens.length === 0
+                                            ? placeholder
+                                            : undefined
+                                    }
+                                    aria-label={
+                                        activeField
+                                            ? `${activeField.key} filter`
+                                            : "Search"
+                                    }
+                                    value={editableValue}
+                                    disabled={!enabled}
+                                    onChange={(e) => {
+                                        const nextEditable = e.target.value;
+                                        const nextCaretInEditable =
+                                            e.target.selectionStart ??
+                                            nextEditable.length;
+                                        const nextActive = `${activeInputPrefix}${nextEditable}`;
+                                        const next = `${committedPrefix}${nextActive}`;
+                                        const nextCaret =
+                                            committedPrefix.length +
+                                            activeInputOffset +
+                                            nextCaretInEditable;
 
-                                    const selStart =
-                                        e.currentTarget.selectionStart ?? 0;
-                                    const selEnd =
-                                        e.currentTarget.selectionEnd ?? 0;
-                                    if (selStart !== 0 || selEnd !== 0) return;
-
-                                    if (activeInputOffset > 0) {
-                                        const removeAt =
-                                            activeStart + activeInputOffset - 1;
-                                        if (removeAt < 0) return;
-
-                                        const next =
-                                            draftValue.slice(0, removeAt) +
-                                            draftValue.slice(removeAt + 1);
-                                        const nextCaret = removeAt;
                                         commitValue(next);
                                         setCaret(nextCaret);
                                         setManualClosed(false);
                                         maybeOpenDropdown(next, nextCaret);
-                                        e.preventDefault();
-                                        return;
-                                    }
-
-                                    if (
-                                        committedTokens.length === 0 ||
-                                        editableValue.trim().length > 0
-                                    ) {
-                                        return;
-                                    }
-
-                                    const lastToken =
-                                        committedTokens[
-                                            committedTokens.length - 1
-                                        ];
-                                    const next = removeTokenFromQuery(
-                                        draftValue,
-                                        lastToken.range.start,
-                                        lastToken.range.end,
-                                    );
-                                    commitValue(next);
-                                    setDropdownOpen(false);
-                                    setManualClosed(false);
-                                    e.preventDefault();
-
-                                    requestAnimationFrame(() => {
-                                        const nextChunks =
-                                            splitBySemicolonOutsideQuotes(next);
-                                        const nextActiveStart =
-                                            nextChunks[nextChunks.length - 1]
-                                                ?.start ?? 0;
-                                        setCaret(nextActiveStart);
-                                        inputRef.current?.focus();
-                                        inputRef.current?.setSelectionRange(
-                                            0,
-                                            0,
+                                    }}
+                                    onFocus={() => {
+                                        const el = inputRef.current;
+                                        const nextCaret =
+                                            activeStart +
+                                            activeInputOffset +
+                                            (el?.selectionStart ?? 0);
+                                        setCaret(nextCaret);
+                                        setManualClosed(false);
+                                        maybeOpenDropdown(
+                                            draftValue,
+                                            nextCaret,
                                         );
-                                    });
-                                }}
-                                onKeyUp={() => {
-                                    const nextCaret = updateCaret();
-                                    maybeOpenDropdown(draftValue, nextCaret);
-                                }}
-                            />
-                        </span>
+                                    }}
+                                    onClick={() => {
+                                        const el = inputRef.current;
+                                        const nextCaret =
+                                            activeStart +
+                                            activeInputOffset +
+                                            (el?.selectionStart ?? 0);
+                                        setCaret(nextCaret);
+                                        setManualClosed(false);
+                                        maybeOpenDropdown(
+                                            draftValue,
+                                            nextCaret,
+                                        );
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key !== "Backspace") return;
+
+                                        const selStart =
+                                            e.currentTarget.selectionStart ?? 0;
+                                        const selEnd =
+                                            e.currentTarget.selectionEnd ?? 0;
+                                        if (selStart !== 0 || selEnd !== 0)
+                                            return;
+
+                                        if (activeInputOffset > 0) {
+                                            const removeAt =
+                                                activeStart +
+                                                activeInputOffset -
+                                                1;
+                                            if (removeAt < 0) return;
+
+                                            const next =
+                                                draftValue.slice(0, removeAt) +
+                                                draftValue.slice(removeAt + 1);
+                                            const nextCaret = removeAt;
+                                            commitValue(next);
+                                            setCaret(nextCaret);
+                                            setManualClosed(false);
+                                            maybeOpenDropdown(next, nextCaret);
+                                            e.preventDefault();
+                                            return;
+                                        }
+
+                                        if (
+                                            committedTokens.length === 0 ||
+                                            editableValue.trim().length > 0
+                                        ) {
+                                            return;
+                                        }
+
+                                        const lastToken =
+                                            committedTokens[
+                                                committedTokens.length - 1
+                                            ];
+                                        const next = removeTokenFromQuery(
+                                            draftValue,
+                                            lastToken.range.start,
+                                            lastToken.range.end,
+                                        );
+                                        commitValue(next);
+                                        setDropdownOpen(false);
+                                        setManualClosed(false);
+                                        e.preventDefault();
+
+                                        requestAnimationFrame(() => {
+                                            const nextChunks =
+                                                splitBySemicolonOutsideQuotes(
+                                                    next,
+                                                );
+                                            const nextActiveStart =
+                                                nextChunks[
+                                                    nextChunks.length - 1
+                                                ]?.start ?? 0;
+                                            setCaret(nextActiveStart);
+                                            inputRef.current?.focus();
+                                            inputRef.current?.setSelectionRange(
+                                                0,
+                                                0,
+                                            );
+                                        });
+                                    }}
+                                    onKeyUp={() => {
+                                        const nextCaret = updateCaret();
+                                        maybeOpenDropdown(draftValue, nextCaret);
+                                    }}
+                                />
+                            </span>
+                        </div>
                     </div>
                 </div>
 
