@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { AlarmClock, FishingHook, FileInput } from "lucide-react";
 import styles from "./Hooks.module.css";
 import { Plugin } from "@/api/plugins/pluginshelpers";
@@ -8,6 +9,18 @@ export type HooksProps = {
 };
 
 export default function Hooks({ onClose, plugin }: HooksProps) {
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+            }
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [onClose]);
+
     return (
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>
             <div className={styles.panel} onClick={(e) => e.stopPropagation()}>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./DeleteUser.module.css";
 import UserDeleter from "@/api/users/userdeleter";
 
@@ -14,6 +14,18 @@ export default function DeleteUser({
     username,
 }: DeleteUserProps) {
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+            }
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [onClose]);
 
     async function onDelete() {
         const result = await UserDeleter(userId);

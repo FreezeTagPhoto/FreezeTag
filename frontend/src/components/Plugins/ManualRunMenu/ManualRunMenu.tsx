@@ -35,6 +35,18 @@ export default function ManualRunMenu({
     );
 
     useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+            }
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [onClose]);
+
+    useEffect(() => {
         (async () => {
             const result = await PluginsLister();
             if (!result.ok) {
