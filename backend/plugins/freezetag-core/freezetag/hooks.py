@@ -47,6 +47,11 @@ class AddImageAction(HookAction):
         data = base64.b64encode(image_bytes)
         HookAction.__init__(self, {"name": name + "." + format, "data": data.decode("utf-8")}, "add_image")
 
+class AddRawImageAction(HookAction):
+    def __init__(self, name: str, format: str, image_bytes: bytes):
+        data = base64.b64encode(image_bytes)
+        HookAction.__init__(self, {"name": name + "." + format, "data": data.decode("utf-8")}, "add_image")
+
 class SendFormAction(HookAction):
     def __init__(self, form: str):
         """`form` should be a string containing valid HTML (can have embedded CSS), with the outermost tag being `<form></form>` without any attributes."""

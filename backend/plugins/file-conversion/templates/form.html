@@ -1,0 +1,13 @@
+<form>
+    <div style="display:flex; flex-direction:column; gap: 1rem; padding: 1rem; font-size: 1.5rem;">
+        <input type="hidden" value="{{ id }}" name="id"></input>
+        <label for="format_select">Format:</label>
+        <select name="format_select" id="format_select" style="padding: 1rem; font-size: 1.5rem;" required>
+            <option value="" disabled selected hidden>-- Select an option --</option>
+            {% for format in formats %}
+                <option value="{{ format }}">{{ format | upper }}</option>
+            {% endfor %}
+        </select>
+        <input style="padding: 1rem; font-size: 1.5rem;" type="submit" value="Convert"/>
+    </div>
+</form>
