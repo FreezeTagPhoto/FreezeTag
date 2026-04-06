@@ -15,10 +15,19 @@ export function formatCamera(
     return parts.length ? parts.join(" ") : "—";
 }
 
-export function formatResultion(
+export function formatResolution(
     width: number | null,
     height: number | null,
 ): string {
     if (height === null || width === null) return "—";
     return `${width} × ${height}`;
+}
+
+export function formatFile(filename: string | null): string {
+    if (!filename) return "—";
+
+    const dot = filename.lastIndexOf(".");
+    if (dot === -1) return filename;
+
+    return `${filename.slice(dot + 1).toUpperCase()}`;
 }

@@ -51,6 +51,12 @@ export default function PreviewWindow({
     const [baseSize, setBaseSize] = useState<BaseSize>(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
+    const [imgSrc, setImgSrc] = useState(
+        `${SERVER_ADDRESS}/thumbnails/${selectedId}?size=1`,
+    );
+    const [highResReady, setHighResReady] = useState(false);
+    const highResLoaderRef = useRef<HTMLImageElement | null>(null);
+
     const handleDeleted = useCallback(
         () => onDeleted?.(selectedId),
         [onDeleted, selectedId],
@@ -81,6 +87,52 @@ export default function PreviewWindow({
             scroller.scrollLeft = 0;
             scroller.scrollTop = 0;
         }
+    }, [selectedId]);
+
+    // when selectedId changes, show low-res immediately and preload high-res in background
+    // the highResLoaderRef guard prevents stale loads from applying after navigation
+    useEffect(() => {
+        setImgSrc(`${SERVER_ADDRESS}/thumbnails/${selectedId}?size=1`);
+        setHighResReady(false);
+
+        const prev = highResLoaderRef.current;
+        if (prev) {
+            prev.onload = null;
+            prev.onerror = null;
+        }
+
+        const loader = new Image();
+        highResLoaderRef.current = loader;
+
+        loader.onload = () => {
+            if (highResLoaderRef.current !== loader) return;
+            setImgSrc(`${SERVER_ADDRESS}/thumbnails/${selectedId}?size=2`);
+            setHighResReady(true);
+        };
+        loader.onerror = () => {
+            // high-res failed; stop blurring so the low-res is shown cleanly
+            if (highResLoaderRef.current !== loader) return;
+            setHighResReady(true);
+        };
+        loader.src = `${SERVER_ADDRESS}/thumbnails/${selectedId}?size=2`;
+
+        // if size=2 is already in the browser cache, loader.complete will be true,
+        // skip low-res phase
+        if (loader.complete) {
+            loader.onload = null;
+            loader.onerror = null;
+            highResLoaderRef.current = null;
+            setImgSrc(`${SERVER_ADDRESS}/thumbnails/${selectedId}?size=2`);
+            setHighResReady(true);
+        }
+
+        return () => {
+            loader.onload = null;
+            loader.onerror = null;
+            if (highResLoaderRef.current === loader) {
+                highResLoaderRef.current = null;
+            }
+        };
     }, [selectedId]);
 
     useEffect(() => {
@@ -130,12 +182,23 @@ export default function PreviewWindow({
 
     const ensureBaseSize = useCallback(() => {
         const img = imgRef.current;
-        if (!img) return;
+        const scroller = scrollRef.current;
+        if (!img || !scroller) return;
 
-        const r = img.getBoundingClientRect();
-        if (r.width > 1 && r.height > 1) {
-            setBaseSize({ w: r.width, h: r.height });
-        }
+        const nW = img.naturalWidth;
+        const nH = img.naturalHeight;
+        if (nW < 1 || nH < 1) return;
+
+        const cW = scroller.clientWidth;
+        const cH = scroller.clientHeight;
+        if (cW < 1 || cH < 1) return;
+
+        const imgAspect = nW / nH;
+        const cAspect = cW / cH;
+        const w = imgAspect > cAspect ? cW : cH * imgAspect;
+        const h = imgAspect > cAspect ? cW / imgAspect : cH;
+
+        setBaseSize({ w, h });
     }, []);
 
     useLayoutEffect(() => {
@@ -165,8 +228,19 @@ export default function PreviewWindow({
         if (zoom === 1) {
             const imgRect = event.currentTarget.getBoundingClientRect();
 
-            if (!baseSize && imgRect.width > 1 && imgRect.height > 1) {
-                setBaseSize({ w: imgRect.width, h: imgRect.height });
+            if (!baseSize) {
+                const img = event.currentTarget;
+                const nW = img.naturalWidth;
+                const nH = img.naturalHeight;
+                if (nW > 0 && nH > 0) {
+                    const cW = scroller.clientWidth;
+                    const cH = scroller.clientHeight;
+                    const imgAspect = nW / nH;
+                    const cAspect = cW / cH;
+                    const w = imgAspect > cAspect ? cW : cH * imgAspect;
+                    const h = imgAspect > cAspect ? cW / imgAspect : cH;
+                    setBaseSize({ w, h });
+                }
             }
 
             const fx = (event.clientX - imgRect.left) / imgRect.width;
@@ -201,6 +275,29 @@ export default function PreviewWindow({
 
         setPendingPan(null);
     }, [zoom, pendingPan]);
+
+    // preserve focal point so visible image content doesn't shift under sidebar column
+    // (when toggling sidebar)
+    const handleSidebarToggle = (e: ReactMouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+
+        if (zoom !== 1 && scrollRef.current) {
+            const scroller = scrollRef.current;
+            const fx =
+                scroller.scrollWidth > 0
+                    ? (scroller.scrollLeft + scroller.clientWidth / 2) /
+                      scroller.scrollWidth
+                    : 0.5;
+            const fy =
+                scroller.scrollHeight > 0
+                    ? (scroller.scrollTop + scroller.clientHeight / 2) /
+                      scroller.scrollHeight
+                    : 0.5;
+            setPendingPan({ fx, fy });
+        }
+
+        setSidebarOpen((v) => !v);
+    };
 
     const zoomed = zoom !== 1;
 
@@ -277,10 +374,7 @@ export default function PreviewWindow({
                     <button
                         type="button"
                         className={styles.infoButton}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setSidebarOpen((v) => !v);
-                        }}
+                        onClick={handleSidebarToggle}
                         aria-label={sidebarOpen ? "Hide info" : "Show info"}
                         title={sidebarOpen ? "Hide info" : "Show info"}
                     >
@@ -313,7 +407,7 @@ export default function PreviewWindow({
                     >
                         <img
                             ref={imgRef}
-                            src={`${SERVER_ADDRESS}/thumbnails/${selectedId}?size=2`}
+                            src={imgSrc}
                             alt={`Preview of image ${selectedId}`}
                             className={styles.viewerImage}
                             draggable={false}
@@ -323,6 +417,8 @@ export default function PreviewWindow({
                             onLoad={handleImageLoad}
                             style={{
                                 cursor,
+                                filter: highResReady ? undefined : "blur(3px)",
+                                // transition: "filter 10ms ease",
                                 ...(zoomedStyle ?? {}),
                             }}
                         />

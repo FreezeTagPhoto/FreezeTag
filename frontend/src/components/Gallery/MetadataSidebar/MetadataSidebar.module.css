@@ -2,6 +2,8 @@
     width: 100%;
     min-width: 0;
 
+    font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+
     background: var(--base);
     border-left: var(--border-info);
     padding: 20px 24px;
@@ -139,6 +141,19 @@
     display: grid;
     gap: 10px;
     min-width: 0;
+}
+
+.twoColumnRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    min-width: 0;
+}
+
+@media (max-width: 480px) {
+    .twoColumnRow {
+        grid-template-columns: 1fr;
+    }
 }
 
 .detailRow {

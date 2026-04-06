@@ -2,9 +2,10 @@
 import {
     useEffect,
     useState,
+    useCallback,
     SubmitEvent,
     ChangeEvent,
-    KeyboardEvent,
+    KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import {
     GetPluginConfig,
@@ -23,15 +24,17 @@ export type ConfigProps = {
 export default function Config({ onClose, plugin }: ConfigProps) {
     const [fields, setFields] = useState<Record<string, PluginConfigField>>({});
     const [formData, setFormData] = useState<Record<string, string>>({});
+    const [loading, setLoading] = useState(true);
 
-    const fetchFields = async () => {
+    const fetchFields = useCallback(async () => {
         const result = await GetPluginConfig(plugin.name);
         if (result.ok) {
             setFields(result.value);
         } else {
             console.error(`Plugin Config Error! ${result.error.message}`);
         }
-    };
+        setLoading(false);
+    }, [plugin.name]);
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = event.target;
@@ -45,7 +48,7 @@ export default function Config({ onClose, plugin }: ConfigProps) {
         });
     };
 
-    const noEnterSubmit = (event: KeyboardEvent<HTMLInputElement>) => {
+    const noEnterSubmit = (event: ReactKeyboardEvent<HTMLInputElement>) => {
         if (event.key === "Enter") {
             event.preventDefault();
         }
@@ -88,7 +91,19 @@ export default function Config({ onClose, plugin }: ConfigProps) {
     // why is this a lint error twin :bro:
     useEffect(() => {
         fetchFields();
-    }, []); // eslint-disable-line
+    }, [fetchFields]);
+
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+            }
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [onClose]);
 
     return (
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>
@@ -157,7 +172,9 @@ export default function Config({ onClose, plugin }: ConfigProps) {
                             )}
                         </div>
                     ))}
-                    {Object.keys(fields).length != 0 ? (
+                    {!loading && Object.keys(fields).length === 0 ? (
+                        <p>Nothing to see here</p>
+                    ) : !loading ? (
                         <button
                             className={`${styles.plugin_item} ${styles.plugin_item_button} ${styles.submit_button}`}
                             type="submit"
@@ -168,9 +185,7 @@ export default function Config({ onClose, plugin }: ConfigProps) {
                                 Save Changes
                             </p>
                         </button>
-                    ) : (
-                        <p>Nothing to see here</p>
-                    )}
+                    ) : null}
                 </form>
             </div>
         </div>

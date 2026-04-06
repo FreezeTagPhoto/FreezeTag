@@ -263,7 +263,7 @@
     color: var(--base);
 }
 
-.hintRow {
+/* .hintRow {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -289,12 +289,12 @@
     font-size: 12px;
     padding: 3px 10px;
     border-radius: 999px;
-    /* background: color-mix(in srgb, var(--text) 6%, transparent); */
-    /* border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); */
+    background: color-mix(in srgb, var(--text) 6%, transparent); 
+    border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
     background: var(--mantle);
     border: var(--border-info);
     border-color: var(--crust);
     color: var(--text);
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
-}
+} */

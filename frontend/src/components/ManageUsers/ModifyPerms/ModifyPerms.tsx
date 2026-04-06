@@ -34,6 +34,18 @@ export default function ModifyPerms({
     const [allPerms, setAllPerms] = useState<Perm[]>([]);
 
     useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+            }
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [onClose]);
+
+    useEffect(() => {
         (async () => {
             const result = await PermsGetter(userId);
             if (result.ok) {

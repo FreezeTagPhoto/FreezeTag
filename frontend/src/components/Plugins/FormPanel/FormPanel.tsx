@@ -27,6 +27,18 @@ export default function FormPanel({
         setProcessedString(formString.substring(formTagLen, lastIndex));
     }, [formString]);
 
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+            }
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [onClose]);
+
     const onSubmit = (e: FormData) => {
         FormDataPluginRunner(plugin, hook, e);
         onFormSubmit();
