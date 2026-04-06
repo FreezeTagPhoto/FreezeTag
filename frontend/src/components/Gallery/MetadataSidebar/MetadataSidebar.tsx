@@ -250,12 +250,16 @@ const MetadataSidebar = memo(function MetadataSidebar({
     const pluginRunner = async (
         plugin_name: string,
         hook_name: string,
-        _hook_signature: string,
+        hook_signature: string,
         hook_type: string,
         form_receive_hook_name?: string,
     ) => {
         setSelectingPlugin(false);
-        const res_promise = PluginRunner(plugin_name, hook_name, selectedId);
+        const res_promise = PluginRunner(
+            plugin_name,
+            hook_name,
+            hook_signature === "image_batch" ? [selectedId] : selectedId,
+        );
         if (hook_type !== "generate_form") {
             router.replace("/jobs");
             return;
@@ -283,14 +287,27 @@ const MetadataSidebar = memo(function MetadataSidebar({
                 console.error(job_output.error);
                 return;
             }
-            if (job_output.value.completed?.length === 1) {
+            if (!job_output.value.in_progress?.length) {
                 break;
             }
             // Wait 1 second before asking again
             await new Promise((r) => setTimeout(r, 1000));
         }
 
-        const form: string | undefined = job_output.value.completed[0]?.form;
+        if (job_output.value.failed?.length) {
+            console.error(
+                `Job failed! Reasons: ${JSON.stringify(job_output.value.failed)}`,
+            );
+            return;
+        }
+
+        if (!job_output.value.completed) {
+            console.error(`No completed jobs for some reason!`);
+            return;
+        }
+
+        const form: string | undefined = job_output.value.completed[0].form;
+
         if (!form) {
             console.error(`Did not get form out of plugin! Job UUID: ${uuid}`);
             return;
