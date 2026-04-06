@@ -84,6 +84,8 @@ type AuthService interface {
 	SetUserProfilePicture(userID database.UserID, pictureData []byte, filename string) error
 	// GetUserProfilePicture returns the profile picture for a user, given the user ID. Returns an error if the user does not exist or does not have a profile picture.
 	GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error)
+	// SetUserVisibility sets the visibility of a user's profile to either public or private
+	SetUserVisibilityMode(userID database.UserID, visibility int) error
 	// ResetProfilePicture resets the profile picture for a user to the default generated avatar. Returns an error if the user does not exist.
 	ResetProfilePicture(userID database.UserID) error
 }
@@ -316,6 +318,14 @@ func (s *DefaultAuthService) SetUserProfilePicture(userID database.UserID, pictu
 
 func (s *DefaultAuthService) GetUserProfilePicture(userID database.UserID) (database.ProfilePicture, error) {
 	return s.userDatabase.GetUserProfilePicture(userID)
+}
+
+func (s *DefaultAuthService) SetUserVisibilityMode(userID database.UserID, visibility int) error {
+	if visibility < 0 || visibility > 2 {
+		log.Printf("[WARN] User with ID %d attempted to set invalid visibility mode: %d", userID, visibility)
+		return fmt.Errorf("invalid visibility mode: %d", visibility)
+	}
+	return s.userDatabase.SetUserVisibilityMode(userID, visibility)
 }
 
 func (s *DefaultAuthService) ResetProfilePicture(userID database.UserID) error {

@@ -201,6 +201,7 @@ func (ue UserEndpoint) GetPermissions(c *gin.Context) {
 
 // @Summary     Get a user's profile picture
 // @Description Retrieves the profile picture of a user by their ID.
+// @Description Retrieves the profile picture of a user by their ID.
 // a user can only access their own profile picture, but an admin with the appropriate permissions can access any user's profile picture.
 // @Tags        users
 // @Produce     image/webp
@@ -257,6 +258,44 @@ func (ue UserEndpoint) SetProfilePicture(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, api.MessageResponse{Message: "profile picture updated"})
+}
+
+// @Summary     Set a user's visibility mode
+// @Description Sets the visibility mode of a user by their ID. The visibility mode determines who can see the user's profile and images. Accepts a query parameter "mode" with values 0, 1, or 2, where 0 means only the user can see their profile and images, 1 means anyone can see their profile but only followers can see their images, and 2 means anyone can see their profile and images. a user can only update their own visibility mode, but an admin with the appropriate permissions can update any user's visibility mode.
+// @Tags        users
+// @Accept      application/json
+// @Produce     application/json
+// @Param       id   path      int  true  "User ID"
+// @Param       mode query     int  true  "Visibility mode (0, 1, or 2)"
+// @Success     200 {object} api.MessageResponse
+// @Failure     400 {object} api.BadRequestResponse
+// @Failure     500 {object} api.ServerErrorResponse
+// @Router      /users/visibility/{id} [post]
+func (ue UserEndpoint) SetUserVisibilityMode(c *gin.Context) {
+	targetID, err := api.ParseParamIntoID[database.UserID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid target id"})
+		return
+	}
+	modeParam := c.Query("mode")
+	if modeParam == "" {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "missing mode query parameter"})
+		return
+	}
+	mode, err := strconv.Atoi(modeParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid mode query parameter"})
+		return
+	}
+	if mode < 0 || mode > 2 {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "mode query parameter must be 0, 1, or 2"})
+		return
+	}
+	if err := ue.authService.SetUserVisibilityMode(targetID, mode); err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "failed to update user visibility mode: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, api.MessageResponse{Message: "user visibility mode updated"})
 }
 
 // @Summary     Reset a user's profile picture to default

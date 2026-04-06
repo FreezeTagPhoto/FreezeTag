@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"freezetag/backend/pkg/database/data"
 	"freezetag/backend/pkg/images"
 
@@ -16,9 +17,10 @@ type UserID uint64
 type TokenID uint64
 
 type PublicUser struct {
-	ID        UserID `json:"id"`
-	Username  string `json:"username"`
-	CreatedAt int64  `json:"created_at"`
+	ID             UserID `json:"id"`
+	Username       string `json:"username"`
+	CreatedAt      int64  `json:"created_at"`
+	VisibilityMode int    `json:"visibility_mode"`
 
 	PasswordHash string `json:"-"`
 }
@@ -85,29 +87,12 @@ type UserDatabase interface {
 	SetUserProfilePicture(userID UserID, pictureData []byte) error
 	// Get user profile picture, return error if user not found or issue occurs
 	GetUserProfilePicture(userID UserID) (ProfilePicture, error)
+	// Set user visibility mode, return error if user not found or issue occurs. visibility should be either 0 (private) or 1 (public)
+	SetUserVisibilityMode(userID UserID, visibility int) error
 }
 
 type SqliteUserDatabase struct {
 	db *sql.DB
-}
-
-//go:embed user_schema.sql
-var user_schema string
-
-func InitSQLiteUserDatabase(datasource string) (SqliteUserDatabase, error) {
-	db, err := sql.Open("sqlite3", datasource)
-	if err != nil {
-		return SqliteUserDatabase{}, err
-	}
-	_, err = db.Exec(user_schema)
-	if err != nil {
-		return SqliteUserDatabase{}, err
-	}
-	defaultDB := SqliteUserDatabase{db}
-	if err := defaultDB.seedPermissions(); err != nil {
-		return SqliteUserDatabase{}, err
-	}
-	return defaultDB, nil
 }
 
 // Seed the App_Permissions table with all defined permissions
@@ -155,10 +140,11 @@ func (s SqliteUserDatabase) AddUser(username string, passwordHash string) (*Publ
 		return nil, err
 	}
 	return &PublicUser{
-		ID:           UserID(id),
-		Username:     username,
-		CreatedAt:    createdAt,
-		PasswordHash: passwordHash,
+		ID:             UserID(id),
+		Username:       username,
+		CreatedAt:      createdAt,
+		VisibilityMode: 1,
+		PasswordHash:   passwordHash,
 	}, nil
 }
 
@@ -166,18 +152,20 @@ func (s SqliteUserDatabase) GetUserById(id UserID) (*PublicUser, error) {
 	var username string
 	var passwordHash string
 	var createdAt int64
+	var visibilityMode int
 	err := s.db.QueryRow(
-		"SELECT username, passwordHash, createdAt FROM Users WHERE id = ?",
+		"SELECT username, passwordHash, createdAt, visibility_mode FROM Users WHERE id = ?",
 		id,
-	).Scan(&username, &passwordHash, &createdAt)
+	).Scan(&username, &passwordHash, &createdAt, &visibilityMode)
 	if err != nil {
 		return nil, err
 	}
 	return &PublicUser{
-		ID:           id,
-		Username:     username,
-		CreatedAt:    createdAt,
-		PasswordHash: passwordHash,
+		ID:             id,
+		Username:       username,
+		CreatedAt:      createdAt,
+		VisibilityMode: visibilityMode,
+		PasswordHash:   passwordHash,
 	}, nil
 }
 
@@ -185,18 +173,20 @@ func (s SqliteUserDatabase) GetUserByUsername(username string) (*PublicUser, err
 	var id UserID
 	var createdAt int64
 	var passwordHash string
+	var visibilityMode int
 	err := s.db.QueryRow(
-		"SELECT id, createdAt, passwordHash FROM Users WHERE username = ?",
+		"SELECT id, createdAt, passwordHash, visibility_mode FROM Users WHERE username = ?",
 		username,
-	).Scan(&id, &createdAt, &passwordHash)
+	).Scan(&id, &createdAt, &passwordHash, &visibilityMode)
 	if err != nil {
 		return nil, err
 	}
 	return &PublicUser{
-		ID:           id,
-		Username:     username,
-		CreatedAt:    createdAt,
-		PasswordHash: passwordHash,
+		ID:             id,
+		Username:       username,
+		CreatedAt:      createdAt,
+		VisibilityMode: visibilityMode,
+		PasswordHash:   passwordHash,
 	}, nil
 }
 
@@ -232,7 +222,7 @@ func (s SqliteUserDatabase) SetUserPassword(userID UserID, newPasswordHash strin
 }
 
 func (s SqliteUserDatabase) ListUsers() ([]*PublicUser, error) {
-	rows, err := s.db.Query("SELECT id, username, createdAt, passwordHash FROM Users")
+	rows, err := s.db.Query("SELECT id, username, createdAt, passwordHash, visibility_mode FROM Users")
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +231,7 @@ func (s SqliteUserDatabase) ListUsers() ([]*PublicUser, error) {
 	var users []*PublicUser
 	for rows.Next() {
 		var user PublicUser
-		err := rows.Scan(&user.ID, &user.Username, &user.CreatedAt, &user.PasswordHash)
+		err := rows.Scan(&user.ID, &user.Username, &user.CreatedAt, &user.PasswordHash, &user.VisibilityMode)
 		if err != nil {
 			return nil, err
 		}
@@ -550,6 +540,10 @@ func (s SqliteUserDatabase) EnsureAdmin(userID UserID) error {
 	if err != nil {
 		return err
 	}
+	err = s.SetUserVisibilityMode(userID, 2)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -564,7 +558,7 @@ func getTokenStatus(revoked int, expiresAt sql.NullInt64) TokenStatus {
 }
 
 func (s SqliteUserDatabase) AllUsers() ([]PublicUser, error) {
-	rows, err := s.db.Query("SELECT id, username, createdAt FROM Users")
+	rows, err := s.db.Query("SELECT id, username, createdAt, visibility_mode FROM Users")
 	if err != nil {
 		return nil, err
 	}
@@ -573,7 +567,7 @@ func (s SqliteUserDatabase) AllUsers() ([]PublicUser, error) {
 	var users []PublicUser
 	for rows.Next() {
 		var user PublicUser
-		err := rows.Scan(&user.ID, &user.Username, &user.CreatedAt)
+		err := rows.Scan(&user.ID, &user.Username, &user.CreatedAt, &user.VisibilityMode)
 		if err != nil {
 			return nil, err
 		}
@@ -611,4 +605,23 @@ func (s SqliteUserDatabase) GetUserProfilePicture(userID UserID) (ProfilePicture
 		return nil, err
 	}
 	return pictureData, nil
+}
+
+func (s SqliteUserDatabase) SetUserVisibilityMode(userID UserID, visibility int) error {
+	result, err := s.db.Exec(
+		"UPDATE Users SET visibility_mode = ? WHERE id = ?",
+		visibility,
+		userID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to execute visibility update: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected != 1 {
+		return fmt.Errorf("failed to update visibility mode for user %d: user not found or no changes made (rows affected: %d)", userID, rowsAffected)
+	}
+	return nil
 }

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"freezetag/backend/api/albums"
 	"freezetag/backend/api/files"
 	"freezetag/backend/api/jobs"
 	"freezetag/backend/api/login"
@@ -52,6 +53,8 @@ type dependencies struct {
 	jobService    services.JobService
 	authService   services.AuthService
 	pluginService services.PluginService
+
+	albumRepository database.AlbumDatabase
 }
 
 // @title FreezeTag API
@@ -88,10 +91,11 @@ func initializeDependencies() *dependencies {
 	parserCollection := initParserCollection()
 
 	jobRepo := repositories.NewDefaultJobRepository()
-	imageRepo := initDefaultImageRepository(defaultDataDir, parserCollection)
-	userRepo := initDefaultUserDatabase(defaultDataDir)
+	manager := initDefaultManager(defaultDataDir, parserCollection)
+	imageService := initDefaultImageRepository(manager, parserCollection)
+	userRepo := manager.UserDB
 
-	pluginService, err := services.InitDefaultPluginService("./plugins", imageRepo)
+	pluginService, err := services.InitDefaultPluginService("./plugins", imageService)
 	if err != nil {
 		log.Fatalf("[ERR]  error launching plugin service: %v", err)
 	}
@@ -103,7 +107,7 @@ func initializeDependencies() *dependencies {
 		}
 		log.Printf("       - %s version %s%s", plug.Name, plug.Version, dis)
 	}
-	jobService := services.InitDefaultJobService(jobRepo, imageRepo, pluginService)
+	jobService := services.InitDefaultJobService(jobRepo, imageService, pluginService)
 	authService := services.InitDefaultAuthService(userRepo, parserCollection)
 	err = authService.EnsureLogin()
 	if err != nil {
@@ -111,36 +115,29 @@ func initializeDependencies() *dependencies {
 	}
 
 	return &dependencies{
-		imageRepository: imageRepo,
+		imageRepository: imageService,
 		jobRepository:   jobRepo,
 		jobService:      jobService,
 		authService:     authService,
 		pluginService:   pluginService,
+		albumRepository: manager.AlbumDB,
 	}
 }
 
-func initDefaultUserDatabase(dataDir string) database.UserDatabase {
+func initDefaultImageRepository(mgr *database.Manager, parserCollection images.Parser) repositories.ImageRepository {
+	return repositories.InitImageRepository(mgr.ImageDB, parserCollection, path.Join(defaultDataDir, "images"))
+}
+
+func initDefaultManager(dataDir string, parserCollection images.Parser) *database.Manager {
 	err := os.MkdirAll(dataDir, os.ModePerm)
 	if err != nil {
 		log.Fatalf("failed to create data directory")
 	}
-	db, err := database.InitSQLiteUserDatabase(path.Join(dataDir, "users.db"))
+	manager, err := database.NewDefaultManager(path.Join(dataDir, "database.db"))
 	if err != nil {
-		log.Fatalf("failed to initialize user database: %v", err.Error())
+		log.Fatalf("failed to initialize database manager: %v", err.Error())
 	}
-	return db
-}
-
-func initDefaultImageRepository(dataDir string, parserCollection images.Parser) repositories.ImageRepository {
-	err := os.MkdirAll(dataDir, os.ModePerm)
-	if err != nil {
-		log.Fatalf("failed to create data directory")
-	}
-	db, err := database.InitSQLiteImageDatabase(path.Join(dataDir, "database.db"))
-	if err != nil {
-		log.Fatalf("failed to initialize database: %v", err.Error())
-	}
-	return repositories.InitImageRepository(db, parserCollection, path.Join(dataDir, "images"))
+	return manager
 }
 
 // In order to make permission changes easy and keep unit tests modular, all middleware should
@@ -165,6 +162,33 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 	initFileEndpoints(authGroup, deps)
 	initUserEndpoints(authGroup, deps)
 	initPluginEndpoints(authGroup, deps)
+	initAlbumEndpoints(authGroup, deps)
+}
+
+func initAlbumEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+	ae := albums.InitAlbumEndpoint(deps.albumRepository)
+
+	albumGroup := baseGroup.Group("/album")
+	{
+		albumGroup.GET("", ae.ListAlbums)
+		albumGroup.POST("", ae.CreateAlbum)
+		albumGroup.GET("/image/:id", ae.ListImageAlbums)
+
+		singleAlbum := albumGroup.Group("/:id")
+		{
+			singleAlbum.DELETE("", ae.DeleteAlbum)
+			singleAlbum.GET("", ae.GetAlbumInfo)
+			singleAlbum.PATCH("/name", ae.RenameAlbum)
+			singleAlbum.PATCH("/visibility", ae.ChangeAlbumVisibility)
+
+			singleAlbum.GET("/permissions", ae.GetAlbumPermissions)
+			singleAlbum.PUT("/permissions", ae.SetUserAlbumPermission)
+
+			singleAlbum.POST("/images", ae.AddImageToAlbum)
+			singleAlbum.GET("/images", ae.ListAlbumImages)
+			singleAlbum.DELETE("/images/:image_id", ae.RemoveImageFromAlbum)
+		}
+	}
 }
 
 func initApiKeyEndpoints(baseGroup gin.IRouter, deps *dependencies) {
@@ -173,7 +197,6 @@ func initApiKeyEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		te := tokens.InitTokenEndpoint(deps.authService)
 		apiKeyGroup.POST("/revoke/:id", middleware.RequirePermission(data.WriteToken), te.RevokeUserToken)
 		apiKeyGroup.POST("/create", middleware.RequirePermission(data.WriteToken), te.CreateUserToken)
-
 		apiKeyGroup.POST("/admin/revoke/:id", middleware.RequirePermission(data.WriteAnyToken), te.AdminRevokeToken)
 		apiKeyGroup.DELETE("/admin/delete/:id", middleware.RequirePermission(data.WriteAnyToken), te.AdminDeleteUserToken)
 	}
@@ -236,6 +259,7 @@ func initUserEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		userGroup.POST("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.AddPermissions)
 		userGroup.DELETE("/permissions/:id", middleware.RequirePermission(data.WritePermissions), ue.RevokePermissions)
 
+		userGroup.POST("/visibility/:id", middleware.RequirePermissionOrSelf(data.WriteUser), ue.SetUserVisibilityMode)
 	}
 }
 

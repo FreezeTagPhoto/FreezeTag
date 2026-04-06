@@ -512,9 +512,15 @@ func TestGetTagCountsInvalidId(t *testing.T) {
 func TestGetTagCountsQuerySuccess(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		GetQueryTagCounts(mock.Anything).
+		GetQueryTagCounts(mock.Anything, mock.Anything).
 		Return(map[string]int64{"foo": 2}, nil)
+
 	router := gin.Default()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", "1")
+		c.Next()
+	})
+
 	InitTagEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
@@ -522,7 +528,9 @@ func TestGetTagCountsQuerySuccess(t *testing.T) {
 	q := req.URL.Query()
 	q.Add("make", "Apple")
 	req.URL.RawQuery = q.Encode()
+
 	router.ServeHTTP(w, req)
+
 	assert.Equal(t, http.StatusOK, w.Code)
 	expected := api.TagCounts(map[string]int64{"foo": 2})
 	var got api.TagCounts
@@ -533,17 +541,17 @@ func TestGetTagCountsQuerySuccess(t *testing.T) {
 func TestGetTagCountsQueryError(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		GetQueryTagCounts(mock.Anything).
+		GetQueryTagCounts(mock.Anything, mock.Anything).
 		Return(nil, fmt.Errorf("foo"))
+
 	router := gin.Default()
+	router.Use(func(c *gin.Context) { c.Set("userID", "1"); c.Next() })
 	InitTagEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/tag/search", nil)
-	q := req.URL.Query()
-	q.Add("make", "Apple")
-	req.URL.RawQuery = q.Encode()
+	req, _ := http.NewRequest("GET", "/tag/search?make=Apple", nil)
 	router.ServeHTTP(w, req)
+
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	expected := api.ServerErrorResponse{Error: "foo"}
 	var got api.ServerErrorResponse
@@ -553,15 +561,15 @@ func TestGetTagCountsQueryError(t *testing.T) {
 
 func TestGetTagCountsQueryInvalidField(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
+
 	router := gin.Default()
+	router.Use(func(c *gin.Context) { c.Set("userID", "1"); c.Next() })
 	InitTagEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/tag/search", nil)
-	q := req.URL.Query()
-	q.Add("near", "foo")
-	req.URL.RawQuery = q.Encode()
+	req, _ := http.NewRequest("GET", "/tag/search?near=foo", nil)
 	router.ServeHTTP(w, req)
+
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	expected := api.BadRequestResponse{Error: "invalid near parameter"}
 	var got api.BadRequestResponse
@@ -574,7 +582,9 @@ func TestFullDeleteSuccess(t *testing.T) {
 	m.EXPECT().
 		DeleteTags([]string{"foo", "bar"}).
 		Return(2, nil)
+
 	router := gin.Default()
+	router.Use(func(c *gin.Context) { c.Set("userID", "1"); c.Next() })
 	InitTagEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
@@ -585,7 +595,9 @@ func TestFullDeleteSuccess(t *testing.T) {
 
 func TestFullDeleteNoTags(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
+
 	router := gin.Default()
+	router.Use(func(c *gin.Context) { c.Set("userID", "1"); c.Next() })
 	InitTagEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()
@@ -599,7 +611,9 @@ func TestFullDeleteRepoError(t *testing.T) {
 	m.EXPECT().
 		DeleteTags(mock.Anything).
 		Return(0, fmt.Errorf("test error"))
+
 	router := gin.Default()
+	router.Use(func(c *gin.Context) { c.Set("userID", "1"); c.Next() })
 	InitTagEndpoint(m).RegisterEndpoints(router)
 
 	w := httptest.NewRecorder()

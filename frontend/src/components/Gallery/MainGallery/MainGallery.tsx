@@ -80,7 +80,7 @@ export default function MainGallery({
                 onKeyDown={handleGridKeyDown}
                 aria-label="Photo gallery"
             >
-                {image_ids.map((id, index) => (
+                {image_ids?.map((id, index) => (
                     <GalleryImage
                         key={id}
                         id={id}

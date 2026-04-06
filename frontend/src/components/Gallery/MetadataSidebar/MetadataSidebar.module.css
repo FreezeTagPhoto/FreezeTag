@@ -579,6 +579,190 @@
     line-height: 1.2rem;
 }
 
+.inlineMuted {
+    color: var(--subtext0);
+    font-size: 0.85rem;
+    line-height: 1.2rem;
+}
+
+.albumCurrentWrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.albumTokenPill {
+    height: 28px;
+    padding: 0 10px;
+}
+
+.albumOpenButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+
+    border: var(--border-info);
+    background: var(--crust);
+    color: var(--text);
+
+    cursor: pointer;
+    transition:
+        background 120ms ease,
+        border-color 120ms ease,
+        transform 80ms ease;
+}
+
+.albumOpenButton:hover {
+    background: var(--surface0);
+}
+
+.albumOpenButton:active {
+    transform: scale(0.98);
+}
+
+.albumOpenButton:disabled {
+    color: var(--subtext0);
+    background: var(--mantle);
+    border-color: var(--surface1);
+    cursor: default;
+}
+
+.albumEditor {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.albumModeRow {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.albumModeButton {
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+
+    border: var(--border-info);
+    background: var(--base);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.albumModeButton:hover {
+    background: var(--surface0);
+}
+
+.albumModeButton:disabled {
+    color: var(--subtext0);
+    background: var(--mantle);
+    border-color: var(--surface1);
+    cursor: default;
+}
+
+.albumModeButtonActive {
+    background: var(--surface0);
+    border-color: var(--accent2);
+}
+
+.albumFormStack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.albumFormRow {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.albumInput,
+.albumSelect {
+    height: 32px;
+    border-radius: 8px;
+    border: var(--border-info);
+    background: var(--base);
+    color: var(--text);
+    padding: 0 10px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.albumSelect {
+    cursor: pointer;
+}
+
+.albumPrimaryButton,
+.albumSecondaryButton {
+    height: 32px;
+    border-radius: 8px;
+    border: var(--border-info);
+    background: var(--base);
+    color: var(--text);
+    cursor: pointer;
+    padding: 0 12px;
+    white-space: nowrap;
+}
+
+.albumPrimaryButton:hover,
+.albumSecondaryButton:hover {
+    background: var(--surface0);
+}
+
+.albumPrimaryButton:disabled,
+.albumSecondaryButton:disabled {
+    color: var(--subtext0);
+    background: var(--mantle);
+    border-color: var(--surface1);
+    cursor: default;
+}
+
+.albumSecondaryButton {
+    align-self: flex-start;
+}
+
+.albumInputRow {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.albumInputWrap {
+    flex: 1;
+    position: relative;
+}
+
+.albumInputField {
+    border: 1px solid var(--border-info) !important;
+    border-radius: 8px !important;
+    background: var(--crust) !important;
+}
+
+.albumDropdown {
+    top: 100%;
+    width: 100%;
+}
+
+.albumSuggestEmpty {
+    cursor: default;
+}
+
+.albumSuggestLabelNew {
+    color: var(--subtext0);
+}
+
+.publicIcon {
+    color: var(--blue);
+}
+
 /* ===========================
    Icon helpers
    =========================== */
@@ -623,6 +807,15 @@
     .sidebarTitle {
         margin-bottom: 10px;
     }
+
+    .albumFormRow {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .albumSecondaryButton {
+        width: 100%;
+    }
 }
 
 .plugin_run_button {
@@ -643,4 +836,9 @@
         background 120ms ease,
         border-color 120ms ease,
         transform 80ms ease;
+}
+
+.viewerSidebar input:focus-visible {
+    outline: none;
+    box-shadow: none;
 }

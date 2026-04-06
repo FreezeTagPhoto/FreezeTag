@@ -85,9 +85,10 @@ export default function Config({ onClose, plugin }: ConfigProps) {
         await fetchFields();
     };
 
+    // why is this a lint error twin :bro:
     useEffect(() => {
         fetchFields();
-    }, []);
+    }, []); // eslint-disable-line
 
     return (
         <div className={styles.viewerBackdrop} onClick={() => onClose()}>

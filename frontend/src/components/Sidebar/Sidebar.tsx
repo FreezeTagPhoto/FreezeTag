@@ -22,6 +22,7 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     ChevronsLeft,
+    Album,
 } from "lucide-react";
 
 import { useContext, useEffect, useMemo, useState } from "react";
@@ -40,6 +41,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
     { label: "Gallery", href: "/", icon: Images },
+    { label: "Albums", href: "/albums", icon: Album },
     {
         label: "Upload",
         href: "/upload",

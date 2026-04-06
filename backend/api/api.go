@@ -86,6 +86,22 @@ type LoginCredentials struct {
 	Password string `form:"password" json:"password" binding:"required"`
 }
 
+type AlbumCreateResponse struct {
+	AlbumID database.AlbumID `json:"album_id"`
+}
+
+type AlbumNameResponse struct {
+	Name string `json:"name"`
+}
+
+type AlbumOwnerResponse struct {
+	OwnerID database.UserID `json:"owner_id"`
+}
+
+type AlbumSharedUsersResponse struct {
+	SharedUserIDs []database.UserID `json:"shared_user_ids"`
+}
+
 type TagCounts map[string]int64
 
 type PasswordChangeRequest struct {

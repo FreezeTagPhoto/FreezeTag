@@ -2,6 +2,7 @@ package search
 
 import (
 	"freezetag/backend/api"
+	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/database/queries"
 	"freezetag/backend/pkg/repositories"
 	"net/http"
@@ -44,6 +45,16 @@ func InitSearchEndpoint(repository repositories.ImageRepository) SearchEndpoint 
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
 func (se SearchEndpoint) Search(c *gin.Context) {
+	userId, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userId not found in context"})
+		return
+	}
+	uid, err := api.ParseParamIntoID[database.UserID](userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userId in context is not of type UserID"})
+		return
+	}
 	query := api.GetRequestQuery(c)
 	if query == nil {
 		return
@@ -90,7 +101,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 			return
 		}
 	}
-	images, err := se.imageRepository.SearchImageOrderedPaged(query, field, order, pageSize, pageNo)
+	images, err := se.imageRepository.SearchImageOrderedPaged(query, field, order, pageSize, pageNo, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return

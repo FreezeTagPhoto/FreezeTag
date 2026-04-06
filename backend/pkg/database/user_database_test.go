@@ -11,9 +11,9 @@ import (
 
 func createTempUserDatabase(t *testing.T) UserDatabase {
 	tmp := createTempFile(t)
-	db, err := InitSQLiteUserDatabase(tmp.Name())
+	db, err := NewDefaultManager(tmp.Name())
 	require.NoError(t, err)
-	return db
+	return db.UserDB
 }
 
 func TestAddUser(t *testing.T) {

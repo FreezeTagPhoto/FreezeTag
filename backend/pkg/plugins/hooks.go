@@ -393,7 +393,7 @@ func pluginSearchRequest(msg map[string]any, repo repositories.ImageRepository) 
 	if err != nil {
 		return nil, err
 	}
-	return repo.SearchImage(query)
+	return repo.SearchImage(query, 0)
 }
 
 func pluginTagSearchRequest(msg map[string]any, repo repositories.ImageRepository) (map[string]int64, error) {
@@ -418,7 +418,7 @@ func pluginTagSearchRequest(msg map[string]any, repo repositories.ImageRepositor
 	if err != nil {
 		return nil, err
 	}
-	return repo.GetQueryTagCounts(query)
+	return repo.GetQueryTagCounts(query, 0)
 }
 
 // special case because JSON deserialized numbers are dumb

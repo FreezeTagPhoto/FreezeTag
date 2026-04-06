@@ -143,3 +143,8 @@
     flex: 0 0 auto;
     color: var(--text);
 }
+
+.visibility_label {
+    width: 5rem;
+    text-align: left;
+}

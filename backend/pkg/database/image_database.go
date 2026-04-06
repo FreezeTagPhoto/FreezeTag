@@ -13,16 +13,29 @@ import (
 	_ "embed"
 )
 
-type ImageId int64
-type TagId int64
+type ImageId uint64
+type TagId uint64
+type AlbumID uint64
 
 type ImageDatabase interface {
-	// Get a list of image IDs corresponding to the provided query
-	GetImages(queries.DatabaseQuery) ([]ImageId, error)
+	// Get a list of all image IDs corresponding to the
+	//
+	// Only returns a list of image IDs that the user has access to.
+	GetImages(queries.DatabaseQuery, UserID) ([]ImageId, error)
 	// Get a list of image IDs corresponding to the provided query and order
-	GetImagesOrder(queries.DatabaseQuery, queries.SortField, queries.SortOrder) ([]ImageId, error)
+	GetImagesOrder(
+		queries.DatabaseQuery,
+		queries.SortField,
+		queries.SortOrder,
+		UserID) ([]ImageId, error)
 	// Get a list of image IDs corresponding to the provided query, order, page size, and page number
-	GetImagesOrderPaged(queries.DatabaseQuery, queries.SortField, queries.SortOrder, uint, uint) ([]ImageId, error)
+	GetImagesOrderPaged(
+		queries.DatabaseQuery,
+		queries.SortField,
+		queries.SortOrder,
+		uint,
+		uint,
+		UserID) ([]ImageId, error)
 	// Get the image filename pointed to by the image ID
 	GetImageFile(ImageId) (*string, error)
 	// Get the lowest suffix number that doesn't overlap with an existing image
@@ -85,38 +98,54 @@ type SqliteImageDatabase struct {
 	db *sql.DB
 }
 
-//go:embed schema.sql
-var schema string
-
-func InitSQLiteImageDatabase(datasource string) (SqliteImageDatabase, error) {
-	registerExtendedSqlite("sqlite3_extrafunc")
-	db, err := sql.Open("sqlite3_extrafunc", datasource)
-	if err != nil {
-		return SqliteImageDatabase{}, err
-	}
-	_, err = db.Exec(schema)
-	if err != nil {
-		return SqliteImageDatabase{}, err
-	}
-	return SqliteImageDatabase{db}, nil
+func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery, UserID UserID) ([]ImageId, error) {
+	return db.GetImagesOrder(q, queries.DateAdded, queries.Descending, UserID)
 }
 
-func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery) ([]ImageId, error) {
-	return db.GetImagesOrder(q, queries.DateAdded, queries.Descending)
+func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, UserID UserID) ([]ImageId, error) {
+	return db.GetImagesOrderPaged(q, sf, so, 0, 0, UserID)
 }
 
-func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder) ([]ImageId, error) {
-	return db.GetImagesOrderPaged(q, sf, so, 0, 0)
-}
+func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, pageSize uint, pageNum uint, userID UserID) ([]ImageId, error) {
+	stmt, stmtArgs := q.StatementWithArgs()
+	var args []any
+	var query string
 
-func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, pageSize uint, pageNum uint) ([]ImageId, error) {
-	s, as := queries.ImageIdPreparable(q, sf, so, pageSize, pageNum)
-	stmt, err := db.db.Prepare(s)
-	if err != nil {
-		return []ImageId{}, err
+	if userID == 0 {
+		// If userID is 0, we are assuming this is a plugin/other internal tool
+		// and dont apply filters because that would be a pain and this needs to be shipped
+		query = fmt.Sprintf("SELECT id FROM Images WHERE %s", stmt)
+		args = append(args, stmtArgs...)
+	} else {
+		query = `
+        WITH UserPermissions AS (
+            SELECT visibility_mode FROM Users WHERE id = ?
+        ),
+        AccessibleAlbums AS (
+            SELECT albumId 
+            FROM AlbumAccess 
+            WHERE userId = ? AND access_level > 0
+        )
+        SELECT DISTINCT i.id 
+        FROM Images i
+        CROSS JOIN UserPermissions up
+        LEFT JOIN AlbumImages ai ON i.id = ai.imageId
+        WHERE (` + stmt + `) AND (
+            up.visibility_mode > 0
+            OR 
+            ai.albumId IN (SELECT albumId FROM AccessibleAlbums)
+        )`
+		args = append(args, userID, userID)
+		args = append(args, stmtArgs...)
 	}
-	defer stmt.Close() //nolint:errcheck
-	rows, err := stmt.Query(as...)
+
+	query += fmt.Sprintf(" ORDER BY %s %s", sf.String(), so.String())
+	if pageSize != 0 {
+		query += " LIMIT ? OFFSET ?"
+		args = append(args, pageSize, pageSize*pageNum)
+	}
+
+	rows, err := db.db.Query(query, args...)
 	if err != nil {
 		return []ImageId{}, err
 	}
@@ -126,7 +155,7 @@ func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf qu
 		if err := rows.Err(); err != nil {
 			return []ImageId{}, err
 		}
-		var id int
+		var id int64
 		if err := rows.Scan(&id); err != nil {
 			return []ImageId{}, err
 		}
@@ -411,10 +440,20 @@ func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageI
 		longitude = &data.Geo.Lon
 	}
 	var id int64
-	if err := db.db.QueryRow(
+	tx, err := db.db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	if err := tx.QueryRow(
 		"INSERT INTO Images (imageFile, dateTaken, dateUploaded, cameraMake, cameraModel, latitude, longitude, width, height) values (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
 		file, datetaken, &dateuploaded, make, model, latitude, longitude, data.Width, data.Height,
 	).Scan(&id); err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 	return ImageId(id), nil
