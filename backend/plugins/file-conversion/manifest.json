@@ -8,6 +8,11 @@
       "type": "generate_form",
       "signature": "single_image"
     },
+    "change_metadata_form": {
+      "friendly_name": "Change Image Metadata",
+      "type": "generate_form",
+      "signature": "single_image"
+    },
     "process_file_form": {
       "friendly_name": "(Process) Convert Image Format",
       "type": "manual_trigger",
