@@ -1,13 +1,14 @@
 import freezetag
-from freezetag.hooks import single_image, form_data, SendFormAction, AddRawImageWithTagsAction, Error
-from freezetag.message import get_image_file, read_config, get_metadata, get_image_tags
+from freezetag.hooks import single_image, form_data, SendFormAction, MultipartAction, AddRawImageWithTagsAction, NoAction, DeleteImageAction, Error
+from freezetag.message import get_image_file, read_config, get_metadata, get_image_tags, log
+
+from PIL import Image
+import piexif, io
 
 from datetime import datetime
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from wand.image import Image
-import exif
-from exif import DATETIME_STR_FORMAT
+from wand.image import Image as WandImage
 
 @single_image
 def make_file_form(_img, id):
@@ -30,6 +31,9 @@ def change_metadata_form(_img, id):
         autoescape=select_autoescape()
     )
     meta = get_metadata(id)
+    ext = Path(meta["fileName"]).suffix
+    if ext != ".jpg" and ext != ".jpeg":
+        return SendFormAction("<form><div style=\"display:flex; flex-direction:column; gap: 1rem; padding: 1rem; font-size: 1.5rem;\"><p>This feature doesn't work with images that aren't JPEG formatted. Use the conversion feature to convert them to JPEG before using this feature!</p></div></form>")
     date_taken = datetime.fromtimestamp(meta["dateTaken"]).strftime("%Y-%m-%dT%H:%M") if meta["dateTaken"] is not None else ""
     latitude = meta["latitude"] if meta["latitude"] is not None else ""
     longitude = meta["longitude"] if meta["longitude"] is not None else ""
@@ -40,13 +44,24 @@ def change_metadata_form(_img, id):
         template.render(id=id, date_taken=date_taken, latitude=latitude, longitude=longitude, camera_make=make, camera_model=model)
     )
 
-def decimal_to_exif_dms(decimal_degree):
-    """Converts decimal degrees to (degrees, minutes, seconds) for EXIF."""
-    degree = int(abs(decimal_degree))
-    minute = int((abs(decimal_degree) - degree) * 60)
-    second = (abs(decimal_degree) * 60 - degree * 60 - minute) * 60
-    
-    return (degree, minute, second)
+def _decimal_to_dms(value: float):
+    abs_val = abs(value)
+    degrees = int(abs_val)
+    minutes_float = (abs_val - degrees) * 60
+    minutes = int(minutes_float)
+    seconds_num = int(round((minutes_float - minutes) * 60 * 10000))
+    return ((degrees, 1), (minutes, 1), (seconds_num, 10000))
+
+def _load_exif_safe(raw: bytes) -> dict:
+    try:
+        return piexif.load(raw)
+    except Exception:
+        return {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}}
+
+STRING_FIELDS = {
+    "make": (piexif.ImageIFD.Make, "0th"),
+    "model": (piexif.ImageIFD.Model, "0th"),
+}
 
 @form_data
 def process_file_form(data):
@@ -60,34 +75,79 @@ def process_file_form(data):
             tags = get_image_tags(id)
             tags.append(f"converted:{format}")
 
-            with Image(blob=get_image_file(id)) as img:
+            with WandImage(blob=get_image_file(id)) as img:
                 img_bin = img.make_blob(format)
                 return AddRawImageWithTagsAction(f"conv-{filename}", format, img_bin, tags)
         case "metadata":
             meta = get_metadata(id)
             filename = Path(meta["fileName"]).stem
-            ext = Path(meta["fileName"]).suffix
             tags = get_image_tags(id)
             tags.append(f"converted:metadata")
-            img = exif.Image(get_image_file(id))
-            if not img.has_exif:
-                return Error(f"image doesn't have EXIF fields")
-            date_taken = datetime.fromisoformat(data["date_taken"]) if data["date_taken"] != "" else None
-            latitude = float(data["latitude"]) if data["latitude"] != "" else None
-            longitude = float(data["longitude"]) if data["longitude"] != "" else None
-            make = data["camera_make"]
-            model = data["camera_model"]
-            if date_taken is not None:
-                img.datetime_original = date_taken.strftime(DATETIME_STR_FORMAT)
-            if latitude is not None:
-                img.gps_latitude = decimal_to_exif_dms(latitude)
-                img.gps_latitude_ref = "S" if latitude < 0 else "N"
-            if longitude is not None:
-                img.gps_longitude = decimal_to_exif_dms(longitude)
-                img.gps_longitude_ref = "W" if longitude < 0 else "E"
-            img.make = make
-            img.model = model
-            return AddRawImageWithTagsAction(f"conv-{filename}", ext, img.get_file(), tags)
+            raw = get_image_file(id)
+            exif_dict = _load_exif_safe(raw) if raw else {"0th": {}, "Exif": {}, "GPS": {}, "1st": {}}
+
+            exif_dict = _load_exif_safe(raw)
+
+            for field, (tag, ifd) in STRING_FIELDS.items():
+                val = data.get(field, "").strip()
+                if val:
+                    exif_dict[ifd][tag] = val.encode("utf-8")
+                else:
+                    exif_dict[ifd].pop(tag, None)
+            
+            dt_val = data.get("date_taken", "").strip()
+            if dt_val and len(dt_val) >= 16:
+                try:
+                    dt_exif = dt_val[:10].replace("-", ":") + " " + dt_val[11:16] + ":00"
+                    dt_bytes = dt_exif.encode("utf-8")
+                    exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal] = dt_bytes
+                    exif_dict["0th"][piexif.ImageIFD.DateTime] = dt_bytes
+                except Exception as e:
+                    log(f"[exif-editor] Could not parse datetime '{dt_val}': {e}")
+            else:
+                exif_dict["Exif"].pop(piexif.ExifIFD.DateTimeOriginal, None)
+                exif_dict["0th"].pop(piexif.ImageIFD.DateTime, None)
+            
+            lat_str = data.get("lat", "").strip()
+            lon_str = data.get("lon", "").strip()
+            alt_str = data.get("alt", "").strip()
+            if lat_str and lon_str:
+                try:
+                    lat = float(lat_str)
+                    lon = float(lon_str)
+                    alt = float(alt_str) if alt_str else 0.0
+                    alt_rational = (int(abs(alt) * 10), 10)
+                    exif_dict["GPS"] = {
+                        piexif.GPSIFD.GPSVersionID:    (2, 3, 0, 0),
+                        piexif.GPSIFD.GPSLatitudeRef:  b"N" if lat >= 0 else b"S",
+                        piexif.GPSIFD.GPSLatitude:     _decimal_to_dms(lat),
+                        piexif.GPSIFD.GPSLongitudeRef: b"E" if lon >= 0 else b"W",
+                        piexif.GPSIFD.GPSLongitude:    _decimal_to_dms(lon),
+                        piexif.GPSIFD.GPSAltitudeRef:  b"\x00" if alt >= 0 else b"\x01",
+                        piexif.GPSIFD.GPSAltitude:     alt_rational,
+                    }
+                except Exception as e:
+                    log(f"[exif-editor] Could not encode GPS: {e}")
+            else:
+                exif_dict["GPS"] = {}
+            
+            try:
+                exif_bytes = piexif.dump(exif_dict)
+
+                src_img = Image.open(io.BytesIO(raw))
+                out = io.BytesIO()
+                if src_img.mode not in ("RGB", "L"):
+                    src_img = src_img.convert("RGB")
+                src_img.save(out, format="JPEG", exif=exif_bytes, quality=95, subsampling=0)
+                modified_bytes = out.getvalue()
+            except Exception as e:
+                log(f"[exif-editor] Failed to write EXIF: {e}")
+                return NoAction()
+
+            return MultipartAction(
+                DeleteImageAction(id),
+                AddRawImageWithTagsAction(filename, "jpeg", modified_bytes, tags)
+            )
         case _:
             return Error(f"unsupported action: {action}")
 

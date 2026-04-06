@@ -3,16 +3,16 @@
         <input type="hidden" value="{{ id }}" name="id"></input>
         <input type="hidden" value="metadata" name="action"></input>
         <label for="date_taken">Date Taken:</label>
-        <input type="datetime-local" name="date_taken" id="date_taken" value="{{ date_taken }}" required>
+        <input type="datetime-local" name="date_taken" id="date_taken" value="{{ date_taken }}">
         <label for="location">Location:</label>
         <div id="location" style="display: flex; flex-direction: row;">
-            <input type="number" name="latitude" id="latitude" value="{{ latitude }}" required>
-            <input type="number" name="longitude" id="longitude" value="{{ longitude }}" required>
+            <input type="number" step="any" name="latitude" id="latitude" value="{{ latitude }}">
+            <input type="number" step="any" name="longitude" id="longitude" value="{{ longitude }}">
         </div>
-        <label for="camera_make">Camera Make:</label>
-        <input type="text" name="camera_make" id="camera_make" value="{{ camera_make }}" required>
-        <label for="camera_model">Camera Model:</label>
-        <input type="text" name="camera_model" id="camera_model" value="{{ camera_model }}" required>
+        <label for="make">Camera Make:</label>
+        <input type="text" name="make" id="make" value="{{ camera_make }}">
+        <label for="model">Camera Model:</label>
+        <input type="text" name="model" id="model" value="{{ camera_model }}">
         <input style="padding: 1rem; font-size: 1.5rem;" type="submit" value="Apply"/>
     </div>
 </form>
