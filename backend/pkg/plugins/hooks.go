@@ -256,7 +256,7 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 		}
 		res := repo.AddImageTags(id, tags)
 		if res.Err != nil {
-			return nil, fmt.Errorf("failed to add tags: %w", res.Err.Reason)
+			return nil, fmt.Errorf("failed to add tags: %s", res.Err.Reason)
 		}
 		return map[string]any{"name": name, "id": id, "tags": tags}, nil
 	case "send_form":
