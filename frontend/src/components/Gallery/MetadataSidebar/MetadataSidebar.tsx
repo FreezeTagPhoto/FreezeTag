@@ -19,7 +19,8 @@ import { useCachedById } from "@/common/gallery/cache";
 import {
     formatCamera,
     formatLocation,
-    formatResultion,
+    formatResolution,
+    formatFile,
 } from "@/common/gallery/format";
 import { formatLongDate } from "@/common/dateformat";
 import { useTagEditor } from "@/common/gallery/tageditor";
@@ -44,6 +45,7 @@ import {
     PuzzleIcon,
     Globe,
     Lock,
+    FileImage,
 } from "lucide-react";
 import LocationMap from "./LocationMap";
 import {
@@ -324,7 +326,7 @@ const MetadataSidebar = memo(function MetadataSidebar({
     return (
         <aside className={styles.viewerSidebar}>
             <div className={styles.detailsHeaderRow}>
-                <h2 className={styles.sidebarTitle}>Image details</h2>
+                <h2 className={styles.sidebarTitle}>Image Details</h2>
 
                 <div className={styles.headerRight} onClick={stopClick}>
                     <button
@@ -393,22 +395,42 @@ const MetadataSidebar = memo(function MetadataSidebar({
             )}
 
             <div className={styles.detailGrid}>
-                <div className={styles.detailRow}>
-                    <div className={styles.detailLabelRow}>
-                        <FullscreenIcon className={styles.detailLabelIcon} />
-                        <span className={styles.detailLabel}>Resolution</span>
+                <div className={styles.twoColumnRow}>
+                    <div className={styles.detailRow}>
+                        <div className={styles.detailLabelRow}>
+                            <FullscreenIcon
+                                className={styles.detailLabelIcon}
+                            />
+                            <span className={styles.detailLabel}>
+                                Resolution
+                            </span>
+                        </div>
+                        <div className={styles.detailValue}>
+                            {currentMetadata
+                                ? formatResolution(
+                                      currentMetadata.width,
+                                      currentMetadata.height,
+                                  )
+                                : "—"}
+                        </div>
                     </div>
-                    <div className={styles.detailValue}>
-                        {currentMetadata
-                            ? formatResultion(
-                                  currentMetadata.width,
-                                  currentMetadata.height,
-                              )
-                            : "—"}
+
+                    <div className={styles.detailRow}>
+                        <div className={styles.detailLabelRow}>
+                            <FileImage className={styles.detailLabelIcon} />
+                            <span className={styles.detailLabel}>
+                                File Format
+                            </span>
+                        </div>
+                        <div className={styles.detailValue}>
+                            {currentMetadata
+                                ? formatFile(currentMetadata.fileName)
+                                : "—"}
+                        </div>
                     </div>
                 </div>
 
-                <div className={styles.dateRow}>
+                <div className={styles.twoColumnRow}>
                     <div className={styles.detailRow}>
                         <div className={styles.detailLabelRow}>
                             <CloudUpload className={styles.detailLabelIcon} />
