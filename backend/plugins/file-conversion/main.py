@@ -67,6 +67,7 @@ STRING_FIELDS = {
 def process_file_form(data):
     id = int(data["id"])
     action = data["action"]
+    duplicate = data.get("duplicate", "off") == "on"
     match action:
         case "format":
             format = data["format_select"]
@@ -77,7 +78,10 @@ def process_file_form(data):
 
             with WandImage(blob=get_image_file(id)) as img:
                 img_bin = img.make_blob(format)
-                return AddRawImageWithTagsAction(f"conv-{filename}", format, img_bin, tags)
+                actions = [AddRawImageWithTagsAction(f"conv-{filename}", format, img_bin, tags)]
+                if not duplicate:
+                    actions.append(DeleteImageAction(id))
+                return MultipartAction(*actions)
         case "metadata":
             meta = get_metadata(id)
             filename = Path(meta["fileName"]).stem
@@ -108,9 +112,9 @@ def process_file_form(data):
                 exif_dict["Exif"].pop(piexif.ExifIFD.DateTimeOriginal, None)
                 exif_dict["0th"].pop(piexif.ImageIFD.DateTime, None)
             
-            lat_str = data.get("lat", "").strip()
-            lon_str = data.get("lon", "").strip()
-            alt_str = data.get("alt", "").strip()
+            lat_str = data.get("latitude", "").strip()
+            lon_str = data.get("longitude", "").strip()
+            alt_str = data.get("altitude", "").strip()
             if lat_str and lon_str:
                 try:
                     lat = float(lat_str)
@@ -144,10 +148,10 @@ def process_file_form(data):
                 log(f"[exif-editor] Failed to write EXIF: {e}")
                 return NoAction()
 
-            return MultipartAction(
-                DeleteImageAction(id),
-                AddRawImageWithTagsAction(filename, "jpeg", modified_bytes, tags)
-            )
+            actions = [AddRawImageWithTagsAction(filename, "jpeg", modified_bytes, tags)]
+            if not duplicate:
+                actions.append(DeleteImageAction(id))
+            return MultipartAction(*actions)
         case _:
             return Error(f"unsupported action: {action}")
 

@@ -9,6 +9,9 @@
                 <option value="{{ format }}">{{ format | upper }}</option>
             {% endfor %}
         </select>
+        <label style="display: flex; flex-direction: row; font-size: 1rem; gap: 1rem;">
+            <input type="checkbox" name="duplicate" id="duplicate" checked> Save as duplicate
+        </label>
         <input style="padding: 1rem; font-size: 1.5rem;" type="submit" value="Convert"/>
     </div>
 </form>
