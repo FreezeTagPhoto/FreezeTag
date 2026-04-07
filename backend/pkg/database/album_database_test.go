@@ -15,7 +15,7 @@ func createTempAlbumDatabase(t *testing.T) (AlbumDatabase, UserDatabase) {
 	return manager.AlbumDB, manager.UserDB
 }
 
-// since userAuthorizedForAlbum is NOT a part of the 
+// since userAuthorizedForAlbum is NOT a part of the
 // AlbumDatabase interface, gotta do some type assertion
 func assertSqliteAlbumDatabase(t *testing.T, albumDB AlbumDatabase) SqliteAlbumDatabase {
 	var sqliteAlbumDB SqliteAlbumDatabase
@@ -175,8 +175,6 @@ func TestUserAuthorizedForAlbumStressMatrix(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, ownerAuthorized)
 }
-
-
 
 func TestUserAuthorizedForAlbumStressAdminUserIDZero(t *testing.T) {
 	albumDB, userDB := createTempAlbumDatabase(t)
