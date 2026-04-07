@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/google/uuid"
 	toml "github.com/pelletier/go-toml/v2"
 )
 
@@ -21,7 +22,7 @@ type PluginService interface {
 	ReadConfiguration(plugin string) (map[string]plugins.PublicConfigField, error)
 	ChangeConfiguration(plugin string, changes map[string]any) error
 	LaunchPlugin(plugin string, ctx context.Context) (*plugins.HookedPlugin, error)
-	DownloadPlugin(name string, link string) error
+	DownloadPlugin(link string) error
 }
 
 type defaultPluginService struct {
@@ -227,8 +228,9 @@ func (ps defaultPluginService) LaunchPlugin(plugin string, ctx context.Context) 
 	return &process, nil
 }
 
-func (ps defaultPluginService) DownloadPlugin(name string, link string) error {
-	pluginDir := ps.baseDir + "/" + name + "/"
+func (ps defaultPluginService) DownloadPlugin(link string) error {
+	name := "git_" + uuid.NewString()
+	pluginDir := path.Join(ps.baseDir, name)
 	err := os.Mkdir(pluginDir, 0750)
 	if err != nil {
 		return fmt.Errorf("failed to make plugin directory: %w", err)
@@ -238,5 +240,18 @@ func (ps defaultPluginService) DownloadPlugin(name string, link string) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to clone plugin: %w", err)
 	}
+
+	manifest, err := plugins.ReadManifest(pluginDir)
+	if err != nil {
+		log.Printf("[ERR]  failed to read plugin manifest at %v: %s", manifest.Name, err.Error())
+		return fmt.Errorf("failed to read plugin manifest at %v: %s", manifest.Name, err.Error())
+	}
+	if _, exists := ps.plugins[manifest.Name]; exists {
+		log.Printf("[ERR]  detected duplicate plugins of the same name.")
+		return fmt.Errorf("detected duplicate plugins of the same name")
+	} else {
+		ps.plugins[manifest.Name] = &manifest
+	}
+
 	return nil
 }

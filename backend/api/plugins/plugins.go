@@ -185,7 +185,6 @@ func (pe PluginEndpoint) ChangeConfig(c *gin.Context) {
 // @tags        plugins
 // @produce     application/json
 // @router      /plugins/upload [post]
-// @param       plugin_name query string true "name to give the plugin"
 // @param       git_repo body string true "link to pull from"
 // @success     200 {object} string
 // @failure     404 {object} api.NotFoundResponse
@@ -197,8 +196,7 @@ func (pe PluginEndpoint) GitUpload(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to parse changes, expected a string with a link"})
 		return
 	}
-	name := c.Query("plugin_name")
-	err := pe.service.DownloadPlugin(name, repo)
+	err := pe.service.DownloadPlugin(repo)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
