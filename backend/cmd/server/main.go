@@ -219,6 +219,7 @@ func initPluginEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 		pluginGroup.POST("/run", middleware.RequirePermission(data.WritePlugins), pe.RunManual)
 		pluginGroup.GET("/config", middleware.RequirePermission(data.ReadPlugins), pe.ReadConfig)
 		pluginGroup.POST("/config", middleware.RequirePermission(data.WritePlugins), pe.ChangeConfig)
+		pluginGroup.POST("/upload", middleware.RequirePermission(data.WritePlugins), pe.GitUpload)
 	}
 }
 

@@ -179,3 +179,23 @@ func (pe PluginEndpoint) ChangeConfig(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, "changed configuration")
 }
+
+// @summary     Upload Plugin via Git
+// @description Add a new plugin by submitting a Git link
+// @tags        plugins
+// @produce     application/json
+// @router      /plugins/upload [post]
+// @param       git_repo body string true "link to pull from"
+// @success     200 {object} string
+// @failure     404 {object} api.NotFoundResponse
+// @failure     400 {object} api.BadRequestResponse
+// @failure     500 {object} api.ServerErrorResponse
+func (pe PluginEndpoint) GitUpload(c *gin.Context) {
+	var repo string
+	if err := c.BindJSON(&repo); err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "failed to parse changes, expected a string with a link"})
+		return
+	}
+	fmt.Println(repo)
+	c.JSON(http.StatusOK, "plugin uploaded")
+}
