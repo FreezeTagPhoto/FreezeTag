@@ -7,6 +7,7 @@ import (
 	"freezetag/backend/pkg/repositories"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 
@@ -20,6 +21,7 @@ type PluginService interface {
 	ReadConfiguration(plugin string) (map[string]plugins.PublicConfigField, error)
 	ChangeConfiguration(plugin string, changes map[string]any) error
 	LaunchPlugin(plugin string, ctx context.Context) (*plugins.HookedPlugin, error)
+	DownloadPlugin(name string, link string) error
 }
 
 type defaultPluginService struct {
@@ -223,4 +225,18 @@ func (ps defaultPluginService) LaunchPlugin(plugin string, ctx context.Context) 
 		return nil, fmt.Errorf("failed to initialize plugin: %w", err)
 	}
 	return &process, nil
+}
+
+func (ps defaultPluginService) DownloadPlugin(name string, link string) error {
+	pluginDir := ps.baseDir + "/" + name + "/"
+	err := os.Mkdir(pluginDir, 0750)
+	if err != nil {
+		return fmt.Errorf("failed to make plugin directory: %w", err)
+	}
+
+	cmd := exec.Command("git", "clone", link, pluginDir)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to clone plugin: %w", err)
+	}
+	return nil
 }
