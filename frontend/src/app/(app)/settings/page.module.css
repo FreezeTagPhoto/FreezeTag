@@ -427,6 +427,10 @@
         grid-template-columns: repeat(4, 1fr);
     }
 
+    .neutralGrid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
     .uiAccentGrid {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -468,6 +472,10 @@
         grid-template-columns: repeat(4, 1fr);
     }
 
+    .neutralGrid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
     .uiAccentGrid {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -481,6 +489,10 @@
 
 @container (max-width: 500px) {
     .colorGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .neutralGrid {
         grid-template-columns: repeat(3, 1fr);
     }
 
@@ -667,6 +679,13 @@
     line-height: 1.35;
 }
 
+.neutralGrid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px 8px;
+    margin-top: 14px;
+}
+
 .uiAccentGrid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -772,6 +791,11 @@
         gap: 10px 6px;
     }
 
+    .neutralGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px 6px;
+    }
+
     .uiAccentGrid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px 6px;
@@ -832,6 +856,11 @@
     }
 
     .colorGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px 6px;
+    }
+
+    .neutralGrid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px 6px;
     }

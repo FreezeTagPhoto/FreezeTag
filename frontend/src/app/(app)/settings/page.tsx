@@ -10,8 +10,10 @@ import {
     ApplyTheme,
     ACCENT_VARIABLES,
     UI_ACCENT_VARIABLES,
+    NEUTRAL_VARIABLES,
     type AccentVariable,
     type UIAccentVariable,
+    type NeutralVariable,
     type CustomColors,
     MOCHA_ACCENT_DEFAULTS,
     LATTE_ACCENT_DEFAULTS,
@@ -71,6 +73,22 @@ const UI_ACCENT_LABEL: Record<UIAccentVariable, string> = {
     accent3: "Tertiary",
 };
 
+// neutral surface variables
+const NEUTRAL_LABEL: Record<NeutralVariable, string> = {
+    text: "Text",
+    subtext1: "Subtext 1",
+    subtext0: "Subtext 0",
+    overlay2: "Overlay 2",
+    overlay1: "Overlay 1",
+    overlay0: "Overlay 0",
+    surface2: "Surface 2",
+    surface1: "Surface 1",
+    surface0: "Surface 0",
+    base: "Base",
+    mantle: "Mantle",
+    crust: "Crust",
+};
+
 const CustomThemeEditor = ({
     colors,
     onColorChange,
@@ -78,15 +96,14 @@ const CustomThemeEditor = ({
 }: {
     colors: CustomColors;
     onColorChange: (
-        variable: AccentVariable | UIAccentVariable,
+        variable: AccentVariable | UIAccentVariable | NeutralVariable,
         value: string,
     ) => void;
     onReset: () => void;
 }) => (
     <div className={styles.customThemeEditor}>
         <p className={styles.hint}>
-            Customize accent colors. Neutral surface shades (backgrounds,
-            borders, text) inherit from the Catppuccin base palette.
+            Customize accent, UI, and surface colors for your theme.
         </p>
 
         <div className={styles.colorSectionRow}>
@@ -133,6 +150,31 @@ const CustomThemeEditor = ({
                     />
                     <span className={styles.colorSwatchLabel} aria-hidden>
                         {ACCENT_LABEL[v]}
+                    </span>
+                </div>
+            ))}
+        </div>
+
+        <div className={styles.colorSectionRow}>
+            <span className={styles.colorSectionLabel}>Surfaces &amp; Text</span>
+            <p className={styles.colorSectionHint}>
+                Background layers, border overlays, and text shades used
+                throughout the interface.
+            </p>
+        </div>
+        <div className={styles.neutralGrid}>
+            {NEUTRAL_VARIABLES.map((v) => (
+                <div key={v} className={styles.colorPickerItem}>
+                    <input
+                        type="color"
+                        className={styles.colorSwatch}
+                        value={colors[v]}
+                        onChange={(e) => onColorChange(v, e.target.value)}
+                        title={NEUTRAL_LABEL[v]}
+                        aria-label={`${NEUTRAL_LABEL[v]} color`}
+                    />
+                    <span className={styles.colorSwatchLabel} aria-hidden>
+                        {NEUTRAL_LABEL[v]}
                     </span>
                 </div>
             ))}
@@ -371,7 +413,7 @@ export default function SettingsPage() {
         setPwShow((prev) => ({ ...prev, [key]: !prev[key] }));
 
     const handleCustomColorChange = (
-        variable: AccentVariable | UIAccentVariable,
+        variable: AccentVariable | UIAccentVariable | NeutralVariable,
         value: string,
     ) => {
         const isCustomDark = theme === "Custom Dark";
