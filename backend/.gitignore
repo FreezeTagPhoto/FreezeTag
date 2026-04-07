@@ -4,3 +4,4 @@ gl-codequality.json
 /data/
 /cmd/docs
 .env
+/plugins/git_*
