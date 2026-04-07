@@ -47,6 +47,24 @@ class AddImageAction(HookAction):
         data = base64.b64encode(image_bytes)
         HookAction.__init__(self, {"name": name + "." + format, "data": data.decode("utf-8")}, "add_image")
 
+class AddImageWithTagsAction(HookAction):
+    def __init__(self, name: str, format: str, image: Image.Image, tags: list[str]):
+        byte_arr = io.BytesIO()
+        image.save(byte_arr, format=format)
+        image_bytes = byte_arr.getvalue()
+        data = base64.b64encode(image_bytes)
+        HookAction.__init__(self, {"name": name + "." + format, "data": data.decode("utf-8"), "tags": tags}, "add_image_with_tags")
+
+class AddRawImageAction(HookAction):
+    def __init__(self, name: str, format: str, image_bytes: bytes):
+        data = base64.b64encode(image_bytes)
+        HookAction.__init__(self, {"name": name + "." + format, "data": data.decode("utf-8")}, "add_image")
+
+class AddRawImageWithTagsAction(HookAction):
+    def __init__(self, name: str, format: str, image_bytes: bytes, tags: list[str]):
+        data = base64.b64encode(image_bytes)
+        HookAction.__init__(self, {"name": name + "." + format, "data": data.decode("utf-8"), "tags": tags}, "add_image_with_tags")
+
 class SendFormAction(HookAction):
     def __init__(self, form: str):
         """`form` should be a string containing valid HTML (can have embedded CSS), with the outermost tag being `<form></form>` without any attributes."""

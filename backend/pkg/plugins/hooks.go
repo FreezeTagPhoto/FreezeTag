@@ -233,6 +233,32 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 			return nil, err
 		}
 		return map[string]any{"name": name, "id": id}, nil
+	case "add_image_with_tags":
+		name, err := into[string](msg["name"])
+		if err != nil {
+			return nil, err
+		}
+		data64, err := into[string](msg["data"])
+		if err != nil {
+			return nil, err
+		}
+		data, err := base64.StdEncoding.DecodeString(data64)
+		if err != nil {
+			return nil, err
+		}
+		tags, err := intoList[string](msg["tags"])
+		if err != nil {
+			return nil, err
+		}
+		id, err := repo.StoreImageBytes(data, name)
+		if err != nil {
+			return nil, err
+		}
+		res := repo.AddImageTags(id, tags)
+		if res.Err != nil {
+			return nil, fmt.Errorf("failed to add tags: %s", res.Err.Reason)
+		}
+		return map[string]any{"name": name, "id": id, "tags": tags}, nil
 	case "send_form":
 		form, err := into[string](msg["form"])
 		if err != nil {

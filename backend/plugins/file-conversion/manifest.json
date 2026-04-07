@@ -1,0 +1,35 @@
+{
+  "name": "file-conversion",
+  "friendly_name": "File Converter",
+  "main_file": "main.py",
+  "hooks": {
+    "make_file_form": {
+      "friendly_name": "Convert Image Format",
+      "type": "generate_form",
+      "signature": "single_image"
+    },
+    "change_metadata_form": {
+      "friendly_name": "Change Image Metadata",
+      "type": "generate_form",
+      "signature": "single_image"
+    },
+    "process_file_form": {
+      "friendly_name": "(Process) Convert Image Format",
+      "type": "manual_trigger",
+      "signature": "form_data"
+    }
+  },
+  "version": "0.1.0",
+  "requirements": "requirements.txt",
+  "config": {
+    "file": "config.toml",
+    "fields": [
+        {
+            "name": "format_options",
+            "friendly_name": "Available Formats",
+            "description": "comma-separated list of available conversion formats",
+            "default": "webp,png,jpg"
+        }
+    ]
+  }
+}
