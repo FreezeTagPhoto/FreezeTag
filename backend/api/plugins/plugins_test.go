@@ -113,7 +113,7 @@ func TestRunManuallySuccessOneImage(t *testing.T) {
 		},
 	})
 	j := jsMocks.NewMockJobService(t)
-	j.EXPECT().SchedulePluginHook("foo", "bar", database.ImageId(42)).Return(uuid.Nil)
+	j.EXPECT().SchedulePluginHook("foo", "bar", database.ImageID(42)).Return(uuid.Nil)
 	pe := InitPluginEndpoint(m, j)
 	pe.RunManual(ctx)
 	assert.Equal(t, http.StatusAccepted, w.Code)
@@ -140,7 +140,7 @@ func TestRunManuallySuccessMultiImage(t *testing.T) {
 		},
 	})
 	j := jsMocks.NewMockJobService(t)
-	j.EXPECT().SchedulePluginHook("foo", "bar", []database.ImageId{69, 420}).Return(uuid.Nil)
+	j.EXPECT().SchedulePluginHook("foo", "bar", []database.ImageID{69, 420}).Return(uuid.Nil)
 	pe := InitPluginEndpoint(m, j)
 	pe.RunManual(ctx)
 	assert.Equal(t, http.StatusAccepted, w.Code)

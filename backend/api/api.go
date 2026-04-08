@@ -25,7 +25,7 @@ type TagDeleteResponse struct {
 }
 
 type ImageDeleteResponse struct {
-	Id   database.ImageId `json:"id"`
+	ID   database.ImageID `json:"id"`
 	File string           `json:"file"`
 }
 

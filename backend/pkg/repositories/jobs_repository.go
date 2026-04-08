@@ -32,7 +32,7 @@ func decreaseJobCounter() {
 		sub <- decreaseJobCounter
 		jobCounter.waiting = jobCounter.waiting[1:]
 	} else {
-		jobCounter.activeJobs -= 1
+		jobCounter.activeJobs--
 	}
 }
 
@@ -42,7 +42,7 @@ func waitForJob() <-chan func() {
 	sub := make(chan func(), 1)
 	if jobCounter.activeJobs < MaxJobThreads {
 		sub <- decreaseJobCounter
-		jobCounter.activeJobs += 1
+		jobCounter.activeJobs++
 	} else {
 		jobCounter.waiting = append(jobCounter.waiting, sub)
 	}
@@ -98,7 +98,7 @@ type JobBatch[I JobInput, C any] struct {
 	synchronous bool               `json:"-"` // whether or not the job should be run in order
 }
 
-func (jb *JobBatch[I, C]) removeById(id int) {
+func (jb *JobBatch[I, C]) removeByID(id int) {
 	jb.Lock.Lock()
 	defer jb.Lock.Unlock()
 	jb.InProgress = slices.DeleteFunc(jb.InProgress, func(i I) bool {
@@ -154,7 +154,7 @@ func (jb *JobBatch[I, C]) run() {
 			}
 			finished := <-waitForJob()
 			thing, err := jb.operation(input, jb.Context, changeStatus)
-			jb.removeById(input.ID())
+			jb.removeByID(input.ID())
 			jb.addResults(input, thing, err)
 			finished()
 			// decrement the count and maybe notify complete job

@@ -41,25 +41,25 @@ func InitSearchEndpoint(repository repositories.ImageRepository) SearchEndpoint 
 // @param       sortOrder      query string   false "sort order"                            Enums(ASC,DESC) default(DESC)
 // @param       pageSize       query uint     false "page size"
 // @param       pageNo         query uint     false "page number (zero indexed)"
-// @success     200 {array}  database.ImageId
+// @success     200 {array}  database.ImageID
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
 func (se SearchEndpoint) Search(c *gin.Context) {
-	userId, exists := c.Get("userID")
+	userID, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userId not found in context"})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
 		return
 	}
-	uid, err := api.ParseParamIntoID[database.UserID](userId)
+	uid, err := api.ParseParamIntoID[database.UserID](userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userId in context is not of type UserID"})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
 		return
 	}
 	query := api.GetRequestQuery(c)
 	if query == nil {
 		return
 	}
-	var pageSize uint = 0
+	var pageSize uint
 	if psParam := c.Query("pageSize"); psParam != "" {
 		ps, err := strconv.ParseUint(psParam, 10, 32)
 		if err != nil {
@@ -68,7 +68,7 @@ func (se SearchEndpoint) Search(c *gin.Context) {
 		}
 		pageSize = uint(ps)
 	}
-	var pageNo uint = 0
+	var pageNo uint
 	if pcParam := c.Query("pageNo"); pcParam != "" {
 		pn, err := strconv.ParseUint(pcParam, 10, 32)
 		if err != nil {

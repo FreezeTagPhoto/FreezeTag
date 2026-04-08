@@ -224,7 +224,7 @@ func TestLoginNoExistingLoginCookie(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-func TestLoginInfoBadId(t *testing.T) {
+func TestLoginInfoBadID(t *testing.T) {
 	NewMockAuthService := mockUserService.NewMockAuthService(t)
 	NewMockAuthService.EXPECT().
 		ValidateJWT("existing_token").

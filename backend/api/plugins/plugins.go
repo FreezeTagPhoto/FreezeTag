@@ -98,16 +98,16 @@ func (pe PluginEndpoint) RunManual(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("failed to parse request body (expected an ID): %v", err)})
 			return
 		}
-		input = database.ImageId(id)
+		input = database.ImageID(id)
 	case plugins.ProcessImageBatch:
 		var in []int64
 		if err := c.BindJSON(&in); err != nil {
 			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: fmt.Sprintf("failed to parse request body (expected an array of IDs): %v", err)})
 			return
 		}
-		ids := make([]database.ImageId, len(in))
+		ids := make([]database.ImageID, len(in))
 		for i, id := range in {
-			ids[i] = database.ImageId(id)
+			ids[i] = database.ImageID(id)
 		}
 		input = ids
 	case plugins.ProcessFormData:

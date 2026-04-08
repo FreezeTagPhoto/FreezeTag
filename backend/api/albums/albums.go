@@ -74,12 +74,17 @@ func (ae AlbumEndpoint) AddImageToAlbum(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
 		return
 	}
+	albumID, err := api.ParseParamIntoID[database.AlbumID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
 	var req AlbumImageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
 		return
 	}
-	err = ae.albumRepository.SetImageAlbum(database.ImageId(req.ImageId), database.AlbumID(req.AlbumId), uid)
+	err = ae.albumRepository.SetImageAlbum(req.ImageID, albumID, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
@@ -110,15 +115,13 @@ func (ae AlbumEndpoint) RemoveImageFromAlbum(c *gin.Context) {
 		return
 	}
 
-	albumId := c.Param("id")
-	albumID, err := api.ParseParamIntoID[database.AlbumID](albumId)
+	albumID, err := api.ParseParamIntoID[database.AlbumID](c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
 	}
 
-	imageId := c.Param("image_id")
-	imageID, err := api.ParseParamIntoID[database.ImageId](imageId)
+	imageID, err := api.ParseParamIntoID[database.ImageID](c.Param("image_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
@@ -162,7 +165,7 @@ func (ae AlbumEndpoint) ChangeAlbumVisibility(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "visibility_mode is required"})
 		return
 	}
-	err = ae.albumRepository.SetAlbumVisibility(req.AlbumId, *req.VisibilityMode, uid)
+	err = ae.albumRepository.SetAlbumVisibility(req.AlbumID, *req.VisibilityMode, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
@@ -196,7 +199,7 @@ func (ae AlbumEndpoint) SetUserAlbumPermission(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
 		return
 	}
-	err = ae.albumRepository.SetUserAlbumPermission(req.AlbumId, req.TargetUserId, req.Permission, uid)
+	err = ae.albumRepository.SetUserAlbumPermission(req.AlbumID, req.TargetUserID, req.Permission, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
@@ -286,7 +289,7 @@ func (ae AlbumEndpoint) ListImageAlbums(c *gin.Context) {
 		return
 	}
 
-	imageID, err := api.ParseParamIntoID[database.ImageId](c.Param("id"))
+	imageID, err := api.ParseParamIntoID[database.ImageID](c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return
@@ -323,8 +326,7 @@ func (ae AlbumEndpoint) RenameAlbum(c *gin.Context) {
 	}
 
 	var req RenameAlbumRequest
-	albumId := c.Param("id")
-	albumID, err := api.ParseParamIntoID[database.AlbumID](albumId)
+	albumID, err := api.ParseParamIntoID[database.AlbumID](c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
 		return

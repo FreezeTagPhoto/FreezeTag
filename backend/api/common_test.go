@@ -45,7 +45,7 @@ func TestParseParamStringInvalid(t *testing.T) {
 	assert.Equal(t, database.UserID(0), id)
 }
 
-func TestGetUserIdFromStringNegative(t *testing.T) {
+func TestGetUserIDFromStringNegative(t *testing.T) {
 	id, err := ParseParamIntoID[database.UserID]("-5")
 	assert.Error(t, err)
 	assert.Equal(t, database.UserID(0), id)

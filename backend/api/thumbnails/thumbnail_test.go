@@ -39,7 +39,7 @@ func TestGetThumbnailSuccess(t *testing.T) {
 	assert.Equal(t, gopherBytes, w.Body.Bytes())
 }
 
-func TestGetThumbnailBadId(t *testing.T) {
+func TestGetThumbnailBadID(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
 	InitThumbnailEndpoint(m).RegisterEndpoints(router)

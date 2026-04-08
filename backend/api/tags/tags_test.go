@@ -79,7 +79,7 @@ func TestHandleGetImageTagsSuccess(t *testing.T) {
 	assert.ElementsMatch(t, expected, got)
 }
 
-func TestHandleGetImageTagsBadId(t *testing.T) {
+func TestHandleGetImageTagsBadID(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
@@ -119,7 +119,7 @@ func TestHandleGetImageTagsIntOverflow(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	//max signed int64 type
-	req, _ := http.NewRequest("GET", "/tag/list/9223372036854775808", nil)
+	req, _ := http.NewRequest("GET", "/tag/list/92233720368547758088123987461928736598712365987163245", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	expected := api.BadRequestResponse{Error: "Invalid image ID parameter"}
@@ -131,7 +131,7 @@ func TestHandleGetImageTagsIntOverflow(t *testing.T) {
 func TestHandlePostSimple(t *testing.T) {
 	result := repositories.ImageTagResult{
 		Success: &repositories.ImageTagSuccess{
-			Id:    database.ImageId(1),
+			ID:    database.ImageID(1),
 			Count: 3,
 		},
 		Err: nil,
@@ -164,12 +164,12 @@ func TestHandlePostSimple(t *testing.T) {
 func TestHandlePostComplex(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		AddImageTags(mock.AnythingOfType("database.ImageId"), mock.Anything).
+		AddImageTags(mock.AnythingOfType("database.ImageID"), mock.Anything).
 		RunAndReturn(
-			func(id database.ImageId, _ []string) repositories.ImageTagResult {
+			func(id database.ImageID, _ []string) repositories.ImageTagResult {
 				return repositories.ImageTagResult{
 					Success: &repositories.ImageTagSuccess{
-						Id:    id,
+						ID:    id,
 						Count: 3,
 					},
 					Err: nil,
@@ -194,7 +194,7 @@ func TestHandlePostComplex(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	expected := api.TagAddResponse{
-		Added:  []repositories.ImageTagSuccess{{Id: 1, Count: 3}, {Id: 2, Count: 3}, {Id: 3, Count: 3}},
+		Added:  []repositories.ImageTagSuccess{{ID: 1, Count: 3}, {ID: 2, Count: 3}, {ID: 3, Count: 3}},
 		Errors: []repositories.ImageTagFail{{Reason: "unknown id c"}},
 	}
 	var got api.TagAddResponse
@@ -204,7 +204,7 @@ func TestHandlePostComplex(t *testing.T) {
 	assert.ElementsMatch(t, expected.Errors, got.Errors)
 }
 
-func TestHandlePostNoIds(t *testing.T) {
+func TestHandlePostNoIDs(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().AddTags([]string{"tagtest"}).Return(repositories.TagResult{Success: true})
 	router := gin.Default()
@@ -244,7 +244,7 @@ func TestHandlePostNoTags(t *testing.T) {
 
 }
 
-func TestHandlePostBadId(t *testing.T) {
+func TestHandlePostBadID(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
@@ -273,7 +273,7 @@ func TestHandlePostBadId(t *testing.T) {
 func TestHandleDeleteSimple(t *testing.T) {
 	result := repositories.ImageTagResult{
 		Success: &repositories.ImageTagSuccess{
-			Id:    database.ImageId(1),
+			ID:    database.ImageID(1),
 			Count: 3,
 		},
 		Err: nil,
@@ -306,12 +306,12 @@ func TestHandleDeleteSimple(t *testing.T) {
 func TestHandleDeleteComplex(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		RemoveImageTags(mock.AnythingOfType("database.ImageId"), mock.Anything).
+		RemoveImageTags(mock.AnythingOfType("database.ImageID"), mock.Anything).
 		RunAndReturn(
-			func(id database.ImageId, _ []string) repositories.ImageTagResult {
+			func(id database.ImageID, _ []string) repositories.ImageTagResult {
 				return repositories.ImageTagResult{
 					Success: &repositories.ImageTagSuccess{
-						Id:    id,
+						ID:    id,
 						Count: 3,
 					},
 					Err: nil,
@@ -336,7 +336,7 @@ func TestHandleDeleteComplex(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	expected := api.TagRemoveResponse{
-		Deleted: []repositories.ImageTagSuccess{{Id: 1, Count: 3}, {Id: 2, Count: 3}, {Id: 3, Count: 3}},
+		Deleted: []repositories.ImageTagSuccess{{ID: 1, Count: 3}, {ID: 2, Count: 3}, {ID: 3, Count: 3}},
 		Errors:  []repositories.ImageTagFail{{Reason: "unknown id c"}},
 	}
 	var got api.TagRemoveResponse
@@ -346,7 +346,7 @@ func TestHandleDeleteComplex(t *testing.T) {
 	assert.ElementsMatch(t, expected.Errors, got.Errors)
 }
 
-func TestHandleDeleteNoIds(t *testing.T) {
+func TestHandleDeleteNoIDs(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
@@ -385,7 +385,7 @@ func TestHandleDeleteNoTags(t *testing.T) {
 
 }
 
-func TestHandleDeleteBadId(t *testing.T) {
+func TestHandleDeleteBadID(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
@@ -431,7 +431,7 @@ func TestGetTagCounts(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-func TestGetTagCountsBadId(t *testing.T) {
+func TestGetTagCountsBadID(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
 		GetTagCounts(mock.Anything).
@@ -453,7 +453,7 @@ func TestGetTagCountsBadId(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-func TestGetTagCountsNoIds(t *testing.T) {
+func TestGetTagCountsNoIDs(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)
@@ -490,7 +490,7 @@ func TestGetTagCountsDatabaseError(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-func TestGetTagCountsInvalidId(t *testing.T) {
+func TestGetTagCountsInvalidID(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
 	InitTagEndpoint(m).RegisterEndpoints(router)

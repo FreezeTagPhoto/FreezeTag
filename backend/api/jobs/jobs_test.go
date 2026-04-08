@@ -135,7 +135,7 @@ func TestJobListEndpoint(t *testing.T) {
 // NOTE: we can't test JobCancelFound because it actually calls the CancelFunc
 // on the job batch, and that's a private field to the repository package (for good reason)
 
-func TestJobCancelEndpointBadId(t *testing.T) {
+func TestJobCancelEndpointBadID(t *testing.T) {
 	j := mockJobService.NewMockJobService(t)
 
 	router := gin.Default()

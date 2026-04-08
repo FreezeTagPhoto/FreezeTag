@@ -47,7 +47,7 @@ func TestStoreImageBytesSuccess(t *testing.T) {
 	mockdb.
 		EXPECT().
 		AddImage(mock.AnythingOfType("string"), mock.AnythingOfType("imagedata.Data")).
-		Return(database.ImageId(42), nil).Times(1)
+		Return(database.ImageID(42), nil).Times(1)
 	mockdb.
 		EXPECT().
 		AddImageThumbnail(mock.Anything, mock.Anything, mock.Anything).
@@ -62,7 +62,7 @@ func TestStoreImageBytesSuccess(t *testing.T) {
 	id, err := repo.StoreImageBytes(data, "gopher.png")
 
 	assert.NoError(t, err, "expected no error in result")
-	assert.Equal(t, id, database.ImageId(42))
+	assert.Equal(t, id, database.ImageID(42))
 	data2, err := os.ReadFile("test_resources/gopher1.png")
 	assert.NoError(t, err, "failed to read file2")
 	assert.Equal(t, data, data2, "written file is not the uploaded file")
@@ -171,7 +171,7 @@ func TestStoreImageBytesNameCollision(t *testing.T) {
 	mockdb.
 		EXPECT().
 		AddImage(mock.AnythingOfType("string"), mock.AnythingOfType("imagedata.Data")).
-		Return(database.ImageId(42), nil)
+		Return(database.ImageID(42), nil)
 	mockdb.
 		EXPECT().
 		AddImageThumbnail(mock.Anything, mock.Anything, mock.Anything).
@@ -220,7 +220,7 @@ func TestGetThumbnailFail(t *testing.T) {
 
 func TestSearchImageError(t *testing.T) {
 	err := fmt.Errorf("mock error")
-	ids := []database.ImageId{}
+	ids := []database.ImageID{}
 
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().GetImages(mock.Anything, mock.Anything).Return(ids, err)
@@ -233,7 +233,7 @@ func TestSearchImageError(t *testing.T) {
 }
 
 func TestSearchImageNoneReturn(t *testing.T) {
-	ids := []database.ImageId{}
+	ids := []database.ImageID{}
 
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().GetImages(mock.Anything, mock.Anything).Return(ids, nil)
@@ -246,7 +246,7 @@ func TestSearchImageNoneReturn(t *testing.T) {
 }
 
 func TestSearchImageSomeReturnedIDs(t *testing.T) {
-	ids := []database.ImageId{1, 2, 3, 4, 5}
+	ids := []database.ImageID{1, 2, 3, 4, 5}
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().GetImages(mock.Anything, mock.Anything).Return(ids, nil)
 	parser := mockParser.NewMockParser(t)
@@ -258,7 +258,7 @@ func TestSearchImageSomeReturnedIDs(t *testing.T) {
 }
 
 func TestSearchImageOrderedSomeReturnedIDs(t *testing.T) {
-	ids := []database.ImageId{1, 3, 2, 4, 5}
+	ids := []database.ImageID{1, 3, 2, 4, 5}
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().GetImagesOrder(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(ids, nil)
 	parser := mockParser.NewMockParser(t)
@@ -270,7 +270,7 @@ func TestSearchImageOrderedSomeReturnedIDs(t *testing.T) {
 }
 
 func TestSearchImageOrderedPagedSomeReturnedIDs(t *testing.T) {
-	ids := []database.ImageId{1, 3, 2, 4, 5}
+	ids := []database.ImageID{1, 3, 2, 4, 5}
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().GetImagesOrderPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(ids, nil)
 	parser := mockParser.NewMockParser(t)
@@ -336,7 +336,7 @@ func TestAddImageTagsSuccess(t *testing.T) {
 	result := repo.AddImageTags(1, []string{"tag"})
 	assert.Nil(t, result.Err, "error should be nil")
 	assert.NotNil(t, result.Success, "success should not be nil")
-	assert.Equal(t, ImageTagSuccess{Id: 1, Count: 1}, *result.Success)
+	assert.Equal(t, ImageTagSuccess{ID: 1, Count: 1}, *result.Success)
 }
 
 func TestAddImageTagsFail(t *testing.T) {
@@ -348,7 +348,7 @@ func TestAddImageTagsFail(t *testing.T) {
 	result := repo.AddImageTags(1, []string{"tag"})
 	assert.NotNil(t, result.Err, "error should be nil")
 	assert.Nil(t, result.Success, "success should be nil")
-	assert.Equal(t, ImageTagFail{Reason: "mock error", Id: 1}, *result.Err)
+	assert.Equal(t, ImageTagFail{Reason: "mock error", ID: 1}, *result.Err)
 }
 
 func TestRemoveImageTagsSuccess(t *testing.T) {
@@ -360,7 +360,7 @@ func TestRemoveImageTagsSuccess(t *testing.T) {
 	result := repo.RemoveImageTags(1, []string{"tag"})
 	assert.Nil(t, result.Err, "error should be nil")
 	assert.NotNil(t, result.Success, "success should not be nil")
-	assert.Equal(t, ImageTagSuccess{Id: 1, Count: 1}, *result.Success)
+	assert.Equal(t, ImageTagSuccess{ID: 1, Count: 1}, *result.Success)
 }
 
 func TestRemoveImageTagsFail(t *testing.T) {
@@ -372,7 +372,7 @@ func TestRemoveImageTagsFail(t *testing.T) {
 	result := repo.RemoveImageTags(1, []string{"tag"})
 	assert.NotNil(t, result.Err, "error should be nil")
 	assert.Nil(t, result.Success, "success should be nil")
-	assert.Equal(t, ImageTagFail{Reason: "mock error", Id: 1}, *result.Err)
+	assert.Equal(t, ImageTagFail{Reason: "mock error", ID: 1}, *result.Err)
 }
 
 func TestGetImageFilepathSuccess(t *testing.T) {
@@ -505,7 +505,7 @@ func TestGetTagCount(t *testing.T) {
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
 
-	result, err := repo.GetTagCounts([]database.ImageId{1})
+	result, err := repo.GetTagCounts([]database.ImageID{1})
 	assert.Nil(t, err, "error should be nil")
 	assert.Equal(t, expected, result)
 }
@@ -519,7 +519,7 @@ func TestGetTagCountFail(t *testing.T) {
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder/")
 
-	_, err := repo.GetTagCounts([]database.ImageId{1})
+	_, err := repo.GetTagCounts([]database.ImageID{1})
 	assert.NotNil(t, err, "error should not be nil")
 	assert.Equal(t, "mock error", err.Error())
 }
@@ -528,9 +528,9 @@ func TestGetQueryTagCountQuerySuccess(t *testing.T) {
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().
 		GetImages(mock.Anything, mock.Anything).
-		Return([]database.ImageId{1, 2}, nil)
+		Return([]database.ImageID{1, 2}, nil)
 	mockdb.EXPECT().
-		GetTagCounts([]database.ImageId{1, 2}).
+		GetTagCounts([]database.ImageID{1, 2}).
 		Return(map[string]int64{"foo": 2}, nil)
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
@@ -562,7 +562,7 @@ func TestGetImageResolution(t *testing.T) {
 	parser := mockParser.NewMockParser(t)
 	repo := InitImageRepository(mockdb, parser, "/this/is/a/folder")
 
-	w, h, err := repo.GetImageResolution(database.ImageId(5))
+	w, h, err := repo.GetImageResolution(database.ImageID(5))
 	assert.NoError(t, err)
 	assert.Equal(t, 5, w)
 	assert.Equal(t, 4, h)
@@ -582,7 +582,7 @@ func TestRemoveTags(t *testing.T) {
 }
 
 func TestDeleteImageFailDelete(t *testing.T) {
-	id := database.ImageId(4)
+	id := database.ImageID(4)
 	filePath := "/tmp/nonexistent/file"
 	mockdb := mockDatabase.NewMockImageDatabase(t)
 	mockdb.EXPECT().
@@ -598,7 +598,7 @@ func TestDeleteImageFailDelete(t *testing.T) {
 }
 
 func TestDeleteImageDatabaseErrors(t *testing.T) {
-	id := database.ImageId(4)
+	id := database.ImageID(4)
 	t.Run("duringFile", func(t *testing.T) {
 		mockdb := mockDatabase.NewMockImageDatabase(t)
 		mockdb.EXPECT().

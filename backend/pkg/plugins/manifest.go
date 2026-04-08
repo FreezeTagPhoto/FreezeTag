@@ -130,14 +130,14 @@ const (
 	ProcessFormData
 )
 
-var stringHookMap map[string]HookType = map[string]HookType{
+var stringHookMap = map[string]HookType{
 	"post_upload":    PostUpload,
 	"manual_trigger": ManualTrigger,
 	"generate_form":  GenerateForm,
 }
 var hookStringMap map[HookType]string
 
-var stringSignatureMap map[string]HookSignature = map[string]HookSignature{
+var stringSignatureMap = map[string]HookSignature{
 	"single_image": ProcessOneImage,
 	"image_batch":  ProcessImageBatch,
 	"form_data":    ProcessFormData,

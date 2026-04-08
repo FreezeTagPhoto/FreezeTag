@@ -186,13 +186,13 @@ func (q *ImageQuery) WithLocation(lat float64, long float64, dist float64) *Imag
 	return q
 }
 
-func (q *ImageQuery) WithMake(make string) *ImageQuery {
-	q.make = &queryTag{make, true}
+func (q *ImageQuery) WithMake(deviceMake string) *ImageQuery {
+	q.make = &queryTag{deviceMake, true}
 	return q
 }
 
-func (q *ImageQuery) WithMakeLike(make string) *ImageQuery {
-	q.make = &queryTag{make, false}
+func (q *ImageQuery) WithMakeLike(deviceMake string) *ImageQuery {
+	q.make = &queryTag{deviceMake, false}
 	return q
 }
 

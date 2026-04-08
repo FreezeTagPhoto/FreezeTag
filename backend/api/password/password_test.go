@@ -72,7 +72,7 @@ func TestChangePasswordInvalidRequest(t *testing.T) {
 	assert.Contains(t, got.Error, "invalid request")
 }
 
-func TestChangePasswordNoIdInJWT(t *testing.T) {
+func TestChangePasswordNoIDInJWT(t *testing.T) {
 	w := httptest.NewRecorder()
 	mockAuthService := mockUserService.NewMockAuthService(t)
 	router := gin.New()
