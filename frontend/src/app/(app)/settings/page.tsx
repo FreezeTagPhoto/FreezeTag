@@ -70,7 +70,7 @@ const ACCENT_LABEL: Record<AccentVariable, string> = {
 const UI_ACCENT_LABEL: Record<UIAccentVariable, string> = {
     accent1: "Primary",
     accent2: "Secondary",
-    accent3: "Tertiary",
+    accent3: "Accent Text",
 };
 
 // neutral surface variables

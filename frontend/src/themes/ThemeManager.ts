@@ -84,7 +84,7 @@ export const MOCHA_ACCENT_DEFAULTS: CustomColors = {
     // dark theme ui accents
     accent1: "#579dd7",
     accent2: "#aedbf0",
-    accent3: "#ffffff",
+    accent3: "#11111b",
 
     // dark theme neutrals
     text: "#cdd6f4",
@@ -121,7 +121,7 @@ export const LATTE_ACCENT_DEFAULTS: CustomColors = {
     // light theme ui accents
     accent1: "#79c5d3",
     accent2: "#579dd7",
-    accent3: "#ffffff",
+    accent3: "#4c4f69",
 
     // light theme neutrals
     text: "#4c4f69",

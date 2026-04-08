@@ -16,21 +16,19 @@ body {
     --dropshadow: drop-shadow(0.5px 0.5px 0.5px #888888);
     --accent1: #79c5d3;
     --accent2: #579dd7;
-    --accent3: #ffffff;
+    --accent3: #4c4f69;
     --backdrop: rgba(0, 0, 0, 0.15);
     --border-color: rgba(0, 0, 0, 0.1);
     --subtext0: var(--subtext1);
-    --on-accent: var(--text);
 }
 
 [data-theme-type="dark"] {
     --dropshadow: drop-shadow(0.5px 0.5px 0.5px #000000);
     --accent1: #579dd7;
     --accent2: #aedbf0;
-    --accent3: #ffffff;
+    --accent3: #11111b;
     --backdrop: rgba(255, 255, 255, 0.15);
     --border-color: rgba(150, 150, 150, 0.1);
-    --on-accent: var(--crust);
 }
 
 body {
