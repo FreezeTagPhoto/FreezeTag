@@ -591,6 +591,18 @@
     display: none;
 }
 
+.themeControlRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.themeControlRow .select {
+    flex: 1;
+    min-width: 0;
+}
+
 .customThemeEditor {
     display: flex;
     flex-direction: column;
