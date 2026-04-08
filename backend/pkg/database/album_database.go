@@ -459,7 +459,7 @@ func (db SqliteAlbumDatabase) GetAlbumOwner(albumID AlbumID) (UserID, error) {
 	var ownerID int64
 	err := db.db.QueryRow("SELECT userId FROM Albums WHERE id = ?", albumID).Scan(&ownerID)
 	if err == sql.ErrNoRows {
-		return 0, fmt.Errorf("No owner for album with ID: %v", albumID)
+		return 0, fmt.Errorf("no owner for album with ID: %v", albumID)
 	}
 	if err != nil {
 		return 0, err
