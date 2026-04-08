@@ -384,10 +384,11 @@ func (db SqliteAlbumDatabase) GetAlbumTagCounts(albumID AlbumID, userID UserID) 
 	}
 
 	query = `
-		SELECT it.tag, COUNT(*) FROM AlbumImages ai
+		SELECT t.tag, COUNT(*) FROM AlbumImages ai
 		JOIN ImageTags it ON it.imageId = ai.imageId
+		JOIN Tags t ON t.id = it.tagId
 		WHERE ai.albumId = :aid
-		GROUP BY it.tag
+		GROUP BY t.tag
 	`
 	args = []any{sql.Named("aid", albumID)}
 
@@ -433,58 +434,6 @@ func (db SqliteAlbumDatabase) GetAlbumNameByID(albumID AlbumID, userID UserID) (
 		return "", nil
 	}
 	return name, err
-}
-
-func (db SqliteAlbumDatabase) GetAlbumIDByName(name string, userID UserID) (AlbumID, error) {
-	var query string
-	var args []any
-	var id int64
-
-	userVisibility, err := db.getVisibilityMode(userID)
-	if err != nil {
-		return 0, err
-	}
-
-	switch userVisibility {
-	case USER_ADMIN:
-		query = "SELECT id FROM Albums WHERE album_name = ? ORDER BY id ASC LIMIT 1"
-		args = []any{name}
-	case USER_PUBLIC:
-		query = `
-			SELECT a.id FROM Albums a
-			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = ?
-			WHERE a.album_name = ?
-			AND (
-				(a.visibility_mode >= 1 AND (aa.access_level IS NULL OR aa.access_level > 0))
-				OR aa.access_level > 0
-				OR a.userId = ?
-			)
-			ORDER BY CASE WHEN a.userId = ? THEN 0 ELSE 1 END, a.id ASC
-			LIMIT 1
-		`
-		args = []any{userID, name, userID, userID}
-	case USER_PRIVATE:
-		query = `
-			SELECT a.id FROM Albums a
-			LEFT JOIN AlbumAccess aa ON aa.albumId = a.id AND aa.userId = ?
-			WHERE a.album_name = ?
-			AND (aa.access_level > 0 OR a.userId = ?)
-			ORDER BY CASE WHEN a.userId = ? THEN 0 ELSE 1 END, a.id ASC
-			LIMIT 1
-		`
-		args = []any{userID, name, userID, userID}
-	default:
-		return 0, fmt.Errorf("invalid visibility mode for user %v", userID)
-	}
-
-	err = db.db.QueryRow(query, args...).Scan(&id)
-	if err == sql.ErrNoRows {
-		return 0, nil
-	}
-	if err != nil {
-		return 0, err
-	}
-	return AlbumID(id), nil
 }
 
 func (db SqliteAlbumDatabase) CanManageAlbum(albumID AlbumID, userID UserID) (bool, error) {

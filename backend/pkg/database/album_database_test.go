@@ -418,6 +418,65 @@ func TestGetAlbumSharedUsersForbidden(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestGetAlbumSharedUsersPrivateSharedAlbum(t *testing.T) {
+	manager := createTempManager(t)
+	albumDB := manager.AlbumDB
+	userDB := manager.UserDB
+
+	owner, err := userDB.AddUser("owner_shared_private", "hash")
+	require.NoError(t, err)
+	viewer, err := userDB.AddUser("viewer_shared_private", "hash")
+	require.NoError(t, err)
+	other, err := userDB.AddUser("other_shared_private", "hash")
+	require.NoError(t, err)
+
+	albumID, err := albumDB.CreateAlbum("Shared Private", owner.ID, ALBUM_PRIVATE)
+	require.NoError(t, err)
+	require.NoError(t, albumDB.SetUserAlbumPermission(albumID, viewer.ID, USER_PUBLIC, owner.ID))
+
+	sharedUsers, err := albumDB.GetAlbumSharedUsers(albumID, owner.ID)
+	require.NoError(t, err)
+
+	assert.Len(t, sharedUsers, 3)
+	perms := map[UserID]GlobalPrivacy{}
+	for _, su := range sharedUsers {
+		perms[su.UserID] = su.Permission
+	}
+	assert.Equal(t, GlobalPrivacy(USER_ADMIN), perms[owner.ID])
+	assert.Equal(t, GlobalPrivacy(USER_PUBLIC), perms[viewer.ID])
+	assert.Equal(t, GlobalPrivacy(USER_PRIVATE), perms[other.ID])
+}
+
+func TestGetAlbumSharedUsersPublicAlbumForPublicViewer(t *testing.T) {
+	manager := createTempManager(t)
+	albumDB := manager.AlbumDB
+	userDB := manager.UserDB
+
+	owner, err := userDB.AddUser("owner_shared_public", "hash")
+	require.NoError(t, err)
+	viewer, err := userDB.AddUser("viewer_shared_public", "hash")
+	require.NoError(t, err)
+	other, err := userDB.AddUser("other_shared_public", "hash")
+	require.NoError(t, err)
+	require.NoError(t, userDB.SetUserVisibilityMode(viewer.ID, USER_PUBLIC))
+	require.NoError(t, userDB.SetUserVisibilityMode(other.ID, USER_PUBLIC))
+
+	albumID, err := albumDB.CreateAlbum("Shared Public", owner.ID, ALBUM_PUBLIC)
+	require.NoError(t, err)
+
+	sharedUsers, err := albumDB.GetAlbumSharedUsers(albumID, viewer.ID)
+	require.NoError(t, err)
+
+	assert.Len(t, sharedUsers, 3)
+	perms := map[UserID]GlobalPrivacy{}
+	for _, su := range sharedUsers {
+		perms[su.UserID] = su.Permission
+	}
+	assert.Equal(t, GlobalPrivacy(USER_ADMIN), perms[owner.ID])
+	assert.Equal(t, GlobalPrivacy(USER_PUBLIC), perms[viewer.ID])
+	assert.Equal(t, GlobalPrivacy(USER_PUBLIC), perms[other.ID])
+}
+
 func TestRemoveImageFromAlbum(t *testing.T) {
 	manager := createTempManager(t)
 	albumDB := manager.AlbumDB
@@ -609,4 +668,177 @@ func TestGetAlbumsAdmin(t *testing.T) {
 	assert.ElementsMatch(t,
 		[]AlbumID{albumID, albumID2},
 		[]AlbumID{albums[0].ID, albums[1].ID})
+}
+
+func TestGetAlbumsNonAdmin(t *testing.T) {
+	manager := createTempManager(t)
+	albumDB := manager.AlbumDB
+	userDB := manager.UserDB
+
+	owner, err := userDB.AddUser("owner_get_nonadmin", "hash")
+	require.NoError(t, err)
+	viewer, err := userDB.AddUser("viewer_get_nonadmin", "hash")
+	require.NoError(t, err)
+
+	albumID, err := albumDB.CreateAlbum("Viewer Album", owner.ID, ALBUM_PUBLIC)
+	require.NoError(t, err)
+	albumID2, err := albumDB.CreateAlbum("Private Album", owner.ID, ALBUM_PRIVATE)
+	require.NoError(t, err)
+
+	err = albumDB.SetUserAlbumPermission(albumID2, viewer.ID, USER_PUBLIC, owner.ID)
+	require.NoError(t, err)
+
+	albums, err := albumDB.GetAlbums(viewer.ID)
+	require.NoError(t, err)
+	assert.Len(t, albums, 2)
+	assert.ElementsMatch(t,
+		[]AlbumID{albumID, albumID2},
+		[]AlbumID{albums[0].ID, albums[1].ID})
+}
+
+func TestGetAlbumsNonAdminSharedPrivate(t *testing.T) {
+	manager := createTempManager(t)
+	albumDB := manager.AlbumDB
+	userDB := manager.UserDB
+
+	owner, err := userDB.AddUser("owner_get_shared_private", "hash")
+	require.NoError(t, err)
+	viewer, err := userDB.AddUser("viewer_get_shared_private", "hash")
+	require.NoError(t, err)
+
+	albumID, err := albumDB.CreateAlbum("Shared Private Album", owner.ID, ALBUM_PRIVATE)
+	require.NoError(t, err)
+
+	err = albumDB.SetUserAlbumPermission(albumID, viewer.ID, USER_PUBLIC, owner.ID)
+	require.NoError(t, err)
+
+	albums, err := albumDB.GetAlbums(viewer.ID)
+	require.NoError(t, err)
+	assert.Len(t, albums, 1)
+	assert.Equal(t, albumID, albums[0].ID)
+}
+
+func TestGetAlbumsWhitelistedUser(t *testing.T) {
+	manager := createTempManager(t)
+	albumDB := manager.AlbumDB
+	userDB := manager.UserDB
+
+	owner, err := userDB.AddUser("owner_get_whitelist", "hash")
+	require.NoError(t, err)
+	viewer, err := userDB.AddUser("viewer_get_whitelist", "hash")
+	require.NoError(t, err)
+	err = userDB.SetUserVisibilityMode(viewer.ID, USER_PRIVATE)
+	require.NoError(t, err)
+
+	albumID, err := albumDB.CreateAlbum("Whitelisted Album", owner.ID, ALBUM_PRIVATE)
+	require.NoError(t, err)
+
+	err = albumDB.SetUserAlbumPermission(albumID, viewer.ID, USER_PUBLIC, owner.ID)
+	require.NoError(t, err)
+
+	albums, err := albumDB.GetAlbums(viewer.ID)
+	require.NoError(t, err)
+	assert.Len(t, albums, 1)
+	assert.Equal(t, albumID, albums[0].ID)
+}
+
+func TestGetAlbumNameByIDHonorsAuthorization(t *testing.T) {
+	manager := createTempManager(t)
+	albumDB := manager.AlbumDB
+	userDB := manager.UserDB
+	sqliteAlbumDB := assertSqliteAlbumDatabase(t, albumDB)
+
+	owner, err := userDB.AddUser("owner_get_name", "hash")
+	require.NoError(t, err)
+	viewer, err := userDB.AddUser("viewer_get_name", "hash")
+	require.NoError(t, err)
+
+	albumID, err := albumDB.CreateAlbum("Secret Album", owner.ID, ALBUM_PRIVATE)
+	require.NoError(t, err)
+
+	name, err := sqliteAlbumDB.GetAlbumNameByID(albumID, viewer.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "", name)
+
+	require.NoError(t, albumDB.SetUserAlbumPermission(albumID, viewer.ID, USER_PUBLIC, owner.ID))
+	name, err = sqliteAlbumDB.GetAlbumNameByID(albumID, viewer.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Secret Album", name)
+
+	name, err = sqliteAlbumDB.GetAlbumNameByID(albumID, 0)
+	require.NoError(t, err)
+	assert.Equal(t, "Secret Album", name)
+}
+
+func TestGetAlbumSharedUserIDsReturnsSortedPositiveOnly(t *testing.T) {
+	manager := createTempManager(t)
+	albumDB := manager.AlbumDB
+	userDB := manager.UserDB
+	sqliteAlbumDB := assertSqliteAlbumDatabase(t, albumDB)
+
+	owner, err := userDB.AddUser("owner_shared_ids", "hash")
+	require.NoError(t, err)
+	u1, err := userDB.AddUser("u1_shared_ids", "hash")
+	require.NoError(t, err)
+	u2, err := userDB.AddUser("u2_shared_ids", "hash")
+	require.NoError(t, err)
+	u3, err := userDB.AddUser("u3_shared_ids", "hash")
+	require.NoError(t, err)
+
+	albumID, err := albumDB.CreateAlbum("Shared IDs", owner.ID, ALBUM_PRIVATE)
+	require.NoError(t, err)
+
+	require.NoError(t, albumDB.SetUserAlbumPermission(albumID, u3.ID, USER_PRIVATE, owner.ID))
+	require.NoError(t, albumDB.SetUserAlbumPermission(albumID, u2.ID, USER_ADMIN, owner.ID))
+	require.NoError(t, albumDB.SetUserAlbumPermission(albumID, u1.ID, USER_PUBLIC, owner.ID))
+
+	ids, err := sqliteAlbumDB.GetAlbumSharedUserIDs(albumID)
+	require.NoError(t, err)
+	assert.Equal(t, []UserID{u1.ID, u2.ID}, ids)
+}
+
+func TestGetAlbumTagCountsAndUnauthorized(t *testing.T) {
+	manager := createTempManager(t)
+	albumDB := manager.AlbumDB
+	userDB := manager.UserDB
+	imageDB := manager.ImageDB
+
+	owner, err := userDB.AddUser("owner_tag_counts", "hash")
+	require.NoError(t, err)
+	viewer, err := userDB.AddUser("viewer_tag_counts", "hash")
+	require.NoError(t, err)
+
+	albumID, err := albumDB.CreateAlbum("Tag Count Album", owner.ID, ALBUM_PRIVATE)
+	require.NoError(t, err)
+
+	img1, err := imageDB.AddImage("a.png", imagedata.Data{})
+	require.NoError(t, err)
+	img2, err := imageDB.AddImage("b.png", imagedata.Data{})
+	require.NoError(t, err)
+
+	require.NoError(t, albumDB.SetImageAlbum(img1, albumID, owner.ID))
+	require.NoError(t, albumDB.SetImageAlbum(img2, albumID, owner.ID))
+
+	_, err = imageDB.AddImageTags(img1, []string{"foo", "bar"})
+	require.NoError(t, err)
+	_, err = imageDB.AddImageTags(img2, []string{"foo"})
+	require.NoError(t, err)
+
+	counts, err := albumDB.GetAlbumTagCounts(albumID, owner.ID)
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), counts["foo"])
+	assert.Equal(t, int64(1), counts["bar"])
+
+	_, err = albumDB.GetAlbumTagCounts(albumID, viewer.ID)
+	require.Error(t, err)
+}
+
+func TestGetAlbumOwnerReturnsZeroForMissingAlbum(t *testing.T) {
+	manager := createTempManager(t)
+	albumDB := manager.AlbumDB
+	sqliteAlbumDB := assertSqliteAlbumDatabase(t, albumDB)
+
+	ownerID, err := sqliteAlbumDB.GetAlbumOwner(AlbumID(999999))
+	require.NoError(t, err)
+	assert.Equal(t, UserID(0), ownerID)
 }
