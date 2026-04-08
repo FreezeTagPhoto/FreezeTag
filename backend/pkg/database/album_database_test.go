@@ -75,7 +75,7 @@ func TestCreateAndGetAlbumForOwner(t *testing.T) {
 	require.NoError(t, err)
 
 	album, err := albumDB.GetAlbum(albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, albumID, album.ID)
 	assert.Equal(t, "Test Album", album.Name)
 	assert.Equal(t, owner.ID, album.OwnerID)
@@ -98,7 +98,7 @@ func TestRenameAlbum(t *testing.T) {
 	require.NoError(t, err)
 
 	album, err := albumDB.GetAlbum(albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "After", album.Name)
 }
 
@@ -117,7 +117,7 @@ func TestSetAlbumVisibility(t *testing.T) {
 	require.NoError(t, err)
 
 	album, err := albumDB.GetAlbum(albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, ALBUM_PUBLIC, album.AlbumPrivacy)
 }
 
@@ -141,7 +141,7 @@ func TestSetUserAlbumPermissionGrantsAccess(t *testing.T) {
 	require.NoError(t, err)
 
 	album, err := albumDB.GetAlbum(albumID, viewer.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, albumID, album.ID)
 	assert.Equal(t, "Shared Album", album.Name)
 	assert.Equal(t, USER_PUBLIC, album.VisbilityLevel)
@@ -158,7 +158,7 @@ func TestGetVisibilityModeUID0(t *testing.T) {
 	require.NoError(t, err)
 
 	album, err := albumDB.GetAlbum(albumID, 0) // UID 0 should see everything
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, USER_ADMIN, album.VisbilityLevel)
 }
 
@@ -177,6 +177,7 @@ func TestUserAuthorizedForAlbumStressMatrix(t *testing.T) {
 	albumModes := []GlobalPrivacy{ALBUM_PRIVATE, ALBUM_PUBLIC}
 	accessLevels := []int{-1, 0, 1, 2} // -1 means no AlbumAccess row
 
+	// wrapper for something Rust could have done better
 	computeExpected := func(requesterMode UserPrivacy, albumMode GlobalPrivacy, accessLevel int) bool {
 		switch requesterMode {
 		case USER_PUBLIC:
@@ -208,7 +209,7 @@ func TestUserAuthorizedForAlbumStressMatrix(t *testing.T) {
 				require.NoError(t, authErr)
 
 				expected := computeExpected(requesterMode, albumMode, accessLevel)
-				assert.Equal(t, expected, got, "mode=%d album=%d access=%d", requesterMode, albumMode, accessLevel)
+				assert.Equal(t, expected, got)
 			}
 		}
 	}
@@ -217,7 +218,7 @@ func TestUserAuthorizedForAlbumStressMatrix(t *testing.T) {
 	ownerAlbumID, err := albumDB.CreateAlbum("owner_album", owner.ID, ALBUM_PRIVATE)
 	require.NoError(t, err)
 	ownerAuthorized, err := sqliteAlbumDB.userAuthorizedForAlbum(ownerAlbumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.True(t, ownerAuthorized)
 }
 
@@ -234,7 +235,7 @@ func TestUserAuthorizedForAlbumStressAdminUserIDZero(t *testing.T) {
 	require.NoError(t, err)
 
 	authorized, err := sqliteAlbumDB.userAuthorizedForAlbum(albumID, 0)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.True(t, authorized)
 }
 
@@ -251,7 +252,7 @@ func TestSetImageAlbumSuccess(t *testing.T) {
 	imageID, err := imageDB.AddImage("test.png", imagedata.Data{})
 	require.NoError(t, err)
 	err = albumDB.SetImageAlbum(imageID, albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestSetImageAlbumCantManage(t *testing.T) {
@@ -291,7 +292,7 @@ func TestRenameAlbumNotOwner(t *testing.T) {
 	require.Error(t, err)
 
 	album, err := albumDB.GetAlbum(albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "Original", album.Name)
 }
 
@@ -312,7 +313,7 @@ func TestSetAlbumVisibilityNotOwnerFails(t *testing.T) {
 	require.Error(t, err)
 
 	album, err := albumDB.GetAlbum(albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, ALBUM_PRIVATE, album.AlbumPrivacy)
 }
 
@@ -332,7 +333,7 @@ func TestSetUserAlbumPermissionCannotManage(t *testing.T) {
 	require.NoError(t, err)
 
 	err = albumDB.SetUserAlbumPermission(albumID, target.ID, USER_PUBLIC, requester.ID)
-	require.Error(t, err)
+	assert.Error(t, err)
 }
 
 func TestGetAlbumForbiddenForPrivateAlbum(t *testing.T) {
@@ -348,8 +349,9 @@ func TestGetAlbumForbiddenForPrivateAlbum(t *testing.T) {
 	albumID, err := albumDB.CreateAlbum("Private Get", owner.ID, ALBUM_PRIVATE)
 	require.NoError(t, err)
 
-	_, err = albumDB.GetAlbum(albumID, other.ID)
-	require.Error(t, err)
+	ID, err := albumDB.GetAlbum(albumID, other.ID)
+	assert.Error(t, err)
+	assert.Equal(t, Album{}, ID)
 }
 
 func TestGetAlbumImagesForbiddenForPrivateAlbum(t *testing.T) {
@@ -369,8 +371,9 @@ func TestGetAlbumImagesForbiddenForPrivateAlbum(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, albumDB.SetImageAlbum(imageID, albumID, owner.ID))
 
-	_, err = albumDB.GetAlbumImages(albumID, other.ID)
-	require.Error(t, err)
+	IDs, err := albumDB.GetAlbumImages(albumID, other.ID)
+	assert.Error(t, err)
+	assert.Empty(t, IDs)
 }
 
 func TestGetAssociatedAlbumsRespectsPermissions(t *testing.T) {
@@ -396,7 +399,7 @@ func TestGetAssociatedAlbumsRespectsPermissions(t *testing.T) {
 
 	require.NoError(t, albumDB.SetUserAlbumPermission(albumID, viewer.ID, USER_PUBLIC, owner.ID))
 	albums, err = albumDB.GetAssociatedAlbums(imageID, viewer.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, albums, 1)
 	assert.Equal(t, albumID, albums[0].ID)
 }
@@ -415,7 +418,7 @@ func TestGetAlbumSharedUsersForbidden(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = albumDB.GetAlbumSharedUsers(albumID, other.ID)
-	require.Error(t, err)
+	assert.Error(t, err)
 }
 
 func TestGetAlbumSharedUsersPrivateSharedAlbum(t *testing.T) {
@@ -435,7 +438,7 @@ func TestGetAlbumSharedUsersPrivateSharedAlbum(t *testing.T) {
 	require.NoError(t, albumDB.SetUserAlbumPermission(albumID, viewer.ID, USER_PUBLIC, owner.ID))
 
 	sharedUsers, err := albumDB.GetAlbumSharedUsers(albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	assert.Len(t, sharedUsers, 3)
 	perms := map[UserID]GlobalPrivacy{}
@@ -465,7 +468,7 @@ func TestGetAlbumSharedUsersPublicAlbumForPublicViewer(t *testing.T) {
 	require.NoError(t, err)
 
 	sharedUsers, err := albumDB.GetAlbumSharedUsers(albumID, viewer.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	assert.Len(t, sharedUsers, 3)
 	perms := map[UserID]GlobalPrivacy{}
@@ -498,7 +501,7 @@ func TestRemoveImageFromAlbum(t *testing.T) {
 	require.NoError(t, err)
 
 	images, err := albumDB.GetAlbumImages(albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, images, 0)
 }
 
@@ -523,7 +526,7 @@ func TestRemoveImageFromAlbumUnauthorized(t *testing.T) {
 	require.Error(t, err)
 
 	images, err := albumDB.GetAlbumImages(albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, images, 1)
 }
 
@@ -546,7 +549,7 @@ func TestRemoveAlbum(t *testing.T) {
 	require.Error(t, err)
 
 	err = albumDB.RemoveAlbum(albumID, other.ID)
-	require.Error(t, err)
+	assert.Error(t, err)
 }
 
 func TestRemoveAlbumOwnerHasAuthorized(t *testing.T) {
@@ -565,7 +568,7 @@ func TestRemoveAlbumOwnerHasAuthorized(t *testing.T) {
 	err = albumDB.SetUserAlbumPermission(albumID, other.ID, USER_ADMIN, owner.ID)
 	require.NoError(t, err)
 	err = albumDB.RemoveAlbum(albumID, other.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestRemoveAlbumUnauthorized(t *testing.T) {
@@ -582,7 +585,7 @@ func TestRemoveAlbumUnauthorized(t *testing.T) {
 	require.NoError(t, err)
 
 	err = albumDB.RemoveAlbum(albumID, other.ID)
-	require.Error(t, err)
+	assert.Error(t, err)
 }
 
 func TestRenameAlbumSuccess(t *testing.T) {
@@ -599,7 +602,7 @@ func TestRenameAlbumSuccess(t *testing.T) {
 	require.NoError(t, err)
 
 	album, err := albumDB.GetAlbum(albumID, owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "New Name", album.Name)
 }
 
@@ -620,7 +623,7 @@ func TestRenameAlbumOwnerHasAuthorized(t *testing.T) {
 	require.NoError(t, err)
 
 	err = albumDB.RenameAlbum(albumID, "New Name", other.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	album, err := albumDB.GetAlbum(albumID, owner.ID)
 	require.NoError(t, err)
@@ -663,7 +666,7 @@ func TestGetAlbumsAdmin(t *testing.T) {
 	require.NoError(t, err)
 
 	albums, err := albumDB.GetAlbums(owner.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, albums, 2)
 	assert.ElementsMatch(t,
 		[]AlbumID{albumID, albumID2},
@@ -689,7 +692,7 @@ func TestGetAlbumsNonAdmin(t *testing.T) {
 	require.NoError(t, err)
 
 	albums, err := albumDB.GetAlbums(viewer.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, albums, 2)
 	assert.ElementsMatch(t,
 		[]AlbumID{albumID, albumID2},
@@ -713,7 +716,7 @@ func TestGetAlbumsNonAdminSharedPrivate(t *testing.T) {
 	require.NoError(t, err)
 
 	albums, err := albumDB.GetAlbums(viewer.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, albums, 1)
 	assert.Equal(t, albumID, albums[0].ID)
 }
@@ -737,7 +740,7 @@ func TestGetAlbumsWhitelistedUser(t *testing.T) {
 	require.NoError(t, err)
 
 	albums, err := albumDB.GetAlbums(viewer.ID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Len(t, albums, 1)
 	assert.Equal(t, albumID, albums[0].ID)
 }
@@ -766,7 +769,7 @@ func TestGetAlbumNameByIDHonorsAuthorization(t *testing.T) {
 	assert.Equal(t, "Secret Album", name)
 
 	name, err = sqliteAlbumDB.GetAlbumNameByID(albumID, 0)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "Secret Album", name)
 }
 
@@ -793,7 +796,7 @@ func TestGetAlbumSharedUserIDsReturnsSortedPositiveOnly(t *testing.T) {
 	require.NoError(t, albumDB.SetUserAlbumPermission(albumID, u1.ID, USER_PUBLIC, owner.ID))
 
 	ids, err := sqliteAlbumDB.GetAlbumSharedUserIDs(albumID)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, []UserID{u1.ID, u2.ID}, ids)
 }
 
@@ -830,7 +833,7 @@ func TestGetAlbumTagCountsAndUnauthorized(t *testing.T) {
 	assert.Equal(t, int64(1), counts["bar"])
 
 	_, err = albumDB.GetAlbumTagCounts(albumID, viewer.ID)
-	require.Error(t, err)
+	assert.Error(t, err)
 }
 
 func TestGetAlbumOwnerReturnsZeroForMissingAlbum(t *testing.T) {
@@ -839,6 +842,6 @@ func TestGetAlbumOwnerReturnsZeroForMissingAlbum(t *testing.T) {
 	sqliteAlbumDB := assertSqliteAlbumDatabase(t, albumDB)
 
 	ownerID, err := sqliteAlbumDB.GetAlbumOwner(AlbumID(999999))
-	require.NoError(t, err)
+	assert.Error(t, err)
 	assert.Equal(t, UserID(0), ownerID)
 }
