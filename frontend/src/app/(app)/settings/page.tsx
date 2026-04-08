@@ -40,7 +40,15 @@ import { UserContext } from "@/components/Auth/AuthGate";
 import { ProfilePictureContext } from "@/components/Auth/ProfilePictureContext";
 import { Option, Some, None } from "@/common/option";
 import { Result, Ok, Err } from "@/common/result";
-import { Camera, Eye, EyeOff, User, RotateCcw, Download, Upload } from "lucide-react";
+import {
+    Camera,
+    Eye,
+    EyeOff,
+    User,
+    RotateCcw,
+    Download,
+    Upload,
+} from "lucide-react";
 
 type ThemeName =
     | (typeof LightThemeRegistry)[number]
@@ -156,7 +164,9 @@ const CustomThemeEditor = ({
         </div>
 
         <div className={styles.colorSectionRow}>
-            <span className={styles.colorSectionLabel}>Surfaces &amp; Text</span>
+            <span className={styles.colorSectionLabel}>
+                Surfaces &amp; Text
+            </span>
             <p className={styles.colorSectionHint}>
                 Background layers, border overlays, and text shades used
                 throughout the interface.
@@ -484,7 +494,9 @@ export default function SettingsPage() {
 
             const isCustomDark = theme === "Custom Dark";
             const type: "dark" | "light" = isCustomDark ? "dark" : "light";
-            const existing = isCustomDark ? customDarkColors : customLightColors;
+            const existing = isCustomDark
+                ? customDarkColors
+                : customLightColors;
             const allVars = [
                 ...ACCENT_VARIABLES,
                 ...UI_ACCENT_VARIABLES,
@@ -749,8 +761,8 @@ export default function SettingsPage() {
                                     className={styles.select}
                                     value={theme}
                                     onChange={(e) => {
-                                        const next =
-                                            e.target.value as ThemeName;
+                                        const next = e.target
+                                            .value as ThemeName;
                                         setTheme(next);
                                         ThemeSetter(next);
                                         ApplyTheme(next);

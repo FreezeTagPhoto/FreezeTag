@@ -61,7 +61,10 @@ export const NEUTRAL_VARIABLES = [
 export type AccentVariable = (typeof ACCENT_VARIABLES)[number];
 export type UIAccentVariable = (typeof UI_ACCENT_VARIABLES)[number];
 export type NeutralVariable = (typeof NEUTRAL_VARIABLES)[number];
-export type AllCustomVariable = AccentVariable | UIAccentVariable | NeutralVariable;
+export type AllCustomVariable =
+    | AccentVariable
+    | UIAccentVariable
+    | NeutralVariable;
 export type CustomColors = Record<AllCustomVariable, string>;
 
 export const MOCHA_ACCENT_DEFAULTS: CustomColors = {
@@ -196,7 +199,11 @@ export const CustomColorsGetter = (type: "dark" | "light"): CustomColors => {
         try {
             const parsed = JSON.parse(stored);
             const merged = { ...defaults };
-            for (const v of [...ACCENT_VARIABLES, ...UI_ACCENT_VARIABLES, ...NEUTRAL_VARIABLES]) {
+            for (const v of [
+                ...ACCENT_VARIABLES,
+                ...UI_ACCENT_VARIABLES,
+                ...NEUTRAL_VARIABLES,
+            ]) {
                 if (typeof parsed[v] === "string") {
                     merged[v] = parsed[v];
                 }
