@@ -41,7 +41,7 @@
 
     --border-color: #767676;
 
-    --on-accent: var(--text);
+    --accent3: var(--text);
 
     /* Black drop-shadow is invisible on a black background*/
     --dropshadow: none;

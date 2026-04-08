@@ -10,8 +10,10 @@ import {
     ApplyTheme,
     ACCENT_VARIABLES,
     UI_ACCENT_VARIABLES,
+    NEUTRAL_VARIABLES,
     type AccentVariable,
     type UIAccentVariable,
+    type NeutralVariable,
     type CustomColors,
     MOCHA_ACCENT_DEFAULTS,
     LATTE_ACCENT_DEFAULTS,
@@ -38,7 +40,15 @@ import { UserContext } from "@/components/Auth/AuthGate";
 import { ProfilePictureContext } from "@/components/Auth/ProfilePictureContext";
 import { Option, Some, None } from "@/common/option";
 import { Result, Ok, Err } from "@/common/result";
-import { Camera, Eye, EyeOff, User, RotateCcw } from "lucide-react";
+import {
+    Camera,
+    Eye,
+    EyeOff,
+    User,
+    RotateCcw,
+    Download,
+    Upload,
+} from "lucide-react";
 
 type ThemeName =
     | (typeof LightThemeRegistry)[number]
@@ -68,7 +78,23 @@ const ACCENT_LABEL: Record<AccentVariable, string> = {
 const UI_ACCENT_LABEL: Record<UIAccentVariable, string> = {
     accent1: "Primary",
     accent2: "Secondary",
-    accent3: "Tertiary",
+    accent3: "Accent Text",
+};
+
+// neutral surface variables
+const NEUTRAL_LABEL: Record<NeutralVariable, string> = {
+    text: "Text",
+    subtext1: "Subtext 1",
+    subtext0: "Subtext 0",
+    overlay2: "Overlay 2",
+    overlay1: "Overlay 1",
+    overlay0: "Overlay 0",
+    surface2: "Surface 2",
+    surface1: "Surface 1",
+    surface0: "Surface 0",
+    base: "Base",
+    mantle: "Mantle",
+    crust: "Crust",
 };
 
 const CustomThemeEditor = ({
@@ -78,15 +104,14 @@ const CustomThemeEditor = ({
 }: {
     colors: CustomColors;
     onColorChange: (
-        variable: AccentVariable | UIAccentVariable,
+        variable: AccentVariable | UIAccentVariable | NeutralVariable,
         value: string,
     ) => void;
     onReset: () => void;
 }) => (
     <div className={styles.customThemeEditor}>
         <p className={styles.hint}>
-            Customize accent colors. Neutral surface shades (backgrounds,
-            borders, text) inherit from the Catppuccin base palette.
+            Customize accent, UI, and surface colors for your theme.
         </p>
 
         <div className={styles.colorSectionRow}>
@@ -133,6 +158,33 @@ const CustomThemeEditor = ({
                     />
                     <span className={styles.colorSwatchLabel} aria-hidden>
                         {ACCENT_LABEL[v]}
+                    </span>
+                </div>
+            ))}
+        </div>
+
+        <div className={styles.colorSectionRow}>
+            <span className={styles.colorSectionLabel}>
+                Surfaces &amp; Text
+            </span>
+            <p className={styles.colorSectionHint}>
+                Background layers, border overlays, and text shades used
+                throughout the interface.
+            </p>
+        </div>
+        <div className={styles.neutralGrid}>
+            {NEUTRAL_VARIABLES.map((v) => (
+                <div key={v} className={styles.colorPickerItem}>
+                    <input
+                        type="color"
+                        className={styles.colorSwatch}
+                        value={colors[v]}
+                        onChange={(e) => onColorChange(v, e.target.value)}
+                        title={NEUTRAL_LABEL[v]}
+                        aria-label={`${NEUTRAL_LABEL[v]} color`}
+                    />
+                    <span className={styles.colorSwatchLabel} aria-hidden>
+                        {NEUTRAL_LABEL[v]}
                     </span>
                 </div>
             ))}
@@ -212,6 +264,7 @@ export default function SettingsPage() {
     const { refreshProfilePicture } = useContext(ProfilePictureContext);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const importFileRef = useRef<HTMLInputElement>(null);
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [avatarBusy, setAvatarBusy] = useState(false);
     const [avatarStatus, setAvatarStatus] =
@@ -371,7 +424,7 @@ export default function SettingsPage() {
         setPwShow((prev) => ({ ...prev, [key]: !prev[key] }));
 
     const handleCustomColorChange = (
-        variable: AccentVariable | UIAccentVariable,
+        variable: AccentVariable | UIAccentVariable | NeutralVariable,
         value: string,
     ) => {
         const isCustomDark = theme === "Custom Dark";
@@ -402,6 +455,74 @@ export default function SettingsPage() {
             theme as "Custom Dark" | "Custom Light",
             newColors,
         );
+    };
+
+    const handleExportTheme = () => {
+        const isCustomDark = theme === "Custom Dark";
+        const colors = isCustomDark ? customDarkColors : customLightColors;
+        const payload = { theme, colors };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], {
+            type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = isCustomDark
+            ? "custom-dark-theme.json"
+            : "custom-light-theme.json";
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleImportTheme = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = e.target.files?.[0];
+        if (importFileRef.current) importFileRef.current.value = "";
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            const raw =
+                parsed &&
+                typeof parsed === "object" &&
+                parsed.colors &&
+                typeof parsed.colors === "object"
+                    ? parsed.colors
+                    : parsed;
+
+            const isCustomDark = theme === "Custom Dark";
+            const type: "dark" | "light" = isCustomDark ? "dark" : "light";
+            const existing = isCustomDark
+                ? customDarkColors
+                : customLightColors;
+            const allVars = [
+                ...ACCENT_VARIABLES,
+                ...UI_ACCENT_VARIABLES,
+                ...NEUTRAL_VARIABLES,
+            ] as const;
+            const merged = { ...existing };
+            for (const v of allVars) {
+                const val = raw[v];
+                if (
+                    typeof val === "string" &&
+                    /^#[0-9a-fA-F]{3,8}$/.test(val.trim())
+                ) {
+                    merged[v] = val.trim();
+                }
+            }
+
+            if (isCustomDark) setCustomDarkColors(merged);
+            else setCustomLightColors(merged);
+            CustomColorsSetter(type, merged);
+            ApplyCustomThemeColors(
+                theme as "Custom Dark" | "Custom Light",
+                merged,
+            );
+        } catch {
+            // ignore bad files
+        }
     };
 
     const onChangePassword: React.FormEventHandler<HTMLFormElement> = async (
@@ -634,51 +755,99 @@ export default function SettingsPage() {
                         </div>
 
                         <div className={styles.control}>
-                            <select
-                                id="theme"
-                                className={styles.select}
-                                value={theme}
-                                onChange={(e) => {
-                                    const next = e.target.value as ThemeName;
-                                    setTheme(next);
-                                    ThemeSetter(next);
-                                    ApplyTheme(next);
-                                    window.dispatchEvent(
-                                        new Event("freezetag:theme-changed"),
-                                    );
-                                }}
-                            >
-                                <optgroup label="Light Themes">
-                                    {[...LightThemeRegistry]
-                                        .filter((t) => !t.startsWith("Custom"))
-                                        .sort()
-                                        .map((t) => (
-                                            <option key={t} value={t}>
-                                                {t}
-                                            </option>
-                                        ))}
-                                </optgroup>
+                            <div className={styles.themeControlRow}>
+                                <select
+                                    id="theme"
+                                    className={styles.select}
+                                    value={theme}
+                                    onChange={(e) => {
+                                        const next = e.target
+                                            .value as ThemeName;
+                                        setTheme(next);
+                                        ThemeSetter(next);
+                                        ApplyTheme(next);
+                                        window.dispatchEvent(
+                                            new Event(
+                                                "freezetag:theme-changed",
+                                            ),
+                                        );
+                                    }}
+                                >
+                                    <optgroup label="Light Themes">
+                                        {[...LightThemeRegistry]
+                                            .filter(
+                                                (t) => !t.startsWith("Custom"),
+                                            )
+                                            .sort()
+                                            .map((t) => (
+                                                <option key={t} value={t}>
+                                                    {t}
+                                                </option>
+                                            ))}
+                                    </optgroup>
 
-                                <optgroup label="Dark Themes">
-                                    {[...DarkThemeRegistry]
-                                        .filter((t) => !t.startsWith("Custom"))
-                                        .sort()
-                                        .map((t) => (
-                                            <option key={t} value={t}>
-                                                {t}
-                                            </option>
-                                        ))}
-                                </optgroup>
+                                    <optgroup label="Dark Themes">
+                                        {[...DarkThemeRegistry]
+                                            .filter(
+                                                (t) => !t.startsWith("Custom"),
+                                            )
+                                            .sort()
+                                            .map((t) => (
+                                                <option key={t} value={t}>
+                                                    {t}
+                                                </option>
+                                            ))}
+                                    </optgroup>
 
-                                <optgroup label="Custom">
-                                    <option value="Custom Light">
-                                        Custom Light
-                                    </option>
-                                    <option value="Custom Dark">
-                                        Custom Dark
-                                    </option>
-                                </optgroup>
-                            </select>
+                                    <optgroup label="Custom">
+                                        <option value="Custom Light">
+                                            Custom Light
+                                        </option>
+                                        <option value="Custom Dark">
+                                            Custom Dark
+                                        </option>
+                                    </optgroup>
+                                </select>
+
+                                {isCustomTheme && (
+                                    <>
+                                        <input
+                                            ref={importFileRef}
+                                            type="file"
+                                            accept=".json,application/json"
+                                            className={styles.hiddenFileInput}
+                                            aria-label="Import theme JSON"
+                                            onChange={handleImportTheme}
+                                        />
+                                        <button
+                                            type="button"
+                                            className={styles.iconBtn}
+                                            onClick={handleExportTheme}
+                                            title="Export theme as JSON"
+                                            aria-label="Export theme as JSON"
+                                        >
+                                            <Download
+                                                className={styles.iconBtnIcon}
+                                                aria-hidden
+                                            />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={styles.iconBtn}
+                                            onClick={() =>
+                                                importFileRef.current?.click()
+                                            }
+                                            title="Import theme from JSON"
+                                            aria-label="Import theme from JSON"
+                                        >
+                                            <Upload
+                                                className={styles.iconBtnIcon}
+                                                aria-hidden
+                                            />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 

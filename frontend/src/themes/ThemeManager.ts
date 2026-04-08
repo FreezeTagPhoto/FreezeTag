@@ -42,9 +42,29 @@ export const ACCENT_VARIABLES = [
 // ui accent variables
 export const UI_ACCENT_VARIABLES = ["accent1", "accent2", "accent3"] as const;
 
+// neutral surface / text variables (overlay, surface, base layers, text)
+export const NEUTRAL_VARIABLES = [
+    "text",
+    "subtext1",
+    "subtext0",
+    "overlay2",
+    "overlay1",
+    "overlay0",
+    "surface2",
+    "surface1",
+    "surface0",
+    "base",
+    "mantle",
+    "crust",
+] as const;
+
 export type AccentVariable = (typeof ACCENT_VARIABLES)[number];
 export type UIAccentVariable = (typeof UI_ACCENT_VARIABLES)[number];
-export type AllCustomVariable = AccentVariable | UIAccentVariable;
+export type NeutralVariable = (typeof NEUTRAL_VARIABLES)[number];
+export type AllCustomVariable =
+    | AccentVariable
+    | UIAccentVariable
+    | NeutralVariable;
 export type CustomColors = Record<AllCustomVariable, string>;
 
 export const MOCHA_ACCENT_DEFAULTS: CustomColors = {
@@ -67,7 +87,21 @@ export const MOCHA_ACCENT_DEFAULTS: CustomColors = {
     // dark theme ui accents
     accent1: "#579dd7",
     accent2: "#aedbf0",
-    accent3: "#ffffff",
+    accent3: "#11111b",
+
+    // dark theme neutrals
+    text: "#cdd6f4",
+    subtext1: "#bac2de",
+    subtext0: "#a6adc8",
+    overlay2: "#9399b2",
+    overlay1: "#7f849c",
+    overlay0: "#6c7086",
+    surface2: "#585b70",
+    surface1: "#45475a",
+    surface0: "#313244",
+    base: "#1e1e2e",
+    mantle: "#181825",
+    crust: "#11111b",
 };
 
 export const LATTE_ACCENT_DEFAULTS: CustomColors = {
@@ -90,26 +124,9 @@ export const LATTE_ACCENT_DEFAULTS: CustomColors = {
     // light theme ui accents
     accent1: "#79c5d3",
     accent2: "#579dd7",
-    accent3: "#ffffff",
-};
+    accent3: "#4c4f69",
 
-// neutral colors (hidden from users)
-const MOCHA_NEUTRALS: Record<string, string> = {
-    text: "#cdd6f4",
-    subtext1: "#bac2de",
-    subtext0: "#a6adc8",
-    overlay2: "#9399b2",
-    overlay1: "#7f849c",
-    overlay0: "#6c7086",
-    surface2: "#585b70",
-    surface1: "#45475a",
-    surface0: "#313244",
-    base: "#1e1e2e",
-    mantle: "#181825",
-    crust: "#11111b",
-};
-
-const LATTE_NEUTRALS: Record<string, string> = {
+    // light theme neutrals
     text: "#4c4f69",
     subtext1: "#5c5f77",
     subtext0: "#6c6f85",
@@ -182,7 +199,11 @@ export const CustomColorsGetter = (type: "dark" | "light"): CustomColors => {
         try {
             const parsed = JSON.parse(stored);
             const merged = { ...defaults };
-            for (const v of [...ACCENT_VARIABLES, ...UI_ACCENT_VARIABLES]) {
+            for (const v of [
+                ...ACCENT_VARIABLES,
+                ...UI_ACCENT_VARIABLES,
+                ...NEUTRAL_VARIABLES,
+            ]) {
                 if (typeof parsed[v] === "string") {
                     merged[v] = parsed[v];
                 }
@@ -210,10 +231,7 @@ export const ApplyCustomThemeColors = (
     colors: CustomColors,
 ) => {
     if (typeof document === "undefined") return;
-    const neutrals =
-        themeName === "Custom Dark" ? MOCHA_NEUTRALS : LATTE_NEUTRALS;
-    const allVars = { ...neutrals, ...colors };
-    const varBlock = Object.entries(allVars)
+    const varBlock = Object.entries(colors)
         .map(([k, v]) => `  --${k}: ${v};`)
         .join("\n");
     let styleEl = document.getElementById(
