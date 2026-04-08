@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	max_height = 512
+	maxHeight = 512
 	quality    = float32(0.5)
 
-	max_height_large = 2160
-	quality_large    = float32(0.8)
+	maxHeightLarge = 2160
+	qualityLarge    = float32(0.8)
 )
 
 type ImageUploadSuccess struct {
@@ -59,10 +59,10 @@ type TagResult struct {
 
 type ImageRepository interface {
 	// a userID of 0 is used for unauthenticated requests
-	SearchImage(query queries.DatabaseQuery, userId database.UserID) ([]database.ImageID, error)
-	SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, userId database.UserID) ([]database.ImageID, error)
-	SearchImageOrderedPaged(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, pageSize uint, page uint, userId database.UserID) ([]database.ImageID, error)
-	GetQueryTagCounts(query queries.DatabaseQuery, userId database.UserID) (map[string]int64, error)
+	SearchImage(query queries.DatabaseQuery, userID database.UserID) ([]database.ImageID, error)
+	SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, userID database.UserID) ([]database.ImageID, error)
+	SearchImageOrderedPaged(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, pageSize uint, page uint, userID database.UserID) ([]database.ImageID, error)
+	GetQueryTagCounts(query queries.DatabaseQuery, userID database.UserID) (map[string]int64, error)
 
 	StoreImageBytes(data []byte, filename string) (database.ImageID, error)
 	RetrieveThumbnail(id database.ImageID, quality uint) ([]byte, error)
@@ -118,12 +118,12 @@ func (repo *DefaultImageRepository) StoreImageBytes(data []byte, filename string
 		return 0, err
 	}
 
-	thumbSmall, err := images.CreateThumbnail(imagedata, max_height, quality)
+	thumbSmall, err := images.CreateThumbnail(imagedata, maxHeight, quality)
 	if err != nil {
 		return 0, err
 	}
 
-	thumbLarge, err := images.CreateThumbnail(imagedata, max_height_large, quality_large)
+	thumbLarge, err := images.CreateThumbnail(imagedata, maxHeightLarge, qualityLarge)
 	if err != nil {
 		return 0, err
 	}
@@ -183,16 +183,16 @@ func (repo *DefaultImageRepository) RetrieveImageFile(id database.ImageID) ([]by
 	return data, nil
 }
 
-func (repo *DefaultImageRepository) SearchImage(query queries.DatabaseQuery, userId database.UserID) ([]database.ImageID, error) {
-	return repo.db.GetImages(query, userId)
+func (repo *DefaultImageRepository) SearchImage(query queries.DatabaseQuery, userID database.UserID) ([]database.ImageID, error) {
+	return repo.db.GetImages(query, userID)
 }
 
-func (repo *DefaultImageRepository) SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, userId database.UserID) ([]database.ImageID, error) {
-	return repo.db.GetImagesOrder(query, field, order, userId)
+func (repo *DefaultImageRepository) SearchImageOrdered(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, userID database.UserID) ([]database.ImageID, error) {
+	return repo.db.GetImagesOrder(query, field, order, userID)
 }
 
-func (repo *DefaultImageRepository) SearchImageOrderedPaged(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, pageSize uint, pageNo uint, userId database.UserID) ([]database.ImageID, error) {
-	return repo.db.GetImagesOrderPaged(query, field, order, pageSize, pageNo, userId)
+func (repo *DefaultImageRepository) SearchImageOrderedPaged(query queries.DatabaseQuery, field queries.SortField, order queries.SortOrder, pageSize uint, pageNo uint, userID database.UserID) ([]database.ImageID, error) {
+	return repo.db.GetImagesOrderPaged(query, field, order, pageSize, pageNo, userID)
 }
 
 func (repo *DefaultImageRepository) RetrieveAllTags() (map[string]int64, error) {
@@ -308,8 +308,8 @@ func (repo *DefaultImageRepository) GetTagCounts(ids []database.ImageID) (map[st
 	return repo.db.GetTagCounts(ids)
 }
 
-func (repo *DefaultImageRepository) GetQueryTagCounts(query queries.DatabaseQuery, userId database.UserID) (map[string]int64, error) {
-	images, err := repo.SearchImage(query, userId)
+func (repo *DefaultImageRepository) GetQueryTagCounts(query queries.DatabaseQuery, userID database.UserID) (map[string]int64, error) {
+	images, err := repo.SearchImage(query, userID)
 	if err != nil {
 		return nil, err
 	}

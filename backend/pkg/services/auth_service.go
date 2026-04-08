@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	JwtSigningMethod   = jwt.SigningMethodHS256
-	JwtSecretKey       = ""
-	JwtExpirationHours = time.Duration(24) * time.Hour
+	JWTSigningMethod   = jwt.SigningMethodHS256
+	JWTSecretKey       = ""
+	JWTExpirationHours = time.Duration(24) * time.Hour
 	bcryptCost         = bcrypt.DefaultCost
 )
 
@@ -35,7 +35,7 @@ type APIClaims struct {
 	Permissions data.Permissions `json:"permissions"`
 }
 
-type ApiCreateToken struct {
+type APICreateToken struct {
 	TokenID     database.TokenID `json:"tokenId"`
 	TokenString string           `json:"tokenString,omitempty"`
 }
@@ -57,7 +57,7 @@ type AuthService interface {
 	ValidateAPIToken(token string) (APIClaims, error)
 	// creates an API token. Returns the Plaintext token. Plaintext token is not stored. A token can only have as many or fewer permissions as the user has.
 	// Returns an error if the user does not have the requested permissions.
-	CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (ApiCreateToken, error)
+	CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (APICreateToken, error)
 	// soft delete an API token, returning an error if the token does not exist or could not be revoked
 	RevokeAPIToken(userID database.UserID, tokenID database.TokenID) error
 	// permanently delete an API token, returning an error if the token does not exist or could not be deleted. Admin only operation
@@ -104,9 +104,9 @@ func InitDefaultAuthService(userDb database.UserDatabase, imageParser images.Par
 		if err != nil {
 			panic(err)
 		}
-		JwtSecretKey = base64.StdEncoding.EncodeToString(randomBytes)
+		JWTSecretKey = base64.StdEncoding.EncodeToString(randomBytes)
 	} else {
-		JwtSecretKey = key
+		JWTSecretKey = key
 	}
 	return &DefaultAuthService{
 		userDatabase: userDb,
@@ -163,8 +163,8 @@ func (s *DefaultAuthService) AddUser(username string, password string) (*databas
 func (s *DefaultAuthService) ValidateJWT(tokenString string) (JWTClaims, error) {
 	claims := JWTClaims{}
 	_, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
-		return []byte(JwtSecretKey), nil
-	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
+		return []byte(JWTSecretKey), nil
+	}, jwt.WithValidMethods([]string{JWTSigningMethod.Alg()}))
 
 	if err != nil {
 		return JWTClaims{}, err
@@ -217,37 +217,37 @@ func createTokenWithPermissions(userID database.UserID, permissions data.Permiss
 		Permissions: permissions,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   strconv.FormatInt(int64(userID), 10),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(JwtExpirationHours)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(JWTExpirationHours)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
-	token := jwt.NewWithClaims(JwtSigningMethod, JWTClaims)
-	return token.SignedString([]byte(JwtSecretKey))
+	token := jwt.NewWithClaims(JWTSigningMethod, JWTClaims)
+	return token.SignedString([]byte(JWTSecretKey))
 }
 
-func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (ApiCreateToken, error) {
+func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (APICreateToken, error) {
 	plaintextTokenBytes := make([]byte, 32)
 	_, err := rand.Read(plaintextTokenBytes)
 	if err != nil {
-		return ApiCreateToken{}, err
+		return APICreateToken{}, err
 	}
 	plaintextToken := base64.StdEncoding.EncodeToString(plaintextTokenBytes)
 	tokenHash := hashToken(plaintextToken)
 
 	userPermissions, err := s.userDatabase.GetUserPermissions(userID)
 	if err != nil {
-		return ApiCreateToken{}, err
+		return APICreateToken{}, err
 	}
 	if !userPermissions.Contains(permissions) {
 		log.Printf("[WARN] User with ID %d attempted to create an API token with permissions that exceed their own", userID)
-		return ApiCreateToken{}, fmt.Errorf("invalid permissions requested")
+		return APICreateToken{}, fmt.Errorf("invalid permissions requested")
 	}
 
 	tokenID, err := s.userDatabase.SaveAPIToken(userID, expiresAt, tokenHash, label, permissions)
 	if err != nil {
-		return ApiCreateToken{}, err
+		return APICreateToken{}, err
 	}
-	return ApiCreateToken{
+	return APICreateToken{
 		TokenID:     tokenID,
 		TokenString: plaintextToken,
 	}, nil

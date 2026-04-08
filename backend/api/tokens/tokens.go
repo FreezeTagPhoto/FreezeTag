@@ -73,7 +73,7 @@ func (te TokenEndpoint) RevokeUserToken(c *gin.Context) {
 // @param       label query string false "Optional label for the token"
 // @param       expiresAt query string false "Optional expiration time for the token in RFC3339 format (e.g. 2024-01-01T00:00:00Z)"
 // @param       permission query []string true "List of permissions to assign to the token" collectionFormat(multi)
-// @success     200 {object} services.ApiCreateToken
+// @success     200 {object} services.APICreateToken
 // @failure     400 {object} api.BadRequestResponse
 // @failure     401 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse

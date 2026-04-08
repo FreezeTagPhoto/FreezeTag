@@ -152,7 +152,7 @@ func TestCreateToken(t *testing.T) {
 
 	// Parse the token to verify its contents
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-		return []byte(JwtSecretKey), nil
+		return []byte(JWTSecretKey), nil
 	})
 	require.NoError(t, err)
 	claims, ok := token.Claims.(jwt.MapClaims)
@@ -187,8 +187,8 @@ func TestLoginCreatesValidJWT(t *testing.T) {
 
 	claims := JWTClaims{}
 	_, err = jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
-		return []byte(JwtSecretKey), nil
-	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
+		return []byte(JWTSecretKey), nil
+	}, jwt.WithValidMethods([]string{JWTSigningMethod.Alg()}))
 	require.NoError(t, err)
 
 	t.Logf("%s", claims)
@@ -223,7 +223,7 @@ func TestValidateJWTexpiredToken(t *testing.T) {
 		"sub": "789",
 		"exp": time.Now().Add(-1 * time.Hour).Unix(),
 	})
-	tokenString, err := expiredToken.SignedString([]byte(JwtSecretKey))
+	tokenString, err := expiredToken.SignedString([]byte(JWTSecretKey))
 	require.NoError(t, err)
 	claims, err := auth.ValidateJWT(tokenString)
 	require.Error(t, err)
@@ -236,8 +236,8 @@ func TestCreateJWTNoPermissions(t *testing.T) {
 	require.NoError(t, err)
 	claims := JWTClaims{}
 	_, err = jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
-		return []byte(JwtSecretKey), nil
-	}, jwt.WithValidMethods([]string{JwtSigningMethod.Alg()}))
+		return []byte(JWTSecretKey), nil
+	}, jwt.WithValidMethods([]string{JWTSigningMethod.Alg()}))
 	require.NoError(t, err)
 	assert.Empty(t, claims.Permissions)
 }

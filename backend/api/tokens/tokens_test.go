@@ -184,7 +184,7 @@ func TestCreateTokenSuccess(t *testing.T) {
 		EXPECT().
 		CreateAPIToken(database.UserID(1), data.Permissions{data.ReadFiles}, (*time.Time)(nil), "test token").
 		Return(
-			services.ApiCreateToken{
+			services.APICreateToken{
 				TokenID: 1, TokenString: "plaintexttoken",
 			}, nil).
 		Once()
@@ -200,11 +200,11 @@ func TestCreateTokenSuccess(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	var got services.ApiCreateToken
+	var got services.APICreateToken
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	t.Log(w.Body.String())
 	assert.NoError(t, err)
-	expected := services.ApiCreateToken{TokenID: 1, TokenString: "plaintexttoken"}
+	expected := services.APICreateToken{TokenID: 1, TokenString: "plaintexttoken"}
 	assert.Equal(t, expected, got)
 }
 
@@ -295,7 +295,7 @@ func TestCreateUserTokenDatabaseError(t *testing.T) {
 	authService.
 		EXPECT().
 		CreateAPIToken(database.UserID(1), data.Permissions{data.ReadFiles}, (*time.Time)(nil), "test token").
-		Return(services.ApiCreateToken{}, assert.AnError).
+		Return(services.APICreateToken{}, assert.AnError).
 		Once()
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
