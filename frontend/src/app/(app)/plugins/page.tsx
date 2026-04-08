@@ -6,9 +6,10 @@ import { Plugin } from "@/api/plugins/pluginshelpers";
 import PluginsLister from "@/api/plugins/pluginslister";
 import { UserHasPerm } from "@/api/permissions/permshelpers";
 import PluginsAbler from "@/api/plugins/pluginsabler";
-import { FishingHook, History, Power, Settings } from "lucide-react";
+import { FishingHook, History, Power, Settings, Upload } from "lucide-react";
 import Hooks from "@/components/Plugins/Hooks/Hooks";
 import Config from "@/components/Plugins/Configuration/Configuration";
+import UploadPlugin from "@/components/Plugins/UploadPlugin/UploadPlugin";
 
 export default function Home() {
     const [plugins, setPlugins] = useState<Plugin[]>([]);
@@ -18,6 +19,8 @@ export default function Home() {
 
     const currentUser = useContext(UserContext);
     const userCanChangePlugins = UserHasPerm(currentUser, "write:plugins");
+
+    const [uploadingPlugin, setUploadingPlugin] = useState<boolean>(false);
 
     const fetchPlugins = async () => {
         const result = await PluginsLister();
@@ -32,7 +35,7 @@ export default function Home() {
 
     useEffect(() => {
         fetchPlugins();
-    }, []);
+    }, [uploadingPlugin]);
 
     const onPluginAble = async (
         current_state: boolean,
@@ -122,6 +125,18 @@ export default function Home() {
                     onClose={() => setViewingConfig(undefined)}
                     plugin={viewingConfig}
                 />
+            )}
+            <button
+                type="button"
+                className={styles.upload_plugin}
+                disabled={!userCanChangePlugins}
+                onClick={() => setUploadingPlugin(true)}
+            >
+                <Upload aria-hidden={true} />
+                Upload Plugin
+            </button>
+            {uploadingPlugin && (
+                <UploadPlugin onClose={() => setUploadingPlugin(false)} />
             )}
         </main>
     );

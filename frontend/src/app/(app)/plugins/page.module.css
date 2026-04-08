@@ -102,3 +102,30 @@
 .power_icon_off {
     color: var(--red);
 }
+
+.upload_plugin {
+    background-color: var(--base);
+    border-radius: var(--border-radius);
+    border: var(--border-info);
+    filter: var(--dropshadow);
+
+    padding: 0.75rem 1rem;
+    max-width: 200px;
+
+    font: inherit;
+    color: var(--text);
+
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    align-items: center;
+    cursor: pointer;
+}
+
+.upload_plugin:hover {
+    background-color: var(--surface0);
+}
+
+.upload_plugin:disabled {
+    display: none;
+}
