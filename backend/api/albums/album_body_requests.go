@@ -16,9 +16,9 @@ type AlbumModifyRequest struct {
 }
 
 type UserAlbumPermissionRequest struct {
-	AlbumID      database.AlbumID       `json:"album_id" binding:"required"`
-	TargetUserID database.UserID        `json:"target_user_id" binding:"required"`
-	Permission   database.GlobalPrivacy `json:"permission" binding:"oneof=0 1 2"`
+	AlbumID      database.AlbumID     `json:"album_id" binding:"required"`
+	TargetUserID database.UserID      `json:"target_user_id" binding:"required"`
+	Permission   database.UserPrivacy `json:"permission" binding:"oneof=0 1 2"`
 }
 
 type AlbumImageRequest struct {

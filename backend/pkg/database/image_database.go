@@ -297,7 +297,7 @@ func (db SqliteImageDatabase) AddTags(tags []string) ([]TagID, error) {
 		if err := stmt.QueryRow(tag).Scan(&id); err != nil {
 			if err == sql.ErrNoRows {
 				continue
-			} 
+			}
 			return []TagID{}, err
 		}
 		ids = append(ids, TagID(id))

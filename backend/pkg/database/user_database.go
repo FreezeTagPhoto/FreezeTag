@@ -88,7 +88,7 @@ type UserDatabase interface {
 	// Get user profile picture, return error if user not found or issue occurs
 	GetUserProfilePicture(userID UserID) (ProfilePicture, error)
 	// Set user visibility mode, return error if user not found or issue occurs. visibility should be either 0 (private) or 1 (public)
-	SetUserVisibilityMode(userID UserID, visibility int) error
+	SetUserVisibilityMode(userID UserID, visibility UserPrivacy) error
 }
 
 type SqliteUserDatabase struct {
@@ -607,7 +607,7 @@ func (s SqliteUserDatabase) GetUserProfilePicture(userID UserID) (ProfilePicture
 	return pictureData, nil
 }
 
-func (s SqliteUserDatabase) SetUserVisibilityMode(userID UserID, visibility int) error {
+func (s SqliteUserDatabase) SetUserVisibilityMode(userID UserID, visibility UserPrivacy) error {
 	result, err := s.db.Exec(
 		"UPDATE Users SET visibility_mode = ? WHERE id = ?",
 		visibility,

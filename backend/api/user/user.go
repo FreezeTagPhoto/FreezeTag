@@ -279,6 +279,7 @@ func (ue UserEndpoint) SetUserVisibilityMode(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "missing mode query parameter"})
 		return
 	}
+
 	mode, err := strconv.Atoi(modeParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid mode query parameter"})
@@ -288,7 +289,7 @@ func (ue UserEndpoint) SetUserVisibilityMode(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "mode query parameter must be 0, 1, or 2"})
 		return
 	}
-	if err := ue.authService.SetUserVisibilityMode(targetID, mode); err != nil {
+	if err := ue.authService.SetUserVisibilityMode(targetID, database.UserPrivacy(mode)); err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "failed to update user visibility mode: " + err.Error()})
 		return
 	}
