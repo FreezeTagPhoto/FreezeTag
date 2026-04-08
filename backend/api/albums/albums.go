@@ -74,12 +74,18 @@ func (ae AlbumEndpoint) AddImageToAlbum(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
 		return
 	}
+	albumId := c.Param("id")
+	albumID, err := api.ParseParamIntoID[database.AlbumID](albumId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: err.Error()})
+		return
+	}
 	var req AlbumImageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "invalid request body"})
 		return
 	}
-	err = ae.albumRepository.SetImageAlbum(database.ImageId(req.ImageId), database.AlbumID(req.AlbumId), uid)
+	err = ae.albumRepository.SetImageAlbum(req.ImageId, albumID, uid)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return

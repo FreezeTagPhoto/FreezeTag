@@ -22,8 +22,7 @@ type UserAlbumPermissionRequest struct {
 }
 
 type AlbumImageRequest struct {
-	ImageId database.ImageId `json:"image_id"`
-	AlbumId database.AlbumID `json:"album_id"`
+	ImageId database.ImageId `json:"image_id" binding:"required"`
 }
 
 type RenameAlbumRequest struct {
