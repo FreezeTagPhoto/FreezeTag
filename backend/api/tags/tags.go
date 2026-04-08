@@ -73,16 +73,16 @@ func (te TagEndpoint) HandleDelete(c *gin.Context) {
 			failed = append(failed, repositories.ImageTagFail{Reason: fmt.Sprintf("unknown id %s", idStr)})
 			continue
 		}
-		res := te.imageRepository.RemoveImageTags(database.ImageId(id), tags)
+		res := te.imageRepository.RemoveImageTags(database.ImageID(id), tags)
 		if res.Success != nil {
 			deleted = append(deleted, repositories.ImageTagSuccess{
-				Id:    res.Success.Id,
+				ID:    res.Success.ID,
 				Count: res.Success.Count,
 			})
 		}
 		if res.Err != nil {
 			failed = append(failed, repositories.ImageTagFail{
-				Id:     res.Err.Id,
+				ID:     res.Err.ID,
 				Reason: res.Err.Reason,
 			})
 		}
@@ -134,16 +134,16 @@ func (te TagEndpoint) HandlePost(c *gin.Context) {
 			})
 			continue
 		}
-		res := te.imageRepository.AddImageTags(database.ImageId(id), tags)
+		res := te.imageRepository.AddImageTags(database.ImageID(id), tags)
 		if res.Success != nil {
 			added = append(added, repositories.ImageTagSuccess{
-				Id:    res.Success.Id,
+				ID:    res.Success.ID,
 				Count: res.Success.Count,
 			})
 		}
 		if res.Err != nil {
 			failed = append(failed, repositories.ImageTagFail{
-				Id:     res.Err.Id,
+				ID:     res.Err.ID,
 				Reason: res.Err.Reason,
 			})
 		}
@@ -197,15 +197,12 @@ func (te TagEndpoint) ListTags(c *gin.Context) {
 // @failure     400 {object} api.BadRequestResponse
 // @failure     500 {object} api.ServerErrorResponse
 func (te TagEndpoint) ImageTags(c *gin.Context) {
-	idParam := c.Param("id")
-	var id database.ImageId
-	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
+	ID, err := api.ParseParamIntoID[database.ImageID](c.Param("id"))
+	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid image ID parameter"})
 		return
-	} else {
-		id = database.ImageId(num)
 	}
-	result, err := te.imageRepository.RetrieveImageTags(id)
+	result, err := te.imageRepository.RetrieveImageTags(ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
@@ -228,14 +225,14 @@ func (te TagEndpoint) ListCounts(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "no ids specified"})
 		return
 	}
-	ids := make([]database.ImageId, len(idParam))
+	ids := make([]database.ImageID, len(idParam))
 	for i, idStr := range idParam {
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "bad id parameter"})
 			return
 		}
-		ids[i] = database.ImageId(id)
+		ids[i] = database.ImageID(id)
 	}
 
 	result, err := te.imageRepository.GetTagCounts(ids)
@@ -270,14 +267,14 @@ func (te TagEndpoint) ListCounts(c *gin.Context) {
 // @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
 func (te TagEndpoint) ListCountsQuery(c *gin.Context) {
-	userId, exists := c.Get("userID")
+	userID, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userId not found in context"})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID not found in context"})
 		return
 	}
-	uid, err := api.ParseParamIntoID[database.UserID](userId)
+	uid, err := api.ParseParamIntoID[database.UserID](userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userId in context is not of type UserID"})
+		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "userID in context is not of type UserID"})
 		return
 	}
 	query := api.GetRequestQuery(c)

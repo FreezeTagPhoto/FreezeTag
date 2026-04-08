@@ -26,10 +26,10 @@ func (me MetadataEndpoint) RegisterEndpoints(e gin.IRoutes) {
 func TestGetMetadataSuccessNils(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		GetImageMetadata(mock.AnythingOfType("database.ImageId")).
+		GetImageMetadata(mock.AnythingOfType("database.ImageID")).
 		Return(imagedata.Metadata{}, nil)
 	m.EXPECT().
-		GetImageResolution(mock.AnythingOfType("database.ImageId")).
+		GetImageResolution(mock.AnythingOfType("database.ImageID")).
 		Return(0, 0, nil)
 
 	router := gin.Default()
@@ -48,12 +48,12 @@ func TestGetMetadataSuccessNils(t *testing.T) {
 func TestGetMetadataSuccessOneValue(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		GetImageMetadata(mock.AnythingOfType("database.ImageId")).
+		GetImageMetadata(mock.AnythingOfType("database.ImageID")).
 		Return(imagedata.Metadata{
 			CameraMake: ptrString("Canon"),
 		}, nil)
 	m.EXPECT().
-		GetImageResolution(mock.AnythingOfType("database.ImageId")).
+		GetImageResolution(mock.AnythingOfType("database.ImageID")).
 		Return(69, 420, nil)
 
 	router := gin.Default()
@@ -78,10 +78,10 @@ func TestGetMetadataSuccessOneValue(t *testing.T) {
 func TestGetMetadataError(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		GetImageMetadata(mock.AnythingOfType("database.ImageId")).
+		GetImageMetadata(mock.AnythingOfType("database.ImageID")).
 		Return(imagedata.Metadata{}, fmt.Errorf("mock error")).Maybe()
 	m.EXPECT().
-		GetImageResolution(mock.AnythingOfType("database.ImageId")).
+		GetImageResolution(mock.AnythingOfType("database.ImageID")).
 		Return(10, 12, nil).Maybe()
 
 	router := gin.Default()
@@ -100,10 +100,10 @@ func TestGetMetadataError(t *testing.T) {
 func TestGetMetadataError2(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
-		GetImageMetadata(mock.AnythingOfType("database.ImageId")).
+		GetImageMetadata(mock.AnythingOfType("database.ImageID")).
 		Return(imagedata.Metadata{}, nil).Maybe()
 	m.EXPECT().
-		GetImageResolution(mock.AnythingOfType("database.ImageId")).
+		GetImageResolution(mock.AnythingOfType("database.ImageID")).
 		Return(0, 0, fmt.Errorf("mock error")).Maybe()
 
 	router := gin.Default()
@@ -119,7 +119,7 @@ func TestGetMetadataError2(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-func TestGetMetadataBadId(t *testing.T) {
+func TestGetMetadataBadID(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 
 	router := gin.Default()

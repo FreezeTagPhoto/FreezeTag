@@ -11,9 +11,9 @@ import (
 
 func RequireAuth(auth services.AuthService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		api_key := c.GetHeader("X-API-Key")
-		if api_key != "" {
-			claims, err := auth.ValidateAPIToken(api_key)
+		apiKey := c.GetHeader("X-API-Key")
+		if apiKey != "" {
+			claims, err := auth.ValidateAPIToken(apiKey)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, api.BadRequestResponse{Error: "Invalid API Key"})
 				return

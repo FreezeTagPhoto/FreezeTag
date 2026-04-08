@@ -13,21 +13,21 @@ import (
 	_ "embed"
 )
 
-type ImageId uint64
-type TagId uint64
+type ImageID uint64
+type TagID uint64
 type AlbumID uint64
 
 type ImageDatabase interface {
 	// Get a list of all image IDs corresponding to the
 	//
 	// Only returns a list of image IDs that the user has access to.
-	GetImages(queries.DatabaseQuery, UserID) ([]ImageId, error)
+	GetImages(queries.DatabaseQuery, UserID) ([]ImageID, error)
 	// Get a list of image IDs corresponding to the provided query and order
 	GetImagesOrder(
 		queries.DatabaseQuery,
 		queries.SortField,
 		queries.SortOrder,
-		UserID) ([]ImageId, error)
+		UserID) ([]ImageID, error)
 	// Get a list of image IDs corresponding to the provided query, order, page size, and page number
 	GetImagesOrderPaged(
 		queries.DatabaseQuery,
@@ -35,43 +35,43 @@ type ImageDatabase interface {
 		queries.SortOrder,
 		uint,
 		uint,
-		UserID) ([]ImageId, error)
+		UserID) ([]ImageID, error)
 	// Get the image filename pointed to by the image ID
-	GetImageFile(ImageId) (*string, error)
+	GetImageFile(ImageID) (*string, error)
 	// Get the lowest suffix number that doesn't overlap with an existing image
 	GetNonOverlappingSuffix(string) (int, error)
 	// Get the thumbnail data at the given thumbnail level for the image with the given ID
-	GetImageThumbnail(ImageId, uint) ([]byte, error)
+	GetImageThumbnail(ImageID, uint) ([]byte, error)
 	// Get the tags attached to an image
-	GetImageTags(ImageId) ([]string, error)
+	GetImageTags(ImageID) ([]string, error)
 	// Get the metadata for an image
-	GetImageMetadata(ImageId) (imagedata.Metadata, error)
+	GetImageMetadata(ImageID) (imagedata.Metadata, error)
 	// Get the resolution of an image
-	GetImageResolution(ImageId) (int, int, error)
+	GetImageResolution(ImageID) (int, int, error)
 	// Get all tags matching the given names in the database
 	//
 	// Note: This function WILL fail silently if you ask for tags that haven't been added. Only use this if you don't care about the tags absolutely existing.
-	GetTags([]string) ([]TagId, error)
+	GetTags([]string) ([]TagID, error)
 	// Get all tags present in the database
 	GetAllTags() (map[string]int64, error)
 	// Get the thumbnail sizes an image has
-	GetImageThumbnailSizes(ImageId) ([]int, error)
+	GetImageThumbnailSizes(ImageID) ([]int, error)
 	// Add an image file and its metadata to the database
 	//
 	// returns: the database ID of the image
-	AddImage(string, imagedata.Data) (ImageId, error)
+	AddImage(string, imagedata.Data) (ImageID, error)
 	// Add a thumbnail of the given size with the given data to the database
 	//
 	// returns: whether the thumbnail was added successfully
-	AddImageThumbnail(ImageId, int, []byte) (bool, error)
+	AddImageThumbnail(ImageID, int, []byte) (bool, error)
 	// Add a set of tags to the image with the given id
 	//
 	// returns: the number of tags successfully added
-	AddImageTags(ImageId, []string) (int, error)
+	AddImageTags(ImageID, []string) (int, error)
 	// Add a set of tags by name to the database
 	//
 	// returns: the IDs of the tags with those names
-	AddTags([]string) ([]TagId, error)
+	AddTags([]string) ([]TagID, error)
 	// Remove a set of tags by name from the database
 	//
 	// returns: the number of tags actually removed
@@ -79,34 +79,34 @@ type ImageDatabase interface {
 	// Remove an image from the database
 	//
 	// returns: whether an image was removed
-	RemoveImage(ImageId) (bool, error)
+	RemoveImage(ImageID) (bool, error)
 	// Remove tags from an image
 	//
 	// returns: the number of tags successfully removed
-	RemoveImageTags(ImageId, []string) (int, error)
+	RemoveImageTags(ImageID, []string) (int, error)
 	// Remove a thumbnail with the given size from an image
 	//
 	// returns: whether the thumbnail was removed
-	RemoveImageThumbnail(ImageId, int) (bool, error)
+	RemoveImageThumbnail(ImageID, int) (bool, error)
 	// Gets the tag count for each image ID in the provided list
 	//
 	// returns: a map of tag name to count
-	GetTagCounts([]ImageId) (map[string]int64, error)
+	GetTagCounts([]ImageID) (map[string]int64, error)
 }
 
 type SqliteImageDatabase struct {
 	db *sql.DB
 }
 
-func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery, UserID UserID) ([]ImageId, error) {
+func (db SqliteImageDatabase) GetImages(q queries.DatabaseQuery, UserID UserID) ([]ImageID, error) {
 	return db.GetImagesOrder(q, queries.DateAdded, queries.Descending, UserID)
 }
 
-func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, UserID UserID) ([]ImageId, error) {
+func (db SqliteImageDatabase) GetImagesOrder(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, UserID UserID) ([]ImageID, error) {
 	return db.GetImagesOrderPaged(q, sf, so, 0, 0, UserID)
 }
 
-func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, pageSize uint, pageNum uint, userID UserID) ([]ImageId, error) {
+func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf queries.SortField, so queries.SortOrder, pageSize uint, pageNum uint, userID UserID) ([]ImageID, error) {
 	stmt, stmtArgs := q.StatementWithArgs()
 	var args []any
 	var query string
@@ -147,24 +147,24 @@ func (db SqliteImageDatabase) GetImagesOrderPaged(q queries.DatabaseQuery, sf qu
 
 	rows, err := db.db.Query(query, args...)
 	if err != nil {
-		return []ImageId{}, err
+		return []ImageID{}, err
 	}
 	defer rows.Close() //nolint:errcheck
-	ids := []ImageId{}
+	ids := []ImageID{}
 	for rows.Next() {
 		if err := rows.Err(); err != nil {
-			return []ImageId{}, err
+			return []ImageID{}, err
 		}
 		var id int64
 		if err := rows.Scan(&id); err != nil {
-			return []ImageId{}, err
+			return []ImageID{}, err
 		}
-		ids = append(ids, ImageId(id))
+		ids = append(ids, ImageID(id))
 	}
 	return ids, nil
 }
 
-func (db SqliteImageDatabase) GetImageFile(id ImageId) (*string, error) {
+func (db SqliteImageDatabase) GetImageFile(id ImageID) (*string, error) {
 	rows, err := db.db.Query("SELECT imageFile FROM Images WHERE id = ?", id)
 	if err != nil {
 		return nil, err
@@ -213,7 +213,7 @@ func (db SqliteImageDatabase) GetNonOverlappingSuffix(name string) (int, error) 
 	return lowest, nil
 }
 
-func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size uint) ([]byte, error) {
+func (db SqliteImageDatabase) GetImageThumbnail(id ImageID, size uint) ([]byte, error) {
 	rows, err := db.db.Query("SELECT thumbnailData FROM Thumbnails WHERE imageId = ? AND thumbnailSize = ?", id, size)
 	if err != nil {
 		return []byte{}, err
@@ -232,7 +232,7 @@ func (db SqliteImageDatabase) GetImageThumbnail(id ImageId, size uint) ([]byte, 
 	return nil, nil
 }
 
-func (db SqliteImageDatabase) GetImageTags(id ImageId) ([]string, error) {
+func (db SqliteImageDatabase) GetImageTags(id ImageID) ([]string, error) {
 	rows, err := db.db.Query("SELECT tag FROM Tags WHERE id IN (SELECT tagId FROM ImageTags WHERE imageId = ?)", id)
 	if err != nil {
 		return []string{}, err
@@ -252,59 +252,58 @@ func (db SqliteImageDatabase) GetImageTags(id ImageId) ([]string, error) {
 	return tags, nil
 }
 
-func (db SqliteImageDatabase) GetTags(tags []string) ([]TagId, error) {
+func (db SqliteImageDatabase) GetTags(tags []string) ([]TagID, error) {
 	tx, err := db.db.Begin()
 	if err != nil {
-		return []TagId{}, err
+		return []TagID{}, err
 	}
 	defer tx.Rollback() //nolint:errcheck
 	stmt, err := tx.Prepare("SELECT id FROM Tags WHERE tag = ?")
 	if err != nil {
-		return []TagId{}, err
+		return []TagID{}, err
 	}
 	defer stmt.Close() //nolint:errcheck
-	ids := make([]TagId, 0, len(tags))
+	ids := make([]TagID, 0, len(tags))
 	for _, tag := range tags {
 		var id int64
 		if err := stmt.QueryRow(tag).Scan(&id); err != nil {
 			if err == sql.ErrNoRows {
 				continue
 			}
-			return []TagId{}, fmt.Errorf("failed to get a tag ID: %w", err)
+			return []TagID{}, fmt.Errorf("failed to get a tag ID: %w", err)
 		}
-		ids = append(ids, TagId(id))
+		ids = append(ids, TagID(id))
 	}
 	if err := tx.Commit(); err != nil {
-		return []TagId{}, err
+		return []TagID{}, err
 	}
 	return ids, nil
 }
 
-func (db SqliteImageDatabase) AddTags(tags []string) ([]TagId, error) {
+func (db SqliteImageDatabase) AddTags(tags []string) ([]TagID, error) {
 	tx, err := db.db.Begin()
 	if err != nil {
-		return []TagId{}, err
+		return []TagID{}, err
 	}
 	defer tx.Rollback() //nolint:errcheck
 	stmt, err := tx.Prepare("INSERT OR IGNORE INTO Tags (tag) VALUES (?) RETURNING id")
 	if err != nil {
-		return []TagId{}, err
+		return []TagID{}, err
 	}
 	defer stmt.Close() //nolint:errcheck
-	ids := make([]TagId, 0, len(tags))
+	ids := make([]TagID, 0, len(tags))
 	for _, tag := range tags {
 		var id int64
 		if err := stmt.QueryRow(tag).Scan(&id); err != nil {
 			if err == sql.ErrNoRows {
 				continue
-			} else {
-				return []TagId{}, err
-			}
+			} 
+			return []TagID{}, err
 		}
-		ids = append(ids, TagId(id))
+		ids = append(ids, TagID(id))
 	}
 	if err := tx.Commit(); err != nil {
-		return []TagId{}, err
+		return []TagID{}, err
 	}
 	return ids, nil
 }
@@ -359,7 +358,7 @@ func (db SqliteImageDatabase) GetAllTags() (map[string]int64, error) {
 	return tags, nil
 }
 
-func (db SqliteImageDatabase) GetImageMetadata(id ImageId) (imagedata.Metadata, error) {
+func (db SqliteImageDatabase) GetImageMetadata(id ImageID) (imagedata.Metadata, error) {
 	rows, err := db.db.Query("SELECT imageFile, dateTaken, dateUploaded, cameraMake, cameraModel, latitude, longitude FROM Images WHERE id = ?", id)
 	if err != nil {
 		return imagedata.Metadata{}, err
@@ -392,7 +391,7 @@ func (db SqliteImageDatabase) GetImageMetadata(id ImageId) (imagedata.Metadata, 
 	return imagedata.Metadata{}, nil
 }
 
-func (db SqliteImageDatabase) GetImageResolution(id ImageId) (w int, h int, err error) {
+func (db SqliteImageDatabase) GetImageResolution(id ImageID) (w int, h int, err error) {
 	err = db.db.QueryRow("SELECT width, height FROM Images WHERE id = ?", id).Scan(&w, &h)
 	if err == sql.ErrNoRows {
 		return 0, 0, nil
@@ -400,7 +399,7 @@ func (db SqliteImageDatabase) GetImageResolution(id ImageId) (w int, h int, err 
 	return
 }
 
-func (db SqliteImageDatabase) GetImageThumbnailSizes(id ImageId) ([]int, error) {
+func (db SqliteImageDatabase) GetImageThumbnailSizes(id ImageID) ([]int, error) {
 	rows, err := db.db.Query("SELECT thumbnailSize FROM Thumbnails WHERE imageId = ?", id)
 	if err != nil {
 		return []int{}, err
@@ -420,10 +419,10 @@ func (db SqliteImageDatabase) GetImageThumbnailSizes(id ImageId) ([]int, error) 
 	return sizes, nil
 }
 
-func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageId, error) {
+func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageID, error) {
 	var datetaken *int64
 	dateuploaded := time.Now().Unix()
-	var make *string
+	var deviceMake *string
 	var model *string
 	var latitude *float64
 	var longitude *float64
@@ -432,7 +431,7 @@ func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageI
 		datetaken = &formatted
 	}
 	if data.Cam != nil {
-		make = &data.Cam.Manufacturer
+		deviceMake = &data.Cam.Manufacturer
 		model = &data.Cam.Model
 	}
 	if data.Geo != nil {
@@ -448,7 +447,7 @@ func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageI
 
 	if err := tx.QueryRow(
 		"INSERT INTO Images (imageFile, dateTaken, dateUploaded, cameraMake, cameraModel, latitude, longitude, width, height) values (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
-		file, datetaken, &dateuploaded, make, model, latitude, longitude, data.Width, data.Height,
+		file, datetaken, &dateuploaded, deviceMake, model, latitude, longitude, data.Width, data.Height,
 	).Scan(&id); err != nil {
 		return 0, err
 	}
@@ -456,10 +455,10 @@ func (db SqliteImageDatabase) AddImage(file string, data imagedata.Data) (ImageI
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
-	return ImageId(id), nil
+	return ImageID(id), nil
 }
 
-func (db SqliteImageDatabase) AddImageThumbnail(id ImageId, size int, data []byte) (bool, error) {
+func (db SqliteImageDatabase) AddImageThumbnail(id ImageID, size int, data []byte) (bool, error) {
 	res, err := db.db.Exec("INSERT OR IGNORE INTO Thumbnails (imageId, thumbnailSize, thumbnailData) VALUES (?, ?, ?)", id, size, data)
 	if err != nil {
 		return false, err
@@ -471,7 +470,7 @@ func (db SqliteImageDatabase) AddImageThumbnail(id ImageId, size int, data []byt
 	return rows != 0, nil
 }
 
-func (db SqliteImageDatabase) AddImageTags(id ImageId, tags []string) (int, error) {
+func (db SqliteImageDatabase) AddImageTags(id ImageID, tags []string) (int, error) {
 	modified := 0
 	tx, err := db.db.Begin()
 	if err != nil {
@@ -481,7 +480,7 @@ func (db SqliteImageDatabase) AddImageTags(id ImageId, tags []string) (int, erro
 	if _, err = db.AddTags(tags); err != nil {
 		return 0, err
 	}
-	tagIds, err := db.GetTags(tags)
+	tagIDs, err := db.GetTags(tags)
 	if err != nil {
 		return 0, err
 	}
@@ -490,8 +489,8 @@ func (db SqliteImageDatabase) AddImageTags(id ImageId, tags []string) (int, erro
 		return 0, err
 	}
 	defer stmt.Close() //nolint:errcheck
-	for _, tagId := range tagIds {
-		res, err := stmt.Exec(id, tagId)
+	for _, tagID := range tagIDs {
+		res, err := stmt.Exec(id, tagID)
 		if err != nil {
 			return 0, err
 		}
@@ -507,7 +506,7 @@ func (db SqliteImageDatabase) AddImageTags(id ImageId, tags []string) (int, erro
 	return modified, nil
 }
 
-func (db SqliteImageDatabase) RemoveImage(id ImageId) (bool, error) {
+func (db SqliteImageDatabase) RemoveImage(id ImageID) (bool, error) {
 	res, err := db.db.Exec("DELETE FROM Images WHERE id = ?", id)
 	if err != nil {
 		return false, err
@@ -519,11 +518,11 @@ func (db SqliteImageDatabase) RemoveImage(id ImageId) (bool, error) {
 	return rows != 0, nil
 }
 
-func (db SqliteImageDatabase) RemoveImageTags(id ImageId, tags []string) (int, error) {
+func (db SqliteImageDatabase) RemoveImageTags(id ImageID, tags []string) (int, error) {
 	if len(tags) == 0 {
 		return 0, nil
 	}
-	tagIds, err := db.GetTags(tags)
+	tagIDs, err := db.GetTags(tags)
 	if err != nil {
 		return 0, err
 	}
@@ -538,8 +537,8 @@ func (db SqliteImageDatabase) RemoveImageTags(id ImageId, tags []string) (int, e
 	}
 	defer stmt.Close() //nolint:errcheck
 	modified := 0
-	for _, tagId := range tagIds {
-		res, err := stmt.Exec(id, tagId)
+	for _, tagID := range tagIDs {
+		res, err := stmt.Exec(id, tagID)
 		if err != nil {
 			return 0, err
 		}
@@ -555,7 +554,7 @@ func (db SqliteImageDatabase) RemoveImageTags(id ImageId, tags []string) (int, e
 	return modified, nil
 }
 
-func (db SqliteImageDatabase) RemoveImageThumbnail(id ImageId, size int) (bool, error) {
+func (db SqliteImageDatabase) RemoveImageThumbnail(id ImageID, size int) (bool, error) {
 	res, err := db.db.Exec("DELETE FROM Thumbnails WHERE imageId = ? AND thumbnailSize = ?", id, size)
 	if err != nil {
 		return false, err
@@ -567,7 +566,7 @@ func (db SqliteImageDatabase) RemoveImageThumbnail(id ImageId, size int) (bool, 
 	return rows != 0, nil
 }
 
-func (db SqliteImageDatabase) GetTagCounts(imageIds []ImageId) (map[string]int64, error) {
+func (db SqliteImageDatabase) GetTagCounts(imageIds []ImageID) (map[string]int64, error) {
 	if len(imageIds) == 0 {
 		return map[string]int64{}, nil
 	}

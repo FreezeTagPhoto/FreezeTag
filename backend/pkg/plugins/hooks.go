@@ -26,15 +26,15 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 			if !ok {
 				return nil, fmt.Errorf("invalid input type for post_upload,single_image")
 			}
-			return h.processOneImage(hookName, resolved.Id, repo)
+			return h.processOneImage(hookName, resolved.ID, repo)
 		case ProcessImageBatch:
 			resolved, ok := in.([]repositories.ImageUploadSuccess)
 			if !ok {
 				return nil, fmt.Errorf("invalid input type for post_upload,image_batch")
 			}
-			ids := make([]database.ImageId, len(resolved))
+			ids := make([]database.ImageID, len(resolved))
 			for i, res := range resolved {
-				ids[i] = res.Id
+				ids[i] = res.ID
 			}
 			return h.processImageBatch(hookName, ids, repo)
 		case ProcessFormData:
@@ -43,13 +43,13 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 	case ManualTrigger, GenerateForm:
 		switch s {
 		case ProcessOneImage:
-			resolved, ok := in.(database.ImageId)
+			resolved, ok := in.(database.ImageID)
 			if !ok {
 				return nil, fmt.Errorf("invalid input type for manual_trigger,single_image")
 			}
 			return h.processOneImage(hookName, resolved, repo)
 		case ProcessImageBatch:
-			resolved, ok := in.([]database.ImageId)
+			resolved, ok := in.([]database.ImageID)
 			if !ok {
 				return nil, fmt.Errorf("invalid input type for manual_trigger,image_batch")
 			}
@@ -65,7 +65,7 @@ func (h *HookedPlugin) RunHook(hookName string, in any, repo repositories.ImageR
 	return nil, fmt.Errorf("unknown hook type: %v,%v", t, s)
 }
 
-func (h *HookedPlugin) processOneImage(hookName string, id database.ImageId, repo repositories.ImageRepository) (PluginResult, error) {
+func (h *HookedPlugin) processOneImage(hookName string, id database.ImageID, repo repositories.ImageRepository) (PluginResult, error) {
 	webp, err := repo.RetrieveThumbnail(id, 2)
 	if webp == nil {
 		return map[string]any{"skipped": true}, nil
@@ -89,7 +89,7 @@ func (h *HookedPlugin) processOneImage(hookName string, id database.ImageId, rep
 	return res, nil
 }
 
-func (h *HookedPlugin) processImageBatch(hookName string, ids []database.ImageId, repo repositories.ImageRepository) (PluginResult, error) {
+func (h *HookedPlugin) processImageBatch(hookName string, ids []database.ImageID, repo repositories.ImageRepository) (PluginResult, error) {
 	h.IO().In <- PluginMessage{
 		GET,
 		map[string]any{"action": "image_batch", "ids": ids, "hook": hookName},
@@ -168,7 +168,7 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 	case "none":
 		return map[string]any{"skipped": true}, nil
 	case "add_tags":
-		id, err := intoId(msg["id"])
+		id, err := intoID(msg["id"])
 		if err != nil {
 			return nil, err
 		}
@@ -182,7 +182,7 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 		}
 		return map[string]any{"count": res.Success.Count}, nil
 	case "remove_tags":
-		id, err := intoId(msg["id"])
+		id, err := intoID(msg["id"])
 		if err != nil {
 			return nil, err
 		}
@@ -206,7 +206,7 @@ func (h *HookedPlugin) handlePost(repo repositories.ImageRepository, m any) (Plu
 		}
 		return map[string]any{"deleted": count}, nil
 	case "delete_image":
-		id, err := intoId(msg["id"])
+		id, err := intoID(msg["id"])
 		if err != nil {
 			return nil, err
 		}
@@ -300,7 +300,7 @@ func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessa
 	}
 	switch msg["action"] {
 	case "metadata":
-		id, err := intoId(msg["id"])
+		id, err := intoID(msg["id"])
 		if err != nil {
 			return err
 		}
@@ -330,7 +330,7 @@ func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessa
 			map[string]any{"action": "search", "results": res},
 		}
 	case "image":
-		id, err := intoId(msg["id"])
+		id, err := intoID(msg["id"])
 		if err != nil {
 			return err
 		}
@@ -347,7 +347,7 @@ func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessa
 		}
 		pl.IO().In <- PluginMessage{BIN, webp}
 	case "image_file":
-		id, err := intoId(msg["id"])
+		id, err := intoID(msg["id"])
 		if err != nil {
 			return err
 		}
@@ -361,7 +361,7 @@ func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessa
 		}
 		pl.IO().In <- PluginMessage{BIN, file}
 	case "tags":
-		id, err := intoId(msg["id"])
+		id, err := intoID(msg["id"])
 		if err != nil {
 			return err
 		}
@@ -397,7 +397,7 @@ func handlePluginGet(pl Plugin, repo repositories.ImageRepository, m PluginMessa
 	return nil
 }
 
-func pluginSearchRequest(msg map[string]any, repo repositories.ImageRepository) ([]database.ImageId, error) {
+func pluginSearchRequest(msg map[string]any, repo repositories.ImageRepository) ([]database.ImageID, error) {
 	qParams, ok := msg["query"].(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("couldn't deserialize query parameters")
@@ -448,12 +448,12 @@ func pluginTagSearchRequest(msg map[string]any, repo repositories.ImageRepositor
 }
 
 // special case because JSON deserialized numbers are dumb
-func intoId(a any) (database.ImageId, error) {
+func intoID(a any) (database.ImageID, error) {
 	i, ok := a.(float64)
 	if !ok {
 		return 0, fmt.Errorf("failed to extract ID")
 	}
-	return database.ImageId(int64(i)), nil
+	return database.ImageID(int64(i)), nil
 }
 
 func into[V any](a any) (V, error) {

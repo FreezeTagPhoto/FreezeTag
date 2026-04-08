@@ -30,15 +30,12 @@ func InitUserEndpoint(authService services.AuthService) UserEndpoint {
 // @Failure      500  {object}  api.ServerErrorResponse
 // @Router       /users/{id} [get]
 func (ue UserEndpoint) GetUser(c *gin.Context) {
-	userIDString := c.Param("id")
-	var id database.UserID
-	if num, err := strconv.ParseInt(userIDString, 10, 64); err != nil {
-		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid user ID parameter: " + userIDString})
+	userID, err := api.ParseParamIntoID[database.UserID](c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid user ID parameter"})
 		return
-	} else {
-		id = database.UserID(num)
 	}
-	user, err := ue.authService.GetUserById(id)
+	user, err := ue.authService.GetUserByID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: "User not found"})
 		return

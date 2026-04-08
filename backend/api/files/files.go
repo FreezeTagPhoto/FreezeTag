@@ -5,7 +5,6 @@ import (
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/repositories"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,14 +30,11 @@ func InitFileEndpoint(repo repositories.ImageRepository) FileEndpoint {
 // @failure     500 {object} api.ServerErrorResponse
 func (fe FileEndpoint) HandleGet(c *gin.Context) {
 	idParam := c.Param("id")
-	var id database.ImageId
-	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
+	id, err := api.ParseParamIntoID[database.ImageID](idParam)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid image ID parameter"})
 		return
-	} else {
-		id = database.ImageId(num)
 	}
-
 	result, err := fe.imageRepository.GetImageFilepath(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
@@ -57,12 +53,10 @@ func (fe FileEndpoint) HandleGet(c *gin.Context) {
 // @failure     400 {object} api.BadRequestResponse
 func (fe FileEndpoint) HandleDelete(c *gin.Context) {
 	idParam := c.Param("id")
-	var id database.ImageId
-	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
+	id, err := api.ParseParamIntoID[database.ImageID](idParam)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid image ID parameter"})
 		return
-	} else {
-		id = database.ImageId(num)
 	}
 
 	file, err := fe.imageRepository.DeleteImage(id)
@@ -70,5 +64,5 @@ func (fe FileEndpoint) HandleDelete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, api.ServerErrorResponse{Error: err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, api.ImageDeleteResponse{Id: id, File: file})
+	c.JSON(http.StatusOK, api.ImageDeleteResponse{ID: id, File: file})
 }

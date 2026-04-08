@@ -5,7 +5,6 @@ import (
 	"freezetag/backend/pkg/database"
 	"freezetag/backend/pkg/repositories"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,13 +30,13 @@ func InitMetadataEndpoint(repo repositories.ImageRepository) MetadataEndpoint {
 // @failure     500 {object} api.ServerErrorResponse
 func (me MetadataEndpoint) Metadata(c *gin.Context) {
 	idParam := c.Param("id")
-	var id database.ImageId
-	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
+	var id database.ImageID
+	num, err := api.ParseParamIntoID[database.ImageID](idParam)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid image ID parameter"})
 		return
-	} else {
-		id = database.ImageId(num)
 	}
+	id = database.ImageID(num)
 
 	meta, err := me.imageRepository.GetImageMetadata(id)
 	if err != nil {

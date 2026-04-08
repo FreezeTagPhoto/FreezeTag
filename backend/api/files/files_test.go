@@ -61,7 +61,7 @@ func TestServeFileFail(t *testing.T) {
 	assert.Equal(t, expected, got)
 }
 
-func TestServeFileBadId(t *testing.T) {
+func TestServeFileBadID(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
 	InitFileEndpoint(m).RegisterEndpoints(router)
@@ -105,13 +105,13 @@ func TestDeleteFile(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", "/file/delete/1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	expected := api.ImageDeleteResponse{Id: 1, File: "/foo/bar"}
+	expected := api.ImageDeleteResponse{ID: 1, File: "/foo/bar"}
 	var got api.ImageDeleteResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
 
-func TestDeleteFileBadId(t *testing.T) {
+func TestDeleteFileBadID(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	router := gin.Default()
 	InitFileEndpoint(m).RegisterEndpoints(router)

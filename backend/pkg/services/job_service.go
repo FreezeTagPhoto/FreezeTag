@@ -118,7 +118,7 @@ func (s *defaultJobService) uploadOneFile(f innerFileJob) (repositories.ImageUpl
 	if err != nil {
 		return repositories.ImageUploadSuccess{}, err
 	}
-	return repositories.ImageUploadSuccess{Id: id, Filename: f.Name}, nil
+	return repositories.ImageUploadSuccess{ID: id, Filename: f.Name}, nil
 }
 
 func (s *defaultJobService) RunUploadJob(batch []FileJob) uuid.UUID {

@@ -31,12 +31,10 @@ func InitThumbnailEndpoint(repository repositories.ImageRepository) ThumbnailEnd
 // @failure     500 {object} api.ServerErrorResponse
 func (te ThumbnailEndpoint) HandleGet(c *gin.Context) {
 	idParam := c.Param("id")
-	var id database.ImageId
-	if num, err := strconv.ParseInt(idParam, 10, 64); err != nil {
+	id, err := api.ParseParamIntoID[database.ImageID](idParam)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid image ID parameter"})
 		return
-	} else {
-		id = database.ImageId(num)
 	}
 	sizeParam := c.Query("size")
 	var size uint

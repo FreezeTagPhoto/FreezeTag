@@ -11,49 +11,49 @@ type Permission struct {
 type Permissions []Permission
 
 var (
-	ReadFiles Permission = register("read:files",
+	ReadFiles = register("read:files",
 		"Read Files",
 		"Allows downloading/viewing stored files.")
-	WriteFiles Permission = register("write:files",
+	WriteFiles = register("write:files",
 		"Write Files",
 		"Allows uploading files.")
-	ReadTags Permission = register("read:tags",
+	ReadTags = register("read:tags",
 		"Read Tags",
 		"Allows viewing metadata tags.")
-	WriteTags Permission = register("write:tags",
+	WriteTags = register("write:tags",
 		"Write Tags",
 		"Allows creating and editing metadata tags.")
 
-	WriteUser Permission = register("write:user",
+	WriteUser = register("write:user",
 		"Write User",
 		"Allows updating existing user information. (e.g passwords).")
-	ReadUser Permission = register("read:user",
+	ReadUser = register("read:user",
 		"Read User",
 		"Allows viewing user profiles.")
 
-	ReadPlugins Permission = register("read:plugins",
+	ReadPlugins = register("read:plugins",
 		"Read Plugins",
 		"Allows viewing the plugins enabled on the system.")
-	WritePlugins Permission = register("write:plugins",
+	WritePlugins = register("write:plugins",
 		"Write Plugins",
 		"Allows changing plugins' enabled status, as well as downloading new plugins.")
 
-	WriteToken Permission = register("write:tokens",
+	WriteToken = register("write:tokens",
 		"Write API Tokens",
 		"Allows creating and revoking API tokens.")
-	ReadToken Permission = register("read:tokens",
+	ReadToken = register("read:tokens",
 		"Read API Tokens",
 		"Allows viewing existing API token information.")
 
-	WriteJobs Permission = register("write:jobs",
+	WriteJobs = register("write:jobs",
 		"Write/Cancel Jobs",
 		"Allows modifying or cancelling running jobs (uploads, plugins, etc...)")
 
 	// More powerful permissions for admin users
-	WriteAnyToken    Permission = register("write:any_token", "Write Any API Token", "Allows revoking and deleting any API token, including those not owned by the user.")
-	ReadAnyToken     Permission = register("read:any_token", "Read Any API Token", "Allows viewing any API token, including those not owned by the user.")
-	ReadPermissions  Permission = register("read:permissions", "Read Permissions", "Administrative access to read system roles and rights.")
-	WritePermissions Permission = register("write:permissions", "Write Permissions", "Administrative access to modify system roles and rights.")
+	WriteAnyToken    = register("write:any_token", "Write Any API Token", "Allows revoking and deleting any API token, including those not owned by the user.")
+	ReadAnyToken     = register("read:any_token", "Read Any API Token", "Allows viewing any API token, including those not owned by the user.")
+	ReadPermissions  = register("read:permissions", "Read Permissions", "Administrative access to read system roles and rights.")
+	WritePermissions = register("write:permissions", "Write Permissions", "Administrative access to modify system roles and rights.")
 )
 
 var allPermissions Permissions

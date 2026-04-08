@@ -35,8 +35,8 @@ const (
 	TokenStatusRevoked TokenStatus = "revoked"
 )
 
-type ApiTokenInfo struct {
-	Id     TokenID     `json:"id"`
+type APITokenInfo struct {
+	ID     TokenID     `json:"id"`
 	Label  string      `json:"label"`
 	Status TokenStatus `json:"status"` // active, expired, revoked
 }
@@ -63,22 +63,22 @@ type UserDatabase interface {
 	// delete a user by ID
 	DeleteUser(userID UserID) error
 	// save a new API token for a user, return the token hash and error if user not found. expiresAt can be nil for no expiration
-	SaveApiToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string, permissions data.Permissions) (TokenID, error)
+	SaveAPIToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string, permissions data.Permissions) (TokenID, error)
 	// Get API permissions for a user by token hash, return error if not found
-	GetApiPermissions(tokenHash [32]byte) (data.Permissions, error)
+	GetAPIPermissions(tokenHash [32]byte) (data.Permissions, error)
 	// get user ID associated with an API token hash, return error if not found
-	GetApiUserID(tokenHash [32]byte) (UserID, error)
+	GetAPIUserID(tokenHash [32]byte) (UserID, error)
 	// soft delete an API token by its id. This does NOT delete the token from the database, but it does remove permissions/userID/etc
-	RevokeApiToken(userId UserID, tokenId TokenID) error
+	RevokeAPIToken(userID UserID, tokenID TokenID) error
 	// Admin level operation to revoke an API token by its id, regardless of associated user
-	AdminRevokeApiToken(tokenId TokenID) error
+	AdminRevokeAPIToken(tokenID TokenID) error
 	// delete an API token by its id from the database
-	DeleteApiToken(tokenId TokenID) error
+	DeleteAPIToken(tokenID TokenID) error
 	// get the label for an API token by its id, return error if not found.
 	// revoked and expired tokens are still returned by this function, but not deleted tokens
-	GetApiTokenInfo(tokenId TokenID) (ApiTokenInfo, error)
+	GetAPITokenInfo(tokenID TokenID) (APITokenInfo, error)
 	// get all API token labels for a user by user ID, return error if user not found
-	GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, error)
+	GetUserAPITokenInfo(userID UserID) ([]APITokenInfo, error)
 	// ensure an admin has all permissions
 	EnsureAdmin(userID UserID) error
 	// Get all users in the database with their ID, username, and createdAt fields. Does not include password hashes. Return error if issue occurs
@@ -324,7 +324,7 @@ func (s SqliteUserDatabase) DeleteUser(userID UserID) error {
 }
 
 // API token related methods
-func (s SqliteUserDatabase) SaveApiToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string, permissions data.Permissions) (TokenID, error) {
+func (s SqliteUserDatabase) SaveAPIToken(userID UserID, expiresAt *time.Time, tokenHash [32]byte, label string, permissions data.Permissions) (TokenID, error) {
 	var expiresUnix any
 	if expiresAt != nil {
 		expiresUnix = expiresAt.Unix()
@@ -369,7 +369,7 @@ func (s SqliteUserDatabase) SaveApiToken(userID UserID, expiresAt *time.Time, to
 	return TokenID(tokenID), nil
 }
 
-func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (data.Permissions, error) {
+func (s SqliteUserDatabase) GetAPIPermissions(tokenHash [32]byte) (data.Permissions, error) {
 	query := `
 		SELECT p.slug, p.name, p.description
 		FROM API_Token t
@@ -403,7 +403,7 @@ func (s SqliteUserDatabase) GetApiPermissions(tokenHash [32]byte) (data.Permissi
 	return permissions, nil
 }
 
-func (s SqliteUserDatabase) GetApiUserID(tokenHash [32]byte) (UserID, error) {
+func (s SqliteUserDatabase) GetAPIUserID(tokenHash [32]byte) (UserID, error) {
 	var userID UserID
 	query := `
 		SELECT userId 
@@ -423,7 +423,7 @@ func (s SqliteUserDatabase) GetApiUserID(tokenHash [32]byte) (UserID, error) {
 	return userID, nil
 }
 
-func (s SqliteUserDatabase) RevokeApiToken(userID UserID, tokenID TokenID) error {
+func (s SqliteUserDatabase) RevokeAPIToken(userID UserID, tokenID TokenID) error {
 	query := `
 		UPDATE API_Token 
 		SET revoked = 1 
@@ -443,7 +443,7 @@ func (s SqliteUserDatabase) RevokeApiToken(userID UserID, tokenID TokenID) error
 	return nil
 }
 
-func (s SqliteUserDatabase) AdminRevokeApiToken(tokenID TokenID) error {
+func (s SqliteUserDatabase) AdminRevokeAPIToken(tokenID TokenID) error {
 	query := `
 		UPDATE API_Token 
 		SET revoked = 1 
@@ -463,7 +463,7 @@ func (s SqliteUserDatabase) AdminRevokeApiToken(tokenID TokenID) error {
 	return nil
 }
 
-func (s SqliteUserDatabase) DeleteApiToken(tokenID TokenID) error {
+func (s SqliteUserDatabase) DeleteAPIToken(tokenID TokenID) error {
 	query := `
 		DELETE FROM API_Token 
 		WHERE id = ?
@@ -479,8 +479,8 @@ func (s SqliteUserDatabase) DeleteApiToken(tokenID TokenID) error {
 	return nil
 }
 
-func (s SqliteUserDatabase) GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, error) {
-	var info ApiTokenInfo
+func (s SqliteUserDatabase) GetUserAPITokenInfo(userID UserID) ([]APITokenInfo, error) {
+	var info APITokenInfo
 	var revoked int
 	var expiresAt sql.NullInt64
 	query := `
@@ -498,9 +498,9 @@ func (s SqliteUserDatabase) GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, 
 	}
 	defer rows.Close() //nolint:errcheck
 
-	var labels []ApiTokenInfo
+	var labels []APITokenInfo
 	for rows.Next() {
-		if err := rows.Scan(&info.Label, &info.Id, &expiresAt, &revoked); err != nil {
+		if err := rows.Scan(&info.Label, &info.ID, &expiresAt, &revoked); err != nil {
 			return nil, err
 		}
 		info.Status = getTokenStatus(revoked, expiresAt)
@@ -513,8 +513,8 @@ func (s SqliteUserDatabase) GetUserApiTokenInfo(userID UserID) ([]ApiTokenInfo, 
 	return labels, nil
 }
 
-func (s SqliteUserDatabase) GetApiTokenInfo(tokenID TokenID) (ApiTokenInfo, error) {
-	var info ApiTokenInfo
+func (s SqliteUserDatabase) GetAPITokenInfo(tokenID TokenID) (APITokenInfo, error) {
+	var info APITokenInfo
 	var revoked int
 	var expiresAt sql.NullInt64
 	query := `
@@ -528,7 +528,7 @@ func (s SqliteUserDatabase) GetApiTokenInfo(tokenID TokenID) (ApiTokenInfo, erro
 		time.Now().Unix(),
 	).Scan(&info.Label, &expiresAt, &revoked)
 	if err != nil {
-		return ApiTokenInfo{}, err
+		return APITokenInfo{}, err
 	}
 	info.Status = getTokenStatus(revoked, expiresAt)
 	return info, nil

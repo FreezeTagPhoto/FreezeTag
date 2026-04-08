@@ -36,7 +36,7 @@ type ApiClaims struct {
 }
 
 type ApiCreateToken struct {
-	TokenId     database.TokenID `json:"tokenId"`
+	TokenID     database.TokenID `json:"tokenId"`
 	TokenString string           `json:"tokenString,omitempty"`
 }
 
@@ -65,9 +65,9 @@ type AuthService interface {
 	// delete an API token, returning an error if the token does not exist or could not be deleted
 	DeleteAPIToken(tokenID database.TokenID) error
 	// Get the IDs of the tokens associated with a user
-	GetUserApiTokenInfo(userID database.UserID) ([]database.ApiTokenInfo, error)
-	// GetUserById returns the public user information for a given user ID
-	GetUserById(userID database.UserID) (*database.PublicUser, error)
+	GetUserApiTokenInfo(userID database.UserID) ([]database.APITokenInfo, error)
+	// GetUserByID returns the public user information for a given user ID
+	GetUserByID(userID database.UserID) (*database.PublicUser, error)
 	// GetPublicUser returns the public user information for a given user ID, or an error if the user does not exist
 	GetPublicUser(userID database.UserID) (*database.PublicUser, error)
 	// List all users in the system
@@ -174,11 +174,11 @@ func (s *DefaultAuthService) ValidateJWT(tokenString string) (JWTClaims, error) 
 
 func (s *DefaultAuthService) ValidateAPIToken(token string) (ApiClaims, error) {
 	tokenHash := hashToken(token)
-	userID, err := s.userDatabase.GetApiUserID(tokenHash)
+	userID, err := s.userDatabase.GetAPIUserID(tokenHash)
 	if err != nil {
 		return ApiClaims{}, err
 	}
-	permissions, err := s.userDatabase.GetApiPermissions(tokenHash)
+	permissions, err := s.userDatabase.GetAPIPermissions(tokenHash)
 	if err != nil {
 		return ApiClaims{}, err
 	}
@@ -243,12 +243,12 @@ func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions 
 		return ApiCreateToken{}, fmt.Errorf("invalid permissions requested")
 	}
 
-	tokenID, err := s.userDatabase.SaveApiToken(userID, expiresAt, tokenHash, label, permissions)
+	tokenID, err := s.userDatabase.SaveAPIToken(userID, expiresAt, tokenHash, label, permissions)
 	if err != nil {
 		return ApiCreateToken{}, err
 	}
 	return ApiCreateToken{
-		TokenId:     tokenID,
+		TokenID:     tokenID,
 		TokenString: plaintextToken,
 	}, nil
 }
@@ -256,24 +256,24 @@ func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions 
 // ** these dont need much protection, but the auth service later can add additional checks/sorting/buiness/whatever logic here if needed, and the database layer can focus on just data access**
 
 func (s *DefaultAuthService) RevokeAPIToken(userID database.UserID, tokenID database.TokenID) error {
-	return s.userDatabase.RevokeApiToken(userID, tokenID)
+	return s.userDatabase.RevokeAPIToken(userID, tokenID)
 }
 
 func (s *DefaultAuthService) AdminRevokeAPIToken(tokenID database.TokenID) error {
 	log.Printf("[INFO] revoking API token with ID %d", tokenID)
-	return s.userDatabase.AdminRevokeApiToken(tokenID)
+	return s.userDatabase.AdminRevokeAPIToken(tokenID)
 }
 
 func (s *DefaultAuthService) DeleteAPIToken(tokenID database.TokenID) error {
 	log.Printf("[INFO] Deleting an API token with ID %d", tokenID)
-	return s.userDatabase.DeleteApiToken(tokenID)
+	return s.userDatabase.DeleteAPIToken(tokenID)
 }
 
-func (s *DefaultAuthService) GetUserApiTokenInfo(userID database.UserID) ([]database.ApiTokenInfo, error) {
-	return s.userDatabase.GetUserApiTokenInfo(userID)
+func (s *DefaultAuthService) GetUserApiTokenInfo(userID database.UserID) ([]database.APITokenInfo, error) {
+	return s.userDatabase.GetUserAPITokenInfo(userID)
 }
 
-func (s *DefaultAuthService) GetUserById(userID database.UserID) (*database.PublicUser, error) {
+func (s *DefaultAuthService) GetUserByID(userID database.UserID) (*database.PublicUser, error) {
 	return s.userDatabase.GetUserById(userID)
 }
 

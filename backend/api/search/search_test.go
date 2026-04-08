@@ -36,7 +36,7 @@ func TestSearchSuccessNoQueries(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
 		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-		Return([]database.ImageId{1, 2, 3}, nil)
+		Return([]database.ImageID{1, 2, 3}, nil)
 
 	router := setupTestRouter(m)
 
@@ -45,8 +45,8 @@ func TestSearchSuccessNoQueries(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	expected := []database.ImageId{1, 2, 3}
-	var got []database.ImageId
+	expected := []database.ImageID{1, 2, 3}
+	var got []database.ImageID
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -55,7 +55,7 @@ func TestSearchSuccessBasicQueries(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
 		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), queries.DateCreated, queries.Ascending, mock.Anything, mock.Anything, mock.Anything).
-		Return([]database.ImageId{1}, nil)
+		Return([]database.ImageID{1}, nil)
 
 	router := setupTestRouter(m)
 
@@ -79,8 +79,8 @@ func TestSearchSuccessBasicQueries(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	expected := []database.ImageId{1}
-	var got []database.ImageId
+	expected := []database.ImageID{1}
+	var got []database.ImageID
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -89,7 +89,7 @@ func TestSearchSuccessBasicQueries2(t *testing.T) {
 	m := mocks.NewMockImageRepository(t)
 	m.EXPECT().
 		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), queries.DateAdded, queries.Descending, mock.Anything, mock.Anything, mock.Anything).
-		Return([]database.ImageId{1}, nil)
+		Return([]database.ImageID{1}, nil)
 
 	router := setupTestRouter(m)
 
@@ -113,8 +113,8 @@ func TestSearchSuccessBasicQueries2(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	expected := []database.ImageId{1}
-	var got []database.ImageId
+	expected := []database.ImageID{1}
+	var got []database.ImageID
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -137,9 +137,9 @@ func TestSearchSuccessTags(t *testing.T) {
 	m.EXPECT().
 		SearchImageOrderedPaged(mock.AnythingOfType("*queries.ImageQuery"), mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(
-			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint, _ database.UserID) ([]database.ImageId, error) {
+			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint, _ database.UserID) ([]database.ImageID, error) {
 				assert.Equal(t, expectedQuery, actualQuery)
-				return []database.ImageId{1, 2, 3, 4}, nil
+				return []database.ImageID{1, 2, 3, 4}, nil
 			})
 
 	router := setupTestRouter(m)
@@ -149,8 +149,8 @@ func TestSearchSuccessTags(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	expected := []database.ImageId{1, 2, 3, 4}
-	var got []database.ImageId
+	expected := []database.ImageID{1, 2, 3, 4}
+	var got []database.ImageID
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }
@@ -206,9 +206,9 @@ func TestSearchNearSuccess(t *testing.T) {
 	m.EXPECT().
 		SearchImageOrderedPaged(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(
-			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint, _ database.UserID) ([]database.ImageId, error) {
+			func(actualQuery queries.DatabaseQuery, _ queries.SortField, _ queries.SortOrder, _ uint, _ uint, _ database.UserID) ([]database.ImageID, error) {
 				assert.Equal(t, expectedQuery, actualQuery)
-				return []database.ImageId{1}, nil
+				return []database.ImageID{1}, nil
 			})
 
 	router := gin.Default()
@@ -224,8 +224,8 @@ func TestSearchNearSuccess(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	expected := []database.ImageId{1}
-	var got []database.ImageId
+	expected := []database.ImageID{1}
+	var got []database.ImageID
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
 	assert.Equal(t, expected, got)
 }

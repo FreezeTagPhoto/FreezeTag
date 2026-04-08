@@ -288,14 +288,14 @@ func TestSaveApiTokenSuccess(t *testing.T) {
 	require.NoError(t, err)
 	tokenHash := [32]byte{1, 2, 3} // example token hash
 	label := "test-token"
-	id, err := db.SaveApiToken(user.ID, nil, tokenHash, label, data.Permissions{})
+	id, err := db.SaveAPIToken(user.ID, nil, tokenHash, label, data.Permissions{})
 	require.NoError(t, err)
 
-	retrievedInfo, err := db.GetApiTokenInfo(id)
+	retrievedInfo, err := db.GetAPITokenInfo(id)
 	require.NoError(t, err)
 	assert.Equal(t, label, retrievedInfo.Label)
 
-	retrievedUserID, err := db.GetApiUserID(tokenHash)
+	retrievedUserID, err := db.GetAPIUserID(tokenHash)
 	require.NoError(t, err)
 	assert.Equal(t, user.ID, retrievedUserID)
 }
@@ -304,7 +304,7 @@ func TestSaveApiTokenNonexistentUser(t *testing.T) {
 	db := createTempUserDatabase(t)
 	tokenHash := [32]byte{1, 2, 3} // example token hash
 	label := "test-token"
-	_, err := db.SaveApiToken(999, nil, tokenHash, label, data.Permissions{}) // user ID 999 does not exist
+	_, err := db.SaveAPIToken(999, nil, tokenHash, label, data.Permissions{}) // user ID 999 does not exist
 	require.Error(t, err)
 }
 
@@ -316,33 +316,33 @@ func TestSaveApiTokensSuccess(t *testing.T) {
 
 	tokenHash1 := [32]byte{1, 2, 3}
 	label1 := "test-token-1"
-	apiId1, err := db.SaveApiToken(user.ID, nil, tokenHash1, label1, data.Permissions{})
+	apiId1, err := db.SaveAPIToken(user.ID, nil, tokenHash1, label1, data.Permissions{})
 	require.NoError(t, err)
 
 	tokenHash2 := [32]byte{4, 5, 6}
 	label2 := "test-token-2"
-	apiId2, err := db.SaveApiToken(user.ID, nil, tokenHash2, label2, data.Permissions{})
+	apiId2, err := db.SaveAPIToken(user.ID, nil, tokenHash2, label2, data.Permissions{})
 	require.NoError(t, err)
 
-	retrievedInfo1, err := db.GetApiTokenInfo(apiId1)
+	retrievedInfo1, err := db.GetAPITokenInfo(apiId1)
 	require.NoError(t, err)
 	assert.Equal(t, label1, retrievedInfo1.Label)
 
-	retrievedInfo2, err := db.GetApiTokenInfo(apiId2)
+	retrievedInfo2, err := db.GetAPITokenInfo(apiId2)
 	require.NoError(t, err)
 	assert.Equal(t, label2, retrievedInfo2.Label)
 
-	retrievedUserID1, err := db.GetApiUserID(tokenHash1)
+	retrievedUserID1, err := db.GetAPIUserID(tokenHash1)
 	require.NoError(t, err)
 	assert.Equal(t, user.ID, retrievedUserID1)
 
-	retrievedUserID2, err := db.GetApiUserID(tokenHash2)
+	retrievedUserID2, err := db.GetAPIUserID(tokenHash2)
 	require.NoError(t, err)
 	assert.Equal(t, user.ID, retrievedUserID2)
 
-	retrievedInfo, err := db.GetUserApiTokenInfo(user.ID)
+	retrievedInfo, err := db.GetUserAPITokenInfo(user.ID)
 	require.NoError(t, err)
-	expected := []ApiTokenInfo{
+	expected := []APITokenInfo{
 		{apiId1, label1, TokenStatusActive},
 		{apiId2, label2, TokenStatusActive},
 	}
@@ -358,18 +358,18 @@ func TestRevokeApiKeySuccess(t *testing.T) {
 
 	tokenHash := [32]byte{1, 2, 3}
 	label := "test-token"
-	apiId, err := db.SaveApiToken(user.ID, nil, tokenHash, label, data.Permissions{})
+	apiId, err := db.SaveAPIToken(user.ID, nil, tokenHash, label, data.Permissions{})
 	require.NoError(t, err)
 
-	err = db.AdminRevokeApiToken(apiId)
+	err = db.AdminRevokeAPIToken(apiId)
 	require.NoError(t, err)
 
-	info, err := db.GetApiTokenInfo(apiId)
+	info, err := db.GetAPITokenInfo(apiId)
 	require.NoError(t, err)
 	assert.Equal(t, TokenStatusRevoked, info.Status)
 
 	// revoked tokens shuold not be associated with a user
-	_, err = db.GetApiUserID(tokenHash)
+	_, err = db.GetAPIUserID(tokenHash)
 	require.Error(t, err)
 }
 
@@ -377,7 +377,7 @@ func TestRevokeApiKeyNonexistentToken(t *testing.T) {
 	db := createTempUserDatabase(t)
 
 	apiId := TokenID(999) // non-existent token ID
-	err := db.AdminRevokeApiToken(apiId)
+	err := db.AdminRevokeAPIToken(apiId)
 	require.Error(t, err)
 }
 
@@ -389,29 +389,29 @@ func TestGetUserApiTokenLabels(t *testing.T) {
 
 	tokenHash1 := [32]byte{1, 2, 3}
 	l1 := "test-token-1"
-	id1, err := db.SaveApiToken(user.ID, nil, tokenHash1, l1, data.Permissions{})
+	id1, err := db.SaveAPIToken(user.ID, nil, tokenHash1, l1, data.Permissions{})
 	require.NoError(t, err)
 
 	tokenHash2 := [32]byte{4, 5, 6}
 	label2 := "test-token-2"
-	id2, err := db.SaveApiToken(user.ID, nil, tokenHash2, label2, data.Permissions{})
+	id2, err := db.SaveAPIToken(user.ID, nil, tokenHash2, label2, data.Permissions{})
 	require.NoError(t, err)
 
-	err = db.AdminRevokeApiToken(id1)
+	err = db.AdminRevokeAPIToken(id1)
 	require.NoError(t, err)
 
-	labels, err := db.GetUserApiTokenInfo(user.ID)
+	labels, err := db.GetUserAPITokenInfo(user.ID)
 	require.NoError(t, err)
-	expected := []ApiTokenInfo{{id2, label2, TokenStatusActive}, {id1, l1, TokenStatusRevoked}}
+	expected := []APITokenInfo{{id2, label2, TokenStatusActive}, {id1, l1, TokenStatusRevoked}}
 	assert.ElementsMatch(t, expected, labels)
 	tokenHash2 = [32]byte{7, 8, 9}
 	label3 := "test-token-3"
-	id3, err := db.SaveApiToken(user.ID, nil, tokenHash2, label3, data.Permissions{})
+	id3, err := db.SaveAPIToken(user.ID, nil, tokenHash2, label3, data.Permissions{})
 	require.NoError(t, err)
 
-	labels, err = db.GetUserApiTokenInfo(user.ID)
+	labels, err = db.GetUserAPITokenInfo(user.ID)
 	require.NoError(t, err)
-	expected = append(expected, ApiTokenInfo{id3, label3, TokenStatusActive})
+	expected = append(expected, APITokenInfo{id3, label3, TokenStatusActive})
 	assert.ElementsMatch(t, expected, labels)
 }
 
@@ -424,14 +424,14 @@ func TestExpiredTokenIsExpired(t *testing.T) {
 	tokenHash := [32]byte{1, 2, 3}
 	label := "test-token"
 	expiredTime := time.Now().Add(-time.Hour) // expired 1 hour ago
-	id, err := db.SaveApiToken(user.ID, &expiredTime, tokenHash, label, data.Permissions{})
+	id, err := db.SaveAPIToken(user.ID, &expiredTime, tokenHash, label, data.Permissions{})
 	require.NoError(t, err)
 
-	result, err := db.GetApiTokenInfo(id)
+	result, err := db.GetAPITokenInfo(id)
 	require.NoError(t, err)
 	assert.Equal(t, TokenStatusExpired, result.Status)
 
-	_, err = db.GetApiUserID(tokenHash)
+	_, err = db.GetAPIUserID(tokenHash)
 	require.Error(t, err)
 }
 
@@ -476,16 +476,16 @@ func TestDeleteApiToken(t *testing.T) {
 
 	tokenHash := [32]byte{1, 2, 3}
 	label := "test-token"
-	apiId, err := db.SaveApiToken(user.ID, nil, tokenHash, label, data.Permissions{})
+	apiId, err := db.SaveAPIToken(user.ID, nil, tokenHash, label, data.Permissions{})
 	require.NoError(t, err)
 
-	err = db.DeleteApiToken(apiId)
+	err = db.DeleteAPIToken(apiId)
 	require.NoError(t, err)
 
-	_, err = db.GetApiTokenInfo(apiId)
+	_, err = db.GetAPITokenInfo(apiId)
 	require.Error(t, err)
 
-	_, err = db.GetApiUserID(tokenHash)
+	_, err = db.GetAPIUserID(tokenHash)
 	require.Error(t, err)
 }
 
@@ -497,16 +497,16 @@ func TestDeleteUserDeletesToken(t *testing.T) {
 
 	tokenHash := [32]byte{1, 2, 3}
 	label := "test-token"
-	apiId, err := db.SaveApiToken(user.ID, nil, tokenHash, label, data.Permissions{})
+	apiId, err := db.SaveAPIToken(user.ID, nil, tokenHash, label, data.Permissions{})
 	require.NoError(t, err)
 
 	err = db.DeleteUser(user.ID)
 	require.NoError(t, err)
 
-	_, err = db.GetApiTokenInfo(apiId)
+	_, err = db.GetAPITokenInfo(apiId)
 	require.Error(t, err)
 
-	_, err = db.GetApiUserID(tokenHash)
+	_, err = db.GetAPIUserID(tokenHash)
 	require.Error(t, err)
 }
 
@@ -518,16 +518,16 @@ func TestRevokeApiTokenSuccess(t *testing.T) {
 
 	tokenHash := [32]byte{1, 2, 3}
 	label := "test-token"
-	apiId, err := db.SaveApiToken(user.ID, nil, tokenHash, label, data.Permissions{})
+	apiId, err := db.SaveAPIToken(user.ID, nil, tokenHash, label, data.Permissions{})
 	require.NoError(t, err)
 
-	err = db.RevokeApiToken(user.ID, apiId)
+	err = db.RevokeAPIToken(user.ID, apiId)
 	require.NoError(t, err)
 
-	_, err = db.GetApiTokenInfo(apiId)
+	_, err = db.GetAPITokenInfo(apiId)
 	require.NoError(t, err)
 
-	_, err = db.GetApiUserID(tokenHash)
+	_, err = db.GetAPIUserID(tokenHash)
 	require.Error(t, err)
 }
 
@@ -540,10 +540,10 @@ func TestGetApiPermissionsSuccess(t *testing.T) {
 	tokenHash := [32]byte{1, 2, 3}
 	label := "test-token"
 	permissions := data.Permissions{data.ReadUser, data.WriteFiles}
-	_, err = db.SaveApiToken(user.ID, nil, tokenHash, label, permissions)
+	_, err = db.SaveAPIToken(user.ID, nil, tokenHash, label, permissions)
 	require.NoError(t, err)
 
-	retrievedPermissions, err := db.GetApiPermissions(tokenHash)
+	retrievedPermissions, err := db.GetAPIPermissions(tokenHash)
 	require.NoError(t, err)
 	t.Logf("Expected permissions: %v, Retrieved permissions: %v", permissions, retrievedPermissions)
 	assert.ElementsMatch(t, permissions, retrievedPermissions)

@@ -122,8 +122,8 @@ func (te TokenEndpoint) CreateUserToken(c *gin.Context) {
 // @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
 func (te TokenEndpoint) AdminDeleteUserToken(c *gin.Context) {
-	tokenIdRaw := c.Param("id")
-	tokenID, err := api.ParseParamIntoID[database.TokenID](tokenIdRaw)
+	tokenIDRaw := c.Param("id")
+	tokenID, err := api.ParseParamIntoID[database.TokenID](tokenIDRaw)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid token ID"})
 		return
@@ -147,8 +147,8 @@ func (te TokenEndpoint) AdminDeleteUserToken(c *gin.Context) {
 // @failure     500 {object} api.ServerErrorResponse
 // @produce     application/json
 func (te TokenEndpoint) AdminRevokeToken(c *gin.Context) {
-	tokenIdRaw := c.Param("id")
-	tokenID, err := api.ParseParamIntoID[database.TokenID](tokenIdRaw)
+	tokenIDRaw := c.Param("id")
+	tokenID, err := api.ParseParamIntoID[database.TokenID](tokenIDRaw)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, api.BadRequestResponse{Error: "Invalid token ID"})
 		return

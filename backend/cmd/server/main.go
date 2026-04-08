@@ -1,5 +1,4 @@
 //go:build !test
-
 package main
 
 import (
@@ -91,7 +90,7 @@ func initializeDependencies() *dependencies {
 	parserCollection := initParserCollection()
 
 	jobRepo := repositories.NewDefaultJobRepository()
-	manager := initDefaultManager(defaultDataDir, parserCollection)
+	manager := initDefaultManager(defaultDataDir)
 	imageService := initDefaultImageRepository(manager, parserCollection)
 	userRepo := manager.UserDB
 
@@ -128,7 +127,7 @@ func initDefaultImageRepository(mgr *database.Manager, parserCollection images.P
 	return repositories.InitImageRepository(mgr.ImageDB, parserCollection, path.Join(defaultDataDir, "images"))
 }
 
-func initDefaultManager(dataDir string, parserCollection images.Parser) *database.Manager {
+func initDefaultManager(dataDir string) *database.Manager {
 	err := os.MkdirAll(dataDir, os.ModePerm)
 	if err != nil {
 		log.Fatalf("failed to create data directory")
@@ -149,7 +148,7 @@ func RegisterEndpoints(router *gin.Engine, deps *dependencies) {
 
 	initLoginEndpoints(router, deps)
 
-	initApiKeyEndpoints(authGroup, deps)
+	initAPIKeyEndpoints(authGroup, deps)
 	initPermissionsEndpoints(authGroup)
 	initLogoutEndpoints(authGroup, deps)
 	initPasswordEndpoints(authGroup, deps)
@@ -191,7 +190,7 @@ func initAlbumEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	}
 }
 
-func initApiKeyEndpoints(baseGroup gin.IRouter, deps *dependencies) {
+func initAPIKeyEndpoints(baseGroup gin.IRouter, deps *dependencies) {
 	apiKeyGroup := baseGroup.Group("/tokens")
 	{
 		te := tokens.InitTokenEndpoint(deps.authService)

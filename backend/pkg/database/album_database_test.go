@@ -41,9 +41,9 @@ func TestCreateAndGetAlbumForOwner(t *testing.T) {
 
 	album, err := albumDB.GetAlbum(albumID, owner.ID)
 	require.NoError(t, err)
-	assert.Equal(t, albumID, album.Id)
+	assert.Equal(t, albumID, album.ID)
 	assert.Equal(t, "Test Album", album.Name)
-	assert.Equal(t, owner.ID, album.OwnerId)
+	assert.Equal(t, owner.ID, album.OwnerID)
 	assert.Equal(t, ALBUM_PRIVATE, album.AlbumPrivacy)
 	assert.Equal(t, VIS_ADMIN, album.VisbilityLevel)
 }
@@ -101,7 +101,7 @@ func TestSetUserAlbumPermissionGrantsAccess(t *testing.T) {
 
 	album, err := albumDB.GetAlbum(albumID, viewer.ID)
 	require.NoError(t, err)
-	assert.Equal(t, albumID, album.Id)
+	assert.Equal(t, albumID, album.ID)
 	assert.Equal(t, "Shared Album", album.Name)
 	assert.Equal(t, VIS_PUBLIC, album.VisbilityLevel)
 }

@@ -125,7 +125,7 @@ func TestAdminDeleteUserTokenInvalidTokenID(t *testing.T) {
 	assert.NotEmpty(t, got)
 }
 
-func TestRevokeUserTokenBadUserId(t *testing.T) {
+func TestRevokeUserTokenBadUserID(t *testing.T) {
 	w := httptest.NewRecorder()
 	authService := mockService.NewMockAuthService(t)
 	router := gin.New()
@@ -185,7 +185,7 @@ func TestCreateTokenSuccess(t *testing.T) {
 		CreateAPIToken(database.UserID(1), data.Permissions{data.ReadFiles}, (*time.Time)(nil), "test token").
 		Return(
 			services.ApiCreateToken{
-				TokenId: 1, TokenString: "plaintexttoken",
+				TokenID: 1, TokenString: "plaintexttoken",
 			}, nil).
 		Once()
 	router := gin.New()
@@ -204,11 +204,11 @@ func TestCreateTokenSuccess(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	t.Log(w.Body.String())
 	assert.NoError(t, err)
-	expected := services.ApiCreateToken{TokenId: 1, TokenString: "plaintexttoken"}
+	expected := services.ApiCreateToken{TokenID: 1, TokenString: "plaintexttoken"}
 	assert.Equal(t, expected, got)
 }
 
-func TestCreateUserTokenNoUserId(t *testing.T) {
+func TestCreateUserTokenNoUserID(t *testing.T) {
 	w := httptest.NewRecorder()
 	authService := mockService.NewMockAuthService(t)
 	router := gin.New()
@@ -247,7 +247,7 @@ func TestCreateUserTokenInvalidPermission(t *testing.T) {
 	assert.NotEmpty(t, got)
 }
 
-func TestCreateUserTokenInvalidUserId(t *testing.T) {
+func TestCreateUserTokenInvalidUserID(t *testing.T) {
 	w := httptest.NewRecorder()
 	authService := mockService.NewMockAuthService(t)
 	router := gin.New()

@@ -49,7 +49,7 @@ func TestGetUserOK(t *testing.T) {
 		Username:  "testuser",
 		CreatedAt: 0,
 	}
-	mockService.EXPECT().GetUserById(database.UserID(1)).Return(testUser, nil)
+	mockService.EXPECT().GetUserByID(database.UserID(1)).Return(testUser, nil)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/users/1", nil)
@@ -64,7 +64,7 @@ func TestGetUserOK(t *testing.T) {
 func TestGetUserUserIDServerError(t *testing.T) {
 	mockService := mockService.NewMockAuthService(t)
 
-	mockService.EXPECT().GetUserById(database.UserID(1)).Return(&database.PublicUser{}, errors.New("not found"))
+	mockService.EXPECT().GetUserByID(database.UserID(1)).Return(&database.PublicUser{}, errors.New("not found"))
 
 	router := gin.Default()
 	InitUserEndpoint(mockService).RegisterEndpoints(router)
@@ -90,7 +90,7 @@ func TestGetUserUserIDBadIDParse(t *testing.T) {
 	var got api.BadRequestResponse
 	err := json.Unmarshal(w.Body.Bytes(), &got)
 	assert.NoError(t, err)
-	assert.Equal(t, api.BadRequestResponse{Error: "Invalid user ID parameter: one"}, got)
+	assert.Equal(t, api.BadRequestResponse{Error: "Invalid user ID parameter"}, got)
 }
 
 func TestListAllUsers(t *testing.T) {

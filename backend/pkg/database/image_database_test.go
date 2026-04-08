@@ -108,12 +108,12 @@ func TestRetrieveImagesSortedByDateCreated(t *testing.T) {
 	assert.NotZero(t, id3)
 	ids, err := tmp.GetImagesOrder(queries.CreateImageQuery(), queries.DateCreated, queries.Descending, 0)
 	assert.NoError(t, err)
-	assert.Equal(t, []ImageId{id2, id3, id1}, ids)
+	assert.Equal(t, []ImageID{id2, id3, id1}, ids)
 }
 
 func TestRetrieveNoImage(t *testing.T) {
 	tmp := createTempDatabase(t)
-	name, err := tmp.GetImageFile(ImageId(1))
+	name, err := tmp.GetImageFile(ImageID(1))
 	assert.NoError(t, err)
 	assert.Nil(t, name)
 }
@@ -180,10 +180,10 @@ func TestRetrieveImageWithMakeAndModel(t *testing.T) {
 	require.NoError(t, err)
 	ids, err := tmp.GetImages(queries.CreateImageQuery().WithMake("Nikon"), 0)
 	assert.NoError(t, err)
-	assert.Equal(t, []ImageId{idNikon}, ids)
+	assert.Equal(t, []ImageID{idNikon}, ids)
 	ids, err = tmp.GetImages(queries.CreateImageQuery().WithModelLike("EOS"), 0)
 	assert.NoError(t, err)
-	assert.Equal(t, []ImageId{idCanon}, ids)
+	assert.Equal(t, []ImageID{idCanon}, ids)
 }
 
 func TestRetrieveImageByGeoDegrees(t *testing.T) {
@@ -225,10 +225,10 @@ func TestRetrieveImageByGeoDegrees(t *testing.T) {
 	require.NoError(t, err)
 	ids, err := tmp.GetImages(queries.CreateImageQuery().WithLocation(0., 0., 1.), 0)
 	assert.NoError(t, err)
-	assert.Equal(t, []ImageId{idA}, ids)
+	assert.Equal(t, []ImageID{idA}, ids)
 	ids, err = tmp.GetImages(queries.CreateImageQuery().WithLocation(11.0, 4.0, 1.1), 0)
 	assert.NoError(t, err)
-	assert.Equal(t, []ImageId{idB}, ids)
+	assert.Equal(t, []ImageID{idB}, ids)
 }
 
 func TestRetrieveImageByDateRange(t *testing.T) {
@@ -257,13 +257,13 @@ func TestRetrieveImageByDateRange(t *testing.T) {
 	require.NoError(t, err)
 	ids, err := tmp.GetImages(queries.CreateImageQuery().TakenAfter(beforeThen).TakenBefore(afterThen), 0)
 	assert.NoError(t, err)
-	assert.Equal(t, []ImageId{idA}, ids)
+	assert.Equal(t, []ImageID{idA}, ids)
 	ids, err = tmp.GetImages(queries.CreateImageQuery().TakenAfter(afterThen), 0)
 	assert.NoError(t, err)
-	assert.Equal(t, []ImageId{idB}, ids)
+	assert.Equal(t, []ImageID{idB}, ids)
 }
 
-func insertTestImage(t *testing.T, db ImageDatabase) ImageId {
+func insertTestImage(t *testing.T, db ImageDatabase) ImageID {
 	id, err := db.AddImage("foo.png", imagedata.Data{
 		PixelsRGBA:  []byte{},
 		Width:       1280,
@@ -276,7 +276,7 @@ func insertTestImage(t *testing.T, db ImageDatabase) ImageId {
 	return id
 }
 
-func insertTestImageNamed(t *testing.T, db ImageDatabase, name string) ImageId {
+func insertTestImageNamed(t *testing.T, db ImageDatabase, name string) ImageID {
 	t.Helper()
 	id, err := db.AddImage(name, imagedata.Data{
 		PixelsRGBA:  []byte{},
@@ -309,7 +309,7 @@ func TestAddAndRetrieveThumbnails(t *testing.T) {
 
 func TestRetrieveNoThumbnail(t *testing.T) {
 	tmp := createTempDatabase(t)
-	data, err := tmp.GetImageThumbnail(ImageId(1), 1)
+	data, err := tmp.GetImageThumbnail(ImageID(1), 1)
 	assert.NoError(t, err)
 	assert.Zero(t, data)
 }
@@ -379,7 +379,7 @@ func TestDeleteImage(t *testing.T) {
 	assert.Empty(t, tags)
 	data, _ := tmp.GetImageThumbnail(id, 1)
 	assert.Empty(t, data)
-	success, err = tmp.RemoveImage(ImageId(3))
+	success, err = tmp.RemoveImage(ImageID(3))
 	assert.NoError(t, err)
 	assert.False(t, success)
 }
@@ -442,7 +442,7 @@ func TestGetMetadata(t *testing.T) {
 	assert.Nil(t, data.Longitude)
 }
 
-func TestGetMetadataNoId(t *testing.T) {
+func TestGetMetadataNoID(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
 	idB := idA + 1
@@ -511,7 +511,7 @@ func TestGetTagCounts(t *testing.T) {
 	idB := insertTestImage(t, tmp)
 	_, _ = tmp.AddImageTags(idA, []string{"tag1", "tag2", "tag3"})
 	_, _ = tmp.AddImageTags(idB, []string{"tag2", "tag3", "tag4"})
-	counts, err := tmp.GetTagCounts([]ImageId{idA, idB})
+	counts, err := tmp.GetTagCounts([]ImageID{idA, idB})
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), counts["tag1"])
 	assert.Equal(t, int64(2), counts["tag2"])
@@ -523,33 +523,33 @@ func TestGetTagCountsNoTags(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
 	idB := insertTestImage(t, tmp)
-	counts, err := tmp.GetTagCounts([]ImageId{idA, idB})
+	counts, err := tmp.GetTagCounts([]ImageID{idA, idB})
 	require.NoError(t, err)
 	assert.Empty(t, counts)
 }
 
-func TestGetTagCountsNoIds(t *testing.T) {
+func TestGetTagCountsNoIDs(t *testing.T) {
 	tmp := createTempDatabase(t)
-	counts, err := tmp.GetTagCounts([]ImageId{})
+	counts, err := tmp.GetTagCounts([]ImageID{})
 	require.NoError(t, err)
 	assert.Empty(t, counts)
 }
 
-func TestGetTagCountsSomeIds(t *testing.T) {
+func TestGetTagCountsSomeIDs(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
 	_, _ = tmp.AddImageTags(idA, []string{"tag1", "tag2"})
-	counts, err := tmp.GetTagCounts([]ImageId{idA, 9999})
+	counts, err := tmp.GetTagCounts([]ImageID{idA, 9999})
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), counts["tag1"])
 	assert.Equal(t, int64(1), counts["tag2"])
 }
 
-func TestGetTagCountsDuplicateTagsSingleId(t *testing.T) {
+func TestGetTagCountsDuplicateTagsSingleID(t *testing.T) {
 	tmp := createTempDatabase(t)
 	idA := insertTestImage(t, tmp)
 	_, _ = tmp.AddImageTags(idA, []string{"tag1", "tag1", "tag2"})
-	counts, err := tmp.GetTagCounts([]ImageId{idA})
+	counts, err := tmp.GetTagCounts([]ImageID{idA})
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), counts["tag1"])
 	assert.Equal(t, int64(1), counts["tag2"])
@@ -563,7 +563,7 @@ func TestMoreDuplicates(t *testing.T) {
 	_, _ = tmp.AddImageTags(idA, []string{"A", "B", "C"})
 	_, _ = tmp.AddImageTags(idB, []string{"A", "B", "C"})
 	_, _ = tmp.AddImageTags(idC, []string{"A", "C", "D"})
-	counts, err := tmp.GetTagCounts([]ImageId{idA, idB, idC})
+	counts, err := tmp.GetTagCounts([]ImageID{idA, idB, idC})
 	require.NoError(t, err)
 	assert.Equal(t, map[string]int64{
 		"A": 3,
@@ -664,8 +664,8 @@ func TestGetImagePaged(t *testing.T) {
 	}
 	page, err := tmp.GetImagesOrderPaged(queries.CreateImageQuery(), queries.DateAdded, queries.Ascending, 10, 0, 0)
 	require.NoError(t, err)
-	assert.ElementsMatch(t, page, []ImageId{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+	assert.ElementsMatch(t, page, []ImageID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 	page, err = tmp.GetImagesOrderPaged(queries.CreateImageQuery(), queries.DateAdded, queries.Ascending, 10, 1, 0)
 	require.NoError(t, err)
-	assert.ElementsMatch(t, page, []ImageId{11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+	assert.ElementsMatch(t, page, []ImageID{11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
 }

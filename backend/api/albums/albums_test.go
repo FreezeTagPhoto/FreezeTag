@@ -78,8 +78,8 @@ func TestCreateAlbumBadBody(t *testing.T) {
 func TestListAlbumsSuccess(t *testing.T) {
 	m := mocks.NewMockAlbumDatabase(t)
 	testAlbums := []database.Album{
-		{Id: 1, Name: "A", OwnerId: 11, AlbumPrivacy: database.ALBUM_PRIVATE, VisbilityLevel: database.VIS_PRIVATE},
-		{Id: 2, Name: "B", OwnerId: 11, AlbumPrivacy: database.ALBUM_PUBLIC, VisbilityLevel: database.VIS_PUBLIC},
+		{ID: 1, Name: "A", OwnerID: 11, AlbumPrivacy: database.ALBUM_PRIVATE, VisbilityLevel: database.VIS_PRIVATE},
+		{ID: 2, Name: "B", OwnerID: 11, AlbumPrivacy: database.ALBUM_PUBLIC, VisbilityLevel: database.VIS_PUBLIC},
 	}
 	m.EXPECT().GetAlbums(database.UserID(11)).Return(testAlbums, nil)
 
@@ -226,11 +226,11 @@ func TestCreateAlbumFail(t *testing.T) {
 func TestAddImageToAlbumSuccess(t *testing.T) {
 	m := mocks.NewMockAlbumDatabase(t)
 	m.EXPECT().
-		SetImageAlbum(database.ImageId(10), database.AlbumID(5), database.UserID(3)).
+		SetImageAlbum(database.ImageID(10), database.AlbumID(5), database.UserID(3)).
 		Return(nil)
 
 	router := newAlbumTestRouter(InitAlbumEndpoint(m))
-	body, err := json.Marshal(AlbumImageRequest{ImageId: 10})
+	body, err := json.Marshal(AlbumImageRequest{ImageID: 10})
 	require.NoError(t, err)
 
 	w := httptest.NewRecorder()
