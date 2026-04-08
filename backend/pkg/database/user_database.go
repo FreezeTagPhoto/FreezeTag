@@ -47,7 +47,7 @@ type UserDatabase interface {
 	// return a User by Username, return error if not found
 	GetUserByUsername(username string) (*PublicUser, error)
 	// Get User by ID, return error if not found
-	GetUserById(id UserID) (*PublicUser, error)
+	GetUserByID(id UserID) (*PublicUser, error)
 	// Set a User Password, return error if user not found or issue occurs
 	SetUserPassword(userID UserID, newPasswordHash string) error
 	// Get Password Hash for a User by ID, return error if ID is not found
@@ -148,7 +148,7 @@ func (s SqliteUserDatabase) AddUser(username string, passwordHash string) (*Publ
 	}, nil
 }
 
-func (s SqliteUserDatabase) GetUserById(id UserID) (*PublicUser, error) {
+func (s SqliteUserDatabase) GetUserByID(id UserID) (*PublicUser, error) {
 	var username string
 	var passwordHash string
 	var createdAt int64

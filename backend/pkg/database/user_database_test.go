@@ -150,7 +150,7 @@ func TestGetUserById(t *testing.T) {
 	byName, err := db.GetUserByUsername("John Paras")
 	require.NoError(t, err)
 
-	byId, err := db.GetUserById(user.ID)
+	byId, err := db.GetUserByID(user.ID)
 	require.NoError(t, err)
 
 	assert.Equal(t, byName.ID, byId.ID)
@@ -159,7 +159,7 @@ func TestGetUserById(t *testing.T) {
 
 func TestGetUserByIdNonexistent(t *testing.T) {
 	db := createTempUserDatabase(t)
-	_, err := db.GetUserById(99999)
+	_, err := db.GetUserByID(99999)
 	require.Error(t, err)
 }
 
@@ -277,7 +277,7 @@ func TestDeleteUser(t *testing.T) {
 	err = db.DeleteUser(user.ID)
 	require.NoError(t, err)
 
-	_, err = db.GetUserById(user.ID)
+	_, err = db.GetUserByID(user.ID)
 	require.Error(t, err)
 }
 

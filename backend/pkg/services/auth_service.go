@@ -30,7 +30,7 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-type ApiClaims struct {
+type APIClaims struct {
 	UserID      database.UserID  `json:"userId"`
 	Permissions data.Permissions `json:"permissions"`
 }
@@ -54,12 +54,12 @@ type AuthService interface {
 	// validates the userID, permissions, and default JWT claims associated with the provided JWT token
 	ValidateJWT(tokenString string) (JWTClaims, error)
 	// validates the userID and permissions associated with the provided API token
-	ValidateAPIToken(token string) (ApiClaims, error)
+	ValidateAPIToken(token string) (APIClaims, error)
 	// creates an API token. Returns the Plaintext token. Plaintext token is not stored. A token can only have as many or fewer permissions as the user has.
 	// Returns an error if the user does not have the requested permissions.
 	CreateAPIToken(userID database.UserID, permissions data.Permissions, expiresAt *time.Time, label string) (ApiCreateToken, error)
 	// soft delete an API token, returning an error if the token does not exist or could not be revoked
-	RevokeAPIToken(userId database.UserID, tokenID database.TokenID) error
+	RevokeAPIToken(userID database.UserID, tokenID database.TokenID) error
 	// permanently delete an API token, returning an error if the token does not exist or could not be deleted. Admin only operation
 	AdminRevokeAPIToken(tokenID database.TokenID) error
 	// delete an API token, returning an error if the token does not exist or could not be deleted
@@ -172,17 +172,17 @@ func (s *DefaultAuthService) ValidateJWT(tokenString string) (JWTClaims, error) 
 	return claims, nil
 }
 
-func (s *DefaultAuthService) ValidateAPIToken(token string) (ApiClaims, error) {
+func (s *DefaultAuthService) ValidateAPIToken(token string) (APIClaims, error) {
 	tokenHash := hashToken(token)
 	userID, err := s.userDatabase.GetAPIUserID(tokenHash)
 	if err != nil {
-		return ApiClaims{}, err
+		return APIClaims{}, err
 	}
 	permissions, err := s.userDatabase.GetAPIPermissions(tokenHash)
 	if err != nil {
-		return ApiClaims{}, err
+		return APIClaims{}, err
 	}
-	return ApiClaims{
+	return APIClaims{
 		UserID:      userID,
 		Permissions: permissions,
 	}, nil
@@ -234,11 +234,11 @@ func (s *DefaultAuthService) CreateAPIToken(userID database.UserID, permissions 
 	plaintextToken := base64.StdEncoding.EncodeToString(plaintextTokenBytes)
 	tokenHash := hashToken(plaintextToken)
 
-	user_permissions, err := s.userDatabase.GetUserPermissions(userID)
+	userPermissions, err := s.userDatabase.GetUserPermissions(userID)
 	if err != nil {
 		return ApiCreateToken{}, err
 	}
-	if !user_permissions.Contains(permissions) {
+	if !userPermissions.Contains(permissions) {
 		log.Printf("[WARN] User with ID %d attempted to create an API token with permissions that exceed their own", userID)
 		return ApiCreateToken{}, fmt.Errorf("invalid permissions requested")
 	}
@@ -274,11 +274,11 @@ func (s *DefaultAuthService) GetUserApiTokenInfo(userID database.UserID) ([]data
 }
 
 func (s *DefaultAuthService) GetUserByID(userID database.UserID) (*database.PublicUser, error) {
-	return s.userDatabase.GetUserById(userID)
+	return s.userDatabase.GetUserByID(userID)
 }
 
 func (s *DefaultAuthService) GetPublicUser(userID database.UserID) (*database.PublicUser, error) {
-	return s.userDatabase.GetUserById(userID)
+	return s.userDatabase.GetUserByID(userID)
 }
 
 func (s *DefaultAuthService) AllUsers() ([]database.PublicUser, error) {
@@ -329,7 +329,7 @@ func (s *DefaultAuthService) SetUserVisibilityMode(userID database.UserID, visib
 }
 
 func (s *DefaultAuthService) ResetProfilePicture(userID database.UserID) error {
-	user, err := s.userDatabase.GetUserById(userID)
+	user, err := s.userDatabase.GetUserByID(userID)
 	if err != nil {
 		return err
 	}

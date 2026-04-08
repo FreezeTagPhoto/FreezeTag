@@ -306,7 +306,7 @@ func TestValidateAPITokenInvalid(t *testing.T) {
 
 	claims, err := authService.ValidateAPIToken("invalid_token")
 	require.Error(t, err)
-	assert.Equal(t, ApiClaims{}, claims)
+	assert.Equal(t, APIClaims{}, claims)
 }
 
 func TestHashToken(t *testing.T) {
@@ -444,7 +444,7 @@ func TestValidateAPITokenFailsGettingPermissions(t *testing.T) {
 
 	claims, err := authService.ValidateAPIToken("token")
 	require.Error(t, err)
-	assert.Equal(t, ApiClaims{}, claims)
+	assert.Equal(t, APIClaims{}, claims)
 }
 
 func TestCreateAPIToken(t *testing.T) {
@@ -583,7 +583,7 @@ func TestWrappers(t *testing.T) {
 		GetUserAPITokenInfo(mock.Anything).
 		Return([]database.APITokenInfo{}, nil)
 	mockDb.EXPECT().
-		GetUserById(mock.Anything).
+		GetUserByID(mock.Anything).
 		Return(&database.PublicUser{}, nil)
 	mockDb.EXPECT().
 		AllUsers().
@@ -624,7 +624,7 @@ func TestWrappers(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Empty(t, info)
 	})
-	t.Run("GetUserById", func(t *testing.T) {
+	t.Run("GetUserByID", func(t *testing.T) {
 		user, err := authService.GetUserByID(database.UserID(1))
 		assert.NoError(t, err)
 		assert.Equal(t, &database.PublicUser{}, user)

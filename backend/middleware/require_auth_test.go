@@ -181,7 +181,7 @@ func TestRequireAuthApiToken(t *testing.T) {
 
 	NewMockAuthService.EXPECT().
 		ValidateAPIToken("TOKENSTRING").
-		Return(services.ApiClaims{UserID: database.UserID(42), Permissions: data.Permissions{data.ReadUser}}, nil).
+		Return(services.APIClaims{UserID: database.UserID(42), Permissions: data.Permissions{data.ReadUser}}, nil).
 		Once()
 
 	RequireAuth(NewMockAuthService)(ctx)
@@ -205,7 +205,7 @@ func TestRequireApiTokenInvalid(t *testing.T) {
 
 	NewMockAuthService.EXPECT().
 		ValidateAPIToken("TOKENSTRING").
-		Return(services.ApiClaims{}, errors.New("invalid token")).
+		Return(services.APIClaims{}, errors.New("invalid token")).
 		Once()
 
 	RequireAuth(NewMockAuthService)(ctx)
