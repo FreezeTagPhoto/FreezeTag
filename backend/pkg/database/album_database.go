@@ -109,7 +109,8 @@ func (db SqliteAlbumDatabase) CreateAlbum(name string, userID UserID, visibility
 	var id int64
 	err := db.db.QueryRow("INSERT INTO Albums (album_name, userId, visibility_mode) VALUES (?, ?, ?) RETURNING id", name, userID, visibilityMode).Scan(&id)
 	if err != nil {
-		return 0, err
+		log.Printf("[WARN] failed to create an album: %w", err)
+		return 0, fmt.Errorf("could not create album: %s", name)
 	}
 	return AlbumID(id), nil
 }
