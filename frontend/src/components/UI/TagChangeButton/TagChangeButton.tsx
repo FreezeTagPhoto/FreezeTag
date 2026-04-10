@@ -58,6 +58,36 @@ export default function TagChangeButton({
         }
 
         setChangedCheckboxes(new Map());
+        seedTags();
+    };
+
+    const seedTags = () => {
+        if (!do_seeding) {
+            return;
+        }
+        if (image_ids.size() === 0) {
+            setCheckboxSeeds(new Map());
+            return;
+        }
+        TagIdCounter(image_ids.toArray()).then((result) => {
+            if (result.ok) {
+                const newSeeds = new Map();
+
+                const image_count = image_ids.size();
+                Object.entries(result.value).forEach(([tag, count]) => {
+                    if (count === image_count) {
+                        newSeeds.set(tag, CheckboxState.Checked);
+                    } else if (count === 0) {
+                        newSeeds.set(tag, CheckboxState.Unchecked);
+                    } else {
+                        newSeeds.set(tag, CheckboxState.Indeterminate);
+                    }
+                });
+                setCheckboxSeeds(newSeeds);
+            } else {
+                console.error("tag id count error");
+            }
+        });
     };
 
     const syncFade = () => {
@@ -134,34 +164,7 @@ export default function TagChangeButton({
         Map<string, CheckboxState>
     >(new Map());
 
-    useEffect(() => {
-        if (!do_seeding) {
-            return;
-        }
-        if (image_ids.size() === 0) {
-            setCheckboxSeeds(new Map());
-            return;
-        }
-        TagIdCounter(image_ids.toArray()).then((result) => {
-            if (result.ok) {
-                const newSeeds = new Map();
-
-                const image_count = image_ids.size();
-                Object.entries(result.value).forEach(([tag, count]) => {
-                    if (count === image_count) {
-                        newSeeds.set(tag, CheckboxState.Checked);
-                    } else if (count === 0) {
-                        newSeeds.set(tag, CheckboxState.Unchecked);
-                    } else {
-                        newSeeds.set(tag, CheckboxState.Indeterminate);
-                    }
-                });
-                setCheckboxSeeds(newSeeds);
-            } else {
-                console.error("tag id count error");
-            }
-        });
-    }, [image_ids, do_seeding]);
+    useEffect(seedTags, [image_ids, do_seeding]);
 
     return (
         <div className={styles.form}>
@@ -184,11 +187,11 @@ export default function TagChangeButton({
                                         : checkboxSeeds.get(tag)) ??
                                     CheckboxState.Unchecked
                                 }
-                                afterChange={(val) =>
-                                    setChangedCheckboxes(
-                                        changedCheckboxes.set(tag, val),
-                                    )
-                                }
+                                afterChange={(val) => {
+                                    const clone = new Map(changedCheckboxes);
+                                    clone.set(tag, val);
+                                    setChangedCheckboxes(clone);
+                                }}
                             />
                             <p>{tag}</p>
                         </label>
