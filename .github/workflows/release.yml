@@ -1,0 +1,26 @@
+name: Create Release Archive
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create Zip Archive
+        uses: thedoctor0/zip-release@0.7.5
+        with:
+          type: 'zip'
+          filename: 'FreezeTag.zip'
+          exclusions: '*.git* *.vscode* .vscode/* /CONTRIBUTING.md'
+      - name: Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: FreezeTag.zip
+          generate_release_notes: true
+          make_latest: true
