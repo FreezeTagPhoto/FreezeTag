@@ -11,7 +11,7 @@ export default class FreezeTagSet<T> {
     }
 
     private setToArray(set: Set<T>): T[] {
-        return set.values().toArray();
+        return Array.from(set.values());
     }
 
     add(...items: T[]): FreezeTagSet<T> {
