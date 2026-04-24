@@ -1,5 +1,7 @@
 ![FreezeTag Logo](resources/freezetag+text.svg)
 
+[![Backend CI](https://github.com/FreezeTagPhoto/FreezeTag/actions/workflows/backend-ci.yml/badge.svg?event=push)](https://github.com/FreezeTagPhoto/FreezeTag/actions/workflows/backend-ci.yml) [![Frontend CI](https://github.com/FreezeTagPhoto/FreezeTag/actions/workflows/frontend-ci.yml/badge.svg?event=push)](https://github.com/FreezeTagPhoto/FreezeTag/actions/workflows/frontend-ci.yml)
+
 ## About the Project
 
 **Free**zeTag is a FOSS project meant to provide an extensible solution for your photo storange needs. Upload all of your photos and have them organized by a robust tagging system, enhanced by our robust [plugin](#plugins) system. 
@@ -14,10 +16,10 @@ FreezeTag plugins are written in Python, and used to extend the core functionali
 
 ## Authors and Acknowledgment
 
-Created as a final project for the University of Utah Computer Science Capstone
+Originally created as a final project for the University of Utah Computer Science Capstone.
 
 ### Core Maintainers
-* [Brayden Jonsson](https://capstone.cs.utah.edu/bjonsson)
-* [Max Petersen](https://capstone.cs.utah.edu/mvpetersen)
-* [Sathya Tadinada](https://capstone.cs.utah.edu/tadinada)
-* [Ethan Collier](https://capstone.cs.utah.edu/ecollier03)
+* [Ethan Collier](https://github.com/ecollier03)
+* [Brayden Jonsson](https://github.com/F1scherman)
+* [Max Petersen](https://github.com/GuyWithaPC)
+* [Sathya Tadinada](https://github.com/SathyaTadinada)
