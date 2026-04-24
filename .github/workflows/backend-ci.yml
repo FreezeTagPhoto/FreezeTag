@@ -1,0 +1,134 @@
+name: backend-ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gofmt:
+    name: format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "./backend/go.mod"
+          cache: true
+          cache-dependency-path: "./backend/go.sum"
+      - name: Check Formatting
+        run: |
+          FILES=$(gofmt -l $(find . -type f -name '*.go' -not -path "./.go/*"))
+          LINES=$(echo "$FILES" | wc -l)
+
+          if ((LINES <= 1)); then # there's 1 line of whitespace if the command succeeds
+              echo "All Go files are correctly formatted."
+          else
+              echo "Some files are not formatted correctly:"
+              echo "$FILES"
+              echo "run 'gofmt -d [file]' to see the problem."
+              exit 1
+          fi
+        working-directory: ./backend
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install system dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm imagemagick base-devel git
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "./backend/go.mod"
+          cache: true
+          cache-dependency-path: "./backend/go.sum"
+      - name: Tidy and create mocks/docs
+        run: |
+          go mod tidy -diff
+          go tool mockery --config=./.mockery.yml
+          go tool swag init -q -g cmd/server/main.go -o cmd/docs
+        working-directory: ./backend
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.11
+          working-directory: "./backend"
+  test:
+    name: test
+    needs: [golangci, gofmt]
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install system dependencies
+        run: |
+          pacman -Syu --noconfirm
+          xargs -t -a .arch-requirements pacman -S --noconfirm
+        working-directory: ./backend
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: "./backend/go.mod"
+          cache: true
+          cache-dependency-path: "./backend/go.sum"
+      - name: Tidy and create mocks
+        run: |
+          go mod tidy -diff
+          go tool mockery --config=./.mockery.yml
+          go tool swag init -q -g cmd/server/main.go -o cmd/docs
+        working-directory: ./backend
+      - name: Test
+        id: tests
+        run: |
+          mkdir -p coverage
+          mkdir -p results
+          go test -coverprofile="coverage/coverage.out" -covermode count -tags=test,sqlite_math_functions,sqlite_foreign_keys $(go list ./... | grep -v -e /mocks/ -e /cmd/) -json > results/test-results.json
+          GOFLAGS="-tags=test,sqlite_math_functions,sqlite_foreign_keys" go tool gocover-cobertura < coverage/coverage.out > coverage/cobertura-coverage.xml
+          go tool cover -html=coverage/coverage.out -o results/coverage.html
+        working-directory: ./backend
+        continue-on-error: true
+      - name: Go Test Report
+        uses: becheran/go-testreport@main
+        with:
+          input: backend/results/test-results.json
+      - name: Upload Go Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/results/
+      - name: Check Test Result
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: backend/coverage/cobertura-coverage.xml
+          badge: false
+          fail_below_min: false
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: '80 85'
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
+      - run: |
+          echo "# Code Coverage" >> $GITHUB_STEP_SUMMARY
+          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+
+      
