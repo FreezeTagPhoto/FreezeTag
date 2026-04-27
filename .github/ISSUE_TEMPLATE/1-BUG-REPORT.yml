@@ -1,0 +1,39 @@
+name: Bug Report
+description: File a bug report.
+title: "[BUG]: "
+labels: ["BUG"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: Enter a short description of the bug here.
+      placeholder: Short description of the bug...
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: Which operating system(s) did the bug occur on?
+      description: You may select more than one.
+      multiple: true
+      options:
+        - label: macOS
+        - label: Windows
+        - label: Linux
+        - label: Docker (ARM, on Mac)
+        - label: Docker (x86, on Linux/Windows)
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: "Steps to Reproduce"
+      description: Enter a list of steps to reproduce the issue.
+    validations:
+      required: true
+  - type: upload
+    id: supplement
+    attributes:
+      label: Relevant Files
+      description: Please add any relevant files here (screenshots, logs, etc...).

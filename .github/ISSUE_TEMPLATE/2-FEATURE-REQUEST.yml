@@ -1,0 +1,19 @@
+name: Feature Request
+description: Request a feature for FreezeTag.
+title: "[Feature]: "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      placeholder: Short description of the feature...
+    validations:
+      required: true
+  - type: textarea
+    id: usecase
+    attributes:
+      label: "Use Case"
+      description: Please provide a short description of a use case for this feature (why it provides something FreezeTag doesn't already have).
+    validations:
+      required: true
