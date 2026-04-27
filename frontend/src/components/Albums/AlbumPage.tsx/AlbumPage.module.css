@@ -22,7 +22,9 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 120ms ease, transform 120ms ease;
+    transition:
+        background-color 120ms ease,
+        transform 120ms ease;
 }
 
 .button:hover {
@@ -94,7 +96,9 @@
     background: var(--mantle);
     color: var(--text);
     cursor: pointer;
-    transition: background-color 120ms ease, border-color 120ms ease;
+    transition:
+        background-color 120ms ease,
+        border-color 120ms ease;
 }
 
 .toggleButton:hover {
@@ -140,7 +144,9 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 120ms ease, transform 120ms ease;
+    transition:
+        background-color 120ms ease,
+        transform 120ms ease;
 }
 
 .primaryButton {
