@@ -1,0 +1,27 @@
+{
+    "name": "plantnet",
+    "friendly_name": "PlantNet Tagger",
+    "main_file": "main.py",
+    "hooks": {
+        "tag_image": {
+            "friendly_name": "Tag Image",
+            "type": "manual_trigger",
+            "signature": "single_image"
+        }
+    },
+    "version": "1.0.0",
+    "requirements": "requirements.txt",
+    "python_version": "3.10",
+    "default_disabled": true,
+    "config": {
+        "file": "config.toml",
+        "fields": [
+            {
+                "name": "plantnet_key",
+                "friendly_name": "PlantNet API Key",
+                "description": "The PlantNet API key to use during requests.",
+                "protected": true
+            }
+        ]
+    }
+}
