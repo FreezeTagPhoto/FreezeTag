@@ -12,7 +12,7 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: description
+    id: system
     attributes:
       label: Which operating system(s) did the bug occur on?
       description: You may select more than one.
