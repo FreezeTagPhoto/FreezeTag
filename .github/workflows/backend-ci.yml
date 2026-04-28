@@ -10,6 +10,9 @@ on:
     paths:
       - 'backend/**'
 
+env:
+  COVERAGE_MINIMUM: 80.0%
+
 permissions:
   contents: read
   pull-requests: write
@@ -94,7 +97,6 @@ jobs:
           mkdir -p coverage
           mkdir -p results
           go test -coverprofile="coverage/coverage.out" -covermode count -tags=test,sqlite_math_functions,sqlite_foreign_keys $(go list ./... | grep -v -e /mocks/ -e /cmd/) -json > results/test-results.json
-          GOFLAGS="-tags=test,sqlite_math_functions,sqlite_foreign_keys" go tool gocover-cobertura < coverage/coverage.out > coverage/cobertura-coverage.xml
           go tool cover -html=coverage/coverage.out -o results/coverage.html
         working-directory: ./backend
         continue-on-error: true
@@ -110,25 +112,19 @@ jobs:
       - name: Check Test Result
         if: steps.tests.outcome == 'failure'
         run: exit 1
-      - name: Code Coverage Report
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: backend/coverage/cobertura-coverage.xml
-          badge: false
-          fail_below_min: false
-          format: markdown
-          hide_branch_rate: false
-          hide_complexity: true
-          indicators: true
-          output: both
-          thresholds: '80 85'
-      - uses: marocchino/sticky-pull-request-comment@v2
-        if: github.event_name == 'pull_request'
-        with:
-          recreate: true
-          path: code-coverage-results.md
-      - run: |
-          echo "# Code Coverage" >> $GITHUB_STEP_SUMMARY
-          cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+      - name: Check Test Coverage
+        run: |
+          pacman -S --noconfirm bc
+          coverage=$(go tool cover -func coverage/coverage.out | tail -n 1 | awk '{print $3}')
+          echo "# Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "**Total: ${coverage}**" >> $GITHUB_STEP_SUMMARY
+          echo '| file | function | percentage |' >> $GITHUB_STEP_SUMMARY
+          echo '|---|---|---|' >> $GITHUB_STEP_SUMMARY
+          go tool cover -func coverage/coverage.out | head -n -1 | awk 'NR>=1 {print "| `" $1 "` | `" $2 "` | `" $3 "` |"}' >> $GITHUB_STEP_SUMMARY
+          if [ "$(echo "${COVERAGE_MINIMUM%\%} > ${coverage%\%}" | bc)" -eq 1 ]; then
+            echo "coverage does not meet required ${COVERAGE_MINIMUM}."
+            exit 1
+          fi
+        working-directory: ./backend
 
       
