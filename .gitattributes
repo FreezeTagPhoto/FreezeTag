@@ -3,4 +3,5 @@ Dockerfile text eol=lf
 go.mod eol=lf
 go.sum eol=lf
 *.gen.ts linguist-generated
-src/openapi-ts_beta_api/** linguist-generated
+frontend/src/openapi-ts_beta_api/** linguist-generated
+backend/cmd/docs/** linguist-generated

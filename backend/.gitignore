@@ -2,6 +2,5 @@ coverage
 gl-codequality.json
 /mocks/
 /data/
-/cmd/docs
 .env
 /plugins/git_*
