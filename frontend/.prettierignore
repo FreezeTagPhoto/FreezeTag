@@ -7,3 +7,9 @@ build/
 
 # ignore pnpm-lock.yaml
 pnpm-lock.yaml
+
+# ignore generated code
+*.gen.ts
+
+# ignore generated api code
+src/openapi-ts_beta_api/

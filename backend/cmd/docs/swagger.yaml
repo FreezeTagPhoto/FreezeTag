@@ -1,0 +1,2122 @@
+basePath: /backend/
+definitions:
+  albums.AlbumCreateRequest:
+    properties:
+      name:
+        type: string
+      visibility_mode:
+        allOf:
+        - $ref: '#/definitions/database.GlobalPrivacy'
+        enum:
+        - 0
+        - 1
+        - 2
+    required:
+    - name
+    type: object
+  albums.AlbumImageRequest:
+    properties:
+      image_id:
+        type: integer
+    required:
+    - image_id
+    type: object
+  albums.AlbumModifyRequest:
+    properties:
+      album_id:
+        type: integer
+      name:
+        type: string
+      visibility_mode:
+        allOf:
+        - $ref: '#/definitions/database.GlobalPrivacy'
+        enum:
+        - 0
+        - 1
+    required:
+    - album_id
+    type: object
+  albums.RenameAlbumRequest:
+    properties:
+      new_name:
+        type: string
+    required:
+    - new_name
+    type: object
+  albums.UserAlbumPermissionRequest:
+    properties:
+      album_id:
+        type: integer
+      permission:
+        allOf:
+        - $ref: '#/definitions/database.UserPrivacy'
+        enum:
+        - 0
+        - 1
+        - 2
+      target_user_id:
+        type: integer
+    required:
+    - album_id
+    - target_user_id
+    type: object
+  api.AlbumCreateResponse:
+    properties:
+      album_id:
+        type: integer
+    type: object
+  api.BadRequestResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  api.CancelledJobResponse:
+    properties:
+      uuid:
+        type: string
+    type: object
+  api.ImageDeleteResponse:
+    properties:
+      file:
+        type: string
+      id:
+        type: integer
+    type: object
+  api.LoginCredentials:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  api.LoginFailResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  api.LoginSuccessResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  api.LoginUserResponse:
+    properties:
+      permissions:
+        items:
+          $ref: '#/definitions/data.Permission'
+        type: array
+      user_id:
+        type: integer
+    type: object
+  api.LogoutSuccessResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  api.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  api.MetadataResponse:
+    properties:
+      cameraMake:
+        type: string
+      cameraModel:
+        type: string
+      dateTaken:
+        type: integer
+      dateUploaded:
+        type: integer
+      fileName:
+        type: string
+      height:
+        type: integer
+      latitude:
+        type: number
+      longitude:
+        type: number
+      width:
+        type: integer
+    type: object
+  api.NotFoundResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  api.PasswordChangeRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  api.PluginDisabledResponse:
+    properties:
+      disabled:
+        type: boolean
+    type: object
+  api.ServerErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  api.TagAddResponse:
+    properties:
+      added:
+        items:
+          $ref: '#/definitions/repositories.ImageTagSuccess'
+        type: array
+      errors:
+        items:
+          $ref: '#/definitions/repositories.ImageTagFail'
+        type: array
+    type: object
+  api.TagCounts:
+    additionalProperties:
+      format: int64
+      type: integer
+    type: object
+  api.TagDeleteResponse:
+    properties:
+      deleted:
+        type: integer
+    type: object
+  api.TagRemoveResponse:
+    properties:
+      deleted:
+        items:
+          $ref: '#/definitions/repositories.ImageTagSuccess'
+        type: array
+      errors:
+        items:
+          $ref: '#/definitions/repositories.ImageTagFail'
+        type: array
+    type: object
+  data.Permission:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      permission:
+        type: string
+    type: object
+  database.Album:
+    properties:
+      album_privacy:
+        $ref: '#/definitions/database.GlobalPrivacy'
+      id:
+        type: integer
+      name:
+        type: string
+      owner_id:
+        type: integer
+      visibility_level:
+        $ref: '#/definitions/database.UserPrivacy'
+    type: object
+  database.AlbumSharedUser:
+    properties:
+      permission:
+        $ref: '#/definitions/database.GlobalPrivacy'
+      user_id:
+        type: integer
+    type: object
+  database.GlobalPrivacy:
+    enum:
+    - 0
+    - 1
+    format: int32
+    type: integer
+    x-enum-varnames:
+    - ALBUM_PRIVATE
+    - ALBUM_PUBLIC
+  database.PublicUser:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: integer
+      username:
+        type: string
+      visibility_mode:
+        type: integer
+    type: object
+  database.UserPrivacy:
+    enum:
+    - 0
+    - 1
+    - 2
+    format: int32
+    type: integer
+    x-enum-varnames:
+    - USER_PRIVATE
+    - USER_PUBLIC
+    - USER_ADMIN
+  jobs.exampleResponse:
+    properties:
+      cancelled:
+        type: boolean
+      completed:
+        items:
+          $ref: '#/definitions/repositories.ImageUploadSuccess'
+        type: array
+      failed:
+        items:
+          properties:
+            input:
+              $ref: '#/definitions/services.FileJob'
+            reason:
+              type: string
+          type: object
+        type: array
+      in_progress:
+        items:
+          $ref: '#/definitions/services.FileJob'
+        type: array
+      uuid:
+        type: string
+    type: object
+  plugins.HookSignature:
+    enum:
+    - 0
+    - 1
+    - 2
+    format: int32
+    type: integer
+    x-enum-varnames:
+    - ProcessOneImage
+    - ProcessImageBatch
+    - ProcessFormData
+  plugins.HookType:
+    enum:
+    - 0
+    - 1
+    - 2
+    format: int32
+    type: integer
+    x-enum-varnames:
+    - PostUpload
+    - ManualTrigger
+    - GenerateForm
+  plugins.PluginHook:
+    properties:
+      friendly_name:
+        type: string
+      signature:
+        $ref: '#/definitions/plugins.HookSignature'
+      type:
+        $ref: '#/definitions/plugins.HookType'
+    type: object
+  plugins.PluginInfo:
+    properties:
+      configurable:
+        type: boolean
+      enabled:
+        type: boolean
+      friendly_name:
+        type: string
+      hooks:
+        additionalProperties:
+          $ref: '#/definitions/plugins.PluginHook'
+        type: object
+      name:
+        type: string
+      version:
+        type: string
+    type: object
+  plugins.PublicConfigField:
+    properties:
+      default: {}
+      description:
+        type: string
+      name:
+        type: string
+      protected:
+        type: boolean
+      value: {}
+    type: object
+  repositories.ImageTagFail:
+    properties:
+      id:
+        type: integer
+      reason:
+        type: string
+    type: object
+  repositories.ImageTagSuccess:
+    properties:
+      count:
+        type: integer
+      id:
+        type: integer
+    type: object
+  repositories.ImageUploadSuccess:
+    properties:
+      filename:
+        type: string
+      id:
+        type: integer
+    type: object
+  services.APICreateToken:
+    properties:
+      tokenId:
+        type: integer
+      tokenString:
+        type: string
+    type: object
+  services.FileJob:
+    properties:
+      name:
+        type: string
+    type: object
+  services.JobSummary:
+    properties:
+      complete:
+        type: integer
+      errors:
+        type: integer
+      in_progress:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+      uuid:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This is the API access for the backend of the FreezeTag app.
+  title: FreezeTag API
+  version: "0.1"
+paths:
+  /album:
+    get:
+      description: Lists visible albums with id, name, owner and explicit shared users
+        (owner only).
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Album'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: List visible albums
+      tags:
+      - albums
+    post:
+      description: Create a new album with a given name and visibility mode
+      parameters:
+      - description: Create Album Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/albums.AlbumCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.AlbumCreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Create album
+      tags:
+      - albums
+  /album/{id}:
+    delete:
+      description: Delete an album by ID. User must be an owner of the album.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Delete album
+      tags:
+      - albums
+    get:
+      description: Get album information for a specific album ID.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.Album'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Get album details
+      tags:
+      - albums
+  /album/{id}/images:
+    get:
+      description: Lists image IDs in an album visible to the requesting user.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: integer
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: List images in album
+      tags:
+      - albums
+    post:
+      description: Add an image to an album
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Add Image to Album Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/albums.AlbumImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Add image to album, user must have write access to the album
+      tags:
+      - albums
+  /album/{id}/images/{image_id}:
+    delete:
+      description: Remove an image from an album
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Image ID
+        in: path
+        name: image_id
+        required: true
+        type: integer
+      - description: Remove Image from Album Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/albums.AlbumImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Remove image from album, user must have write access to the album
+      tags:
+      - albums
+  /album/{id}/name:
+    patch:
+      description: Rename an album. User must be an owner of the album.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Rename Album Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/albums.RenameAlbumRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Rename album
+      tags:
+      - albums
+  /album/{id}/permissions:
+    get:
+      description: Get explicit per-user permissions for an album.
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.AlbumSharedUser'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Get album permissions
+      tags:
+      - albums
+    put:
+      description: Set the permission level of a user for a specific album
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Set User Album Permission Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/albums.UserAlbumPermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Set user album permission
+      tags:
+      - albums
+  /album/{id}/visibility:
+    patch:
+      description: Set the visibility mode of an album
+      parameters:
+      - description: Album ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Change Album Visibility Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/albums.AlbumModifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Set album visibility
+      tags:
+      - albums
+  /album/image/{id}:
+    get:
+      description: List albums associated with an image, including id, name and owner
+        of each album.
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Album'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: List albums associated with image
+      tags:
+      - albums
+  /file/delete/{id}:
+    delete:
+      description: Delete an image file given an ID
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ImageDeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+      summary: Delete file
+      tags:
+      - files
+      - images
+  /file/download/{id}:
+    get:
+      description: Get an image file given an ID
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: thumbnail file data
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Download file
+      tags:
+      - files
+      - images
+  /jobs/cancel/{id}:
+    post:
+      description: Cancel a job given a job ID
+      parameters:
+      - description: Job Batch UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.CancelledJobResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.NotFoundResponse'
+      summary: Cancel a job
+      tags:
+      - jobs
+  /jobs/details/{id}:
+    get:
+      description: Retrieves the current details of a job batch, including specifics
+        of individual in-progress/completed/failed jobs
+      parameters:
+      - description: Job Batch UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/jobs.exampleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.NotFoundResponse'
+      summary: Query job batch details
+      tags:
+      - jobs
+  /jobs/list:
+    get:
+      description: Lists all job batches, including currently running, scheduled,
+        and cancelled/finished (before deletion)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/services.JobSummary'
+            type: array
+      summary: List all job batches
+      tags:
+      - jobs
+  /jobs/summary/{id}:
+    get:
+      description: Retrieves a summary of a job batch, with a high-level overview
+        of progress
+      parameters:
+      - description: Job Batch UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.JobSummary'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.NotFoundResponse'
+      summary: Query job batch summary
+      tags:
+      - jobs
+  /login:
+    get:
+      description: Checks if the user is currently authenticated.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user is authenticated
+          schema:
+            $ref: '#/definitions/api.LoginUserResponse'
+        "401":
+          description: User is not authenticated
+          schema:
+            $ref: '#/definitions/api.LoginFailResponse'
+      summary: Check login status
+      tags:
+      - auth
+      - login
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user using form parameters "username" and "password".
+        On success returns a JSON payload containing an authentication token.
+      parameters:
+      - description: User Login Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.LoginCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Authentication successful
+          schema:
+            $ref: '#/definitions/api.LoginSuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.LoginFailResponse'
+      summary: Authenticate user and return a token
+      tags:
+      - auth
+      - login
+  /logout:
+    post:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.LogoutSuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.LoginFailResponse'
+      summary: invalidate the current user's session token
+      tags:
+      - auth
+      - logout
+  /metadata/{id}:
+    get:
+      description: Retrieve metadata for an image
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MetadataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Get metadata
+      tags:
+      - metadata
+      - images
+      - search
+  /password/change:
+    post:
+      consumes:
+      - application/json
+      description: Allows an authenticated user to change their password by providing
+        their current password and a new password.
+      parameters:
+      - description: Password Change Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.PasswordChangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password changed successfully
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Failed to change password
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+      summary: Change user password
+      tags:
+      - auth
+      - password
+  /permissions/list:
+    get:
+      description: Retrieve a list of all available permissions in the system.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of permission names
+          schema:
+            items:
+              $ref: '#/definitions/data.Permission'
+            type: array
+      summary: List all permissions
+      tags:
+      - permissions
+  /plugins/config:
+    get:
+      description: Get the configuration fields of a plugin
+      parameters:
+      - description: plugin to read configuration from
+        in: query
+        name: plugin
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: plugin configuration
+          schema:
+            additionalProperties:
+              $ref: '#/definitions/plugins.PublicConfigField'
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.NotFoundResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Get Plugin Configuration
+      tags:
+      - plugins
+    post:
+      description: Change a map of plugin config values
+      parameters:
+      - description: plugin to change
+        in: query
+        name: plugin
+        required: true
+        type: string
+      - description: field updates
+        in: body
+        name: updates
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.NotFoundResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Change Plugin Config
+      tags:
+      - plugins
+  /plugins/enable:
+    post:
+      description: Set the enabled status of a plugin by name (plugin names are unique)
+      parameters:
+      - description: plugin to enable/disable
+        in: query
+        name: plugin
+        required: true
+        type: string
+      - description: whether the plugin should be enabled
+        in: query
+        name: enabled
+        required: true
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.PluginDisabledResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+      summary: Set Enabled
+      tags:
+      - plugins
+  /plugins/list:
+    get:
+      description: List plugins along with their hooks and enabled status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/plugins.PluginInfo'
+            type: array
+      summary: List Plugins
+      tags:
+      - plugins
+  /plugins/run:
+    post:
+      description: Start running a manual plugin hook by name
+      parameters:
+      - description: plugin to run
+        in: query
+        name: plugin
+        required: true
+        type: string
+      - description: hook to run
+        in: query
+        name: hook
+        required: true
+        type: string
+      - description: input to hook
+        in: body
+        name: input
+        required: true
+        schema: {}
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: the UUID of the created job for the plugin run
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+      summary: Run Manual Plugin Hook
+      tags:
+      - plugins
+  /plugins/upload:
+    post:
+      description: Add a new plugin by submitting a Git link
+      parameters:
+      - description: link to pull from
+        in: body
+        name: git_repo
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.NotFoundResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Upload Plugin via Git
+      tags:
+      - plugins
+  /search:
+    get:
+      description: Search for an image given information
+      parameters:
+      - description: camera make
+        in: query
+        name: make
+        type: string
+      - description: camera make fuzzy
+        in: query
+        name: makeLike
+        type: string
+      - description: camera model
+        in: query
+        name: model
+        type: string
+      - description: camera model fuzzy
+        in: query
+        name: modelLike
+        type: string
+      - description: picture taken before (unix epoch)
+        in: query
+        name: takenBefore
+        type: string
+      - description: picture taken after (unix epoch)
+        in: query
+        name: takenAfter
+        type: string
+      - description: picture uploaded before (unix epoch)
+        in: query
+        name: uploadedBefore
+        type: string
+      - description: picture uploaded after (unix epoch)
+        in: query
+        name: uploadedAfter
+        type: string
+      - description: latitude/longitude/distance (degrees)
+        example: 100.0,12.0,1.0
+        in: query
+        name: near
+        type: string
+      - collectionFormat: multi
+        description: picture tag
+        in: query
+        items:
+          type: string
+        name: tag
+        type: array
+      - collectionFormat: multi
+        description: picture tag fuzzy
+        in: query
+        items:
+          type: string
+        name: tagLike
+        type: array
+      - default: DateAdded
+        description: sort by
+        enum:
+        - DateAdded
+        - DateCreated
+        in: query
+        name: sortBy
+        type: string
+      - default: DESC
+        description: sort order
+        enum:
+        - ASC
+        - DESC
+        in: query
+        name: sortOrder
+        type: string
+      - description: page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: page number (zero indexed)
+        in: query
+        name: pageNo
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              format: int64
+              type: integer
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Search images
+      tags:
+      - search
+      - images
+  /tag/add:
+    post:
+      description: Add tags to images (or to the database if no images are specified)
+      parameters:
+      - collectionFormat: multi
+        description: tags to add
+        in: query
+        items:
+          type: string
+        name: tag
+        required: true
+        type: array
+      - collectionFormat: multi
+        description: image IDs to add to (optional)
+        in: query
+        items:
+          type: integer
+        name: id
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TagAddResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+      summary: Add tags
+      tags:
+      - tags
+      - upload
+  /tag/counts:
+    get:
+      description: Get all tags and the total count of the overlap for each tag associated
+        with the provided image IDs
+      parameters:
+      - collectionFormat: multi
+        description: image IDs to get tag counts for
+        in: query
+        items:
+          type: string
+        name: id
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TagCounts'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Get tag counts
+      tags:
+      - tags
+  /tag/delete:
+    delete:
+      description: Delete tags from the database
+      parameters:
+      - collectionFormat: multi
+        description: tags to delete
+        in: query
+        items:
+          type: string
+        name: tag
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TagDeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+      summary: Delete tags
+      tags:
+      - tags
+  /tag/list:
+    get:
+      description: Get all the tags in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TagCounts'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: List all tags
+      tags:
+      - tags
+  /tag/list/{id}:
+    get:
+      description: Get all the tags associated with an image
+      parameters:
+      - description: image ID to get the tags of
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: List image tags
+      tags:
+      - tags
+  /tag/remove:
+    delete:
+      description: Delete tags from images
+      parameters:
+      - collectionFormat: multi
+        description: tags to remove
+        in: query
+        items:
+          type: string
+        name: tag
+        required: true
+        type: array
+      - collectionFormat: multi
+        description: image IDs to remove from
+        in: query
+        items:
+          type: integer
+        name: id
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TagRemoveResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+      summary: Delete image tags
+      tags:
+      - tags
+  /tag/search:
+    get:
+      description: Get all tags and the total overlap count for a search query
+      parameters:
+      - description: camera make
+        in: query
+        name: make
+        type: string
+      - description: camera make fuzzy
+        in: query
+        name: makeLike
+        type: string
+      - description: camera model
+        in: query
+        name: model
+        type: string
+      - description: camera model fuzzy
+        in: query
+        name: modelLike
+        type: string
+      - description: picture taken before (unix epoch)
+        in: query
+        name: takenBefore
+        type: string
+      - description: picture taken after (unix epoch)
+        in: query
+        name: takenAfter
+        type: string
+      - description: picture uploaded before (unix epoch)
+        in: query
+        name: uploadedBefore
+        type: string
+      - description: picture uploaded after (unix epoch)
+        in: query
+        name: uploadedAfter
+        type: string
+      - description: latitude/longitude/distance (degrees)
+        example: 100.0,12.0,1.0
+        in: query
+        name: near
+        type: string
+      - collectionFormat: multi
+        description: picture tag
+        in: query
+        items:
+          type: string
+        name: tag
+        type: array
+      - collectionFormat: multi
+        description: picture tag fuzzy
+        in: query
+        items:
+          type: string
+        name: tagLike
+        type: array
+      - default: DateAdded
+        description: sort by
+        enum:
+        - DateAdded
+        - DateCreated
+        in: query
+        name: sortBy
+        type: string
+      - default: DESC
+        description: sort order
+        enum:
+        - ASC
+        - DESC
+        in: query
+        name: sortOrder
+        type: string
+      - description: page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: page number (zero indexed)
+        in: query
+        name: pageNo
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.TagCounts'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Get tag counts from search
+      tags:
+      - search
+      - tags
+  /thumbnails/{id}:
+    get:
+      description: Get a WEBP format image thumbnail for an image
+      parameters:
+      - description: Image ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - image/webp
+      responses:
+        "200":
+          description: thumbnail file data
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Get thumbnail
+      tags:
+      - thumbnails
+      - images
+  /tokens/admin/delete/{id}:
+    delete:
+      description: Permanently delete an API token from the database. This action
+        cannot be undone. Admins can delete any token.
+      parameters:
+      - description: ID of the token to delete
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Admin delete API token
+      tags:
+      - tokens
+  /tokens/admin/revoke/{id}:
+    post:
+      description: Revoke an API token, preventing it from being used for authentication.
+        This is a softer action than deleting a token. Admins can revoke any token.
+      parameters:
+      - description: ID of the token to revoke
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Admin revoke API token
+      tags:
+      - tokens
+  /tokens/create:
+    post:
+      description: Create a new API token for the authenticated user with the specified
+        permissions and expiration time
+      parameters:
+      - description: Optional label for the token
+        in: query
+        name: label
+        type: string
+      - description: Optional expiration time for the token in RFC3339 format (e.g.
+          2024-01-01T00:00:00Z)
+        in: query
+        name: expiresAt
+        type: string
+      - collectionFormat: multi
+        description: List of permissions to assign to the token
+        in: query
+        items:
+          type: string
+        name: permission
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.APICreateToken'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Create API token
+      tags:
+      - tokens
+  /tokens/revoke/{id}:
+    post:
+      description: Revoke an API token, preventing it from being used for authentication.
+        Users can only revoke their own tokens
+      parameters:
+      - description: ID of the token to revoke
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Revoke API token
+      tags:
+      - tokens
+  /upload:
+    post:
+      description: Upload a set of image files to the server
+      parameters:
+      - collectionFormat: multi
+        description: image file to upload
+        in: formData
+        items:
+          type: file
+        name: file
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: the UUID of the created job batch for the upload
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Upload files
+      tags:
+      - upload
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a user from the system by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Delete a user by ID
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a user's public information by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.PublicUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Get a public user by ID
+      tags:
+      - users
+  /users/all:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all users in the system.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.PublicUser'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: List the users in the system
+      tags:
+      - users
+  /users/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user with the provided username and password, granted
+        they have permission to create users.
+      parameters:
+      - description: User Login Details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.LoginCredentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/database.PublicUser'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Create a new user
+      tags:
+      - users
+  /users/permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Revokes specified permissions for a user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: multi
+        description: Permissions to revoke in the form read/write/delete:name
+        in: query
+        items:
+          type: string
+        name: permission
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Revoke permissions for a user
+      tags:
+      - users
+    get:
+      description: Lists the permissions of a user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/data.Permission'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: List user permissions
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Grants specified permissions for a user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - collectionFormat: multi
+        description: Permissions to grant
+        in: query
+        items:
+          type: string
+        name: permission
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Grant permissions for a user
+      tags:
+      - users
+  /users/profile-picture/{id}:
+    delete:
+      description: Resets the profile picture of a user to the default generated avatar.
+        A user can only reset their own profile picture,
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Reset a user's profile picture to default
+      tags:
+      - users
+    get:
+      description: |-
+        Retrieves the profile picture of a user by their ID.
+        Retrieves the profile picture of a user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - image/webp
+      responses:
+        "200":
+          description: profile picture file data
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Get a user's profile picture
+      tags:
+      - users
+    post:
+      consumes:
+      - multipart/form-data
+      description: Updates the profile picture of a user by their ID. Accepts a multipart
+        form with a "picture" file field. a user can only update their own profile
+        picture,
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New profile picture
+        in: formData
+        name: picture
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Update a user's profile picture
+      tags:
+      - users
+  /users/visibility/{id}:
+    post:
+      consumes:
+      - application/json
+      description: Sets the visibility mode of a user by their ID. The visibility
+        mode determines who can see the user's profile and images. Accepts a query
+        parameter "mode" with values 0, 1, or 2, where 0 means only the user can see
+        their profile and images, 1 means anyone can see their profile but only followers
+        can see their images, and 2 means anyone can see their profile and images.
+        a user can only update their own visibility mode, but an admin with the appropriate
+        permissions can update any user's visibility mode.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Visibility mode (0, 1, or 2)
+        in: query
+        name: mode
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ServerErrorResponse'
+      summary: Set a user's visibility mode
+      tags:
+      - users
+swagger: "2.0"

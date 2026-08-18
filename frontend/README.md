@@ -38,6 +38,12 @@ pnpm format
 
 to automatically fix formatting issues.
 
+### BETA: Frontend API Client Codegen
+
+We're testing and implementing Hey API's openapi-ts for generating frontend API clients based off of the backend spec, automatically. All you need to do in the frontend is use the generated files in `src/openapi-ts_beta_api` for any NEW API endpoints, or for any OLD API endpoints that have already been migrated. You are not expected to solve the migration for old, unmigrated endpoints unless you are taking on the specific issue to do the migration. If it's helpful or easy to do the migration alongside your change, assign yourself the related issue.
+
+The default client should be OK, and you should not need any of the options for the client. I believe all you need is the exported functions in `sdk.gen.ts`.
+
 ## Next.js Resources
 
 To learn more about Next.js, take a look at the following resources:

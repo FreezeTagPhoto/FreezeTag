@@ -1,0 +1,3159 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the API access for the backend of the FreezeTag app.",
+        "title": "FreezeTag API",
+        "contact": {},
+        "version": "0.1"
+    },
+    "basePath": "/backend/",
+    "paths": {
+        "/album": {
+            "get": {
+                "description": "Lists visible albums with id, name, owner and explicit shared users (owner only).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "List visible albums",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/database.Album"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new album with a given name and visibility mode",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "Create album",
+                "parameters": [
+                    {
+                        "description": "Create Album Payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/albums.AlbumCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.AlbumCreateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/album/image/{id}": {
+            "get": {
+                "description": "List albums associated with an image, including id, name and owner of each album.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "List albums associated with image",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Image ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/database.Album"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/album/{id}": {
+            "get": {
+                "description": "Get album information for a specific album ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "Get album details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/database.Album"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an album by ID. User must be an owner of the album.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "Delete album",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/album/{id}/images": {
+            "get": {
+                "description": "Lists image IDs in an album visible to the requesting user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "List images in album",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add an image to an album",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "Add image to album, user must have write access to the album",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Add Image to Album Payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/albums.AlbumImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/album/{id}/images/{image_id}": {
+            "delete": {
+                "description": "Remove an image from an album",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "Remove image from album, user must have write access to the album",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Image ID",
+                        "name": "image_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Remove Image from Album Payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/albums.AlbumImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/album/{id}/name": {
+            "patch": {
+                "description": "Rename an album. User must be an owner of the album.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "Rename album",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Rename Album Payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/albums.RenameAlbumRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/album/{id}/permissions": {
+            "get": {
+                "description": "Get explicit per-user permissions for an album.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "Get album permissions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/database.AlbumSharedUser"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Set the permission level of a user for a specific album",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "Set user album permission",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set User Album Permission Payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/albums.UserAlbumPermissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/album/{id}/visibility": {
+            "patch": {
+                "description": "Set the visibility mode of an album",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "albums"
+                ],
+                "summary": "Set album visibility",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Album ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Change Album Visibility Payload",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/albums.AlbumModifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/file/delete/{id}": {
+            "delete": {
+                "description": "Delete an image file given an ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files",
+                    "images"
+                ],
+                "summary": "Delete file",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Image ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ImageDeleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/file/download/{id}": {
+            "get": {
+                "description": "Get an image file given an ID",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "files",
+                    "images"
+                ],
+                "summary": "Download file",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Image ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "thumbnail file data",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/jobs/cancel/{id}": {
+            "post": {
+                "description": "Cancel a job given a job ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jobs"
+                ],
+                "summary": "Cancel a job",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Job Batch UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.CancelledJobResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.NotFoundResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/jobs/details/{id}": {
+            "get": {
+                "description": "Retrieves the current details of a job batch, including specifics of individual in-progress/completed/failed jobs",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jobs"
+                ],
+                "summary": "Query job batch details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Job Batch UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/jobs.exampleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.NotFoundResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/jobs/list": {
+            "get": {
+                "description": "Lists all job batches, including currently running, scheduled, and cancelled/finished (before deletion)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jobs"
+                ],
+                "summary": "List all job batches",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/services.JobSummary"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/jobs/summary/{id}": {
+            "get": {
+                "description": "Retrieves a summary of a job batch, with a high-level overview of progress",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "jobs"
+                ],
+                "summary": "Query job batch summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Job Batch UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.JobSummary"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.NotFoundResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "get": {
+                "description": "Checks if the user is currently authenticated.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth",
+                    "login"
+                ],
+                "summary": "Check login status",
+                "responses": {
+                    "200": {
+                        "description": "user is authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginUserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "User is not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginFailResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Authenticates a user using form parameters \"username\" and \"password\". On success returns a JSON payload containing an authentication token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth",
+                    "login"
+                ],
+                "summary": "Authenticate user and return a token",
+                "parameters": [
+                    {
+                        "description": "User Login Details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginCredentials"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Authentication successful",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginFailResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "tags": [
+                    "auth",
+                    "logout"
+                ],
+                "summary": "invalidate the current user's session token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LogoutSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginFailResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/metadata/{id}": {
+            "get": {
+                "description": "Retrieve metadata for an image",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "metadata",
+                    "images",
+                    "search"
+                ],
+                "summary": "Get metadata",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Image ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MetadataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/password/change": {
+            "post": {
+                "description": "Allows an authenticated user to change their password by providing their current password and a new password.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth",
+                    "password"
+                ],
+                "summary": "Change user password",
+                "parameters": [
+                    {
+                        "description": "Password Change Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.PasswordChangeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "User not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to change password",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/permissions/list": {
+            "get": {
+                "description": "Retrieve a list of all available permissions in the system.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "List all permissions",
+                "responses": {
+                    "200": {
+                        "description": "List of permission names",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/data.Permission"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/plugins/config": {
+            "get": {
+                "description": "Get the configuration fields of a plugin",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plugins"
+                ],
+                "summary": "Get Plugin Configuration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "plugin to read configuration from",
+                        "name": "plugin",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "plugin configuration",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/plugins.PublicConfigField"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.NotFoundResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Change a map of plugin config values",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plugins"
+                ],
+                "summary": "Change Plugin Config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "plugin to change",
+                        "name": "plugin",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "field updates",
+                        "name": "updates",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.NotFoundResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plugins/enable": {
+            "post": {
+                "description": "Set the enabled status of a plugin by name (plugin names are unique)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plugins"
+                ],
+                "summary": "Set Enabled",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "plugin to enable/disable",
+                        "name": "plugin",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "whether the plugin should be enabled",
+                        "name": "enabled",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.PluginDisabledResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plugins/list": {
+            "get": {
+                "description": "List plugins along with their hooks and enabled status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plugins"
+                ],
+                "summary": "List Plugins",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/plugins.PluginInfo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/plugins/run": {
+            "post": {
+                "description": "Start running a manual plugin hook by name",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plugins"
+                ],
+                "summary": "Run Manual Plugin Hook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "plugin to run",
+                        "name": "plugin",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "hook to run",
+                        "name": "hook",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "input to hook",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {}
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "the UUID of the created job for the plugin run",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plugins/upload": {
+            "post": {
+                "description": "Add a new plugin by submitting a Git link",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plugins"
+                ],
+                "summary": "Upload Plugin via Git",
+                "parameters": [
+                    {
+                        "description": "link to pull from",
+                        "name": "git_repo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.NotFoundResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/search": {
+            "get": {
+                "description": "Search for an image given information",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search",
+                    "images"
+                ],
+                "summary": "Search images",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "camera make",
+                        "name": "make",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "camera make fuzzy",
+                        "name": "makeLike",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "camera model",
+                        "name": "model",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "camera model fuzzy",
+                        "name": "modelLike",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture taken before (unix epoch)",
+                        "name": "takenBefore",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture taken after (unix epoch)",
+                        "name": "takenAfter",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture uploaded before (unix epoch)",
+                        "name": "uploadedBefore",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture uploaded after (unix epoch)",
+                        "name": "uploadedAfter",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "100.0,12.0,1.0",
+                        "description": "latitude/longitude/distance (degrees)",
+                        "name": "near",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "picture tag",
+                        "name": "tag",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "picture tag fuzzy",
+                        "name": "tagLike",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "DateAdded",
+                            "DateCreated"
+                        ],
+                        "type": "string",
+                        "default": "DateAdded",
+                        "description": "sort by",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "default": "DESC",
+                        "description": "sort order",
+                        "name": "sortOrder",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page number (zero indexed)",
+                        "name": "pageNo",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer",
+                                "format": "int64"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/add": {
+            "post": {
+                "description": "Add tags to images (or to the database if no images are specified)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags",
+                    "upload"
+                ],
+                "summary": "Add tags",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "tags to add",
+                        "name": "tag",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "image IDs to add to (optional)",
+                        "name": "id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagAddResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/counts": {
+            "get": {
+                "description": "Get all tags and the total count of the overlap for each tag associated with the provided image IDs",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Get tag counts",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "image IDs to get tag counts for",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagCounts"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/delete": {
+            "delete": {
+                "description": "Delete tags from the database",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Delete tags",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "tags to delete",
+                        "name": "tag",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagDeleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/list": {
+            "get": {
+                "description": "Get all the tags in the database",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "List all tags",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagCounts"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/list/{id}": {
+            "get": {
+                "description": "Get all the tags associated with an image",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "List image tags",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "image ID to get the tags of",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/remove": {
+            "delete": {
+                "description": "Delete tags from images",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Delete image tags",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "tags to remove",
+                        "name": "tag",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "image IDs to remove from",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagRemoveResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tag/search": {
+            "get": {
+                "description": "Get all tags and the total overlap count for a search query",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "search",
+                    "tags"
+                ],
+                "summary": "Get tag counts from search",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "camera make",
+                        "name": "make",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "camera make fuzzy",
+                        "name": "makeLike",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "camera model",
+                        "name": "model",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "camera model fuzzy",
+                        "name": "modelLike",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture taken before (unix epoch)",
+                        "name": "takenBefore",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture taken after (unix epoch)",
+                        "name": "takenAfter",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture uploaded before (unix epoch)",
+                        "name": "uploadedBefore",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "picture uploaded after (unix epoch)",
+                        "name": "uploadedAfter",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "100.0,12.0,1.0",
+                        "description": "latitude/longitude/distance (degrees)",
+                        "name": "near",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "picture tag",
+                        "name": "tag",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "picture tag fuzzy",
+                        "name": "tagLike",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "DateAdded",
+                            "DateCreated"
+                        ],
+                        "type": "string",
+                        "default": "DateAdded",
+                        "description": "sort by",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "default": "DESC",
+                        "description": "sort order",
+                        "name": "sortOrder",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page number (zero indexed)",
+                        "name": "pageNo",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TagCounts"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/thumbnails/{id}": {
+            "get": {
+                "description": "Get a WEBP format image thumbnail for an image",
+                "produces": [
+                    "image/webp"
+                ],
+                "tags": [
+                    "thumbnails",
+                    "images"
+                ],
+                "summary": "Get thumbnail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Image ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "thumbnail file data",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tokens/admin/delete/{id}": {
+            "delete": {
+                "description": "Permanently delete an API token from the database. This action cannot be undone. Admins can delete any token.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tokens"
+                ],
+                "summary": "Admin delete API token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the token to delete",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tokens/admin/revoke/{id}": {
+            "post": {
+                "description": "Revoke an API token, preventing it from being used for authentication. This is a softer action than deleting a token. Admins can revoke any token.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tokens"
+                ],
+                "summary": "Admin revoke API token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the token to revoke",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tokens/create": {
+            "post": {
+                "description": "Create a new API token for the authenticated user with the specified permissions and expiration time",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tokens"
+                ],
+                "summary": "Create API token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Optional label for the token",
+                        "name": "label",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Optional expiration time for the token in RFC3339 format (e.g. 2024-01-01T00:00:00Z)",
+                        "name": "expiresAt",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "List of permissions to assign to the token",
+                        "name": "permission",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.APICreateToken"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tokens/revoke/{id}": {
+            "post": {
+                "description": "Revoke an API token, preventing it from being used for authentication. Users can only revoke their own tokens",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tokens"
+                ],
+                "summary": "Revoke API token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the token to revoke",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/upload": {
+            "post": {
+                "description": "Upload a set of image files to the server",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "upload"
+                ],
+                "summary": "Upload files",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "image file to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "the UUID of the created job batch for the upload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/all": {
+            "get": {
+                "description": "Retrieves a list of all users in the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List the users in the system",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/database.PublicUser"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/create": {
+            "post": {
+                "description": "Creates a new user with the provided username and password, granted they have permission to create users.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create a new user",
+                "parameters": [
+                    {
+                        "description": "User Login Details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginCredentials"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/database.PublicUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/permissions/{id}": {
+            "get": {
+                "description": "Lists the permissions of a user by their ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List user permissions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/data.Permission"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Grants specified permissions for a user by their ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Grant permissions for a user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "Permissions to grant",
+                        "name": "permission",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Revokes specified permissions for a user by their ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Revoke permissions for a user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "Permissions to revoke in the form read/write/delete:name",
+                        "name": "permission",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/profile-picture/{id}": {
+            "get": {
+                "description": "Retrieves the profile picture of a user by their ID.\nRetrieves the profile picture of a user by their ID.",
+                "produces": [
+                    "image/webp"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get a user's profile picture",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "profile picture file data",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Updates the profile picture of a user by their ID. Accepts a multipart form with a \"picture\" file field. a user can only update their own profile picture,",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update a user's profile picture",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "New profile picture",
+                        "name": "picture",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Resets the profile picture of a user to the default generated avatar. A user can only reset their own profile picture,",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Reset a user's profile picture to default",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/visibility/{id}": {
+            "post": {
+                "description": "Sets the visibility mode of a user by their ID. The visibility mode determines who can see the user's profile and images. Accepts a query parameter \"mode\" with values 0, 1, or 2, where 0 means only the user can see their profile and images, 1 means anyone can see their profile but only followers can see their images, and 2 means anyone can see their profile and images. a user can only update their own visibility mode, but an admin with the appropriate permissions can update any user's visibility mode.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Set a user's visibility mode",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Visibility mode (0, 1, or 2)",
+                        "name": "mode",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "description": "Retrieves a user's public information by their ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get a public user by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/database.PublicUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a user from the system by their ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete a user by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.BadRequestResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ServerErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "albums.AlbumCreateRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "visibility_mode": {
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/database.GlobalPrivacy"
+                        }
+                    ]
+                }
+            }
+        },
+        "albums.AlbumImageRequest": {
+            "type": "object",
+            "required": [
+                "image_id"
+            ],
+            "properties": {
+                "image_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "albums.AlbumModifyRequest": {
+            "type": "object",
+            "required": [
+                "album_id"
+            ],
+            "properties": {
+                "album_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "visibility_mode": {
+                    "enum": [
+                        0,
+                        1
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/database.GlobalPrivacy"
+                        }
+                    ]
+                }
+            }
+        },
+        "albums.RenameAlbumRequest": {
+            "type": "object",
+            "required": [
+                "new_name"
+            ],
+            "properties": {
+                "new_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "albums.UserAlbumPermissionRequest": {
+            "type": "object",
+            "required": [
+                "album_id",
+                "target_user_id"
+            ],
+            "properties": {
+                "album_id": {
+                    "type": "integer"
+                },
+                "permission": {
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/database.UserPrivacy"
+                        }
+                    ]
+                },
+                "target_user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.AlbumCreateResponse": {
+            "type": "object",
+            "properties": {
+                "album_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.BadRequestResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CancelledJobResponse": {
+            "type": "object",
+            "properties": {
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ImageDeleteResponse": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.LoginCredentials": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.LoginFailResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.LoginSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.LoginUserResponse": {
+            "type": "object",
+            "properties": {
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.Permission"
+                    }
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.LogoutSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.MetadataResponse": {
+            "type": "object",
+            "properties": {
+                "cameraMake": {
+                    "type": "string"
+                },
+                "cameraModel": {
+                    "type": "string"
+                },
+                "dateTaken": {
+                    "type": "integer"
+                },
+                "dateUploaded": {
+                    "type": "integer"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.NotFoundResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.PasswordChangeRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.PluginDisabledResponse": {
+            "type": "object",
+            "properties": {
+                "disabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.ServerErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TagAddResponse": {
+            "type": "object",
+            "properties": {
+                "added": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageTagSuccess"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageTagFail"
+                    }
+                }
+            }
+        },
+        "api.TagCounts": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "integer",
+                "format": "int64"
+            }
+        },
+        "api.TagDeleteResponse": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.TagRemoveResponse": {
+            "type": "object",
+            "properties": {
+                "deleted": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageTagSuccess"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageTagFail"
+                    }
+                }
+            }
+        },
+        "data.Permission": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "permission": {
+                    "type": "string"
+                }
+            }
+        },
+        "database.Album": {
+            "type": "object",
+            "properties": {
+                "album_privacy": {
+                    "$ref": "#/definitions/database.GlobalPrivacy"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_id": {
+                    "type": "integer"
+                },
+                "visibility_level": {
+                    "$ref": "#/definitions/database.UserPrivacy"
+                }
+            }
+        },
+        "database.AlbumSharedUser": {
+            "type": "object",
+            "properties": {
+                "permission": {
+                    "$ref": "#/definitions/database.GlobalPrivacy"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "database.GlobalPrivacy": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-varnames": [
+                "ALBUM_PRIVATE",
+                "ALBUM_PUBLIC"
+            ]
+        },
+        "database.PublicUser": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "visibility_mode": {
+                    "type": "integer"
+                }
+            }
+        },
+        "database.UserPrivacy": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "USER_PRIVATE",
+                "USER_PUBLIC",
+                "USER_ADMIN"
+            ]
+        },
+        "jobs.exampleResponse": {
+            "type": "object",
+            "properties": {
+                "cancelled": {
+                    "type": "boolean"
+                },
+                "completed": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repositories.ImageUploadSuccess"
+                    }
+                },
+                "failed": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "input": {
+                                "$ref": "#/definitions/services.FileJob"
+                            },
+                            "reason": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "in_progress": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.FileJob"
+                    }
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "plugins.HookSignature": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "ProcessOneImage",
+                "ProcessImageBatch",
+                "ProcessFormData"
+            ]
+        },
+        "plugins.HookType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "PostUpload",
+                "ManualTrigger",
+                "GenerateForm"
+            ]
+        },
+        "plugins.PluginHook": {
+            "type": "object",
+            "properties": {
+                "friendly_name": {
+                    "type": "string"
+                },
+                "signature": {
+                    "$ref": "#/definitions/plugins.HookSignature"
+                },
+                "type": {
+                    "$ref": "#/definitions/plugins.HookType"
+                }
+            }
+        },
+        "plugins.PluginInfo": {
+            "type": "object",
+            "properties": {
+                "configurable": {
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "friendly_name": {
+                    "type": "string"
+                },
+                "hooks": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/plugins.PluginHook"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "plugins.PublicConfigField": {
+            "type": "object",
+            "properties": {
+                "default": {},
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "protected": {
+                    "type": "boolean"
+                },
+                "value": {}
+            }
+        },
+        "repositories.ImageTagFail": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "repositories.ImageTagSuccess": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "repositories.ImageUploadSuccess": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "services.APICreateToken": {
+            "type": "object",
+            "properties": {
+                "tokenId": {
+                    "type": "integer"
+                },
+                "tokenString": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.FileJob": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.JobSummary": {
+            "type": "object",
+            "properties": {
+                "complete": {
+                    "type": "integer"
+                },
+                "errors": {
+                    "type": "integer"
+                },
+                "in_progress": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
