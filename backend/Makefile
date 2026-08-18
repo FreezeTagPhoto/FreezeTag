@@ -1,4 +1,4 @@
-.PHONY: run test mocks lint tidy clean docs build deploy kill format
+.PHONY: run test mocks lint tidy clean docs build deploy kill format generate-clients
 .SILENT:
 
 TAGS=sqlite_math_functions,sqlite_foreign_keys
@@ -52,3 +52,6 @@ deploy: build
 kill:
 	docker kill freezetag_backend
 	docker rm freezetag_backend
+
+generate-clients: docs
+	pnpm -C ../frontend run generate-clients

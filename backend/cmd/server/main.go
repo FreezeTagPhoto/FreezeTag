@@ -61,11 +61,11 @@ type dependencies struct {
 // @version 0.1
 // @description This is the API access for the backend of the FreezeTag app.
 //
-// @basePath /
+// @basePath /backend/
 func main() {
 	godotenv.Load(path.Join(defaultDataDir, ".env")) //nolint:errcheck
 	router := gin.Default()
-	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.BasePath = "/backend/"
 	deps := initializeDependencies()
 
 	RegisterEndpoints(router, deps)

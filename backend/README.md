@@ -87,3 +87,10 @@ If you want to check formatting, run `gofmt -l .` to see if any Go files are inc
 You can run unit tests and get coverage using `go test -cover -tags test`.
 
 Contributing is easiest if you use the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.Go) for Visual Studio Code. It handles most of this stuff automatically (although you still need to install `golangci-lint` separately for it to work).
+
+### BETA: Frontend API Client Codegen
+We're testing and implementing Hey API's openapi-ts for generating frontend API clients based off of the backend spec, automatically. So, if you are modifying the backend API endpoints, please run the following:
+```bash
+make generate-clients
+```
+And then verify that the frontend builds and works OK. If it doesn't, then fix the frontend in relation to your changes.
