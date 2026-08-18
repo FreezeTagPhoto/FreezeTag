@@ -12,7 +12,9 @@
         "test": "jest",
         "test:watch": "jest --watch",
         "deploy": "docker build -t freezetag:frontend . && docker run -d --name freezetag_frontend -p 127.0.0.1:3000:3000 freezetag:frontend",
-        "kill": "docker kill freezetag_frontend && docker rm freezetag_frontend"
+        "kill": "docker kill freezetag_frontend && docker rm freezetag_frontend",
+        "openapi-ts": "openapi-ts",
+        "generate-clients": "openapi-ts"
     },
     "dependencies": {
         "lucide-react": "^0.563.0",
@@ -25,6 +27,7 @@
     "devDependencies": {
         "@eslint/eslintrc": "^3.3.5",
         "@gitlab-formatters/eslint-formatter-gitlab": "^1.0.1",
+        "@hey-api/openapi-ts": "0.99.0",
         "@testing-library/dom": "^10.4.1",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
@@ -36,9 +39,9 @@
         "baseline-browser-mapping": "^2.10.8",
         "eslint": "^9.39.4",
         "eslint-config-next": "15.5.6",
-        "leaflet": "^1.9.4",
         "jest": "^30.3.0",
         "jest-environment-jsdom": "^30.3.0",
+        "leaflet": "^1.9.4",
         "prettier": "^3.8.1",
         "ts-node": "^10.9.2",
         "typescript": "^5.9.3"

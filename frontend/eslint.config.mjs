@@ -20,6 +20,8 @@ const eslintConfig = [
             "next-env.d.ts",
             "coverage/**",
             ".swc/**",
+            "**/*.gen.ts",
+            "src/openapi-ts_beta_api/**",
         ],
     },
     {
